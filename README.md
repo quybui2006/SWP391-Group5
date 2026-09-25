@@ -6,9 +6,9 @@
 - develop: tích hợp code của các thành viên.
 - Mỗi nhiệm vụ tạo một nhánh riêng từ develop mới nhất.
 - Không push trực tiếp lên main, staging hoặc develop.
-
-Luồng đưa code:
-feat/* hoặc fix/* → develop → staging → main.
+  
+LUỒNG CODE:
+FEAT/* HOẶC FIX/* → DEVELOP → STAGING → MAIN.
 
 ### 2. Đặt tên nhánh
 - feat/<ten-chuc-nang>: chức năng mới.
