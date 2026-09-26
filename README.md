@@ -1,5 +1,4 @@
-## Quy tắc làm việc nhóm
-
+## Quy tắc 
 ### 1. Nhánh
 - main: phiên bản ổn định để demo hoặc nộp bài.
 - staging: kiểm thử tổng thể.
