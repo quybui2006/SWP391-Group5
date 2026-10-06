@@ -25,6 +25,10 @@ public class ProductVariant {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @ManyToOne
+    @JoinColumn(name = "base_unit_id", nullable = false)
+    private Unit baseUnit;
+
     // Getter và Setter
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -38,4 +42,6 @@ public class ProductVariant {
     public void setPrice(BigDecimal price) { this.price = price; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Unit getBaseUnit() { return baseUnit; }
+    public void setBaseUnit(Unit baseUnit) { this.baseUnit = baseUnit; }
 }

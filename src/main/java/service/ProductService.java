@@ -36,4 +36,10 @@ public class ProductService {
 
         return productVariantRepository.searchAndFilter(safeKeyword, minPrice, maxPrice, filterByCategory, safeCategoryIds);
     }
+
+    public ProductVariant getProductVariantById(Long id) {
+        return productVariantRepository.findById(id)
+                .filter(v -> "ACTIVE".equals(v.getStatus()) && "ACTIVE".equals(v.getProduct().getSellingStatus()))
+                .orElse(null);
+    }
 }
