@@ -21,6 +21,15 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<ProductVariant> variants;
 
+    // Quan hệ Nhiều-Nhiều với Category
+    @ManyToMany
+    @JoinTable(
+            name = "product_categories",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories;
+
     // Getter và Setter
     public Long getId() {
         return id;
@@ -53,4 +62,8 @@ public class Product {
     public void setVariants(List<ProductVariant> variants) {
         this.variants = variants;
     }
+
+    public List<Category> getCategories() { return categories; }
+
+    public void setCategories(List<Category> categories) { this.categories = categories; }
 }
