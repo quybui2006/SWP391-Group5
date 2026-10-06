@@ -25,6 +25,6 @@ public class CustomerProductDetailController {
 
         // Đẩy dữ liệu chi tiết sản phẩm sang giao diện
         model.addAttribute("variant", variant);
-        return "product-detail";
+        return "customerproductdetail";
     }
 }

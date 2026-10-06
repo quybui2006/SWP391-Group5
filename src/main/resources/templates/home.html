@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>FreshFruit - Trái cây tươi mỗi ngày</title>
 
@@ -12,24 +12,25 @@
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet">
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet">
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
+<!-- =========================================================
+     HEADER
+========================================================= -->
 
 <header class="site-header">
 
     <div class="container header-inner">
 
         <!-- LOGO -->
-        <a class="brand" th:href="@{/}">
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
 
-            <span class="brand-mark">
-                F
-            </span>
+            <span class="brand-mark">F</span>
 
             <span>
                 <strong>FreshFruit</strong>
@@ -40,13 +41,15 @@
 
 
         <!-- NAVIGATION -->
-        <nav class="main-nav">
+        <nav class="main-nav" aria-label="Điều hướng chính">
 
-            <a class="active" th:href="@{/}">
+            <a
+                    class="active"
+                    th:href="@{/}">
                 Trang chủ
             </a>
 
-            <a href="#products">
+            <a th:href="@{/search}">
                 Sản phẩm
             </a>
 
@@ -64,20 +67,24 @@
         <!-- HEADER ACTIONS -->
         <div class="header-actions">
 
+            <!-- SEARCH -->
             <a
                     class="icon-btn"
                     th:href="@{/search}"
-                    title="Tìm kiếm">
+                    title="Tìm kiếm"
+                    aria-label="Tìm kiếm">
 
                 ⌕
 
             </a>
 
 
+            <!-- CART -->
             <a
                     class="icon-btn cart-btn"
                     th:href="@{/cart}"
-                    title="Giỏ hàng">
+                    title="Giỏ hàng"
+                    aria-label="Giỏ hàng">
 
                 🛒
 
@@ -88,6 +95,7 @@
             </a>
 
 
+            <!-- LOGIN -->
             <a
                     class="login-btn"
                     th:href="@{/login}">
@@ -103,17 +111,22 @@
 </header>
 
 
-<!-- ================= MAIN ================= -->
+<!-- =========================================================
+     MAIN
+========================================================= -->
 
 <main>
 
 
-    <!-- ================= HERO ================= -->
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
 
     <section class="hero">
 
         <div class="container hero-grid">
 
+            <!-- HERO CONTENT -->
             <div class="hero-content">
 
                 <span class="eyebrow">
@@ -138,7 +151,7 @@
 
                     <a
                             class="primary-btn"
-                            href="#products">
+                            th:href="@{/search}">
 
                         Mua ngay
 
@@ -181,7 +194,6 @@
 
 
             <!-- HERO VISUAL -->
-
             <div class="hero-visual">
 
                 <div class="hero-orbit orbit-one"></div>
@@ -233,7 +245,9 @@
     </section>
 
 
-    <!-- ================= BENEFITS ================= -->
+    <!-- =====================================================
+         BENEFITS
+    ====================================================== -->
 
     <section class="quick-benefits">
 
@@ -247,7 +261,6 @@
                 </div>
 
                 <div>
-
                     <strong>
                         Giao hàng nhanh
                     </strong>
@@ -255,7 +268,6 @@
                     <span>
                         Đóng gói cẩn thận
                     </span>
-
                 </div>
 
             </div>
@@ -268,7 +280,6 @@
                 </div>
 
                 <div>
-
                     <strong>
                         Nguồn gốc rõ ràng
                     </strong>
@@ -276,7 +287,6 @@
                     <span>
                         Kiểm soát chất lượng
                     </span>
-
                 </div>
 
             </div>
@@ -289,7 +299,6 @@
                 </div>
 
                 <div>
-
                     <strong>
                         Tươi mỗi ngày
                     </strong>
@@ -297,7 +306,6 @@
                     <span>
                         Lựa chọn kỹ trước khi giao
                     </span>
-
                 </div>
 
             </div>
@@ -310,7 +318,6 @@
                 </div>
 
                 <div>
-
                     <strong>
                         Thanh toán an toàn
                     </strong>
@@ -318,7 +325,6 @@
                     <span>
                         Nhiều phương thức tiện lợi
                     </span>
-
                 </div>
 
             </div>
@@ -329,14 +335,15 @@
     </section>
 
 
-    <!-- ================= CATEGORIES ================= -->
+    <!-- =====================================================
+         CATEGORIES
+    ====================================================== -->
 
     <section
             class="section"
             id="categories">
 
         <div class="container">
-
 
             <div class="section-heading">
 
@@ -355,7 +362,7 @@
 
                 <a
                         class="view-all"
-                        href="#products">
+                        th:href="@{/search}">
 
                     Xem tất cả →
 
@@ -369,7 +376,7 @@
 
                 <a
                         class="category-card category-red"
-                        href="#products">
+                        th:href="@{/search(categoryId=1)}">
 
                     <span class="category-emoji">
                         🍎
@@ -388,7 +395,7 @@
 
                 <a
                         class="category-card category-yellow"
-                        href="#products">
+                        th:href="@{/search(categoryId=2)}">
 
                     <span class="category-emoji">
                         🍌
@@ -407,7 +414,7 @@
 
                 <a
                         class="category-card category-purple"
-                        href="#products">
+                        th:href="@{/search(categoryId=3)}">
 
                     <span class="category-emoji">
                         🍇
@@ -426,7 +433,7 @@
 
                 <a
                         class="category-card category-green"
-                        href="#products">
+                        th:href="@{/search(categoryId=4)}">
 
                     <span class="category-emoji">
                         🥝
@@ -450,7 +457,9 @@
     </section>
 
 
-    <!-- ================= PRODUCTS ================= -->
+    <!-- =====================================================
+         PRODUCTS
+    ====================================================== -->
 
     <section
             class="section products-section"
@@ -459,6 +468,7 @@
         <div class="container">
 
 
+            <!-- SECTION HEADER -->
             <div class="section-heading">
 
                 <div>
@@ -482,46 +492,51 @@
 
                     <input
                             id="productSearch"
-                            oninput="filterProducts()"
+                            type="search"
                             placeholder="Tìm trái cây..."
-                            type="search">
+                            autocomplete="off"
+                            aria-label="Tìm sản phẩm"
+                            oninput="filterProducts()">
 
                 </div>
 
             </div>
 
 
-            <!-- CÓ SẢN PHẨM -->
+            <!-- =================================================
+                 PRODUCT GRID - CÓ SẢN PHẨM
+            ================================================== -->
 
             <div
                     class="product-grid"
                     th:if="${products != null and !products.isEmpty()}">
 
 
-                <!-- PRODUCT -->
+                <!-- PRODUCT CARD -->
 
                 <article
                         class="product-card"
+                        th:each="variant : ${products}"
                         th:attr="data-name=${variant.name + ' ' + variant.product.name}"
-                        th:each="variant : ${products}">
+                        th:onclick="|openProductDetail(${variant.id})|"
+                        role="link"
+                        tabindex="0"
+                        th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
 
 
-                    <!-- IMAGE -->
-
+                    <!-- PRODUCT IMAGE -->
                     <div class="product-image">
 
 
-                        <!-- Có image URL -->
-
+                        <!-- IMAGE URL -->
                         <img
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';"
-                                th:alt="${variant.name}"
                                 th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
-                                th:src="${variant.imageUrl}">
+                                th:src="${variant.imageUrl}"
+                                th:alt="${variant.name}"
+                                onerror="handleImageError(this)">
 
 
-                        <!-- Không có image URL -->
-
+                        <!-- IMAGE PLACEHOLDER -->
                         <div
                                 class="image-placeholder"
                                 th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
@@ -533,31 +548,32 @@
                         </div>
 
 
+                        <!-- STATUS -->
                         <span class="fresh-tag">
                             Đang bán
                         </span>
 
 
+                        <!-- FAVORITE -->
                         <button
                                 class="heart-btn"
+                                type="button"
                                 title="Yêu thích"
-                                type="button">
+                                aria-label="Thêm vào yêu thích"
+                                onclick="toggleFavorite(event, this)">
 
                             ♡
 
                         </button>
 
-
                     </div>
 
 
                     <!-- PRODUCT INFO -->
-
                     <div class="product-info">
 
 
-                        <!-- Product -->
-
+                        <!-- CATEGORY -->
                         <span
                                 class="product-category"
                                 th:text="${variant.product.name}">
@@ -567,8 +583,7 @@
                         </span>
 
 
-                        <!-- Variant -->
-
+                        <!-- VARIANT NAME -->
                         <h3
                                 th:text="${variant.name}">
 
@@ -581,9 +596,9 @@
 
 
                             <!-- PRICE -->
-
                             <strong
                                     class="price"
+                                    th:if="${variant.price != null}"
                                     th:text="${#numbers.formatDecimal(
                                         variant.price,
                                         0,
@@ -597,18 +612,26 @@
                             </strong>
 
 
-                            <!-- ADD CART -->
+                            <strong
+                                    class="price"
+                                    th:unless="${variant.price != null}">
 
+                                Liên hệ
+
+                            </strong>
+
+
+                            <!-- ADD CART -->
                             <button
                                     class="add-btn"
-                                    onclick="addToCart(this)"
+                                    type="button"
                                     th:attr="data-variant-id=${variant.id}"
-                                    type="button">
+                                    onclick="addToCart(event, this)"
+                                    aria-label="Thêm sản phẩm vào giỏ hàng">
 
                                 +
 
                             </button>
-
 
                         </div>
 
@@ -616,10 +639,13 @@
 
                 </article>
 
+
             </div>
 
 
-            <!-- KHÔNG CÓ SẢN PHẨM -->
+            <!-- =================================================
+                 EMPTY STATE - BACKEND KHÔNG CÓ SẢN PHẨM
+            ================================================== -->
 
             <div
                     class="empty-state"
@@ -638,14 +664,27 @@
                     Vui lòng quay lại sau.
                 </p>
 
+                <a
+                        class="primary-btn"
+                        th:href="@{/search}">
+
+                    Xem sản phẩm
+
+                    <span>→</span>
+
+                </a>
+
             </div>
 
 
-            <!-- SEARCH NO RESULT -->
+            <!-- =================================================
+                 SEARCH NO RESULT
+            ================================================== -->
 
             <p
                     class="no-result"
-                    id="noResult">
+                    id="noResult"
+                    style="display: none;">
 
                 Không tìm thấy sản phẩm phù hợp.
 
@@ -657,7 +696,9 @@
     </section>
 
 
-    <!-- ================= ABOUT ================= -->
+    <!-- =====================================================
+         ABOUT / PROMO
+    ====================================================== -->
 
     <section
             class="promo-section"
@@ -689,7 +730,7 @@
 
                 <a
                         class="primary-btn"
-                        href="#products">
+                        th:href="@{/search}">
 
                     Khám phá ngay
 
@@ -717,13 +758,16 @@
 </main>
 
 
-<!-- ================= FOOTER ================= -->
+<!-- =========================================================
+     FOOTER
+========================================================= -->
 
 <footer class="site-footer">
 
     <div class="container footer-inner">
 
 
+        <!-- FOOTER BRAND -->
         <div>
 
             <a
@@ -756,9 +800,10 @@
         </div>
 
 
+        <!-- FOOTER LINKS -->
         <div class="footer-links">
 
-            <a href="#products">
+            <a th:href="@{/search}">
                 Sản phẩm
             </a>
 
@@ -782,6 +827,10 @@
 
 </footer>
 
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
 
 <script th:src="@{/js/home.js}"></script>
 

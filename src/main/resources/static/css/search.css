@@ -891,4 +891,8 @@ input {
     .footer-links {
         flex-wrap: wrap;
     }
+
+    .product-card {
+        cursor: pointer;
+    }
 }

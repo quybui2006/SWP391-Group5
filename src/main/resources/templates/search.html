@@ -12,34 +12,51 @@
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet">
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet">
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
+<!-- =========================================================
+     HEADER
+========================================================= -->
 
 <header class="site-header">
 
     <div class="container header-inner">
 
-        <a class="brand" th:href="@{/}">
-            <span class="brand-mark">F</span>
+        <!-- LOGO -->
+        <a
+                class="brand"
+                th:href="@{/}"
+                aria-label="FreshFruit - Trang chủ">
+
+            <span class="brand-mark">
+                F
+            </span>
 
             <span>
                 <strong>FreshFruit</strong>
                 <small>Tươi ngon mỗi ngày</small>
             </span>
+
         </a>
 
-        <nav class="main-nav">
+
+        <!-- NAVIGATION -->
+        <nav
+                class="main-nav"
+                aria-label="Điều hướng chính">
 
             <a th:href="@{/}">
                 Trang chủ
             </a>
 
-            <a class="active" th:href="@{/search}">
+            <a
+                    class="active"
+                    th:href="@{/search}">
                 Sản phẩm
             </a>
 
@@ -53,21 +70,28 @@
 
         </nav>
 
+
+        <!-- HEADER ACTIONS -->
         <div class="header-actions">
 
+            <!-- SEARCH -->
             <a
                     class="icon-btn active-icon"
                     th:href="@{/search}"
-                    title="Tìm kiếm">
+                    title="Tìm kiếm"
+                    aria-label="Tìm kiếm">
 
                 ⌕
 
             </a>
 
+
+            <!-- CART -->
             <a
                     class="icon-btn cart-btn"
                     th:href="@{/cart}"
-                    title="Giỏ hàng">
+                    title="Giỏ hàng"
+                    aria-label="Giỏ hàng">
 
                 🛒
 
@@ -77,6 +101,8 @@
 
             </a>
 
+
+            <!-- LOGIN -->
             <a
                     class="login-btn"
                     th:href="@{/login}">
@@ -92,11 +118,16 @@
 </header>
 
 
-<!-- ================= MAIN ================= -->
+<!-- =========================================================
+     MAIN
+========================================================= -->
 
 <main>
 
-    <!-- SEARCH HERO -->
+
+    <!-- =====================================================
+         SEARCH HERO
+    ====================================================== -->
 
     <section class="search-hero">
 
@@ -106,15 +137,19 @@
                 FRESHFRUIT
             </span>
 
+
             <h1>
                 Tìm kiếm sản phẩm
             </h1>
+
 
             <p>
                 Khám phá trái cây tươi ngon theo tên,
                 danh mục và khoảng giá.
             </p>
 
+
+            <!-- MAIN SEARCH -->
             <form
                     class="main-search"
                     th:action="@{/search}"
@@ -124,16 +159,22 @@
                     ⌕
                 </span>
 
+
                 <input
                         id="keyword"
                         name="keyword"
                         type="search"
                         th:value="${keyword}"
                         placeholder="Bạn đang tìm trái cây gì?"
-                        autocomplete="off">
+                        autocomplete="off"
+                        aria-label="Tìm kiếm sản phẩm">
 
-                <button type="submit">
+
+                <button
+                        type="submit">
+
                     Tìm kiếm
+
                 </button>
 
             </form>
@@ -143,16 +184,21 @@
     </section>
 
 
-    <!-- SEARCH + FILTER -->
+    <!-- =====================================================
+         SEARCH + FILTER
+    ====================================================== -->
 
     <section class="search-section">
 
         <div class="container search-layout">
 
 
-            <!-- ================= FILTER ================= -->
+            <!-- =================================================
+                 FILTER
+            ================================================== -->
 
             <aside class="filter-panel">
+
 
                 <div class="filter-header">
 
@@ -168,9 +214,10 @@
 
                     </div>
 
+
                     <a
-                            th:href="@{/search}"
-                            class="clear-filter">
+                            class="clear-filter"
+                            th:href="@{/search}">
 
                         Xóa lọc
 
@@ -179,13 +226,16 @@
                 </div>
 
 
+                <!-- FILTER FORM -->
                 <form
                         id="filterForm"
                         th:action="@{/search}"
                         method="get">
 
 
-                    <!-- Giữ keyword -->
+                    <!-- =================================================
+                         KEYWORD
+                    ================================================== -->
 
                     <input
                             type="hidden"
@@ -193,7 +243,9 @@
                             th:value="${keyword}">
 
 
-                    <!-- CATEGORY -->
+                    <!-- =================================================
+                         CATEGORY
+                    ================================================== -->
 
                     <div class="filter-group">
 
@@ -201,21 +253,27 @@
                             Danh mục
                         </h3>
 
+
+                        <!-- CÓ CATEGORY -->
                         <div
                                 class="category-list"
                                 th:if="${categories != null and !categories.isEmpty()}">
+
 
                             <label
                                     class="check-row"
                                     th:each="category : ${categories}">
 
+
                                 <input
                                         type="checkbox"
                                         name="categoryId"
                                         th:value="${category.id}"
-                                        th:checked="${selectedCategories.contains(category.id.toString())}">
+                                        th:checked="${selectedCategories != null and selectedCategories.contains(category.id)}">
+
 
                                 <span class="custom-check"></span>
+
 
                                 <span
                                         class="check-label"
@@ -230,6 +288,7 @@
                         </div>
 
 
+                        <!-- KHÔNG CÓ CATEGORY -->
                         <div
                                 class="filter-empty"
                                 th:if="${categories == null or categories.isEmpty()}">
@@ -244,7 +303,9 @@
                     <div class="filter-divider"></div>
 
 
-                    <!-- PRICE -->
+                    <!-- =================================================
+                         PRICE
+                    ================================================== -->
 
                     <div class="filter-group">
 
@@ -259,7 +320,7 @@
                                     type="radio"
                                     name="priceRange"
                                     value="all"
-                                    th:checked="${priceRange == 'all'}">
+                                    th:checked="${priceRange == null or priceRange == 'all'}">
 
                             <span class="custom-radio"></span>
 
@@ -323,6 +384,7 @@
                     </div>
 
 
+                    <!-- APPLY -->
                     <button
                             class="apply-btn"
                             type="submit">
@@ -340,11 +402,14 @@
             </aside>
 
 
-            <!-- ================= RESULTS ================= -->
+            <!-- =================================================
+                 RESULTS
+            ================================================== -->
 
             <section class="results-panel">
 
 
+                <!-- RESULTS TOOLBAR -->
                 <div class="results-toolbar">
 
                     <div>
@@ -353,12 +418,13 @@
                             PRODUCTS
                         </span>
 
+
                         <h2>
 
                             Kết quả tìm kiếm
 
                             <span
-                                    th:text="'(' + ${resultCount} + ')'">
+                                    th:text="'(' + resultCount + ')'">
 
                                 (0)
 
@@ -369,14 +435,16 @@
                     </div>
 
 
+                    <!-- ACTIVE KEYWORD -->
                     <div
                             class="active-filter"
                             th:if="${keyword != null and !keyword.isEmpty()}">
 
                         Từ khóa:
 
-                        <strong th:text="${keyword}">
-                            apple
+                        <strong
+                                th:text="${keyword}">
+                            keyword
                         </strong>
 
                     </div>
@@ -384,28 +452,39 @@
                 </div>
 
 
-                <!-- PRODUCT GRID -->
+                <!-- =================================================
+                     PRODUCT GRID
+                ================================================== -->
 
                 <div
                         class="product-grid"
                         th:if="${products != null and !products.isEmpty()}">
 
 
+                    <!-- PRODUCT CARD -->
                     <article
                             class="product-card"
-                            th:each="variant : ${products}">
+                            th:each="variant : ${products}"
+                            th:attr="data-name=${variant.name + ' ' + variant.product.name}"
+                            th:onclick="|openProductDetail(${variant.id})|"
+                            role="link"
+                            tabindex="0"
+                            th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
 
 
+                        <!-- IMAGE -->
                         <div class="product-image">
 
 
+                            <!-- IMAGE -->
                             <img
                                     th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
                                     th:src="${variant.imageUrl}"
                                     th:alt="${variant.name}"
-                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+                                    onerror="handleImageError(this)">
 
 
+                            <!-- PLACEHOLDER -->
                             <div
                                     class="image-placeholder"
                                     th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
@@ -417,15 +496,19 @@
                             </div>
 
 
+                            <!-- STATUS -->
                             <span class="fresh-tag">
                                 Đang bán
                             </span>
 
 
+                            <!-- FAVORITE -->
                             <button
                                     class="heart-btn"
                                     type="button"
-                                    title="Yêu thích">
+                                    title="Yêu thích"
+                                    aria-label="Thêm vào yêu thích"
+                                    onclick="toggleFavorite(event, this)">
 
                                 ♡
 
@@ -434,8 +517,11 @@
                         </div>
 
 
+                        <!-- PRODUCT INFO -->
                         <div class="product-info">
 
+
+                            <!-- CATEGORY -->
                             <span
                                     class="product-category"
                                     th:text="${variant.product.name}">
@@ -445,6 +531,7 @@
                             </span>
 
 
+                            <!-- VARIANT -->
                             <h3
                                     th:text="${variant.name}">
 
@@ -455,8 +542,11 @@
 
                             <div class="product-bottom">
 
+
+                                <!-- PRICE -->
                                 <strong
                                         class="price"
+                                        th:if="${variant.price != null}"
                                         th:text="${#numbers.formatDecimal(
                                             variant.price,
                                             0,
@@ -470,11 +560,22 @@
                                 </strong>
 
 
+                                <strong
+                                        class="price"
+                                        th:unless="${variant.price != null}">
+
+                                    Liên hệ
+
+                                </strong>
+
+
+                                <!-- ADD CART -->
                                 <button
                                         class="add-btn"
                                         type="button"
                                         th:attr="data-variant-id=${variant.id}"
-                                        onclick="addToCart(this)">
+                                        onclick="addToCart(event, this)"
+                                        aria-label="Thêm sản phẩm vào giỏ hàng">
 
                                     +
 
@@ -489,33 +590,36 @@
                 </div>
 
 
-                <!-- EMPTY -->
+                <!-- =================================================
+                     EMPTY RESULT
+                ================================================== -->
 
                 <div
                         class="empty-state"
                         th:if="${products == null or products.isEmpty()}">
 
+
                     <div class="empty-icon">
                         🍃
                     </div>
+
 
                     <h3>
                         Không tìm thấy sản phẩm
                     </h3>
 
 
+                    <!-- HAS KEYWORD -->
                     <p
                             th:if="${keyword != null and !keyword.isEmpty()}">
 
                         Không có sản phẩm phù hợp với từ khóa
-
-                        "<strong th:text="${keyword}">
-                        từ khóa
-                    </strong>".
+                        "<strong th:text="${keyword}">từ khóa</strong>".
 
                     </p>
 
 
+                    <!-- NO KEYWORD -->
                     <p
                             th:if="${keyword == null or keyword.isEmpty()}">
 
@@ -544,12 +648,16 @@
 </main>
 
 
-<!-- ================= FOOTER ================= -->
+<!-- =========================================================
+     FOOTER
+========================================================= -->
 
 <footer class="site-footer">
 
     <div class="container footer-inner">
 
+
+        <!-- BRAND -->
         <div>
 
             <a
@@ -561,11 +669,19 @@
                 </span>
 
                 <span>
-                    <strong>FreshFruit</strong>
-                    <small>Tươi ngon mỗi ngày</small>
+
+                    <strong>
+                        FreshFruit
+                    </strong>
+
+                    <small>
+                        Tươi ngon mỗi ngày
+                    </small>
+
                 </span>
 
             </a>
+
 
             <p>
                 Trái cây tươi chất lượng, giao tận nơi.
@@ -574,6 +690,7 @@
         </div>
 
 
+        <!-- LINKS -->
         <div class="footer-links">
 
             <a th:href="@{/search}">
@@ -600,7 +717,12 @@
 </footer>
 
 
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
 <script th:src="@{/js/search.js}"></script>
 
 </body>
+
 </html>

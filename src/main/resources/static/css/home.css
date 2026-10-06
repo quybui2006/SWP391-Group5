@@ -1464,4 +1464,8 @@ input {
     .promo-visual {
         font-size: 47px;
     }
+
+    .product-card {
+        cursor: pointer;
+    }
 }

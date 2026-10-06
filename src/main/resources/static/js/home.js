@@ -1,110 +1,243 @@
-/* ================= CART ================= */
+/* =========================================================
+   FRESHFRUIT HOME
+========================================================= */
 
-let cartCount =
-    Number(
-        localStorage.getItem(
-            "freshfruit-cart-count"
-        ) || 0
-    );
-
-
-/* ================= PAGE LOAD ================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        updateCartCount();
-
-
-        /*
-         * Heart / Favorite
-         */
-
-        document
-            .querySelectorAll(".heart-btn")
-            .forEach(function (button) {
-
-                button.addEventListener(
-                    "click",
-                    function () {
-
-                        button.classList.toggle(
-                            "liked"
-                        );
-
-
-                        if (
-                            button.classList.contains(
-                                "liked"
-                            )
-                        ) {
-
-                            button.textContent = "♥";
-
-                        } else {
-
-                            button.textContent = "♡";
-
-                        }
-
-                    }
-                );
-
-            });
-
-    }
+let cartCount = Number(
+    localStorage.getItem("freshfruit-cart-count") || 0
 );
 
 
-/* ================= UPDATE CART ================= */
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    updateCartCount();
+
+    setupProductCardKeyboard();
+
+});
+
+
+/* =========================================================
+   CART COUNT
+========================================================= */
 
 function updateCartCount() {
 
-    const badge =
-        document.getElementById(
-            "cartCount"
-        );
+    const cartBadge = document.getElementById("cartCount");
+
+    if (!cartBadge) {
+        return;
+    }
+
+    cartBadge.textContent = cartCount;
+
+}
 
 
-    if (badge) {
+/* =========================================================
+   PRODUCT DETAIL
+========================================================= */
 
-        badge.textContent =
-            cartCount;
+function openProductDetail(variantId) {
+
+    if (!variantId) {
+        return;
+    }
+
+    window.location.href = "/product/" + variantId;
+
+}
+
+
+/* =========================================================
+   PRODUCT CARD KEYBOARD SUPPORT
+========================================================= */
+
+function setupProductCardKeyboard() {
+
+    const cards = document.querySelectorAll(".product-card");
+
+    cards.forEach(function (card) {
+
+        card.addEventListener("keydown", function (event) {
+
+            /*
+             * Enter / Space -> Product Detail
+             */
+            if (event.key === "Enter" || event.key === " ") {
+
+                /*
+                 * Không xử lý nếu focus đang ở button
+                 */
+                if (
+                    event.target.tagName === "BUTTON" ||
+                    event.target.tagName === "A" ||
+                    event.target.tagName === "INPUT"
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const onclickValue = card.getAttribute("onclick");
+
+                if (!onclickValue) {
+                    return;
+                }
+
+                /*
+                 * Extract variant ID từ:
+                 * openProductDetail(123)
+                 */
+                const match = onclickValue.match(
+                    /openProductDetail\((\d+)\)/
+                );
+
+                if (match) {
+                    openProductDetail(match[1]);
+                }
+
+            }
+
+        });
+
+    });
+
+}
+
+
+/* =========================================================
+   IMAGE ERROR
+========================================================= */
+
+function handleImageError(image) {
+
+    if (!image) {
+        return;
+    }
+
+    image.style.display = "none";
+
+    const placeholder = image.nextElementSibling;
+
+    if (placeholder) {
+        placeholder.style.display = "grid";
+    }
+
+}
+
+
+/* =========================================================
+   SEARCH PRODUCT ON HOME
+========================================================= */
+
+function filterProducts() {
+
+    const input = document.getElementById("productSearch");
+
+    if (!input) {
+        return;
+    }
+
+    const keyword = input.value
+        .trim()
+        .toLowerCase();
+
+    const cards = document.querySelectorAll(".product-card");
+
+    const noResult = document.getElementById("noResult");
+
+    let visibleCount = 0;
+
+
+    cards.forEach(function (card) {
+
+        const productName =
+            card.getAttribute("data-name") || "";
+
+        const normalizedName =
+            productName.toLowerCase();
+
+
+        const matched =
+            normalizedName.includes(keyword);
+
+
+        if (matched) {
+
+            card.style.display = "";
+
+            visibleCount++;
+
+        } else {
+
+            card.style.display = "none";
+
+        }
+
+    });
+
+
+    /*
+     * Show "no result"
+     */
+    if (noResult) {
+
+        if (cards.length > 0 && visibleCount === 0) {
+
+            noResult.style.display = "block";
+
+        } else {
+
+            noResult.style.display = "none";
+
+        }
 
     }
 
 }
 
 
-/* ================= ADD TO CART ================= */
+/* =========================================================
+   ADD TO CART
+========================================================= */
 
-function addToCart(button) {
+function addToCart(event, button) {
 
     /*
-     * Lấy ID ProductVariant
-     *
-     * Sau này khi bạn làm Cart backend,
-     * có thể dùng:
-     *
-     * button.dataset.variantId
+     * QUAN TRỌNG:
+     * Không cho click button truyền lên product-card.
      */
+    if (event) {
+        event.stopPropagation();
+    }
+
+
+    if (!button) {
+        return;
+    }
+
 
     const variantId =
-        button.dataset.variantId;
+        button.getAttribute("data-variant-id");
 
 
-    console.log(
-        "Add ProductVariant:",
-        variantId
-    );
+    if (!variantId) {
+        return;
+    }
 
 
     /*
-     * Tạm thời tăng số lượng giỏ hàng
+     * Hiện tại frontend Home chỉ quản lý cart badge
+     * bằng localStorage.
+     *
+     * Khi backend Cart hoàn thiện,
+     * phần này có thể thay bằng API POST /cart.
      */
-
-    cartCount++;
+    cartCount += 1;
 
 
     localStorage.setItem(
@@ -117,166 +250,67 @@ function addToCart(button) {
 
 
     /*
-     * Animation button
+     * Button feedback
      */
+    const oldText = button.innerHTML;
 
-    const oldText =
-        button.textContent;
+    button.innerHTML = "✓";
 
-
-    button.textContent = "✓";
-
-    button.disabled = true;
+    button.classList.add("added");
 
 
-    setTimeout(
-        function () {
+    setTimeout(function () {
 
-            button.textContent =
-                oldText;
+        button.innerHTML = oldText;
 
-            button.disabled = false;
+        button.classList.remove("added");
 
-        },
-        700
-    );
+    }, 900);
 
 }
 
 
-/* ================= SEARCH ================= */
+/* =========================================================
+   FAVORITE
+========================================================= */
 
-function filterProducts() {
-
-    const searchInput =
-        document.getElementById(
-            "productSearch"
-        );
-
-
-    if (!searchInput) {
-        return;
-    }
-
-
-    const query =
-        searchInput.value
-            .trim()
-            .toLowerCase();
-
-
-    const cards =
-        document.querySelectorAll(
-            ".product-card"
-        );
-
-
-    let visibleCount = 0;
-
-
-    cards.forEach(
-        function (card) {
-
-            const productName =
-                (
-                    card.dataset.name ||
-                    ""
-                ).toLowerCase();
-
-
-            const match =
-                !query ||
-                productName.includes(
-                    query
-                );
-
-
-            if (match) {
-
-                card.style.display = "";
-
-                visibleCount++;
-
-            } else {
-
-                card.style.display = "none";
-
-            }
-
-        }
-    );
-
+function toggleFavorite(event, button) {
 
     /*
-     * Hiển thị thông báo
-     * nếu không tìm thấy sản phẩm
+     * Không mở Product Detail
      */
-
-    const noResult =
-        document.getElementById(
-            "noResult"
-        );
-
-
-    if (noResult) {
-
-        if (
-            cards.length > 0 &&
-            visibleCount === 0
-        ) {
-
-            noResult.style.display =
-                "block";
-
-        } else {
-
-            noResult.style.display =
-                "none";
-
-        }
-
+    if (event) {
+        event.stopPropagation();
     }
 
-}
 
-
-/* ================= HEADER SEARCH ================= */
-
-function focusSearch() {
-
-    const searchInput =
-        document.getElementById(
-            "productSearch"
-        );
-
-
-    if (!searchInput) {
+    if (!button) {
         return;
     }
 
 
-    const productsSection =
-        document.getElementById(
-            "products"
+    const isFavorite =
+        button.classList.toggle("active");
+
+
+    if (isFavorite) {
+
+        button.innerHTML = "♥";
+
+        button.setAttribute(
+            "aria-label",
+            "Bỏ khỏi yêu thích"
         );
 
+    } else {
 
-    if (productsSection) {
+        button.innerHTML = "♡";
 
-        productsSection.scrollIntoView({
-            behavior: "smooth"
-        });
+        button.setAttribute(
+            "aria-label",
+            "Thêm vào yêu thích"
+        );
 
     }
-
-
-    setTimeout(
-        function () {
-
-            searchInput.focus();
-
-        },
-        350
-    );
 
 }
