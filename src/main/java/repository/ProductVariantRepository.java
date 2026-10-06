@@ -15,4 +15,11 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             String variantStatus,
             String productStatus
     );
+
+    // Tìm kiếm sản phẩm theo tên (chứa từ khóa) và trạng thái ACTIVE
+    List findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatus(
+            String keyword,
+            String variantStatus,
+            String productStatus
+    );
 }
