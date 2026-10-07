@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sổ địa chỉ | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="customer-shell">
+    <aside class="customer-sidebar">
+        <a class="customer-brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span><strong>Fresh<span>Fruit</span></strong><small>TƯƠI NGON MỖI NGÀY</small></span>
+        </a>
+
+        <div class="customer-profile">
+            <div class="profile-avatar">LN</div>
+            <div><strong>Lan Nguyễn</strong><span>lan.nguyen@email.com</span></div>
+        </div>
+
+        <nav class="customer-nav">
+            <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
+            <a href="#"><span class="nav-symbol">♙</span>Thông tin cá nhân</a>
+            <a class="active" th:href="@{/customer/account/address}"><span class="nav-symbol">⌖</span>Sổ địa chỉ</a>
+            <a href="#"><span class="nav-symbol">▣</span>Đơn hàng của tôi</a>
+            <a href="#"><span class="nav-symbol">♡</span>Sản phẩm yêu thích</a>
+            <span class="nav-caption second">KHÁC</span>
+            <a href="#"><span class="nav-symbol">♧</span>Thông báo <b class="nav-badge">2</b></a>
+            <a href="#"><span class="nav-symbol">⚙</span>Cài đặt tài khoản</a>
+        </nav>
+
+        <div class="sidebar-help"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Liên hệ với FreshFruit</small></div><b>→</b></div>
+    </aside>
+
+    <main class="customer-main">
+        <header class="customer-topbar">
+            <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><span>Tài khoản</span><span>/</span><strong>Sổ địa chỉ</strong></div>
+            <div class="topbar-actions"><button class="top-icon" type="button">⌕</button><button class="top-icon notification" type="button">♢<i></i></button><a class="cart-link" href="#">Giỏ hàng <span>0</span></a></div>
+        </header>
+
+        <section class="page-intro">
+            <div><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Sổ địa chỉ</h1><p>Lưu lại các địa chỉ nhận hàng để đặt mua trái cây nhanh và thuận tiện hơn.</p></div>
+            <button class="primary-button" type="button" onclick="openAddressModal()"><span>＋</span> Thêm địa chỉ mới</button>
+        </section>
+
+        <section class="address-section">
+            <div class="section-heading"><div><h2>Địa chỉ nhận hàng</h2><p>Chọn địa chỉ phù hợp khi thanh toán đơn hàng.</p></div><span class="address-count">2 địa chỉ đã lưu</span></div>
+            <div class="address-grid">
+                <article class="address-card is-default">
+                    <div class="card-top"><span class="address-label"><span class="pin">⌖</span>Địa chỉ mặc định</span><button class="more-button" type="button">⋮</button></div>
+                    <div class="recipient"><strong>Nguyễn Minh Lan</strong><span>+84 912 456 780</span></div>
+                    <p class="address-text">Số 18, ngõ 76 Nguyễn Khang<br>Phường Yên Hòa, Quận Cầu Giấy<br>Hà Nội</p>
+                    <div class="card-footer"><span class="default-pill">✓ Mặc định</span><button class="edit-link" type="button" onclick="openAddressModal('edit')">Chỉnh sửa</button></div>
+                </article>
+                <article class="address-card">
+                    <div class="card-top"><span class="address-label muted-label"><span class="pin">⌖</span>Địa chỉ phụ</span><button class="more-button" type="button">⋮</button></div>
+                    <div class="recipient"><strong>Nguyễn Minh Lan</strong><span>+84 912 456 780</span></div>
+                    <p class="address-text">Tòa S2.08, Vinhomes Ocean Park<br>Xã Đa Tốn, Huyện Gia Lâm<br>Hà Nội</p>
+                    <div class="card-footer"><button class="set-default" type="button" onclick="setDefault(this)">Đặt làm mặc định</button><div><button class="edit-link" type="button" onclick="openAddressModal('edit')">Chỉnh sửa</button><button class="delete-link" type="button" onclick="mockDelete(this)">Xóa</button></div></div>
+                </article>
+                <button class="add-card" type="button" onclick="openAddressModal()"><span>＋</span><strong>Thêm địa chỉ mới</strong><small>Địa chỉ nhà, văn phòng...</small></button>
+            </div>
+        </section>
+
+        <section class="address-note"><div class="note-icon">⌁</div><div><strong>Mua sắm thuận tiện hơn</strong><p>Bạn có thể lưu nhiều địa chỉ và chọn địa chỉ nhận hàng phù hợp cho từng đơn mua.</p></div></section>
+    </main>
+</div>
+
+<div id="addressModal" class="modal-backdrop" aria-hidden="true"><div class="address-modal"><button class="modal-close" type="button" onclick="closeAddressModal()">×</button><span class="modal-eyebrow">ĐỊA CHỈ NHẬN HÀNG</span><h2 id="modalTitle">Thêm địa chỉ mới</h2><p>Thông tin này chỉ được dùng làm dữ liệu mẫu cho giao diện.</p><form onsubmit="saveMockAddress(event)"><div class="modal-grid"><label><span>Họ và tên <b>*</b></span><input required placeholder="Nhập họ và tên"></label><label><span>Số điện thoại <b>*</b></span><input required placeholder="Nhập số điện thoại"></label><label><span>Tỉnh / Thành phố <b>*</b></span><select required><option value="">Chọn tỉnh / thành phố</option><option>Hà Nội</option><option>Thành phố Hồ Chí Minh</option><option>Đà Nẵng</option></select></label><label><span>Quận / Huyện <b>*</b></span><select required><option value="">Chọn quận / huyện</option><option>Cầu Giấy</option><option>Gia Lâm</option><option>Thanh Khê</option></select></label><label class="wide"><span>Địa chỉ cụ thể <b>*</b></span><textarea required rows="3" placeholder="Số nhà, tên đường, phường / xã"></textarea></label></div><label class="checkbox"><input type="checkbox"> Đặt làm địa chỉ mặc định</label><div class="modal-actions"><button class="cancel-button" type="button" onclick="closeAddressModal()">Hủy</button><button class="primary-button" type="submit">Lưu địa chỉ</button></div></form></div></div>
+<div id="accountToast" class="account-toast"></div>
+<script th:src="@{/js/customer-account.js}"></script>
+</body>
+</html>
