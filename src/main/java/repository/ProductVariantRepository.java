@@ -20,7 +20,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     );
 
     // Tìm kiếm sản phẩm theo tên (chứa từ khóa) và trạng thái ACTIVE
-    List findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatus(
+    List<ProductVariant> findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatus(
             String keyword,
             String variantStatus,
             String productStatus
@@ -34,10 +34,10 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
             "AND (:filterByCategory = false OR c.id IN :categoryIds)")
-    List searchAndFilter(
+    List<ProductVariant> searchAndFilter(
             @Param("keyword") String keyword,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("filterByCategory") boolean filterByCategory,
-            @Param("categoryIds") List categoryIds);
+            @Param("categoryIds") List<Long> categoryIds);
 }

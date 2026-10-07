@@ -3,6 +3,8 @@ package controller;
 import dto.ProductCreateRequest;
 import dto.ProductResponseDTO;
 import exception.ProductBusinessException;
+import repository.CategoryRepository;
+import repository.UnitRepository;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,11 +21,17 @@ import service.ProductService;
 public class ProductController {
 
     private final ProductService productService;
+    private final CategoryRepository categoryRepository;
+    private final UnitRepository unitRepository;
 
     public ProductController(
-            ProductService productService
+            ProductService productService,
+            CategoryRepository categoryRepository,
+            UnitRepository unitRepository
     ) {
         this.productService = productService;
+        this.categoryRepository = categoryRepository;
+        this.unitRepository = unitRepository;
     }
 
     // =========================================================
@@ -48,6 +56,9 @@ public class ProductController {
                     required = false
             )
             String keyword,
+
+            @RequestParam(name = "success", required = false, defaultValue = "false")
+            boolean success,
 
             @PageableDefault(
                     page = 0,
@@ -77,6 +88,8 @@ public class ProductController {
                 keyword == null ? "" : keyword
         );
 
+        model.addAttribute("success", success);
+
         return "shopowner/product-list";
     }
 
@@ -93,6 +106,8 @@ public class ProductController {
                 "productCreateRequest",
                 new ProductCreateRequest()
         );
+
+        loadFormOptions(model);
 
         return "shopowner/product-form";
     }
@@ -134,6 +149,7 @@ public class ProductController {
          * Validation lỗi -> quay lại form ngay.
          */
         if (bindingResult.hasErrors()) {
+            loadFormOptions(model);
             return "shopowner/product-form";
         }
 
@@ -161,7 +177,15 @@ public class ProductController {
                     exception.getMessage()
             );
 
+            loadFormOptions(model);
+
             return "shopowner/product-form";
         }
+    }
+
+    /** Danh mục và đơn vị chỉ được đọc một lần để render select của form. */
+    private void loadFormOptions(Model model) {
+        model.addAttribute("categories", categoryRepository.findByIsActiveTrueOrderByNameAsc());
+        model.addAttribute("units", unitRepository.findByIsActiveTrueOrderByNameAsc());
     }
 }

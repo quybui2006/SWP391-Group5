@@ -3,21 +3,25 @@ package service.impl;
 import dto.ProductCreateRequest;
 import dto.ProductResponseDTO;
 import entity.Product;
+import entity.ProductVariant;
 import exception.ProductBusinessException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import repository.ProductRepository;
+import repository.ProductVariantRepository;
 import service.ProductService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.*;
-import java.time.LocalDate;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -26,604 +30,211 @@ import java.util.UUID;
 @Transactional
 public class ProductServiceImpl implements ProductService {
 
-    private static final long MAX_FILE_SIZE =
-            5L * 1024 * 1024;
-
-    private static final Set<String> ALLOWED_EXTENSIONS =
-            Set.of("jpg", "png");
+    private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
 
     private final ProductRepository productRepository;
-
+    private final ProductVariantRepository productVariantRepository;
     private final Path uploadDirectory;
 
     public ProductServiceImpl(
             ProductRepository productRepository,
-            @Value("${app.upload.product-dir:uploads/products}")
-            String uploadDirectory
+            ProductVariantRepository productVariantRepository,
+            @Value("${app.upload.product-dir:uploads/products}") String uploadDirectory
     ) {
         this.productRepository = productRepository;
-
-        this.uploadDirectory = Paths
-                .get(uploadDirectory)
-                .toAbsolutePath()
-                .normalize();
+        this.productVariantRepository = productVariantRepository;
+        this.uploadDirectory = Paths.get(uploadDirectory).toAbsolutePath().normalize();
     }
 
-    // =========================================================
-    // PRODUCT LIST
-    // =========================================================
-
+    /** Luồng danh sách: kiểm tra shop -> tìm kiếm/phân trang -> đổi projection thành DTO. */
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> getProductList(
-            Long shopId,
-            String keyword,
-            Pageable pageable
-    ) {
-
-        validateShopId(shopId);
-
-        String searchKeyword =
-                keyword == null
-                        ? ""
-                        : keyword.trim();
-
-        Page<ProductRepository.ProductListProjection> result =
-                productRepository.findProductList(
-                        shopId,
-                        searchKeyword,
-                        pageable
-                );
-
-        return result.map(this::toResponseDTO);
+    public Page<ProductResponseDTO> getProductList(Long shopId, String keyword, Pageable pageable) {
+        requireShopId(shopId);
+        String searchKeyword = keyword == null ? "" : keyword.trim();
+        return productRepository.findProductList(shopId, searchKeyword, pageable)
+                .map(this::toProductResponse);
     }
 
-    // =========================================================
-    // ADD PRODUCT
-    // =========================================================
-
+    /**
+     * Luồng thêm sản phẩm:
+     * 1. kiểm tra quyền và dữ liệu;
+     * 2. lưu ảnh;
+     * 3. tạo product, variant mặc định, category, image và tồn kho trong một transaction.
+     */
     @Override
-    public ProductResponseDTO addProduct(
-            Long shopId,
-            Long userId,
-            ProductCreateRequest request
-    ) {
+    public ProductResponseDTO addProduct(Long shopId, Long userId, ProductCreateRequest request) {
+        requireShopId(shopId);
+        requireUserId(userId);
+        validateRequest(shopId, userId, request);
 
-        validateShopId(shopId);
-
-        if (userId == null) {
-            throw new ProductBusinessException(
-                    "Không xác định được người dùng hiện tại."
-            );
-        }
-
-        // ---------------------------------------------------------
-        // 1. Check Shop
-        // ---------------------------------------------------------
-
-        if (productRepository.countOwnedShop(
-                shopId,
-                userId
-        ) == 0) {
-
-            throw new ProductBusinessException(
-                    "Bạn không có quyền thao tác với cửa hàng này."
-            );
-        }
-
-        // ---------------------------------------------------------
-        // 2. Normalize input
-        // ---------------------------------------------------------
-
-        String productName =
-                request.getName().trim();
-
-        String batchCode =
-                request.getBatchCode().trim();
-
-        String sku =
-                request.getSku().trim();
-
-        // ---------------------------------------------------------
-        // 3. Duplicate check
-        // ---------------------------------------------------------
-
-        if (productRepository
-                .existsByShopIdAndNameIgnoreCase(
-                        shopId,
-                        productName
-                )) {
-
-            throw new ProductBusinessException(
-                    "Tên sản phẩm đã tồn tại trong shop."
-            );
-        }
-
-        if (productRepository
-                .existsByShopIdAndBatchCodeIgnoreCase(
-                        shopId,
-                        batchCode
-                )) {
-
-            throw new ProductBusinessException(
-                    "Mã lô đã tồn tại trong shop."
-            );
-        }
-
-        // ---------------------------------------------------------
-        // 4. Check category
-        // ---------------------------------------------------------
-
-        if (productRepository.countActiveCategory(
-                request.getCategoryId()
-        ) == 0) {
-
-            throw new ProductBusinessException(
-                    "Danh mục không tồn tại hoặc đã bị khóa."
-            );
-        }
-
-        // ---------------------------------------------------------
-        // 5. Check unit
-        // ---------------------------------------------------------
-
-        if (productRepository.countActiveUnit(
-                request.getUnitId()
-        ) == 0) {
-
-            throw new ProductBusinessException(
-                    "Đơn vị không tồn tại hoặc đã bị khóa."
-            );
-        }
-
-        // ---------------------------------------------------------
-        // 6. Business validation
-        // ---------------------------------------------------------
-
-        validatePrice(request.getPrice());
-
-        validateDates(
-                request.getReceivedDate(),
-                request.getExpiryDate()
-        );
-
-        validateImage(
-                request.getImageFile()
-        );
-
-        // ---------------------------------------------------------
-        // 7. Save image
-        // ---------------------------------------------------------
-
-        String imageUrl =
-                saveImage(request.getImageFile());
-
+        String imageUrl = saveImage(request.getImageFile());
         try {
-
-            // -----------------------------------------------------
-            // 8. Create Product
-            // -----------------------------------------------------
-
-            Product product = Product.builder()
+            Product product = productRepository.save(Product.builder()
                     .shopId(shopId)
-                    .name(productName)
-                    .description(
-                            normalize(
-                                    request.getDescription()
-                            )
-                    )
-                    .origin(
-                            normalize(
-                                    request.getOrigin()
-                            )
-                    )
-                    .batchCode(batchCode)
-                    .receivedDate(
-                            request.getReceivedDate()
-                    )
-                    .expiryDate(
-                            request.getExpiryDate()
-                    )
-
-                    /*
-                     * Product mới chưa được duyệt.
-                     */
+                    .name(request.getName().trim())
+                    .description(blankToNull(request.getDescription()))
+                    .origin(blankToNull(request.getOrigin()))
+                    .batchCode(request.getBatchCode().trim())
+                    .receivedDate(request.getReceivedDate())
+                    .expiryDate(request.getExpiryDate())
                     .approvalStatus("DRAFT")
-
-                    /*
-                     * Chưa được bán.
-                     */
                     .sellingStatus("DRAFT")
+                    .build());
 
-                    .build();
-
-            Product savedProduct =
-                    productRepository.save(product);
-
-            // -----------------------------------------------------
-            // 9. Category
-            // -----------------------------------------------------
-
-            productRepository.insertCategory(
-                    savedProduct.getId(),
-                    request.getCategoryId()
-            );
-
-            // -----------------------------------------------------
-            // 10. Initial Variant
-            // -----------------------------------------------------
-
-            /*
-             * Product Variant là task riêng của teammate.
-             *
-             * Ở đây chỉ tạo đúng 1 variant mặc định để Product
-             * có thể có SKU + price theo thiết kế DB.
-             *
-             * Không tạo ProductVariant Entity.
-             */
+            productRepository.insertCategory(product.getId(), request.getCategoryId());
             productRepository.insertVariant(
-                    savedProduct.getId(),
-                    shopId,
-                    sku,
-                    request.getVariantName().trim(),
-                    imageUrl,
-                    request.getUnitId(),
-                    request.getPrice()
-            );
+                    product.getId(), shopId, request.getSku().trim(), request.getVariantName().trim(),
+                    imageUrl, request.getUnitId(), request.getPrice());
+            productRepository.insertImage(product.getId(), imageUrl);
 
-            Long variantId =
-                    productRepository.findVariantId(
-                            savedProduct.getId(),
-                            shopId,
-                            sku
-                    );
-
+            Long variantId = productRepository.findVariantId(product.getId(), shopId, request.getSku().trim());
             if (variantId == null) {
-                throw new ProductBusinessException(
-                        "Không thể tạo variant mặc định."
-                );
+                throw new ProductBusinessException("Không thể tạo biến thể sản phẩm.");
             }
-
-            // -----------------------------------------------------
-            // 11. Image
-            // -----------------------------------------------------
-
-            productRepository.insertImage(
-                    savedProduct.getId(),
-                    imageUrl
-            );
-
-            // -----------------------------------------------------
-            // 12. Initial Inventory
-            // -----------------------------------------------------
-
-            /*
-             * Chỉ tạo inventory ban đầu.
-             *
-             * Các nghiệp vụ Restock / Update Stock / Low Stock
-             * vẫn thuộc module Inventory của teammate.
-             */
             productRepository.insertInventory(
-                    variantId,
-                    request.getStockQuantity(),
-                    request.getLowStockThresholdPct(),
-                    userId
-            );
-
-            // -----------------------------------------------------
-            // 13. Return DTO
-            // -----------------------------------------------------
+                    variantId, request.getStockQuantity(), request.getLowStockThresholdPct(), userId);
 
             return ProductResponseDTO.builder()
-                    .id(savedProduct.getId())
-                    .name(savedProduct.getName())
-                    .sku(sku)
-                    .categoryId(
-                            request.getCategoryId()
-                    )
-                    .price(
-                            request.getPrice()
-                    )
-                    .stockQuantity(
-                            request.getStockQuantity()
-                    )
+                    .id(product.getId())
+                    .name(product.getName())
+                    .sku(request.getSku().trim())
+                    .categoryId(request.getCategoryId())
+                    .price(request.getPrice())
+                    .stockQuantity(request.getStockQuantity())
                     .imageUrl(imageUrl)
-                    .status(
-                            savedProduct.getSellingStatus()
-                    )
-                    .createdAt(
-                            savedProduct.getCreatedAt()
-                    )
+                    .status(product.getSellingStatus())
+                    .createdAt(product.getCreatedAt())
                     .build();
-
-        } catch (DataIntegrityViolationException exception) {
-
+        } catch (RuntimeException exception) {
+            // Database rollback không thể tự xóa file, nên xóa ảnh vừa lưu khi tạo sản phẩm thất bại.
             deleteImage(imageUrl);
-
-            throw new ProductBusinessException(
-                    "Không thể tạo sản phẩm. "
-                            + "Dữ liệu bị trùng hoặc không hợp lệ.",
-                    exception
-            );
-
-        } catch (ProductBusinessException exception) {
-
-            deleteImage(imageUrl);
-
             throw exception;
         }
     }
 
-    // =========================================================
-    // VALIDATE
-    // =========================================================
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductVariant> searchAndFilterProducts(
+            String keyword, List<Long> categoryIds, String priceRange) {
+        BigDecimal minPrice = null;
+        BigDecimal maxPrice = null;
+        if ("under50".equals(priceRange)) {
+            maxPrice = BigDecimal.valueOf(50_000);
+        } else if ("50to100".equals(priceRange)) {
+            minPrice = BigDecimal.valueOf(50_000);
+            maxPrice = BigDecimal.valueOf(100_000);
+        } else if ("over100".equals(priceRange)) {
+            minPrice = BigDecimal.valueOf(100_000);
+        }
 
-    private void validateShopId(Long shopId) {
+        boolean filterByCategory = categoryIds != null && !categoryIds.isEmpty();
+        List<Long> safeCategoryIds = filterByCategory ? categoryIds : List.of(-1L);
+        return productVariantRepository.searchAndFilter(
+                keyword == null ? "" : keyword.trim(), minPrice, maxPrice, filterByCategory, safeCategoryIds);
+    }
 
-        if (shopId == null) {
-            throw new ProductBusinessException(
-                    "Không xác định được cửa hàng."
-            );
+    @Override
+    @Transactional(readOnly = true)
+    public ProductVariant getProductVariantById(Long id) {
+        return productVariantRepository.findById(id)
+                .filter(variant -> "ACTIVE".equals(variant.getStatus()))
+                .filter(variant -> "ACTIVE".equals(variant.getProduct().getSellingStatus()))
+                .orElse(null);
+    }
+
+    private void validateRequest(Long shopId, Long userId, ProductCreateRequest request) {
+        if (productRepository.countOwnedShop(shopId, userId) == 0) {
+            throw new ProductBusinessException("Bạn không có quyền thao tác với cửa hàng này.");
+        }
+        if (productRepository.existsByShopIdAndNameIgnoreCase(shopId, request.getName().trim())) {
+            throw new ProductBusinessException("Tên sản phẩm đã tồn tại trong shop.");
+        }
+        if (productRepository.existsByShopIdAndBatchCodeIgnoreCase(shopId, request.getBatchCode().trim())) {
+            throw new ProductBusinessException("Mã lô đã tồn tại trong shop.");
+        }
+        if (productRepository.countActiveCategory(request.getCategoryId()) == 0) {
+            throw new ProductBusinessException("Danh mục không tồn tại hoặc đã bị khóa.");
+        }
+        if (productRepository.countActiveUnit(request.getUnitId()) == 0) {
+            throw new ProductBusinessException("Đơn vị không tồn tại hoặc đã bị khóa.");
+        }
+        if (request.getExpiryDate().isBefore(request.getReceivedDate())) {
+            throw new ProductBusinessException("Ngày hết hạn phải sau hoặc bằng ngày nhập.");
+        }
+        validateImage(request.getImageFile());
+    }
+
+    private void validateImage(MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ProductBusinessException("Vui lòng chọn hình ảnh sản phẩm.");
+        }
+        if (image.getSize() > MAX_IMAGE_SIZE) {
+            throw new ProductBusinessException("Hình ảnh không được lớn hơn 5MB.");
+        }
+        String extension = extensionOf(image.getOriginalFilename());
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
+            throw new ProductBusinessException("Chỉ chấp nhận ảnh JPG hoặc PNG.");
         }
     }
 
-    private void validatePrice(BigDecimal price) {
-
-        if (price == null) {
-            throw new ProductBusinessException(
-                    "Giá không được để trống."
-            );
-        }
-
-        if (price.compareTo(
-                BigDecimal.valueOf(1000)
-        ) < 0) {
-
-            throw new ProductBusinessException(
-                    "Giá tối thiểu là 1000 VNĐ."
-            );
-        }
-    }
-
-    private void validateDates(
-            LocalDate receivedDate,
-            LocalDate expiryDate
-    ) {
-
-        if (receivedDate == null
-                || expiryDate == null) {
-
-            throw new ProductBusinessException(
-                    "Ngày nhập và ngày hết hạn không được để trống."
-            );
-        }
-
-        if (expiryDate.isBefore(receivedDate)) {
-
-            throw new ProductBusinessException(
-                    "Ngày hết hạn phải lớn hơn hoặc bằng ngày nhập."
-            );
-        }
-    }
-
-    private void validateImage(
-            MultipartFile file
-    ) {
-
-        /*
-         * MultipartFile được validate ở Service vì requirement
-         * không cho dùng annotation validation cho imageFile.
-         */
-
-        if (file == null) {
-
-            throw new ProductBusinessException(
-                    "Vui lòng chọn hình ảnh sản phẩm."
-            );
-        }
-
-        if (file.isEmpty()) {
-
-            throw new ProductBusinessException(
-                    "Hình ảnh không được để trống."
-            );
-        }
-
-        /*
-         * Requirement: nhỏ hơn 5MB.
-         */
-        if (file.getSize() >= MAX_FILE_SIZE) {
-
-            throw new ProductBusinessException(
-                    "Dung lượng hình ảnh phải nhỏ hơn 5MB."
-            );
-        }
-
-        String filename =
-                file.getOriginalFilename();
-
-        if (filename == null
-                || filename.isBlank()) {
-
-            throw new ProductBusinessException(
-                    "Tên file không hợp lệ."
-            );
-        }
-
-        String extension =
-                getExtension(filename);
-
-        if (!ALLOWED_EXTENSIONS.contains(
-                extension
-        )) {
-
-            throw new ProductBusinessException(
-                    "Chỉ chấp nhận file JPG hoặc PNG."
-            );
-        }
-
-        String contentType =
-                file.getContentType();
-
-        if (contentType == null
-                || (
-                !contentType.equalsIgnoreCase(
-                        "image/jpeg"
-                )
-                        &&
-                        !contentType.equalsIgnoreCase(
-                                "image/png"
-                        )
-        )) {
-
-            throw new ProductBusinessException(
-                    "File hình ảnh không hợp lệ."
-            );
-        }
-    }
-
-    // =========================================================
-    // FILE
-    // =========================================================
-
-    private String saveImage(
-            MultipartFile file
-    ) {
-
+    private String saveImage(MultipartFile image) {
         try {
-
-            Files.createDirectories(
-                    uploadDirectory
-            );
-
-            String extension =
-                    getExtension(
-                            file.getOriginalFilename()
-                    );
-
-            String filename =
-                    UUID.randomUUID()
-                            + "."
-                            + extension;
-
-            Path target =
-                    uploadDirectory
-                            .resolve(filename)
-                            .normalize();
-
-            Files.copy(
-                    file.getInputStream(),
-                    target,
-                    StandardCopyOption.REPLACE_EXISTING
-            );
-
-            return "/uploads/products/"
-                    + filename;
-
+            Files.createDirectories(uploadDirectory);
+            String fileName = UUID.randomUUID() + "." + extensionOf(image.getOriginalFilename());
+            Files.copy(image.getInputStream(), uploadDirectory.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+            return "/uploads/products/" + fileName;
         } catch (IOException exception) {
-
-            throw new ProductBusinessException(
-                    "Không thể lưu hình ảnh.",
-                    exception
-            );
+            throw new ProductBusinessException("Không thể lưu hình ảnh sản phẩm.", exception);
         }
     }
 
-    private void deleteImage(
-            String imageUrl
-    ) {
-
-        if (imageUrl == null) {
-            return;
-        }
-
+    private void deleteImage(String imageUrl) {
         try {
-
-            String filename =
-                    Paths.get(imageUrl)
-                            .getFileName()
-                            .toString();
-
-            Path target =
-                    uploadDirectory
-                            .resolve(filename)
-                            .normalize();
-
-            Files.deleteIfExists(target);
-
-        } catch (Exception ignored) {
-            // Không làm mất exception gốc.
+            if (imageUrl != null) {
+                Files.deleteIfExists(uploadDirectory.resolve(Path.of(imageUrl).getFileName()).normalize());
+            }
+        } catch (IOException ignored) {
+            // Giữ exception nghiệp vụ gốc nếu thao tác dọn file thất bại.
         }
     }
 
-    // =========================================================
-    // MAPPING
-    // =========================================================
-
-    private ProductResponseDTO toResponseDTO(
-            ProductRepository.ProductListProjection projection
-    ) {
-
+    private ProductResponseDTO toProductResponse(ProductRepository.ProductListProjection product) {
         return ProductResponseDTO.builder()
-                .id(projection.getId())
-                .name(projection.getName())
-                .sku(projection.getSku())
-                .categoryId(
-                        projection.getCategoryId()
-                )
-                .price(
-                        projection.getPrice()
-                )
-                .unit(
-                        projection.getUnit()
-                )
-                .stockQuantity(
-                        projection.getStockQuantity()
-                )
-                .imageUrl(
-                        projection.getImageUrl()
-                )
-                .status(
-                        projection.getStatus()
-                )
-                .createdAt(
-                        projection.getCreatedAt()
-                )
+                .id(product.getId())
+                .name(product.getName())
+                .sku(product.getSku())
+                .categoryId(product.getCategoryId())
+                .price(product.getPrice())
+                .unit(product.getUnit())
+                .stockQuantity(product.getStockQuantity())
+                .imageUrl(product.getImageUrl())
+                .status(product.getStatus())
+                .createdAt(product.getCreatedAt())
                 .build();
     }
 
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    private String normalize(String value) {
-
-        if (value == null) {
-            return null;
+    private void requireShopId(Long shopId) {
+        if (shopId == null) {
+            throw new ProductBusinessException("Không xác định được cửa hàng.");
         }
-
-        String result = value.trim();
-
-        return result.isEmpty()
-                ? null
-                : result;
     }
 
-    private String getExtension(
-            String filename
-    ) {
+    private void requireUserId(Long userId) {
+        if (userId == null) {
+            throw new ProductBusinessException("Không xác định được người dùng hiện tại.");
+        }
+    }
 
-        int index =
-                filename.lastIndexOf('.');
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 
-        if (index < 0
-                || index == filename.length() - 1) {
-
+    private String extensionOf(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
             return "";
         }
-
-        return filename
-                .substring(index + 1)
-                .toLowerCase(Locale.ROOT);
+        return fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
     }
 }

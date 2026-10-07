@@ -15,6 +15,9 @@ public class Unit {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
+
     // Getter & Setter
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -22,4 +25,6 @@ public class Unit {
     public void setCode(String code) { this.code = code; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean active) { isActive = active; }
 }

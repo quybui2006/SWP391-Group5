@@ -13,6 +13,12 @@ public class ProductVariant {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Column(name = "shop_id", nullable = false)
+    private Long shopId;
+
+    @Column(name = "sku", nullable = false)
+    private String sku;
+
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -34,6 +40,10 @@ public class ProductVariant {
     public void setId(Long id) { this.id = id; }
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
+    public Long getShopId() { return shopId; }
+    public void setShopId(Long shopId) { this.shopId = shopId; }
+    public String getSku() { return sku; }
+    public void setSku(String sku) { this.sku = sku; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getImageUrl() { return imageUrl; }
