@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Chỉnh sửa sản phẩm - FreshFruit</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/shopproductedit.css}">
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+</head>
+
+<body>
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+<header class="site-header">
+
+    <div class="container header-inner">
+
+        <a class="brand"
+           th:href="@{/}">
+
+            <span class="brand-mark">F</span>
+
+            <span class="brand-text">
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+
+        </a>
+
+        <nav class="main-nav">
+
+            <a th:href="@{/}">Trang chủ</a>
+
+            <a th:href="@{/search}">Sản phẩm</a>
+
+            <a th:href="@{/#categories}">Danh mục</a>
+
+            <a th:href="@{/#about}">Về chúng tôi</a>
+
+        </nav>
+
+        <div class="header-actions">
+
+            <a class="icon-btn"
+               th:href="@{/search}"
+               title="Tìm kiếm"
+               aria-label="Tìm kiếm">⌕</a>
+
+            <a class="login-btn"
+               th:href="@{/}">Quản lý cửa hàng</a>
+
+        </div>
+
+    </div>
+
+</header>
+
+<main>
+
+    <!-- =====================================================
+         BREADCRUMB
+    ====================================================== -->
+    <section class="breadcrumb-section">
+        <div class="container">
+
+            <nav class="breadcrumb"
+                 aria-label="breadcrumb">
+
+                <a th:href="@{/}">Trang chủ</a>
+                <span class="sep">/</span>
+
+                <a th:href="@{/search}">Sản phẩm</a>
+                <span class="sep">/</span>
+
+                <span th:text="${form.name}">Tên sản phẩm</span>
+
+            </nav>
+
+        </div>
+    </section>
+
+    <!-- =====================================================
+         PAGE TITLE
+    ====================================================== -->
+    <section class="container page-title">
+        <h1>Chỉnh sửa sản phẩm</h1>
+        <p>Cập nhật thông tin sản phẩm của cửa hàng
+            <strong th:text="${form.shopName}">Tên cửa hàng</strong>.</p>
+    </section>
+
+    <!-- =====================================================
+         FORM
+    ====================================================== -->
+    <section class="container edit-layout">
+
+        <!-- Cột chính: form -->
+        <div class="card">
+
+            <div class="card-head">
+                <h2>Thông tin sản phẩm</h2>
+                <p>Các ô có dấu <span class="req">*</span> là bắt buộc.</p>
+            </div>
+
+            <form th:object="${form}"
+                  th:action="@{/shop/product/{id}/edit(id=${form.id})}"
+                  method="post">
+
+                <div class="card-body">
+
+                    <div class="form-grid">
+
+                        <!-- Tên sản phẩm -->
+                        <div class="field full">
+                            <label for="name">Tên sản phẩm <span class="req">*</span></label>
+                            <input type="text"
+                                   id="name"
+                                   th:field="*{name}"
+                                   maxlength="200"
+                                   placeholder="Ví dụ: Táo Fuji Thượng Hạng">
+                            <span class="note">Tối đa 200 ký tự.</span>
+                        </div>
+
+                        <!-- Mã lô: chỉ đọc -->
+                        <div class="field">
+                            <label for="batchCode">Mã lô nhập kho</label>
+                            <input type="text"
+                                   id="batchCode"
+                                   th:field="*{batchCode}"
+                                   readonly>
+                            <span class="note">Mỗi lô nhập là một sản phẩm riêng, không sửa mã lô sau khi tạo.</span>
+                        </div>
+
+                        <!-- Xuất xứ -->
+                        <div class="field">
+                            <label for="origin">Xuất xứ</label>
+                            <input type="text"
+                                   id="origin"
+                                   th:field="*{origin}"
+                                   maxlength="150"
+                                   placeholder="Ví dụ: Nhật Bản">
+                        </div>
+
+                        <!-- Danh mục -->
+                        <div class="field">
+                            <label for="categoryId">Danh mục</label>
+                            <select id="categoryId"
+                                    th:field="*{categoryId}">
+                                <option value="">-- Chọn danh mục --</option>
+                                <option th:each="c : ${form.categories}"
+                                        th:value="${c.id}"
+                                        th:text="${c.name}"></option>
+                            </select>
+                        </div>
+
+                        <!-- Trạng thái bán -->
+                        <div class="field">
+                            <label for="sellingStatus">Trạng thái bán</label>
+                            <select id="sellingStatus"
+                                    th:field="*{sellingStatus}">
+                                <option value="DRAFT">DRAFT - Bản nháp</option>
+                                <option value="ACTIVE">ACTIVE - Đang bán</option>
+                                <option value="PAUSED">PAUSED - Tạm ngừng</option>
+                                <option value="ARCHIVED">ARCHIVED - Đã ẩn</option>
+                            </select>
+                            <span class="note">Chỉ được chọn ACTIVE khi sản phẩm đã được duyệt.</span>
+                        </div>
+
+                        <!-- Ngày nhập kho -->
+                        <div class="field">
+                            <label for="receivedDate">Ngày nhập kho <span class="req">*</span></label>
+                            <input type="date"
+                                   id="receivedDate"
+                                   th:field="*{receivedDate}">
+                        </div>
+
+                        <!-- Hạn sử dụng -->
+                        <div class="field">
+                            <label for="expiryDate">Hạn sử dụng <span class="req">*</span></label>
+                            <input type="date"
+                                   id="expiryDate"
+                                   th:field="*{expiryDate}">
+                            <span class="note">Hạn sử dụng phải từ ngày nhập kho trở đi.</span>
+                        </div>
+
+                        <!-- Mô tả -->
+                        <div class="field full">
+                            <label for="description">Mô tả</label>
+                            <textarea id="description"
+                                      th:field="*{description}"
+                                      rows="6"
+                                      maxlength="2000"
+                                      placeholder="Mô tả sản phẩm, nguồn gốc, đặc điểm nổi bật..."></textarea>
+                            <span class="note">Tối đa 2000 ký tự.</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="actions">
+
+                    <button type="submit"
+                            class="btn btn-primary">Lưu thay đổi</button>
+
+                    <a class="btn btn-secondary"
+                       th:href="@{/search}">Huỷ</a>
+
+                    <a class="btn btn-ghost"
+                       th:href="@{/shop/product/{id}(id=${form.id})}">Xem trang sản phẩm</a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        <!-- Cột phụ: trạng thái -->
+        <aside>
+
+            <div class="card side-card">
+
+                <div class="side-title">Trạng thái duyệt</div>
+
+                <div class="side-body">
+
+                    <div class="notice notice-info">
+                        <span class="notice-icon">i</span>
+                        <span>Sản phẩm đang được bán trên sàn. Mọi thay đổi về giá hoặc tồn kho
+                              cần được duyệt lại trước khi áp dụng.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="k">Trạng thái duyệt</span>
+                        <span class="v">
+                            <span class="badge"
+                                  th:classappend="'badge-' + ${form.approvalStatus.toLowerCase()}"
+                                  th:text="${form.approvalStatus}">APPROVED</span>
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="k">Trạng thái bán</span>
+                        <span class="v">
+                            <span class="badge"
+                                  th:classappend="'badge-' + ${form.sellingStatus.toLowerCase()}"
+                                  th:text="${form.sellingStatus}">ACTIVE</span>
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="k">Cửa hàng</span>
+                        <span class="v" th:text="${form.shopName}">FreshFruit Store</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card side-card">
+
+                <div class="side-title">Lưu ý khi sửa</div>
+
+                <div class="side-body">
+
+                    <div class="info-row">
+                        <span class="k">Ngày nhập kho</span>
+                        <span class="v">Không được ở tương lai.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="k">Hạn sử dụng</span>
+                        <span class="v">Phải sau ngày nhập kho.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="k">Mở bán</span>
+                        <span class="v">Cần sản phẩm đã được duyệt.</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+    </section>
+
+</main>
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <span>© 2026 FreshFruit</span>
+        <span>Tươi ngon mỗi ngày</span>
+    </div>
+</footer>
+
+</body>
+</html>
