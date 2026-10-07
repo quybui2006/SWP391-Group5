@@ -12,6 +12,11 @@ import java.util.List;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
+    boolean existsByShopIdAndSkuIgnoreCase(
+            Long shopId,
+            String sku
+    );
+
     // Tìm các biến thể sản phẩm đang ACTIVE
     // và thuộc về Product cũng đang ACTIVE
     List<ProductVariant> findByStatusAndProduct_SellingStatus(

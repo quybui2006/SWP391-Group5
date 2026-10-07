@@ -145,24 +145,58 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void validateRequest(Long shopId, Long userId, ProductCreateRequest request) {
+
         if (productRepository.countOwnedShop(shopId, userId) == 0) {
-            throw new ProductBusinessException("Bạn không có quyền thao tác với cửa hàng này.");
+            throw new ProductBusinessException(
+                    "Bạn không có quyền thao tác với cửa hàng này."
+            );
         }
-        if (productRepository.existsByShopIdAndNameIgnoreCase(shopId, request.getName().trim())) {
-            throw new ProductBusinessException("Tên sản phẩm đã tồn tại trong shop.");
+
+        if (productRepository.existsByShopIdAndNameIgnoreCase(
+                shopId,
+                request.getName().trim()
+        )) {
+            throw new ProductBusinessException(
+                    "Tên sản phẩm đã tồn tại trong shop."
+            );
         }
-        if (productRepository.existsByShopIdAndBatchCodeIgnoreCase(shopId, request.getBatchCode().trim())) {
-            throw new ProductBusinessException("Mã lô đã tồn tại trong shop.");
+
+        if (productRepository.existsByShopIdAndBatchCodeIgnoreCase(
+                shopId,
+                request.getBatchCode().trim()
+        )) {
+            throw new ProductBusinessException(
+                    "Mã lô đã tồn tại trong shop."
+            );
         }
+
+        if (productVariantRepository.existsByShopIdAndSkuIgnoreCase(
+                shopId,
+                request.getSku().trim()
+        )) {
+            throw new ProductBusinessException(
+                    "SKU đã tồn tại trong shop."
+            );
+        }
+
         if (productRepository.countActiveCategory(request.getCategoryId()) == 0) {
-            throw new ProductBusinessException("Danh mục không tồn tại hoặc đã bị khóa.");
+            throw new ProductBusinessException(
+                    "Danh mục không tồn tại hoặc đã bị khóa."
+            );
         }
+
         if (productRepository.countActiveUnit(request.getUnitId()) == 0) {
-            throw new ProductBusinessException("Đơn vị không tồn tại hoặc đã bị khóa.");
+            throw new ProductBusinessException(
+                    "Đơn vị không tồn tại hoặc đã bị khóa."
+            );
         }
+
         if (request.getExpiryDate().isBefore(request.getReceivedDate())) {
-            throw new ProductBusinessException("Ngày hết hạn phải sau hoặc bằng ngày nhập.");
+            throw new ProductBusinessException(
+                    "Ngày hết hạn phải sau hoặc bằng ngày nhập."
+            );
         }
+
         validateImage(request.getImageFile());
     }
 
