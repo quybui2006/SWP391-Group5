@@ -1,16 +1,22 @@
 package dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+/**
+ * DTO dùng để nhận dữ liệu khi Shop Owner tạo sản phẩm mới.
+ *
+ * Không dùng Lombok ở class này để tránh lỗi getter/setter không được generate
+ * khi IDE hoặc Maven chưa bật annotation processing.
+ */
 public class ProductCreateRequest {
 
     @NotBlank(message = "Tên sản phẩm không được để trống")
@@ -43,8 +49,9 @@ public class ProductCreateRequest {
     private LocalDate expiryDate;
 
     @NotNull(message = "Giá sản phẩm không được để trống")
-    @Min(
-            value = 1000,
+    @DecimalMin(
+            value = "1000",
+            inclusive = true,
             message = "Giá tối thiểu là 1000 VNĐ"
     )
     private BigDecimal price;
@@ -79,22 +86,165 @@ public class ProductCreateRequest {
     @NotNull(message = "Vui lòng nhập ngưỡng tồn kho")
     @DecimalMin(
             value = "0.0",
+            inclusive = true,
             message = "Ngưỡng tồn kho không được âm"
     )
     @DecimalMax(
             value = "100.0",
+            inclusive = true,
             message = "Ngưỡng tồn kho không được lớn hơn 100%"
     )
     private BigDecimal lowStockThresholdPct;
 
-    /*
-     * Không dùng @NotNull cho MultipartFile.
-     *
-     * ServiceImpl sẽ kiểm tra:
-     * - file null
-     * - file rỗng
-     * - dung lượng < 5MB
-     * - jpg/png
+    /**
+     * File ảnh sản phẩm. ServiceImpl sẽ kiểm tra null/rỗng, dung lượng và định dạng.
      */
     private MultipartFile imageFile;
+
+    public ProductCreateRequest() {
+    }
+
+    public ProductCreateRequest(
+            String name,
+            String description,
+            String origin,
+            String batchCode,
+            LocalDate receivedDate,
+            LocalDate expiryDate,
+            BigDecimal price,
+            Long categoryId,
+            String sku,
+            String variantName,
+            Long unitId,
+            Integer stockQuantity,
+            BigDecimal lowStockThresholdPct,
+            MultipartFile imageFile
+    ) {
+        this.name = name;
+        this.description = description;
+        this.origin = origin;
+        this.batchCode = batchCode;
+        this.receivedDate = receivedDate;
+        this.expiryDate = expiryDate;
+        this.price = price;
+        this.categoryId = categoryId;
+        this.sku = sku;
+        this.variantName = variantName;
+        this.unitId = unitId;
+        this.stockQuantity = stockQuantity;
+        this.lowStockThresholdPct = lowStockThresholdPct;
+        this.imageFile = imageFile;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public String getBatchCode() {
+        return batchCode;
+    }
+
+    public void setBatchCode(String batchCode) {
+        this.batchCode = batchCode;
+    }
+
+    public LocalDate getReceivedDate() {
+        return receivedDate;
+    }
+
+    public void setReceivedDate(LocalDate receivedDate) {
+        this.receivedDate = receivedDate;
+    }
+
+    public LocalDate getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public String getVariantName() {
+        return variantName;
+    }
+
+    public void setVariantName(String variantName) {
+        this.variantName = variantName;
+    }
+
+    public Long getUnitId() {
+        return unitId;
+    }
+
+    public void setUnitId(Long unitId) {
+        this.unitId = unitId;
+    }
+
+    public Integer getStockQuantity() {
+        return stockQuantity;
+    }
+
+    public void setStockQuantity(Integer stockQuantity) {
+        this.stockQuantity = stockQuantity;
+    }
+
+    public BigDecimal getLowStockThresholdPct() {
+        return lowStockThresholdPct;
+    }
+
+    public void setLowStockThresholdPct(BigDecimal lowStockThresholdPct) {
+        this.lowStockThresholdPct = lowStockThresholdPct;
+    }
+
+    public MultipartFile getImageFile() {
+        return imageFile;
+    }
+
+    public void setImageFile(MultipartFile imageFile) {
+        this.imageFile = imageFile;
+    }
 }
