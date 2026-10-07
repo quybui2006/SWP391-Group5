@@ -1,76 +1,69 @@
 package entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "shop_id", nullable = false)
-    private Long shopId;
-
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "LONGTEXT")
-    private String description;
-
-    @Column(name = "origin", length = 150)
-    private String origin;
-
-    @Column(name = "batch_code", nullable = false, length = 60)
-    private String batchCode;
-
-    @Column(name = "received_date", nullable = false)
-    private LocalDate receivedDate;
-
-    @Column(name = "expiry_date", nullable = false)
-    private LocalDate expiryDate;
-
-    @Column(name = "approval_status", nullable = false, length = 20)
-    private String approvalStatus;
-
-    @Column(name = "selling_status", nullable = false, length = 20)
+    @Column(name = "selling_status", nullable = false)
     private String sellingStatus;
 
-    @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;
+    // Quan hệ 1-Nhiều với ProductVariant
+    @OneToMany(mappedBy = "product")
+    private List<ProductVariant> variants;
 
-    @Column(name = "reviewed_at")
-    private LocalDateTime reviewedAt;
+    // Quan hệ Nhiều-Nhiều với Category
+    @ManyToMany
+    @JoinTable(
+            name = "product_categories",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories;
 
-    @Column(name = "rejection_reason", length = 1000)
-    private String rejectionReason;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-
-        createdAt = now;
-        updatedAt = now;
+    // Getter và Setter
+    public Long getId() {
+        return id;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public void setId(Long id) {
+        this.id = id;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSellingStatus() {
+        return sellingStatus;
+    }
+
+    public void setSellingStatus(String sellingStatus) {
+        this.sellingStatus = sellingStatus;
+    }
+
+    public List<ProductVariant> getVariants() {
+        return variants;
+    }
+
+    public void setVariants(List<ProductVariant> variants) {
+        this.variants = variants;
+    }
+
+    public List<Category> getCategories() { return categories; }
+
+    public void setCategories(List<Category> categories) { this.categories = categories; }
 }

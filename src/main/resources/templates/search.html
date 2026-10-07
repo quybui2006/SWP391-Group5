@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tìm kiếm sản phẩm - FreshFruit</title>
+
+    <link rel="stylesheet" th:href="@{/css/search.css}">
+
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet">
+</head>
+
+<body>
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<header class="site-header">
+
+    <div class="container header-inner">
+
+        <!-- LOGO -->
+        <a
+                class="brand"
+                th:href="@{/}"
+                aria-label="FreshFruit - Trang chủ">
+
+            <span class="brand-mark">
+                F
+            </span>
+
+            <span>
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+
+        </a>
+
+
+        <!-- NAVIGATION -->
+        <nav
+                class="main-nav"
+                aria-label="Điều hướng chính">
+
+            <a th:href="@{/}">
+                Trang chủ
+            </a>
+
+            <a
+                    class="active"
+                    th:href="@{/search}">
+                Sản phẩm
+            </a>
+
+            <a th:href="@{/#categories}">
+                Danh mục
+            </a>
+
+            <a th:href="@{/#about}">
+                Về chúng tôi
+            </a>
+
+        </nav>
+
+
+        <!-- HEADER ACTIONS -->
+        <div class="header-actions">
+
+            <!-- SEARCH -->
+            <a
+                    class="icon-btn active-icon"
+                    th:href="@{/search}"
+                    title="Tìm kiếm"
+                    aria-label="Tìm kiếm">
+
+                ⌕
+
+            </a>
+
+
+            <!-- CART -->
+            <a
+                    class="icon-btn cart-btn"
+                    th:href="@{/cart}"
+                    title="Giỏ hàng"
+                    aria-label="Giỏ hàng">
+
+                🛒
+
+                <span id="cartCount">
+                    0
+                </span>
+
+            </a>
+
+
+            <!-- LOGIN -->
+            <a
+                    class="login-btn"
+                    th:href="@{/login}">
+
+                Đăng nhập
+
+            </a>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
+
+<main>
+
+
+    <!-- =====================================================
+         SEARCH HERO
+    ====================================================== -->
+
+    <section class="search-hero">
+
+        <div class="container">
+
+            <span class="section-kicker">
+                FRESHFRUIT
+            </span>
+
+
+            <h1>
+                Tìm kiếm sản phẩm
+            </h1>
+
+
+            <p>
+                Khám phá trái cây tươi ngon theo tên,
+                danh mục và khoảng giá.
+            </p>
+
+
+            <!-- MAIN SEARCH -->
+            <form
+                    class="main-search"
+                    th:action="@{/search}"
+                    method="get">
+
+                <span class="search-icon">
+                    ⌕
+                </span>
+
+
+                <input
+                        id="keyword"
+                        name="keyword"
+                        type="search"
+                        th:value="${keyword}"
+                        placeholder="Bạn đang tìm trái cây gì?"
+                        autocomplete="off"
+                        aria-label="Tìm kiếm sản phẩm">
+
+
+                <button
+                        type="submit">
+
+                    Tìm kiếm
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SEARCH + FILTER
+    ====================================================== -->
+
+    <section class="search-section">
+
+        <div class="container search-layout">
+
+
+            <!-- =================================================
+                 FILTER
+            ================================================== -->
+
+            <aside class="filter-panel">
+
+
+                <div class="filter-header">
+
+                    <div>
+
+                        <span class="filter-kicker">
+                            FILTER
+                        </span>
+
+                        <h2>
+                            Bộ lọc
+                        </h2>
+
+                    </div>
+
+
+                    <a
+                            class="clear-filter"
+                            th:href="@{/search}">
+
+                        Xóa lọc
+
+                    </a>
+
+                </div>
+
+
+                <!-- FILTER FORM -->
+                <form
+                        id="filterForm"
+                        th:action="@{/search}"
+                        method="get">
+
+
+                    <!-- =================================================
+                         KEYWORD
+                    ================================================== -->
+
+                    <input
+                            type="hidden"
+                            name="keyword"
+                            th:value="${keyword}">
+
+
+                    <!-- =================================================
+                         CATEGORY
+                    ================================================== -->
+
+                    <div class="filter-group">
+
+                        <h3>
+                            Danh mục
+                        </h3>
+
+
+                        <!-- CÓ CATEGORY -->
+                        <div
+                                class="category-list"
+                                th:if="${categories != null and !categories.isEmpty()}">
+
+
+                            <label
+                                    class="check-row"
+                                    th:each="category : ${categories}">
+
+
+                                <input
+                                        type="checkbox"
+                                        name="categoryId"
+                                        th:value="${category.id}"
+                                        th:checked="${selectedCategories != null and selectedCategories.contains(category.id)}">
+
+
+                                <span class="custom-check"></span>
+
+
+                                <span
+                                        class="check-label"
+                                        th:text="${category.name}">
+
+                                    Danh mục
+
+                                </span>
+
+                            </label>
+
+                        </div>
+
+
+                        <!-- KHÔNG CÓ CATEGORY -->
+                        <div
+                                class="filter-empty"
+                                th:if="${categories == null or categories.isEmpty()}">
+
+                            Chưa có danh mục.
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="filter-divider"></div>
+
+
+                    <!-- =================================================
+                         PRICE
+                    ================================================== -->
+
+                    <div class="filter-group">
+
+                        <h3>
+                            Khoảng giá
+                        </h3>
+
+
+                        <label class="radio-row">
+
+                            <input
+                                    type="radio"
+                                    name="priceRange"
+                                    value="all"
+                                    th:checked="${priceRange == null or priceRange == 'all'}">
+
+                            <span class="custom-radio"></span>
+
+                            <span>
+                                Tất cả mức giá
+                            </span>
+
+                        </label>
+
+
+                        <label class="radio-row">
+
+                            <input
+                                    type="radio"
+                                    name="priceRange"
+                                    value="under50"
+                                    th:checked="${priceRange == 'under50'}">
+
+                            <span class="custom-radio"></span>
+
+                            <span>
+                                Dưới 50.000 ₫
+                            </span>
+
+                        </label>
+
+
+                        <label class="radio-row">
+
+                            <input
+                                    type="radio"
+                                    name="priceRange"
+                                    value="50to100"
+                                    th:checked="${priceRange == '50to100'}">
+
+                            <span class="custom-radio"></span>
+
+                            <span>
+                                50.000 – 100.000 ₫
+                            </span>
+
+                        </label>
+
+
+                        <label class="radio-row">
+
+                            <input
+                                    type="radio"
+                                    name="priceRange"
+                                    value="over100"
+                                    th:checked="${priceRange == 'over100'}">
+
+                            <span class="custom-radio"></span>
+
+                            <span>
+                                Trên 100.000 ₫
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- APPLY -->
+                    <button
+                            class="apply-btn"
+                            type="submit">
+
+                        Áp dụng bộ lọc
+
+                        <span>
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+            </aside>
+
+
+            <!-- =================================================
+                 RESULTS
+            ================================================== -->
+
+            <section class="results-panel">
+
+
+                <!-- RESULTS TOOLBAR -->
+                <div class="results-toolbar">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            PRODUCTS
+                        </span>
+
+
+                        <h2>
+
+                            Kết quả tìm kiếm
+
+                            <span
+                                    th:text="'(' + resultCount + ')'">
+
+                                (0)
+
+                            </span>
+
+                        </h2>
+
+                    </div>
+
+
+                    <!-- ACTIVE KEYWORD -->
+                    <div
+                            class="active-filter"
+                            th:if="${keyword != null and !keyword.isEmpty()}">
+
+                        Từ khóa:
+
+                        <strong
+                                th:text="${keyword}">
+                            keyword
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     PRODUCT GRID
+                ================================================== -->
+
+                <div
+                        class="product-grid"
+                        th:if="${products != null and !products.isEmpty()}">
+
+
+                    <!-- PRODUCT CARD -->
+                    <article
+                            class="product-card"
+                            th:each="variant : ${products}"
+                            th:attr="data-name=${variant.name + ' ' + variant.product.name}"
+                            th:onclick="|openProductDetail(${variant.id})|"
+                            role="link"
+                            tabindex="0"
+                            th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
+
+
+                        <!-- IMAGE -->
+                        <div class="product-image">
+
+
+                            <!-- IMAGE -->
+                            <img
+                                    th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                                    th:src="${variant.imageUrl}"
+                                    th:alt="${variant.name}"
+                                    onerror="handleImageError(this)">
+
+
+                            <!-- PLACEHOLDER -->
+                            <div
+                                    class="image-placeholder"
+                                    th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
+                                    ? 'display:none'
+                                    : 'display:grid'">
+
+                                🍎
+
+                            </div>
+
+
+                            <!-- STATUS -->
+                            <span class="fresh-tag">
+                                Đang bán
+                            </span>
+
+
+                            <!-- FAVORITE -->
+                            <button
+                                    class="heart-btn"
+                                    type="button"
+                                    title="Yêu thích"
+                                    aria-label="Thêm vào yêu thích"
+                                    onclick="toggleFavorite(event, this)">
+
+                                ♡
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- PRODUCT INFO -->
+                        <div class="product-info">
+
+
+                            <!-- CATEGORY -->
+                            <span
+                                    class="product-category"
+                                    th:text="${variant.product.name}">
+
+                                Trái cây
+
+                            </span>
+
+
+                            <!-- VARIANT -->
+                            <h3
+                                    th:text="${variant.name}">
+
+                                Tên sản phẩm
+
+                            </h3>
+
+
+                            <div class="product-bottom">
+
+
+                                <!-- PRICE -->
+                                <strong
+                                        class="price"
+                                        th:if="${variant.price != null}"
+                                        th:text="${#numbers.formatDecimal(
+                                            variant.price,
+                                            0,
+                                            'COMMA',
+                                            0,
+                                            'POINT'
+                                        ) + ' ₫'}">
+
+                                    0 ₫
+
+                                </strong>
+
+
+                                <strong
+                                        class="price"
+                                        th:unless="${variant.price != null}">
+
+                                    Liên hệ
+
+                                </strong>
+
+
+                                <!-- ADD CART -->
+                                <button
+                                        class="add-btn"
+                                        type="button"
+                                        th:attr="data-variant-id=${variant.id}"
+                                        onclick="addToCart(event, this)"
+                                        aria-label="Thêm sản phẩm vào giỏ hàng">
+
+                                    +
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <!-- =================================================
+                     EMPTY RESULT
+                ================================================== -->
+
+                <div
+                        class="empty-state"
+                        th:if="${products == null or products.isEmpty()}">
+
+
+                    <div class="empty-icon">
+                        🍃
+                    </div>
+
+
+                    <h3>
+                        Không tìm thấy sản phẩm
+                    </h3>
+
+
+                    <!-- HAS KEYWORD -->
+                    <p
+                            th:if="${keyword != null and !keyword.isEmpty()}">
+
+                        Không có sản phẩm phù hợp với từ khóa
+                        "<strong th:text="${keyword}">từ khóa</strong>".
+
+                    </p>
+
+
+                    <!-- NO KEYWORD -->
+                    <p
+                            th:if="${keyword == null or keyword.isEmpty()}">
+
+                        Không có sản phẩm phù hợp
+                        với bộ lọc hiện tại.
+
+                    </p>
+
+
+                    <a
+                            class="reset-btn"
+                            th:href="@{/search}">
+
+                        Xem tất cả sản phẩm
+
+                    </a>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<footer class="site-footer">
+
+    <div class="container footer-inner">
+
+
+        <!-- BRAND -->
+        <div>
+
+            <a
+                    class="brand footer-brand"
+                    th:href="@{/}">
+
+                <span class="brand-mark">
+                    F
+                </span>
+
+                <span>
+
+                    <strong>
+                        FreshFruit
+                    </strong>
+
+                    <small>
+                        Tươi ngon mỗi ngày
+                    </small>
+
+                </span>
+
+            </a>
+
+
+            <p>
+                Trái cây tươi chất lượng, giao tận nơi.
+            </p>
+
+        </div>
+
+
+        <!-- LINKS -->
+        <div class="footer-links">
+
+            <a th:href="@{/search}">
+                Sản phẩm
+            </a>
+
+            <a th:href="@{/#categories}">
+                Danh mục
+            </a>
+
+            <a th:href="@{/#about}">
+                Về chúng tôi
+            </a>
+
+        </div>
+
+
+        <small>
+            © 2026 FreshFruit. All rights reserved.
+        </small>
+
+    </div>
+
+</footer>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script th:src="@{/js/search.js}"></script>
+
+</body>
+
+</html>
