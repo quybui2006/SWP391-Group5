@@ -1,56 +1,21 @@
 package entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "products")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "shop_id", nullable = false)
-    private Long shopId;
-
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description")
-    private String description;
-
-    @Column(name = "origin")
-    private String origin;
-
-    @Column(name = "batch_code", nullable = false)
-    private String batchCode;
-
-    @Column(name = "received_date", nullable = false)
-    private LocalDate receivedDate;
-
-    @Column(name = "expiry_date", nullable = false)
-    private LocalDate expiryDate;
-
-    @Column(name = "approval_status", nullable = false)
-    private String approvalStatus;
-
     @Column(name = "selling_status", nullable = false)
     private String sellingStatus;
-
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
     // Quan hệ 1-Nhiều với ProductVariant
     @OneToMany(mappedBy = "product")
@@ -65,4 +30,40 @@ public class Product {
     )
     private List<Category> categories;
 
+    // Getter và Setter
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSellingStatus() {
+        return sellingStatus;
+    }
+
+    public void setSellingStatus(String sellingStatus) {
+        this.sellingStatus = sellingStatus;
+    }
+
+    public List<ProductVariant> getVariants() {
+        return variants;
+    }
+
+    public void setVariants(List<ProductVariant> variants) {
+        this.variants = variants;
+    }
+
+    public List<Category> getCategories() { return categories; }
+
+    public void setCategories(List<Category> categories) { this.categories = categories; }
 }
