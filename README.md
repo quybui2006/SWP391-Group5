@@ -32,3 +32,19 @@ Ví dụ: feat/shop-registration, feat/delivery-status.
 - Vào Pull Request => Create Pull Request => Chọn Base là nhánh cần merge vào, Compare là nhánh để merge
 - Chỉ xóa nhánh nhiệm vụ sau khi PR merged.
 - Giữ nguyên main, staging và develop.
+
+## Chạy ứng dụng
+
+Yêu cầu JDK 17 và MySQL. Trong MySQL Workbench, chạy file `OnlineFruitShoppingPlatform.sql` để tạo database `freshfruit_v5` và các bảng.
+
+Mở PowerShell tại thư mục dự án, cấu hình thông tin MySQL rồi chạy:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+$env:DB_USERNAME = "root"
+$env:DB_PASSWORD = "mat-khau-mysql"
+.\mvnw.cmd spring-boot:run
+```
+
+Ứng dụng chạy tại `http://localhost:8080`. Chạy test bằng `.\mvnw.cmd test`; bộ test sử dụng H2 riêng và không cần MySQL.
