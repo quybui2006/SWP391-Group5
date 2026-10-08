@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside class="sidebar" th:fragment="sidebar(activePage)">
+    <a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>SHOP OWNER</small></span></a>
+    <div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong>My Fresh Shop</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div>
+    <nav class="side-nav" aria-label="Điều hướng Shop Owner">
+        <span class="nav-label">TỔNG QUAN</span>
+        <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/shopowner/home}"><span>⌂</span> Dashboard</a>
+        <span class="nav-label">QUẢN LÝ CỬA HÀNG</span>
+        <a th:classappend="${activePage == 'products'} ? ' active' : ''" th:href="@{/shop/products}"><span>▦</span> Products</a>
+        <a th:href="@{/shopowner/product-variants}"><span>▤</span> Product Variants</a>
+        <a href="#"><span>◌</span> Đơn hàng <b class="nav-count orange">4</b></a>
+        <a href="#"><span>♧</span> Kho hàng</a>
+        <span class="nav-label">KHÁC</span>
+        <a href="#"><span>⚙</span> Cài đặt</a>
+        <a href="#"><span>?</span> Trợ giúp</a>
+    </nav>
+    <div class="sidebar-footer"><div class="mini-user"><div class="avatar">AM</div><div><strong>Anna Manager</strong><small>Shop Owner</small></div><span>⋮</span></div></div>
+</aside>
+</body>
+</html>

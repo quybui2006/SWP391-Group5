@@ -131,4 +131,30 @@ class CartCheckoutIntegrationTests {
         mvc.perform(get("/cart")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
         mvc.perform(get("/shop/products")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
     }
+
+    @Test
+    void shopOwnerProductScreensUseDashboardNavigationAndRealRoutes() throws Exception {
+        long owner = seed();
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", owner);
+        session.setAttribute("role", "SHOP_OWNER");
+
+        mvc.perform(get("/shopowner/home"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/shop/products\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("href=\"#\">◫ Products"))));
+        mvc.perform(get("/shop/products").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/shop/products/add")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/shop/product/")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("site-header"))));
+        mvc.perform(get("/shop/products/add").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"name\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"sku\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/shop/products/add\"")));
+        mvc.perform(get("/shopowner/product-variants").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/shop/products"));
+    }
 }

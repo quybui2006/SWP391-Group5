@@ -11,21 +11,8 @@
 </head>
 <body>
 <div class="app-shell">
-    <aside class="sidebar">
-        <a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>SHOP OWNER</small></span></a>
-        <div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong>My Fresh Shop</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div>
-        <nav class="side-nav">
-            <span class="nav-label">TỔNG QUAN</span>
-            <a class="active" th:href="@{/shopowner/home}"><span>⌂</span> Dashboard</a>
-            <span class="nav-label">QUẢN LÝ CỬA HÀNG</span>
-            <a th:href="@{/shop/products}"><span>▦</span> Products</a>
-            <a th:href="@{/shopowner/product-variants}"><span>▦</span> Product Variants <b class="nav-count">12</b></a>
-            <a href="#"><span>◫</span> Products</a><a href="#"><span>◌</span> Đơn hàng <b class="nav-count orange">4</b></a><a href="#"><span>♧</span> Kho hàng</a>
-            <span class="nav-label">KHÁC</span>
-            <a href="#"><span>⚙</span> Cài đặt</a><a href="#"><span>?</span> Trợ giúp</a>
-        </nav>
-        <div class="sidebar-footer"><div class="mini-user"><div class="avatar">AM</div><div><strong>Anna Manager</strong><small>Shop Owner</small></div><span>⋮</span></div></div>
-    </aside>
+    <!-- Tan PTH: shared sidebar removes the duplicate Products entry; Dashboard content/layout stays as-is. -->
+    <aside th:replace="~{shopowner/fragments :: sidebar('dashboard')}"></aside>
     <main class="main-content">
         <header class="topbar"><div><p class="breadcrumb">Shop Owner / <span>Tổng quan</span></p><h1>Chào buổi sáng, Anna <span>✦</span></h1><p class="muted">Đây là tình hình cửa hàng của bạn hôm nay.</p></div><div class="top-actions"><button class="round-btn">⌕</button><button class="round-btn notification">♢<i></i></button><div class="top-user"><div class="avatar">AM</div><span>Anna Manager<br><small>Shop Owner</small></span><b>⌄</b></div></div></header>
         <section class="stats-grid">

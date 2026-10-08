@@ -4,40 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sản phẩm cửa hàng | FreshFruit</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
 </head>
 <body>
-<header class="site-header">
-    <div class="container header-inner">
-        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
-            <span class="brand-mark">F</span>
-            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
-        </a>
-        <nav class="main-nav" aria-label="Điều hướng chính">
-            <a th:href="@{/}">Trang chủ</a>
-            <a th:href="@{/search}">Sản phẩm</a>
-            <a class="active" th:href="@{/shop/products}">Quản lý shop</a>
-        </nav>
-        <div class="header-actions">
-            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
-            <a class="login-btn" th:href="@{/shop/products}">Shop owner</a>
-        </div>
-    </div>
-</header>
-
-<main class="page-shell">
-    <section class="page-heading">
-        <div>
-            <p class="eyebrow">QUẢN LÝ CỬA HÀNG</p>
-            <h1>Sản phẩm</h1>
-            <p>Theo dõi sản phẩm, tồn kho và trạng thái bán hàng của cửa hàng.</p>
-        </div>
-        <a class="button button-primary" th:href="@{/shop/products/add}">+ Thêm sản phẩm</a>
-    </section>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
+    <main class="main-content product-management">
+    <header class="topbar">
+        <div><p class="breadcrumb">Shop Owner / <span>Sản phẩm</span></p><h1>Sản phẩm</h1><p class="muted">Theo dõi sản phẩm, tồn kho và trạng thái bán hàng của cửa hàng.</p></div>
+        <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
+    </header>
 
     <p class="alert alert-success" th:if="${success}">Sản phẩm đã được tạo và đang ở trạng thái nháp.</p>
 
@@ -61,6 +38,7 @@
                     <th>Tồn kho</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
+                    <th>Thao tác</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -83,6 +61,10 @@
                               th:text="${product.status == 'ACTIVE'} ? 'Đang bán' : 'Bản nháp'">Bản nháp</span>
                     </td>
                     <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
+                    <td class="product-actions">
+                        <a th:href="@{/shop/product/{id}(id=${product.id})}">Chi tiết</a>
+                        <a th:href="@{/shop/product/{id}/edit(id=${product.id})}">Sửa</a>
+                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -92,7 +74,7 @@
             <span>🍐</span>
             <h2 th:text="${keyword.isEmpty()} ? 'Chưa có sản phẩm nào' : 'Không tìm thấy sản phẩm phù hợp'">Chưa có sản phẩm nào</h2>
             <p th:text="${keyword.isEmpty()} ? 'Hãy thêm sản phẩm đầu tiên cho cửa hàng của bạn.' : 'Thử tìm với từ khóa khác.'"></p>
-            <a class="button button-primary" th:if="${keyword.isEmpty()}" th:href="@{/shop/products/add}">Thêm sản phẩm</a>
+            <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
         </div>
 
         <nav class="pagination" th:if="${products.totalPages > 1}" aria-label="Phân trang">
@@ -107,22 +89,6 @@
         </nav>
     </section>
 </main>
-<footer class="site-footer">
-    <div class="container footer-inner">
-        <div>
-            <a class="brand footer-brand" th:href="@{/}">
-                <span class="brand-mark">F</span>
-                <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
-            </a>
-            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
-        </div>
-        <div class="footer-links">
-            <a th:href="@{/search}">Sản phẩm</a>
-            <a th:href="@{/#categories}">Danh mục</a>
-            <a th:href="@{/#about}">Về chúng tôi</a>
-        </div>
-        <small>© 2026 FreshFruit. All rights reserved.</small>
-    </div>
-</footer>
+</div>
 </body>
 </html>
