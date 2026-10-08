@@ -50,7 +50,7 @@
                         <form method="post" th:unless="${a.defaultAddress}" th:action="@{/customer/account/address/default}"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="set-default" type="submit">Đặt làm mặc định</button></form>
                         <div class="card-buttons">
                             <button class="edit-link" type="button" th:attr="data-id=${a.id},data-name=${a.recipientName},data-phone=${a.recipientPhone},data-province=${provinceNames[a.provinceCode]},data-ward=${a.wardName},data-detail=${a.addressDetail},data-default=${a.defaultAddress}" onclick="openAddressModal(this)">Chỉnh sửa</button>
-                            <form method="post" th:action="@{/customer/account/address/delete}" onsubmit="return confirm('Xóa địa chỉ này? Nếu là mặc định, địa chỉ còn lại sẽ được chọn thay thế.')"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="delete-link" type="submit">Xóa</button></form>
+                            <form th:unless="${a.defaultAddress}" method="post" th:action="@{/customer/account/address/delete}" onsubmit="return confirm('Xóa địa chỉ này?')"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="delete-link" type="submit">Xóa</button></form>
                         </div>
                     </div>
                 </article>
