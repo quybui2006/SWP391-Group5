@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner-product-screen.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body><div class="app-shell">
+    <aside class="sidebar"><a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>SHOP OWNER</small></span></a>
+        <div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong>My Fresh Shop</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div>
+        <nav class="side-nav"><span class="nav-label">TỔNG QUAN</span><a th:href="@{/shopowner/home}"><span>⌂</span>Dashboard</a><span class="nav-label">QUẢN LÝ CỬA HÀNG</span><a class="active" th:href="@{/shopowner/products}"><span>◫</span>Products</a><a th:href="@{/shopowner/product-variants}"><span>▦</span>Product Variants</a><a href="#"><span>◌</span>Đơn hàng</a><a href="#"><span>♧</span>Kho hàng</a><span class="nav-label">KHÁC</span><a href="#"><span>⚙</span>Cài đặt</a></nav>
+        <div class="sidebar-footer"><div class="mini-user"><div class="avatar">ME</div><div><strong>Shop Owner</strong><small>Quản lý cửa hàng</small></div></div></div>
+    </aside>
+    <main class="main-content"><header class="topbar"><div><p class="breadcrumb">Shop Owner / <span>Products</span></p><h1>Products</h1><p class="muted">Quản lý sản phẩm, trạng thái và các biến thể trong cửa hàng.</p></div><div class="top-actions"><a class="round-btn" th:href="@{/shopowner/product-variants}" title="Product Variants">▦</a><div class="top-user"><div class="avatar">ME</div><span>Shop Owner<br><small>Cửa hàng của tôi</small></span></div></div></header>
+        <div class="op-page"><section class="op-heading"><div><p class="op-breadcrumb">Quản lý cửa hàng / Products</p><h1>Danh sách sản phẩm</h1><p>Xem chi tiết sản phẩm hoặc chỉnh sửa thông tin lô hàng.</p></div><a class="op-btn" th:href="@{/shopowner/product-variants}">▦ Quản lý Product Variants</a></section>
+            <p class="op-alert" th:if="${param.missing}">Không tìm thấy sản phẩm hoặc bạn không có quyền truy cập.</p>
+            <section class="panel table-panel full-table" th:if="${!products.isEmpty()}"><div class="table-top"><div><h2>Products</h2><p class="muted" th:text="${products.size()} + ' sản phẩm trong cửa hàng'">0 sản phẩm</p></div></div><div class="table-wrap"><table class="op-table"><thead><tr><th>Sản phẩm</th><th>Danh mục</th><th>Biến thể</th><th>Tồn kho</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody><tr th:each="product : ${products}"><td><div class="op-product-cell"><span class="op-thumb"><img th:if="${product.imageUrl}" th:src="${product.imageUrl}" th:alt="${product.name}"><span th:unless="${product.imageUrl}">🍎</span></span><div><strong th:text="${product.name}">Sản phẩm</strong><small th:text="${product.fromPrice != null ? 'Từ ' + #numbers.formatDecimal(product.fromPrice,0,'COMMA',0,'POINT') + ' ₫' : 'Chưa có giá'}">Từ 0 ₫</small></div></div></td><td th:text="${product.categoryName}">Danh mục</td><td th:text="${product.variantCount} + ' variants'">0 variants</td><td th:text="${product.availableStock}">0</td><td><span class="op-status" th:classappend="${product.sellingStatus.toLowerCase()}" th:text="${product.sellingStatus}">DRAFT</span></td><td><div class="op-actions"><a class="op-btn" th:href="@{/shopowner/products/{id}(id=${product.id})}">Chi tiết</a><a class="op-btn primary" th:href="@{/shopowner/products/{id}/edit(id=${product.id})}">Sửa</a></div></td></tr></tbody></table></div></section>
+            <section class="panel op-empty" th:if="${products.isEmpty()}"><span>🍐</span><strong>Chưa có sản phẩm nào trong cửa hàng.</strong><p>Hãy dùng màn hình thêm Product của nhóm để tạo sản phẩm đầu tiên.</p></section>
+        </div>
+    </main>
+</div></body></html>

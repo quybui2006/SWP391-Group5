@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${product.name + ' | FreshFruit'}">Product Detail | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner-product-screen.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body><div class="app-shell">
+    <aside class="sidebar"><a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>SHOP OWNER</small></span></a>
+        <div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong th:text="${product.shopName}">My Fresh Shop</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div>
+        <nav class="side-nav"><span class="nav-label">TỔNG QUAN</span><a th:href="@{/shopowner/home}"><span>⌂</span>Dashboard</a><span class="nav-label">QUẢN LÝ CỬA HÀNG</span><a class="active" th:href="@{/shopowner/products}"><span>◫</span>Products</a><a th:href="@{/shopowner/product-variants}"><span>▦</span>Product Variants</a><a href="#"><span>◌</span>Đơn hàng</a><a href="#"><span>♧</span>Kho hàng</a><span class="nav-label">KHÁC</span><a href="#"><span>⚙</span>Cài đặt</a></nav>
+        <div class="sidebar-footer"><div class="mini-user"><div class="avatar">ME</div><div><strong>Shop Owner</strong><small>Quản lý cửa hàng</small></div></div></div>
+    </aside>
+    <main class="main-content"><header class="topbar"><div><p class="breadcrumb">Shop Owner / Products / <span th:text="${product.name}">Product</span></p><h1>Product Detail</h1><p class="muted">Thông tin sản phẩm và biến thể đang được quản lý.</p></div><div class="top-actions"><a class="round-btn" th:href="@{/shopowner/products}" title="Danh sách Products">←</a><div class="top-user"><div class="avatar">ME</div><span>Shop Owner<br><small>Cửa hàng của tôi</small></span></div></div></header>
+        <div class="op-page"><section class="op-heading"><div><p class="op-breadcrumb"><a th:href="@{/shopowner/products}">Products</a> / Chi tiết</p><h1 th:text="${product.name}">Tên sản phẩm</h1><p th:text="${product.shopName}">Tên cửa hàng</p></div><a class="op-btn primary" th:href="@{/shopowner/products/{id}/edit(id=${product.id})}">✎ Chỉnh sửa sản phẩm</a></section>
+            <p class="op-alert" th:if="${success}" th:text="${success}">Đã cập nhật.</p>
+            <div class="op-detail-grid"><section class="panel op-detail-main"><span class="op-kicker" th:text="${product.categoryName ?: 'Chưa phân loại'}">Danh mục</span><h2 class="op-title" th:text="${product.name}">Tên sản phẩm</h2><p class="op-summary" th:text="${product.description ?: 'Chưa có mô tả cho sản phẩm này.'}">Mô tả</p>
+                <div class="op-chip-row"><span class="op-status" th:classappend="${product.approvalStatus.toLowerCase()}" th:text="'Duyệt: ' + ${product.approvalStatus}">Duyệt</span><span class="op-status" th:classappend="${product.sellingStatus.toLowerCase()}" th:text="'Bán: ' + ${product.sellingStatus}">Bán</span></div>
+                <div class="op-meta"><div><span>Mã lô</span><strong th:text="${product.batchCode}">LOT</strong></div><div><span>Xuất xứ</span><strong th:text="${product.origin ?: '-'}">-</strong></div><div><span>Ngày nhập</span><strong th:text="${#temporals.format(product.receivedDate,'dd/MM/yyyy')}">--</strong></div><div><span>Hạn sử dụng</span><strong th:text="${#temporals.format(product.expiryDate,'dd/MM/yyyy')}">--</strong></div></div>
+                <div class="op-section-title"><h2>Biến thể &amp; tồn kho</h2><span class="op-count" th:text="${product.variants.size()} + ' variants'">0 variants</span></div>
+                <div class="table-wrap"><table class="op-table"><thead><tr><th>Variant</th><th>SKU</th><th>Quy cách</th><th>Giá bán</th><th>Tồn kho</th><th>Trạng thái</th></tr></thead><tbody><tr th:each="variant : ${product.variants}"><td><strong th:text="${variant.name}">Variant</strong></td><td th:text="${variant.sku}">SKU</td><td th:text="${variant.specification ?: '-'}">-</td><td th:text="${#numbers.formatDecimal(variant.price,0,'COMMA',0,'POINT')} + ' ₫ / ' + ${variant.unitName}">0 ₫</td><td><strong th:text="${variant.availableQuantity}">0</strong><small th:if="${variant.lowStock}" class="op-error"> tồn thấp</small></td><td><span class="op-status" th:classappend="${variant.status.toLowerCase()}" th:text="${variant.status}">ACTIVE</span></td></tr><tr th:if="${product.variants.isEmpty()}"><td colspan="6" class="op-empty">Sản phẩm chưa có Product Variant.</td></tr></tbody></table></div>
+            </section><aside><section class="panel op-detail-side"><h2 class="op-side-title">Tác vụ liên quan</h2><div class="op-side-row"><span>Quản lý biến thể</span><a th:href="@{/shopowner/product-variants}"><strong>Đi tới →</strong></a></div><div class="op-side-row"><span>Chỉnh sửa thông tin</span><a th:href="@{/shopowner/products/{id}/edit(id=${product.id})}"><strong>Sửa →</strong></a></div><div class="op-side-row"><span>Danh sách Products</span><a th:href="@{/shopowner/products}"><strong>Xem tất cả →</strong></a></div></section></aside></div>
+        </div>
+    </main>
+</div></body></html>
