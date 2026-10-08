@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span>
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+        </a>
+        <a th:href="@{/}">Về trang chủ</a>
+    </div>
+</header>
+
+<main class="login-main">
+    <section class="login-card">
+        <span class="login-eyebrow">CHÀO MỪNG TRỞ LẠI</span>
+        <h1>Đăng nhập</h1>
+        <p>Đăng nhập để tiếp tục với FreshFruit.</p>
+
+        <p class="login-error" th:if="${error}" th:text="${error}" role="alert"></p>
+
+        <form th:action="@{/login}" method="post">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email"
+                   autocomplete="username" maxlength="254" required>
+
+            <label for="password">Mật khẩu</label>
+            <input id="password" name="password" type="password"
+                   autocomplete="current-password" required>
+
+            <button type="submit">Đăng nhập</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>
