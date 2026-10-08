@@ -1,141 +1,104 @@
-// UI demo only: addresses live in memory and reset when the page reloads.
-const addressGrid = document.querySelector('.address-grid');
+// Thymeleaf renders database records. JavaScript only manages the form and location selects.
 const modal = document.getElementById('addressModal');
-const form = modal.querySelector('form');
-const fields = form.querySelectorAll('input:not([type="checkbox"]), select, textarea');
-const defaultCheckbox = form.querySelector('[type="checkbox"]');
-const cardTemplate = addressGrid.querySelector('.address-card').cloneNode(true);
-let addresses = [
-    { id: 1, name: 'Nguyễn Minh Lan', phone: '0912456780', city: 'Hà Nội', ward: 'Phường Yên Hòa', detail: 'Số 18, ngõ 76 Nguyễn Khang', isDefault: true },
-    { id: 2, name: 'Trần Hoàng An', phone: '0983765421', city: 'Thành phố Hồ Chí Minh', ward: 'Phường An Khánh', detail: 'Căn hộ B12, số 28 đường Mai Chí Thọ', isDefault: false }
-];
-let editingId = null;
+const form = document.getElementById('addressForm');
+const field = name => form.elements.namedItem(name);
+let locations;
 let previousFocus;
-let toastTimer;
 
-function notify(message) {
-    const toast = document.getElementById('accountToast');
-    clearTimeout(toastTimer);
-    toast.textContent = message;
-    toast.classList.add('show');
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+function options(select, items, label, value = item => item.name) {
+    select.replaceChildren(new Option(label, ''));
+    items.forEach(item => select.add(new Option(item.name, value(item))));
+    select.disabled = items.length === 0;
 }
-
-function renderAddresses() {
-    addressGrid.querySelectorAll('.address-card, .empty-addresses').forEach(card => card.remove());
-    const addCard = addressGrid.querySelector('.add-card');
-    addresses.forEach(address => {
-        const card = cardTemplate.cloneNode(true);
-        card.classList.toggle('is-default', address.isDefault);
-        card.querySelector('.address-label').textContent = address.isDefault ? '⌖ Địa chỉ mặc định' : '⌖ Địa chỉ nhận hàng';
-        card.querySelector('.address-label').classList.toggle('muted-label', !address.isDefault);
-        card.querySelector('.more-button')?.remove();
-        card.querySelector('.recipient strong').textContent = address.name;
-        card.querySelector('.recipient span').textContent = address.phone;
-        card.querySelector('.address-text').textContent = `${address.detail}\n${address.ward}\n${address.city}`;
-        const footer = card.querySelector('.card-footer');
-        footer.replaceChildren();
-        const defaultAction = document.createElement(address.isDefault ? 'span' : 'button');
-        defaultAction.className = address.isDefault ? 'default-pill' : 'set-default';
-        defaultAction.textContent = address.isDefault ? '✓ Mặc định' : 'Đặt làm mặc định';
-        if (!address.isDefault) {
-            defaultAction.type = 'button';
-            defaultAction.addEventListener('click', () => {
-                addresses.forEach(item => { item.isDefault = item.id === address.id; });
-                renderAddresses();
-                notify('Đã đổi địa chỉ mặc định trong bản xem thử.');
-            });
-        }
-        const actions = document.createElement('div');
-        const edit = document.createElement('button');
-        edit.type = 'button';
-        edit.className = 'edit-link';
-        edit.textContent = 'Chỉnh sửa';
-        edit.addEventListener('click', () => openAddressModal(address.id));
-        actions.append(edit);
-        if (!address.isDefault) {
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'delete-link';
-            remove.textContent = 'Xóa';
-            remove.addEventListener('click', () => {
-                if (window.confirm(`Xóa địa chỉ của ${address.name} khỏi bản xem thử?`)) {
-                    addresses = addresses.filter(item => item.id !== address.id);
-                    renderAddresses();
-                    notify('Đã xóa địa chỉ trong bản xem thử.');
-                }
-            });
-            actions.append(remove);
-        }
-        footer.append(defaultAction, actions);
-        addressGrid.insertBefore(card, addCard);
-    });
-    document.querySelector('.address-count').textContent = `${addresses.length} địa chỉ mẫu`;
+function province() { return locations?.find(item => String(item.code) === field('provinceCode').value); }
+function districts() {
+    options(field('districtName'), province()?.districts || [], 'Chọn quận / huyện');
+    wards();
 }
+function wards() {
+    const district = province()?.districts.find(item => item.name === field('districtName').value);
+    options(field('wardName'), district?.wards || [], 'Chọn phường / xã');
+}
+field('provinceCode').addEventListener('change', districts);
+field('districtName').addEventListener('change', wards);
 
-function openAddressModal(id = null) {
+async function openAddressModal(button = null) {
     previousFocus = document.activeElement;
-    editingId = typeof id === 'number' ? id : null;
     form.reset();
-    const address = addresses.find(item => item.id === editingId);
-    document.getElementById('modalTitle').textContent = address ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới';
-    if (address) {
-        [address.name, address.phone, address.city, address.ward, address.detail].forEach((value, index) => { fields[index].value = value; });
-    }
-    defaultCheckbox.checked = Boolean(address?.isDefault);
-    defaultCheckbox.disabled = Boolean(address?.isDefault);
+    field('recipientPhone').setCustomValidity('');
+    field('id').value = '';
+    const data = button?.dataset;
+    document.getElementById('modalTitle').textContent = data?.id ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.querySelector('.customer-shell').inert = true;
     document.body.style.overflow = 'hidden';
-    fields[0].focus();
+    field('recipientName').focus();
+    form.querySelector('[type="submit"]').disabled = true;
+    const error = document.getElementById('locationError');
+    error.hidden = true;
+    if (data) {
+        field('id').value = data.id || '';
+        field('recipientName').value = data.name || '';
+        field('recipientPhone').value = data.phone || '';
+        field('addressDetail').value = data.detail || '';
+        field('defaultAddress').checked = data.default === 'true';
+    }
+    try {
+        if (!locations) {
+            const response = await fetch(form.dataset.locationsUrl);
+            if (!response.ok) throw new Error('Không tải được danh mục địa chỉ. Đóng và mở lại form để thử lại.');
+            locations = await response.json();
+        }
+        options(field('provinceCode'), locations, 'Chọn tỉnh / thành phố', item => item.code);
+        if (data) field('provinceCode').value = data.code || locations.find(p => p.name === data.province)?.code || '';
+        districts();
+        if (data) {
+            const split = (data.ward || '').split(', ');
+            field('districtName').value = data.district || split.slice(1).join(', ');
+            wards();
+            field('wardName').value = data.district ? data.ward : split[0];
+        }
+        form.querySelector('[type="submit"]').disabled = false;
+    } catch (ex) { error.textContent = ex.message; error.hidden = false; }
 }
-
 function closeAddressModal() {
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     document.querySelector('.customer-shell').inert = false;
     document.body.style.overflow = '';
-    if (previousFocus?.isConnected) previousFocus.focus();
-    else document.querySelector('.page-intro .primary-button').focus();
+    previousFocus?.focus();
 }
-
-function saveMockAddress(event) {
-    event.preventDefault();
-    const values = Array.from(fields, field => field.value.trim());
-    if (values.some(value => !value)) {
-        notify('Vui lòng nhập đầy đủ thông tin địa chỉ.');
-        return;
-    }
-    const address = {
-        id: editingId ?? Date.now(), name: values[0], phone: values[1],
-        city: values[2], ward: values[3], detail: values[4],
-        isDefault: defaultCheckbox.checked || addresses.length === 0
-    };
-    if (address.isDefault) addresses.forEach(item => { item.isDefault = false; });
-    if (editingId !== null) addresses = addresses.map(item => item.id === editingId ? address : item);
-    else addresses.push(address);
-    renderAddresses();
-    closeAddressModal();
-    notify('Đã cập nhật bản xem thử. Dữ liệu sẽ đặt lại khi tải lại trang.');
+function validatePhone() {
+    const input = field('recipientPhone');
+    const normalized = input.value.replace(/[\s.-]/g, '').replace(/^\+84/, '0');
+    input.setCustomValidity(/^0[35789]\d{8}$/.test(normalized) ? '' : 'Nhập số di động Việt Nam hợp lệ: 10 số bắt đầu 03, 05, 07, 08, 09 hoặc +84 tương ứng.');
 }
-
-modal.addEventListener('click', event => {
-    if (event.target === modal) closeAddressModal();
+field('recipientPhone').addEventListener('input', validatePhone);
+form.addEventListener('submit', event => {
+    validatePhone();
+    if (!form.reportValidity()) event.preventDefault();
+    else form.querySelector('[type="submit"]').disabled = true;
 });
+modal.addEventListener('click', event => { if (event.target === modal) closeAddressModal(); });
 modal.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeAddressModal();
     if (event.key !== 'Tab') return;
-    const focusable = Array.from(modal.querySelectorAll('button, input, select, textarea')).filter(element => !element.disabled);
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const controls = [...modal.querySelectorAll('button, input:not([type="hidden"]), select, textarea')].filter(el => !el.disabled);
+    const first = controls[0], last = controls[controls.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
-document.querySelectorAll('a[href="#"], .top-icon').forEach(control => {
+if (document.getElementById('failedAddress')) openAddressModal(document.getElementById('failedAddress'));
+
+let toastTimer;
+document.querySelectorAll('[data-pending]').forEach(control => {
     control.addEventListener('click', event => {
         event.preventDefault();
-        notify('Màn hình này sẽ được bổ sung sau.');
+        const toast = document.getElementById('accountToast');
+        toast.textContent = 'Chức năng này đang được phát triển.';
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
     });
 });
-renderAddresses();

@@ -5,73 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sổ địa chỉ | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/customer-account.css}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" th:href="@{/css/address-book-forms.css}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="customer-shell">
     <aside class="customer-sidebar">
-        <a class="customer-brand" th:href="@{/}">
-            <span class="brand-mark">F</span>
-            <span><strong>Fresh<span>Fruit</span></strong><small>TƯƠI NGON MỖI NGÀY</small></span>
-        </a>
-
-        <div class="customer-profile">
-            <div class="profile-avatar">LN</div>
-            <div><strong>Lan Nguyễn</strong><span>lan.nguyen@email.com</span></div>
-        </div>
-
+        <a class="customer-brand" th:href="@{/}"><span class="brand-mark">F</span><span><strong>Fresh<span>Fruit</span></strong><small>TƯƠI NGON MỖI NGÀY</small></span></a>
+        <div class="customer-profile"><div class="profile-avatar">KH</div><div><strong th:text="${customer.fullName}"></strong><span th:text="${customer.email}"></span></div></div>
         <nav class="customer-nav">
             <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
-            <a href="#"><span class="nav-symbol">♙</span>Thông tin cá nhân</a>
+            <a href="#" data-pending><span class="nav-symbol">♙</span>Thông tin cá nhân</a>
             <a class="active" th:href="@{/customer/account/address}"><span class="nav-symbol">⌖</span>Sổ địa chỉ</a>
-            <a href="#"><span class="nav-symbol">▣</span>Đơn hàng của tôi</a>
-            <a href="#"><span class="nav-symbol">♡</span>Sản phẩm yêu thích</a>
+            <a href="#" data-pending><span class="nav-symbol">▣</span>Đơn hàng của tôi</a>
+            <a href="#" data-pending><span class="nav-symbol">♡</span>Sản phẩm yêu thích</a>
             <span class="nav-caption second">KHÁC</span>
-            <a href="#"><span class="nav-symbol">♧</span>Thông báo <b class="nav-badge">2</b></a>
-            <a href="#"><span class="nav-symbol">⚙</span>Cài đặt tài khoản</a>
+            <a href="#" data-pending><span class="nav-symbol">♧</span>Thông báo</a>
+            <a href="#" data-pending><span class="nav-symbol">⚙</span>Cài đặt tài khoản</a>
         </nav>
-
         <div class="sidebar-help"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Liên hệ với FreshFruit</small></div><b>→</b></div>
     </aside>
-
     <main class="customer-main">
         <header class="customer-topbar">
             <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><span>Tài khoản</span><span>/</span><strong>Sổ địa chỉ</strong></div>
-            <div class="topbar-actions"><button class="top-icon" type="button">⌕</button><button class="top-icon notification" type="button">♢<i></i></button><a class="cart-link" href="#">Giỏ hàng <span>0</span></a></div>
+            <div class="topbar-actions">
+                <a class="top-icon" th:href="@{/search}" aria-label="Tìm kiếm sản phẩm" title="Tìm kiếm">⌕</a>
+                <button class="top-icon notification" type="button" data-pending aria-label="Thông báo">♢<i></i></button>
+                <a class="cart-link" href="#" data-pending aria-label="Giỏ hàng">🛒 Giỏ hàng <span>0</span></a>
+            </div>
         </header>
-
-        <section class="page-intro">
-            <div><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Sổ địa chỉ</h1><p>Lưu lại các địa chỉ nhận hàng để đặt mua trái cây nhanh và thuận tiện hơn.</p></div>
-            <button class="primary-button" type="button" onclick="openAddressModal()"><span>＋</span> Thêm địa chỉ mới</button>
-        </section>
-
+        <section class="page-intro"><div><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Sổ địa chỉ</h1><p>Lưu địa chỉ nhận hàng để thanh toán thuận tiện hơn.</p></div><button class="primary-button" type="button" onclick="openAddressModal()">＋ Thêm địa chỉ mới</button></section>
+        <p class="feedback success" th:if="${message}" th:text="${message}" role="status"></p>
+        <p class="feedback error" th:if="${error}" th:text="${error}" role="alert"></p>
         <section class="address-section">
-            <div class="section-heading"><div><h2>Địa chỉ nhận hàng</h2><p>Chọn địa chỉ phù hợp khi thanh toán đơn hàng.</p></div><span class="address-count">2 địa chỉ đã lưu</span></div>
+            <div class="section-heading"><div><h2>Địa chỉ nhận hàng</h2><p>Địa chỉ mặc định sẽ được ưu tiên khi đặt hàng.</p></div><span class="address-count" th:text="${#lists.size(addresses) + ' địa chỉ đã lưu'}"></span></div>
+            <p th:if="${#lists.isEmpty(addresses)}">Bạn chưa có địa chỉ nhận hàng. Thêm địa chỉ đầu tiên để bắt đầu.</p>
             <div class="address-grid">
-                <article class="address-card is-default">
-                    <div class="card-top"><span class="address-label"><span class="pin">⌖</span>Địa chỉ mặc định</span><button class="more-button" type="button">⋮</button></div>
-                    <div class="recipient"><strong>Nguyễn Minh Lan</strong><span>+84 912 456 780</span></div>
-                    <p class="address-text">Số 18, ngõ 76 Nguyễn Khang<br>Phường Yên Hòa, Quận Cầu Giấy<br>Hà Nội</p>
-                    <div class="card-footer"><span class="default-pill">✓ Mặc định</span><button class="edit-link" type="button" onclick="openAddressModal('edit')">Chỉnh sửa</button></div>
+                <article class="address-card" th:each="a : ${addresses}" th:classappend="${a.defaultAddress} ? 'is-default' : ''">
+                    <div class="card-top"><span class="address-label" th:text="${a.defaultAddress ? '⌖ Địa chỉ mặc định' : '⌖ Địa chỉ nhận hàng'}"></span></div>
+                    <div class="recipient"><strong th:text="${a.recipientName}"></strong><span th:text="${a.recipientPhone}"></span></div>
+                    <p class="address-text"><span th:text="${a.addressDetail}"></span><br><span th:text="${a.wardName}"></span><br><span th:text="${provinceNames[a.provinceCode]}"></span></p>
+                    <div class="card-footer">
+                        <span class="default-pill" th:if="${a.defaultAddress}">✓ Mặc định</span>
+                        <form method="post" th:unless="${a.defaultAddress}" th:action="@{/customer/account/address/default}"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="set-default" type="submit">Đặt làm mặc định</button></form>
+                        <div class="card-buttons">
+                            <button class="edit-link" type="button" th:attr="data-id=${a.id},data-name=${a.recipientName},data-phone=${a.recipientPhone},data-province=${provinceNames[a.provinceCode]},data-ward=${a.wardName},data-detail=${a.addressDetail},data-default=${a.defaultAddress}" onclick="openAddressModal(this)">Chỉnh sửa</button>
+                            <form method="post" th:action="@{/customer/account/address/delete}" onsubmit="return confirm('Xóa địa chỉ này? Nếu là mặc định, địa chỉ còn lại sẽ được chọn thay thế.')"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="delete-link" type="submit">Xóa</button></form>
+                        </div>
+                    </div>
                 </article>
-                <article class="address-card">
-                    <div class="card-top"><span class="address-label muted-label"><span class="pin">⌖</span>Địa chỉ phụ</span><button class="more-button" type="button">⋮</button></div>
-                    <div class="recipient"><strong>Nguyễn Minh Lan</strong><span>+84 912 456 780</span></div>
-                    <p class="address-text">Tòa S2.08, Vinhomes Ocean Park<br>Xã Đa Tốn, Huyện Gia Lâm<br>Hà Nội</p>
-                    <div class="card-footer"><button class="set-default" type="button" onclick="setDefault(this)">Đặt làm mặc định</button><div><button class="edit-link" type="button" onclick="openAddressModal('edit')">Chỉnh sửa</button><button class="delete-link" type="button" onclick="mockDelete(this)">Xóa</button></div></div>
-                </article>
-                <button class="add-card" type="button" onclick="openAddressModal()"><span>＋</span><strong>Thêm địa chỉ mới</strong><small>Địa chỉ nhà, văn phòng...</small></button>
+                <button class="add-card" type="button" onclick="openAddressModal()"><span>＋</span><strong>Thêm địa chỉ mới</strong><small>Nhà riêng, văn phòng...</small></button>
             </div>
         </section>
-
-        <section class="address-note"><div class="note-icon">⌁</div><div><strong>Mua sắm thuận tiện hơn</strong><p>Bạn có thể lưu nhiều địa chỉ và chọn địa chỉ nhận hàng phù hợp cho từng đơn mua.</p></div></section>
     </main>
 </div>
-
-<div id="addressModal" class="modal-backdrop" aria-hidden="true"><div class="address-modal"><button class="modal-close" type="button" onclick="closeAddressModal()">×</button><span class="modal-eyebrow">ĐỊA CHỈ NHẬN HÀNG</span><h2 id="modalTitle">Thêm địa chỉ mới</h2><p>Thông tin này chỉ được dùng làm dữ liệu mẫu cho giao diện.</p><form onsubmit="saveMockAddress(event)"><div class="modal-grid"><label><span>Họ và tên <b>*</b></span><input required placeholder="Nhập họ và tên"></label><label><span>Số điện thoại <b>*</b></span><input required placeholder="Nhập số điện thoại"></label><label><span>Tỉnh / Thành phố <b>*</b></span><select required><option value="">Chọn tỉnh / thành phố</option><option>Hà Nội</option><option>Thành phố Hồ Chí Minh</option><option>Đà Nẵng</option></select></label><label><span>Quận / Huyện <b>*</b></span><select required><option value="">Chọn quận / huyện</option><option>Cầu Giấy</option><option>Gia Lâm</option><option>Thanh Khê</option></select></label><label class="wide"><span>Địa chỉ cụ thể <b>*</b></span><textarea required rows="3" placeholder="Số nhà, tên đường, phường / xã"></textarea></label></div><label class="checkbox"><input type="checkbox"> Đặt làm địa chỉ mặc định</label><div class="modal-actions"><button class="cancel-button" type="button" onclick="closeAddressModal()">Hủy</button><button class="primary-button" type="submit">Lưu địa chỉ</button></div></form></div></div>
-<div id="accountToast" class="account-toast"></div>
-<script th:src="@{/js/customer-account.js}"></script>
+<div id="addressModal" class="modal-backdrop" aria-hidden="true">
+    <div class="address-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" aria-label="Đóng" type="button" onclick="closeAddressModal()">×</button>
+        <span class="modal-eyebrow">ĐỊA CHỈ NHẬN HÀNG</span><h2 id="modalTitle">Thêm địa chỉ mới</h2>
+        <p>Danh mục 3 cấp trước sắp xếp 2025: 63 tỉnh/thành, quận/huyện và phường/xã.</p>
+        <p id="locationError" class="feedback error" hidden role="alert"></p>
+        <form id="addressForm" method="post" th:action="@{/customer/account/address/save}" th:attr="data-locations-url=@{/data/vietnam-addresses-v1.json}">
+            <input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id">
+            <div class="modal-grid">
+                <label><span>Họ và tên *</span><input name="recipientName" required maxlength="150" autocomplete="name"></label>
+                <label><span>Số điện thoại *</span><input name="recipientPhone" type="tel" required maxlength="20" autocomplete="tel" placeholder="0912345678 hoặc +84912345678"><small>Di động Việt Nam: 03, 05, 07, 08, 09.</small></label>
+                <label><span>Tỉnh / Thành phố *</span><select name="provinceCode" required></select></label>
+                <label><span>Quận / Huyện *</span><select name="districtName" required></select></label>
+                <label class="wide"><span>Phường / Xã *</span><select name="wardName" required></select></label>
+                <label class="wide"><span>Số nhà, tên đường *</span><textarea name="addressDetail" required maxlength="500" rows="3" placeholder="Số nhà, ngõ, tên đường, tòa nhà..."></textarea></label>
+            </div>
+            <label class="checkbox"><input type="checkbox" name="defaultAddress" value="true"> Đặt làm địa chỉ mặc định</label>
+            <div class="modal-actions"><button class="cancel-button" type="button" onclick="closeAddressModal()">Hủy</button><button class="primary-button" type="submit">Lưu địa chỉ</button></div>
+        </form>
+    </div>
+</div>
+<div id="failedAddress" th:if="${failedForm}" hidden th:attr="data-id=${failedId},data-name=${failedForm.recipientName},data-phone=${failedForm.recipientPhone},data-code=${failedForm.provinceCode},data-district=${failedForm.districtName},data-ward=${failedForm.wardName},data-detail=${failedForm.addressDetail},data-default=${failedForm.defaultAddress}"></div>
+<div id="accountToast" class="account-toast" role="status"></div>
+<script th:src="@{/js/customer-account.js(v='20261008-2')}"></script>
 </body>
 </html>
