@@ -40,6 +40,18 @@
 .shop-actionbar-info .shop-label { font-size: 0.76rem; color: var(--muted); }
 .shop-actionbar-info strong { font-size: 0.95rem; }
 
+/* Thông báo lưu thành công */
+.shop-alert {
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: var(--green-light);
+    color: var(--green-dark);
+    border: 1px solid var(--green);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
 .shop-actionbar-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* ============ NÚT ============ */

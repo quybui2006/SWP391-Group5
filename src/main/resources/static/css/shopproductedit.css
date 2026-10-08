@@ -269,7 +269,19 @@ a { text-decoration: none; color: inherit; }
 }
 .notice-info { background: var(--green-soft); border-color: var(--green-light); color: var(--text-light); }
 .notice-warn { background: var(--warn-soft); border-color: #f0e3b0; color: #7a5c05; }
+.notice-err { background: var(--danger-soft); border-color: #e0a49c; color: var(--danger); }
 .notice-icon { font-size: 1.05rem; line-height: 1.4; }
+
+/* ============ LỖI TRONG FORM ============ */
+
+.field-err { color: var(--danger); font-size: 0.82rem; margin-top: 5px; }
+
+.field input.invalid,
+.field select.invalid,
+.field textarea.invalid {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+}
 
 /* ============ BUTTON ============ */
 
