@@ -70,11 +70,11 @@
                             <img th:if="${product.imageUrl != null}" th:src="${product.imageUrl}"
                                  th:alt="${product.name}" onerror="this.hidden=true">
                             <span class="image-placeholder" th:unless="${product.imageUrl != null}">🍊</span>
-                            <strong th:text="${product.name}">Tên sản phẩm</strong>
+                            <a th:href="@{/shop/product/{id}(id=${product.id})}" th:text="${product.name}">Tên sản phẩm</a>
                         </div>
                     </td>
                     <td th:text="${product.sku}">SKU</td>
-                    <td th:text="${product.categoryId}">Danh mục</td>
+                    <td th:text="${product.categoryName}">Danh mục</td>
                     <td th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' ₫'">0 ₫</td>
                     <td th:text="${product.stockQuantity}">0</td>
                     <td>

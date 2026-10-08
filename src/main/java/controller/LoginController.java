@@ -39,7 +39,7 @@ public class LoginController {
 
         return switch (account.role()){
             case "ADMIN" -> "redirect:/admin";
-            case "SHOP_OWNER" -> "redirect:/shop-owner";
+            case "SHOP_OWNER" -> "redirect:/shopowner/home";
             default -> "redirect:/customer";
         };
 
@@ -58,7 +58,11 @@ public class LoginController {
 
     @GetMapping("/shop-owner")
     public String shopOwner(HttpServletRequest request) {
-        return pageForRole(request, "SHOP_OWNER", "shop-owner");
+        HttpSession session = request.getSession(false);
+        if (session == null || !"SHOP_OWNER".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+        return "redirect:/shopowner/home";
     }
 
     @GetMapping("/admin")

@@ -24,4 +24,6 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByIdAndShopId(Long id, Long shopId);
 
     List<Product> findByShopId(Long shopId);
+
+    boolean existsByShopIdAndBatchCode(Long shopId, String batchCode);
 }
