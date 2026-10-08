@@ -1,0 +1,18 @@
+.customer-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
+.customer-picker label { color: #637068; font-size: 12px; }
+.customer-picker select { max-width: 100%; padding: 10px; border: 1px solid #dfe8e1; border-radius: 8px; background: white; }
+.feedback { padding: 12px; border-radius: 8px; }
+.feedback.success { color: #16804b; background: #e8f8ee; }
+.feedback.error { color: #9d2020; background: #fff0f0; }
+.card-buttons { display: flex; align-items: center; gap: 5px; }
+.card-footer { flex-wrap: wrap; gap: 10px; }
+.address-modal { max-height: 90vh; overflow-y: auto; }
+.modal-grid input, .modal-grid select, .modal-grid textarea { min-width: 0; width: 100%; }
+.modal-grid small { color: #7b8780; }
+.customer-profile { overflow-wrap: anywhere; }
+button:disabled { opacity: .6; cursor: wait; }
+.topbar-actions .top-icon { display: inline-grid; place-items: center; }
+@media (max-width: 650px) {
+    .customer-topbar { height: auto; min-height: 61px; flex-wrap: wrap; gap: 10px; padding: 10px 0; }
+    .topbar-actions .cart-link { display: inline-block; }
+}
