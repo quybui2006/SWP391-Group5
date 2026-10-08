@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sản phẩm cửa hàng | FreshFruit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+            <span class="brand-mark">F</span>
+            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Điều hướng chính">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a class="active" th:href="@{/shop/products}">Quản lý shop</a>
+        </nav>
+        <div class="header-actions">
+            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
+            <a class="login-btn" th:href="@{/shop/products}">Shop owner</a>
+        </div>
+    </div>
+</header>
+
+<main class="page-shell">
+    <section class="page-heading">
+        <div>
+            <p class="eyebrow">QUẢN LÝ CỬA HÀNG</p>
+            <h1>Sản phẩm</h1>
+            <p>Theo dõi sản phẩm, tồn kho và trạng thái bán hàng của cửa hàng.</p>
+        </div>
+        <a class="button button-primary" th:href="@{/shop/products/add}">+ Thêm sản phẩm</a>
+    </section>
+
+    <p class="alert alert-success" th:if="${success}">Sản phẩm đã được tạo và đang ở trạng thái nháp.</p>
+
+    <section class="panel">
+        <form class="search-bar" method="get" th:action="@{/shop/products}">
+            <label class="sr-only" for="keyword">Tìm theo tên hoặc SKU</label>
+            <input id="keyword" name="keyword" type="search" th:value="${keyword}"
+                   placeholder="Tìm theo tên sản phẩm hoặc SKU">
+            <button class="button button-dark" type="submit">Tìm kiếm</button>
+            <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shop/products}">Xóa lọc</a>
+        </form>
+
+        <div class="table-wrap" th:if="${!products.empty}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>SKU</th>
+                    <th>Danh mục</th>
+                    <th>Giá</th>
+                    <th>Tồn kho</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="product : ${products.content}">
+                    <td>
+                        <div class="product-cell">
+                            <img th:if="${product.imageUrl != null}" th:src="${product.imageUrl}"
+                                 th:alt="${product.name}" onerror="this.hidden=true">
+                            <span class="image-placeholder" th:unless="${product.imageUrl != null}">🍊</span>
+                            <strong th:text="${product.name}">Tên sản phẩm</strong>
+                        </div>
+                    </td>
+                    <td th:text="${product.sku}">SKU</td>
+                    <td th:text="${product.categoryId}">Danh mục</td>
+                    <td th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' ₫'">0 ₫</td>
+                    <td th:text="${product.stockQuantity}">0</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${product.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'"
+                              th:text="${product.status == 'ACTIVE'} ? 'Đang bán' : 'Bản nháp'">Bản nháp</span>
+                    </td>
+                    <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" th:if="${products.empty}">
+            <span>🍐</span>
+            <h2 th:text="${keyword.isEmpty()} ? 'Chưa có sản phẩm nào' : 'Không tìm thấy sản phẩm phù hợp'">Chưa có sản phẩm nào</h2>
+            <p th:text="${keyword.isEmpty()} ? 'Hãy thêm sản phẩm đầu tiên cho cửa hàng của bạn.' : 'Thử tìm với từ khóa khác.'"></p>
+            <a class="button button-primary" th:if="${keyword.isEmpty()}" th:href="@{/shop/products/add}">Thêm sản phẩm</a>
+        </div>
+
+        <nav class="pagination" th:if="${products.totalPages > 1}" aria-label="Phân trang">
+            <a th:classappend="${products.first} ? ' disabled'"
+               th:href="@{/shop/products(page=${products.number - 1}, keyword=${keyword})}">← Trước</a>
+            <a th:each="page : ${#numbers.sequence(0, products.totalPages - 1)}"
+               th:classappend="${page == products.number} ? ' current'"
+               th:href="@{/shop/products(page=${page}, keyword=${keyword})}"
+               th:text="${page + 1}">1</a>
+            <a th:classappend="${products.last} ? ' disabled'"
+               th:href="@{/shop/products(page=${products.number + 1}, keyword=${keyword})}">Sau →</a>
+        </nav>
+    </section>
+</main>
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+            </a>
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
+        </div>
+        <div class="footer-links">
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
+        </div>
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+    </div>
+</footer>
+</body>
+</html>
