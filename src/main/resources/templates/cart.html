@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Giỏ hàng | FreshFruit</title><link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+        main{max-width:1100px;margin:36px auto;padding:0 20px;min-height:55vh}.cart-row{display:grid;grid-template-columns:36px minmax(220px,2fr) 1fr 1fr 100px;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid #e5e7eb}.cart-head{font-size:13px;color:#647067;font-weight:700}.product{display:flex;gap:14px;align-items:center}.product img{width:64px;height:64px;object-fit:cover;border-radius:6px;background:#f3f4f6}.qty{display:flex;align-items:center;gap:8px}.qty input{width:64px;padding:8px;border:1px solid #d1d5db;border-radius:4px}.remove,.checkout{border:0;cursor:pointer}.remove{background:transparent;color:#b42318}.summary{display:flex;justify-content:space-between;align-items:center;padding:22px 0}.notice{padding:12px;margin:12px 0;background:#eff8f1;color:#205c32}.error{background:#fff1f0;color:#9f251d}.empty{text-align:center;padding:50px 0}@media(max-width:700px){.cart-head{display:none}.cart-row{grid-template-columns:28px 1fr auto;gap:10px}.cart-row>*:nth-child(3),.cart-row>*:nth-child(4){grid-column:2}.cart-row>*:last-child{grid-column:3;grid-row:1}.summary{align-items:flex-start;gap:12px;flex-direction:column}}
+    </style>
+</head>
+<body>
+<header class="site-header"><div class="container header-inner"><a class="brand" th:href="@{/}"><span class="brand-mark">F</span><span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span></a><nav class="main-nav"><a th:href="@{/}">Trang chủ</a><a th:href="@{/search}">Sản phẩm</a></nav><div class="header-actions"><form th:action="@{/logout}" method="post"><button class="login-btn" type="submit">Đăng xuất</button></form></div></div></header>
+<main><h1>Giỏ hàng</h1><p class="notice" th:if="${message}" th:text="${message}"></p><p class="notice error" th:if="${error}" th:text="${error}"></p>
+    <div class="cart-row cart-head" th:unless="${#lists.isEmpty(cartItems)}"><div></div><div>Sản phẩm</div><div>Đơn giá</div><div>Số lượng</div><div></div></div>
+    <div class="empty" th:if="${#lists.isEmpty(cartItems)}"><h2>Giỏ hàng đang trống</h2><a class="primary-btn" th:href="@{/search}">Tiếp tục mua sắm</a></div>
+    <div th:each="item : ${cartItems}" class="cart-row">
+        <div><input type="checkbox" name="selectedVariantIds" th:value="${item.variant_id}" form="checkoutForm" aria-label="Chọn sản phẩm"></div>
+        <div class="product"><img th:src="${item.image_url}" alt=""><div><strong th:text="${item.product_name}"></strong><div th:text="${item.variant_name}"></div><small th:text="${'Còn ' + item.available_quantity + ' sản phẩm'}"></small></div></div>
+        <strong th:text="${#numbers.formatDecimal(item.price,0,'COMMA',0,'POINT') + ' ₫'}"></strong>
+        <form class="qty" th:action="@{/cart/items/{id}/quantity(id=${item.id})}" method="post"><input type="number" name="quantity" min="1" max="99" th:value="${item.quantity}"><button type="submit">Cập nhật</button></form>
+        <form th:action="@{/cart/items/{id}/delete(id=${item.id})}" method="post"><button class="remove" type="submit">Xóa</button></form>
+    </div>
+    <form id="checkoutForm" th:action="@{/checkout}" method="post" th:unless="${#lists.isEmpty(cartItems)}" class="summary"><span>Chọn các mặt hàng cần đặt.</span><button class="primary-btn checkout" type="submit">Thanh toán</button></form>
+</main></body></html>
