@@ -25,15 +25,15 @@ public class SearchController {
     @GetMapping("/search")
     public String searchPage(
             @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
-            @RequestParam(value = "categoryId", required = false) List<Long> categoryIds,
+            @RequestParam(value = "categoryId", required = false) List categoryIds,
             @RequestParam(value = "priceRange", required = false, defaultValue = "all") String priceRange,
             Model model) {
 
         // 1. Lấy tất cả danh mục để hiển thị ở Sidebar
-        List<Category> allCategories = categoryRepository.findByIsActiveTrue();
+        List allCategories = categoryRepository.findByIsActiveTrue();
 
         // 2. Truy vấn sản phẩm theo các tiêu chí Lọc
-        List<ProductVariant> searchResults = productService.searchAndFilterProducts(keyword, categoryIds, priceRange);
+        List searchResults = productService.searchAndFilterProducts(keyword, categoryIds, priceRange);
 
         // 3. Đẩy dữ liệu sang Thymeleaf
         model.addAttribute("categories", allCategories);

@@ -1,23 +1,45 @@
 package service;
 
-import dto.ProductCreateRequest;
-import dto.ProductResponseDTO;
 import entity.ProductVariant;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import repository.ProductVariantRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * Các nghiệp vụ dùng chung cho catalog khách hàng và shop owner.
- */
-public interface ProductService {
+@Service
+public class ProductService {
 
-    Page<ProductResponseDTO> getProductList(Long shopId, String keyword, Pageable pageable);
+    @Autowired
+    private ProductVariantRepository productVariantRepository;
 
-    ProductResponseDTO addProduct(Long shopId, Long userId, ProductCreateRequest request);
+    public List searchAndFilterProducts(String keyword, List categoryIds, String priceRange) {
+        BigDecimal minPrice = null;
+        BigDecimal maxPrice = null;
 
-    List<ProductVariant> searchAndFilterProducts(String keyword, List<Long> categoryIds, String priceRange);
+        // Xử lý khoảng giá
+        if ("under50".equals(priceRange)) {
+            maxPrice = new BigDecimal("50000");
+        } else if ("50to100".equals(priceRange)) {
+            minPrice = new BigDecimal("50000");
+            maxPrice = new BigDecimal("100000");
+        } else if ("over100".equals(priceRange)) {
+            minPrice = new BigDecimal("100000");
+        }
 
-    ProductVariant getProductVariantById(Long id);
+        // Xử lý danh mục (Nếu user không tích vào ô nào -> không lọc theo danh mục)
+        boolean filterByCategory = (categoryIds != null && !categoryIds.isEmpty());
+        List safeCategoryIds = filterByCategory ? categoryIds : List.of(-1L);
+
+        String safeKeyword = (keyword == null) ? "" : keyword.trim();
+
+        return productVariantRepository.searchAndFilter(safeKeyword, minPrice, maxPrice, filterByCategory, safeCategoryIds);
+    }
+
+    public ProductVariant getProductVariantById(Long id) {
+        return productVariantRepository.findById(id)
+                .filter(v -> "ACTIVE".equals(v.getStatus()) && "ACTIVE".equals(v.getProduct().getSellingStatus()))
+                .orElse(null);
+    }
 }

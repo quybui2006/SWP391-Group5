@@ -13,7 +13,7 @@ public class HomeService {
     @Autowired
     private ProductVariantRepository productVariantRepository;
 
-    public List<ProductVariant> getActiveProductsForHome() {
+    public List getActiveProductsForHome() {
         // Truyền trạng thái 'ACTIVE' để chỉ lấy hàng đang bán
         return productVariantRepository.findByStatusAndProduct_SellingStatus("ACTIVE", "ACTIVE");
     }

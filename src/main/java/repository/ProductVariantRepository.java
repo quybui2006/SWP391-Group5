@@ -12,11 +12,6 @@ import java.util.List;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
-    boolean existsByShopIdAndSkuIgnoreCase(
-            Long shopId,
-            String sku
-    );
-
     // Tìm các biến thể sản phẩm đang ACTIVE
     // và thuộc về Product cũng đang ACTIVE
     List<ProductVariant> findByStatusAndProduct_SellingStatus(
@@ -25,7 +20,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     );
 
     // Tìm kiếm sản phẩm theo tên (chứa từ khóa) và trạng thái ACTIVE
-    List<ProductVariant> findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatus(
+    List findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatus(
             String keyword,
             String variantStatus,
             String productStatus
@@ -39,10 +34,10 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
             "AND (:filterByCategory = false OR c.id IN :categoryIds)")
-    List<ProductVariant> searchAndFilter(
+    List searchAndFilter(
             @Param("keyword") String keyword,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("filterByCategory") boolean filterByCategory,
-            @Param("categoryIds") List<Long> categoryIds);
+            @Param("categoryIds") List categoryIds);
 }
