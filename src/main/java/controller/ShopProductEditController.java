@@ -1,50 +1,59 @@
 package controller;
 
 import dto.ProductEditView;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import repository.CategoryRepository;
+import service.CurrentUserProvider;
+import service.ProductValidationException;
+import service.ShopProductService;
 
-import java.time.LocalDate;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Màn hình Shop Owner - Edit Product (Sheet2 No.8).
- *
- * Giai đoạn làm giao diện: dữ liệu lấy từ sampleData() để dựng giao diện,
- * chưa truy vấn database. Sau này thay bằng service thật.
  */
 @Controller
 public class ShopProductEditController {
 
+    @Autowired
+    private ShopProductService shopProductService;
+
+    @Autowired
+    private CurrentUserProvider currentUserProvider;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     @GetMapping("/shop/product/{id}/edit")
     public String editProduct(@PathVariable("id") Long id, Model model) {
-        model.addAttribute("form", sampleData(id));
+        model.addAttribute("form",
+                shopProductService.buildEditForm(id, currentUserProvider.requireUserId()));
+        model.addAttribute("errors", Map.of());
         return "shopproductedit";
     }
 
-    private ProductEditView sampleData(Long id) {
-        ProductEditView form = new ProductEditView();
-        form.setId(id);
-        form.setName("Táo Fuji Thượng Hạng");
-        form.setOrigin("Nhật Bản");
-        form.setBatchCode("LOT-2026-001");
-        form.setDescription("Táo Fuji giòn ngọt, nhập khẩu trực tiếp từ Nhật Bản. "
-                + "Phơi nắng tự nhiên, không thuốc bảo quản.");
-        form.setApprovalStatus("APPROVED");
-        form.setSellingStatus("ACTIVE");
-        form.setShopName("FreshFruit Store");
-        form.setReceivedDate(LocalDate.now().minusDays(2));
-        form.setExpiryDate(LocalDate.now().plusDays(25));
-
-        form.setCategories(List.of(
-                new ProductEditView.CategoryOption(1L, "Táo"),
-                new ProductEditView.CategoryOption(2L, "Chuối"),
-                new ProductEditView.CategoryOption(3L, "Cam"),
-                new ProductEditView.CategoryOption(4L, "Xoài"),
-                new ProductEditView.CategoryOption(5L, "Dưa hấu")));
-        form.setCategoryId(1L);
-        return form;
+    @PostMapping("/shop/product/{id}/edit")
+    public String saveProduct(@PathVariable("id") Long id,
+                              @ModelAttribute("form") ProductEditView form,
+                              BindingResult binding,
+                              Model model,
+                              RedirectAttributes redirect) {
+        try {
+            shopProductService.update(id, currentUserProvider.requireUserId(), form);
+            redirect.addFlashAttribute("success", "Cập nhật sản phẩm thành công.");
+            return "redirect:/shop/product/" + id;
+        } catch (ProductValidationException ex) {
+            // Trả lại form, dữ liệu người gõ không mất
+            model.addAttribute("errors", ex.getFieldErrors());
+        }
+        return "shopproductedit";
     }
 }
