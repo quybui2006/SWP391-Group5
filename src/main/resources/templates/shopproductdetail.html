@@ -94,6 +94,9 @@
     <section class="shop-actionbar">
         <div class="container shop-actionbar-inner">
 
+            <!-- Thông báo lưu thành công, hiện 1 lần rồi tự xóa -->
+            <div class="shop-alert" th:if="${success}" th:text="${success}"></div>
+
             <div class="shop-actionbar-info">
                 <span class="shop-label">Đang xem sản phẩm của</span>
                 <strong th:text="${product.shopName}">FreshFruit Store</strong>

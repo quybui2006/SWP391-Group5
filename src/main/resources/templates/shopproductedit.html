@@ -121,6 +121,11 @@
                   th:action="@{/shop/product/{id}/edit(id=${form.id})}"
                   method="post">
 
+                <!-- Báo chung khi có bất kỳ ô nào sai -->
+                <div class="notice notice-err" th:if="${!errors.isEmpty()}">
+                    Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại các ô được đánh dấu đỏ.
+                </div>
+
                 <div class="card-body">
 
                     <div class="form-grid">
@@ -132,8 +137,11 @@
                                    id="name"
                                    th:field="*{name}"
                                    maxlength="200"
+                                   th:classappend="${errors.containsKey('name')} ? 'invalid'"
                                    placeholder="Ví dụ: Táo Fuji Thượng Hạng">
-                            <span class="note">Tối đa 200 ký tự.</span>
+                            <span class="field-err" th:if="${errors.containsKey('name')}"
+                                  th:text="${errors.get('name')}"></span>
+                            <span class="note" th:unless="${errors.containsKey('name')}">Tối đa 200 ký tự.</span>
                         </div>
 
                         <!-- Mã lô: chỉ đọc -->
@@ -153,32 +161,41 @@
                                    id="origin"
                                    th:field="*{origin}"
                                    maxlength="150"
+                                   th:classappend="${errors.containsKey('origin')} ? 'invalid'"
                                    placeholder="Ví dụ: Nhật Bản">
+                            <span class="field-err" th:if="${errors.containsKey('origin')}"
+                                  th:text="${errors.get('origin')}"></span>
                         </div>
 
                         <!-- Danh mục -->
                         <div class="field">
                             <label for="categoryId">Danh mục</label>
                             <select id="categoryId"
-                                    th:field="*{categoryId}">
+                                    th:field="*{categoryId}"
+                                    th:classappend="${errors.containsKey('categoryId')} ? 'invalid'">
                                 <option value="">-- Chọn danh mục --</option>
                                 <option th:each="c : ${form.categories}"
                                         th:value="${c.id}"
                                         th:text="${c.name}"></option>
                             </select>
+                            <span class="field-err" th:if="${errors.containsKey('categoryId')}"
+                                  th:text="${errors.get('categoryId')}"></span>
                         </div>
 
                         <!-- Trạng thái bán -->
                         <div class="field">
                             <label for="sellingStatus">Trạng thái bán</label>
                             <select id="sellingStatus"
-                                    th:field="*{sellingStatus}">
+                                    th:field="*{sellingStatus}"
+                                    th:classappend="${errors.containsKey('sellingStatus')} ? 'invalid'">
                                 <option value="DRAFT">DRAFT - Bản nháp</option>
                                 <option value="ACTIVE">ACTIVE - Đang bán</option>
                                 <option value="PAUSED">PAUSED - Tạm ngừng</option>
                                 <option value="ARCHIVED">ARCHIVED - Đã ẩn</option>
                             </select>
-                            <span class="note">Chỉ được chọn ACTIVE khi sản phẩm đã được duyệt.</span>
+                            <span class="field-err" th:if="${errors.containsKey('sellingStatus')}"
+                                  th:text="${errors.get('sellingStatus')}"></span>
+                            <span class="note" th:unless="${errors.containsKey('sellingStatus')}">Chỉ được chọn ACTIVE khi sản phẩm đã được duyệt.</span>
                         </div>
 
                         <!-- Ngày nhập kho -->
@@ -186,7 +203,10 @@
                             <label for="receivedDate">Ngày nhập kho <span class="req">*</span></label>
                             <input type="date"
                                    id="receivedDate"
-                                   th:field="*{receivedDate}">
+                                   th:field="*{receivedDate}"
+                                   th:classappend="${errors.containsKey('receivedDate')} ? 'invalid'">
+                            <span class="field-err" th:if="${errors.containsKey('receivedDate')}"
+                                  th:text="${errors.get('receivedDate')}"></span>
                         </div>
 
                         <!-- Hạn sử dụng -->
@@ -194,8 +214,11 @@
                             <label for="expiryDate">Hạn sử dụng <span class="req">*</span></label>
                             <input type="date"
                                    id="expiryDate"
-                                   th:field="*{expiryDate}">
-                            <span class="note">Hạn sử dụng phải từ ngày nhập kho trở đi.</span>
+                                   th:field="*{expiryDate}"
+                                   th:classappend="${errors.containsKey('expiryDate')} ? 'invalid'">
+                            <span class="field-err" th:if="${errors.containsKey('expiryDate')}"
+                                  th:text="${errors.get('expiryDate')}"></span>
+                            <span class="note" th:unless="${errors.containsKey('expiryDate')}">Hạn sử dụng phải từ ngày nhập kho trở đi.</span>
                         </div>
 
                         <!-- Mô tả -->
@@ -205,8 +228,11 @@
                                       th:field="*{description}"
                                       rows="6"
                                       maxlength="2000"
+                                      th:classappend="${errors.containsKey('description')} ? 'invalid'"
                                       placeholder="Mô tả sản phẩm, nguồn gốc, đặc điểm nổi bật..."></textarea>
-                            <span class="note">Tối đa 2000 ký tự.</span>
+                            <span class="field-err" th:if="${errors.containsKey('description')}"
+                                  th:text="${errors.get('description')}"></span>
+                            <span class="note" th:unless="${errors.containsKey('description')}">Tối đa 2000 ký tự.</span>
                         </div>
 
                     </div>
