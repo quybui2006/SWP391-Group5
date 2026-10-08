@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán - FreshFruit</title>
+
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        .page-container { max-width: 1100px; margin: 40px auto; padding: 0 20px; min-height: 50vh; }
+        .page-title { font-size: 1.8rem; margin-bottom: 30px; }
+
+        .checkout-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: start; }
+        @media (max-width: 768px) { .checkout-grid { grid-template-columns: 1fr; } }
+
+        .box-section { background: #fff; padding: 30px; border-radius: 12px; border: 1px solid #eaeaea; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .box-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eaeaea; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #444; }
+        .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 1rem; box-sizing: border-box; transition: 0.2s; }
+        .form-control:focus { outline: none; border-color: #2e7d32; }
+
+        .order-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .order-item-info { display: flex; align-items: center; gap: 15px; }
+        .item-img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; }
+
+        .summary-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 0.95rem; color: #666; }
+        .summary-total { display: flex; justify-content: space-between; padding-top: 15px; margin-top: 15px; border-top: 2px dashed #eaeaea; font-size: 1.2rem; font-weight: 700; color: #111; }
+        .summary-total .total-price { color: #2e7d32; font-size: 1.5rem; }
+
+        .payment-methods label { display: flex; align-items: center; gap: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .payment-methods label:hover { border-color: #2e7d32; background: #f9f9f9; }
+        .payment-methods input[type="radio"] { accent-color: #2e7d32; width: 18px; height: 18px; }
+    </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+        </a>
+        <nav class="main-nav">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a href="#categories">Danh mục</a>
+            <a th:href="@{/#about}">
+                Về chúng tôi
+            </a>
+        </nav>
+        <div class="header-actions">
+            <a class="icon-btn cart-btn" th:href="@{/cart}">🛒</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="page-container">
+        <h1 class="page-title">💳 Tiến hành thanh toán</h1>
+
+        <form th:action="@{/order/submit}" method="POST" onsubmit="event.preventDefault(); alert('Thông báo: Hệ thống đang nâng cấp. Hiện tại vẫn chưa thể đặt hàng, vui lòng quay lại sau!');" class="checkout-grid">
+
+            <!-- CỘT TRÁI: THÔNG TIN GIAO HÀNG -->
+            <div class="left-col">
+                <div class="box-section mb-4" style="margin-bottom: 25px;">
+                    <h3 class="box-title">Thông tin nhận hàng</h3>
+                    <div class="form-group">
+                        <label>Họ và tên</label>
+                        <input type="text" class="form-control" name="customerName" required placeholder="Nhập họ tên người nhận">
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input type="tel" class="form-control" name="customerPhone" required placeholder="Nhập số điện thoại">
+                    </div>
+                    <div class="form-group">
+                        <label>Địa chỉ giao hàng</label>
+                        <textarea class="form-control" name="shippingAddress" rows="3" required placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                    </div>
+                </div>
+
+                <div class="box-section payment-methods">
+                    <h3 class="box-title">Phương thức thanh toán</h3>
+                    <label>
+                        <input type="radio" name="paymentMethod" value="COD" checked>
+                        Thanh toán khi nhận hàng (COD)
+                    </label>
+                    <label>
+                        <input type="radio" name="paymentMethod" value="VNPAY">
+                        Thanh toán trực tuyến (VNPAY)
+                    </label>
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG -->
+            <div class="right-col box-section">
+                <h3 class="box-title">Tóm tắt đơn hàng</h3>
+
+                <!-- Vòng lặp sản phẩm truyền từ CheckoutController -->
+                <div style="margin-bottom: 25px;">
+                    <div class="order-item" th:each="item : ${checkoutItems}">
+                        <div class="order-item-info">
+                            <img th:src="${item.imageUrl}" class="item-img" alt="Product">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem;" th:text="${item.productName}">Tên SP</div>
+                                <div style="color: #666; font-size: 0.85rem;" th:text="'Số lượng: ' + ${item.quantity}">SL: 1</div>
+                            </div>
+                        </div>
+                        <div style="font-weight: 600;" th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</div>
+                    </div>
+                </div>
+
+                <div class="summary-row">
+                    <span>Tổng tiền hàng:</span>
+                    <span th:text="${#numbers.formatDecimal(totalItemsPrice, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
+                </div>
+                <div class="summary-row">
+                    <span>Phí vận chuyển:</span>
+                    <span th:text="${#numbers.formatDecimal(shippingFee, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
+                </div>
+
+                <div class="summary-total">
+                    <span>Tổng cộng:</span>
+                    <span class="total-price" th:text="${#numbers.formatDecimal(totalItemsPrice + shippingFee, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
+                </div>
+
+                <button type="submit" class="primary-btn" style="width: 100%; justify-content: center; margin-top: 25px; padding: 15px;">
+                    Xác nhận đặt hàng <span>✓</span>
+                </button>
+            </div>
+        </form>
+
+    </section>
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+            </a>
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
+        </div>
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+    </div>
+</footer>
+
+</body>
+</html>

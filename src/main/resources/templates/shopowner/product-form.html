@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm sản phẩm | FreshFruit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+            <span class="brand-mark">F</span>
+            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Điều hướng chính">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a class="active" th:href="@{/shop/products}">Quản lý shop</a>
+        </nav>
+        <div class="header-actions">
+            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
+            <a class="login-btn" th:href="@{/shop/products}">Shop owner</a>
+        </div>
+    </div>
+</header>
+
+<main class="page-shell form-shell">
+    <section class="page-heading compact">
+        <div>
+            <p class="eyebrow">SẢN PHẨM MỚI</p>
+            <h1>Thêm sản phẩm</h1>
+            <p>Điền thông tin bên dưới. Sản phẩm mới sẽ được lưu ở trạng thái bản nháp.</p>
+        </div>
+    </section>
+
+    <p class="alert alert-error" th:if="${serviceError}" th:text="${serviceError}">Lỗi hệ thống</p>
+
+    <form class="product-form" method="post" enctype="multipart/form-data"
+          th:action="@{/shop/products/add}" th:object="${productCreateRequest}">
+        <section class="form-card">
+            <h2>Thông tin sản phẩm</h2>
+            <div class="form-grid">
+                <label class="field field-wide">
+                    <span>Tên sản phẩm <b>*</b></span>
+                    <input type="text" th:field="*{name}" maxlength="100" placeholder="Ví dụ: Cam sành Vĩnh Long" required>
+                    <em th:errors="*{name}"></em>
+                </label>
+                <label class="field">
+                    <span>Danh mục <b>*</b></span>
+                    <select th:field="*{categoryId}" required>
+                        <option value="">Chọn danh mục</option>
+                        <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"></option>
+                    </select>
+                    <em th:errors="*{categoryId}"></em>
+                </label>
+                <label class="field">
+                    <span>Mã lô <b>*</b></span>
+                    <input type="text" th:field="*{batchCode}" maxlength="60" placeholder="Ví dụ: CAM-20261007" required>
+                    <em th:errors="*{batchCode}"></em>
+                </label>
+                <label class="field">
+                    <span>Ngày nhập <b>*</b></span>
+                    <input type="date" th:field="*{receivedDate}" required>
+                    <em th:errors="*{receivedDate}"></em>
+                </label>
+                <label class="field">
+                    <span>Ngày hết hạn <b>*</b></span>
+                    <input type="date" th:field="*{expiryDate}" required>
+                    <em th:errors="*{expiryDate}"></em>
+                </label>
+                <label class="field">
+                    <span>Xuất xứ</span>
+                    <input type="text" th:field="*{origin}" maxlength="150" placeholder="Ví dụ: Vĩnh Long">
+                    <em th:errors="*{origin}"></em>
+                </label>
+                <label class="field field-wide">
+                    <span>Mô tả</span>
+                    <textarea th:field="*{description}" rows="4" placeholder="Mô tả ngắn về chất lượng, đặc điểm sản phẩm..."></textarea>
+                </label>
+            </div>
+        </section>
+
+        <section class="form-card">
+            <h2>Biến thể và tồn kho</h2>
+            <div class="form-grid">
+                <label class="field">
+                    <span>Tên biến thể <b>*</b></span>
+                    <input type="text" th:field="*{variantName}" maxlength="150" placeholder="Ví dụ: 1 kg" required>
+                    <em th:errors="*{variantName}"></em>
+                </label>
+                <label class="field">
+                    <span>SKU <b>*</b></span>
+                    <input type="text" th:field="*{sku}" maxlength="80" placeholder="Ví dụ: CAM-SANH-1KG" required>
+                    <em th:errors="*{sku}"></em>
+                </label>
+                <label class="field">
+                    <span>Đơn vị <b>*</b></span>
+                    <select th:field="*{unitId}" required>
+                        <option value="">Chọn đơn vị</option>
+                        <option th:each="unit : ${units}" th:value="${unit.id}" th:text="${unit.name}"></option>
+                    </select>
+                    <em th:errors="*{unitId}"></em>
+                </label>
+                <label class="field">
+                    <span>Giá bán (VNĐ) <b>*</b></span>
+                    <input type="number" th:field="*{price}" min="1000" step="1000" placeholder="50000" required>
+                    <em th:errors="*{price}"></em>
+                </label>
+                <label class="field">
+                    <span>Số lượng nhập <b>*</b></span>
+                    <input type="number" th:field="*{stockQuantity}" min="1" step="1" placeholder="100" required>
+                    <em th:errors="*{stockQuantity}"></em>
+                </label>
+                <label class="field">
+                    <span>Ngưỡng cảnh báo (%) <b>*</b></span>
+                    <input type="number" th:field="*{lowStockThresholdPct}" min="0" max="100" step="0.01" placeholder="10" required>
+                    <em th:errors="*{lowStockThresholdPct}"></em>
+                </label>
+            </div>
+        </section>
+
+        <section class="form-card">
+            <h2>Hình ảnh</h2>
+            <div class="upload-row">
+                <label class="upload-box" for="imageFile">
+                    <input id="imageFile" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" required>
+                    <span>Chọn ảnh JPG hoặc PNG</span>
+                    <small>Dung lượng tối đa 5 MB</small>
+                </label>
+                <img id="imagePreview" class="image-preview" alt="Xem trước ảnh sản phẩm" hidden>
+            </div>
+            <em class="field-error" th:errors="*{imageFile}"></em>
+        </section>
+
+        <div class="form-actions">
+            <a class="button button-ghost" th:href="@{/shop/products}">Hủy</a>
+            <button class="button button-primary" type="submit">Lưu sản phẩm</button>
+        </div>
+    </form>
+</main>
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+            </a>
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
+        </div>
+        <div class="footer-links">
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
+        </div>
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+    </div>
+</footer>
+<script th:src="@{/js/shop-product.js}"></script>
+</body>
+</html>
