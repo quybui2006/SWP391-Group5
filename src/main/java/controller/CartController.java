@@ -21,6 +21,13 @@ public class CartController {
         return "cart";
     }
 
+    @GetMapping("/cart/count")
+    @ResponseBody
+    public int count(HttpSession session) {
+        Long userId = customerId(session);
+        return userId == null ? 0 : cart.itemCount(userId);
+    }
+
     @PostMapping("/cart/items")
     @ResponseBody
     public ResponseEntity<?> add(@RequestParam Long variantId, @RequestParam(defaultValue = "1") int quantity, HttpSession session) {

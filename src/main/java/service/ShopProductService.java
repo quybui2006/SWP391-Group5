@@ -116,6 +116,41 @@ public class ShopProductService {
         return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
     }
 
+    // Tan PTH integration: expose the same persisted variant/inventory rows used by product detail.
+    public List<Map<String, Object>> searchShopVariants(Long ownerUserId, String keyword) {
+        Long shopId = requireShopId(ownerUserId);
+        String term = keyword == null ? "" : keyword.trim();
+        String like = "%" + term.toLowerCase() + "%";
+        return jdbc.queryForList("""
+                SELECT pv.id AS variant_id, p.id AS product_id, p.name AS product_name,
+                    pv.name AS variant_name, pv.sku, pv.specification, pv.price,
+                    u.name AS unit_name, COALESCE(vi.quantity_on_hand, 0) AS stock_quantity,
+                    COALESCE(vi.available_quantity, 0) AS available_quantity,
+                    pv.status AS variant_status, p.selling_status AS product_status
+                FROM product_variants pv
+                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
+                JOIN units u ON u.id = pv.base_unit_id
+                LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
+                WHERE pv.shop_id = ?
+                  AND (? = '' OR LOWER(p.name) LIKE ? OR LOWER(pv.name) LIKE ? OR LOWER(pv.sku) LIKE ?)
+                ORDER BY p.name, pv.name, pv.id
+                """, shopId, term, like, like, like);
+    }
+
+    public Map<String, Long> shopVariantSummary(Long ownerUserId) {
+        Long shopId = requireShopId(ownerUserId);
+        return jdbc.queryForMap("""
+                SELECT COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN pv.status = 'ACTIVE' AND p.selling_status = 'ACTIVE' THEN 1 ELSE 0 END), 0) AS active,
+                    COALESCE(SUM(CASE WHEN pv.status = 'DRAFT' THEN 1 ELSE 0 END), 0) AS draft,
+                    COALESCE(SUM(CASE WHEN pv.status IN ('PAUSED', 'ARCHIVED') OR p.selling_status IN ('PAUSED', 'ARCHIVED') THEN 1 ELSE 0 END), 0) AS paused
+                FROM product_variants pv
+                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
+                WHERE pv.shop_id = ?
+                """, shopId).entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey, entry -> ((Number) entry.getValue()).longValue()));
+    }
+
     @Transactional
     public void createProduct(Long ownerUserId, ProductCreateRequest form) {
         Map<String, String> errors = new LinkedHashMap<>();

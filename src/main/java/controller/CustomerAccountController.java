@@ -20,21 +20,20 @@ public class CustomerAccountController {
     public CustomerAccountController(AddressBookService service, ProvinceRepository provinces) {
         this.service = service; this.provinces = provinces;
     }
+    // Tan PTH integration: keep address ownership aligned with checkout's authenticated userId.
     private Long current(HttpSession session) {
-        var customers = service.ensureCustomers();
-        var id = (Long) session.getAttribute("addressCustomerId");
-        if (id == null || customers.stream().noneMatch(u -> u.getId().equals(id))) {
-            session.setAttribute("addressCustomerId", customers.get(0).getId());
-        }
-        return (Long) session.getAttribute("addressCustomerId");
+        if (!"CUSTOMER".equals(session.getAttribute("role"))) return null;
+        Object id = session.getAttribute("userId");
+        return id instanceof Number number ? number.longValue() : null;
     }
     @GetMapping
     public String addressBook(Model model, HttpSession session) {
         Long id = current(session);
+        if (id == null) return "redirect:/login?continueTo=/customer/account/address";
         if (session.getAttribute("addressToken") == null) session.setAttribute("addressToken", UUID.randomUUID().toString());
-        var customers = service.customers();
-        model.addAttribute("customers", customers);
-        model.addAttribute("customer", customers.stream().filter(u -> u.getId().equals(id)).findFirst().orElseThrow());
+        var customer = service.customers().stream().filter(u -> u.getId().equals(id)).findFirst()
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN));
+        model.addAttribute("customer", customer);
         model.addAttribute("addresses", service.list(id));
         model.addAttribute("provinceNames", provinces.findAll().stream().collect(Collectors.toMap(p -> p.getCode(), p -> p.getName())));
         model.addAttribute("token", session.getAttribute("addressToken"));
@@ -44,14 +43,11 @@ public class CustomerAccountController {
     public String change(@PathVariable String action, @RequestParam String token,
                          @RequestParam(required = false) Long id, @ModelAttribute AddressForm form,
                          HttpSession session, RedirectAttributes redirect) {
+        if (current(session) == null) return "redirect:/login?continueTo=/customer/account/address";
         if (!token.equals(session.getAttribute("addressToken"))) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         try {
             Long userId = current(session);
             switch (action) {
-                case "customer" -> {
-                    if (service.customers().stream().noneMatch(u -> u.getId().equals(id))) throw new IllegalArgumentException("Customer không hợp lệ.");
-                    session.setAttribute("addressCustomerId", id);
-                }
                 case "save" -> service.save(userId, id, form);
                 case "default" -> service.setDefault(userId, id);
                 case "delete" -> service.delete(userId, id);

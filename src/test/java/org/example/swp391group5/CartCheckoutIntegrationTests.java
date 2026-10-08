@@ -92,6 +92,67 @@ class CartCheckoutIntegrationTests {
     }
 
     @Test
+    void productScreensPersistCartItemsAndReadTheDatabaseCartCount() throws Exception {
+        long user = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", user);
+        session.setAttribute("role", "CUSTOMER");
+
+        mvc.perform(post("/cart/items").session(session)
+                        .param("variantId", String.valueOf(variant)).param("quantity", "3"))
+                .andExpect(status().isOk()).andExpect(content().string("3"));
+        mvc.perform(get("/cart/count").session(session))
+                .andExpect(status().isOk()).andExpect(content().string("3"));
+        mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/js/cart-integration.js")));
+        mvc.perform(get("/search")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/js/cart-integration.js")));
+    }
+
+    @Test
+    void addressBookUsesTheAuthenticatedCustomerAndLinksBackToCart() throws Exception {
+        long customerId = seed();
+        jdbc.update("INSERT INTO roles(code,name) VALUES ('CUSTOMER','Customer')");
+        long roleId = jdbc.queryForObject("SELECT id FROM roles WHERE code='CUSTOMER'", Long.class);
+        jdbc.update("INSERT INTO user_roles(user_id,role_id) VALUES (?,?)", customerId, roleId);
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", customerId);
+        session.setAttribute("role", "CUSTOMER");
+
+        mvc.perform(get("/customer/account/address").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("checkout@test.example")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/cart\"")));
+        mvc.perform(get("/customer/account/address"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?continueTo=/customer/account/address"));
+    }
+
+    @Test
+    void checkoutAllowsAFirstOrderWithANewAddress() throws Exception {
+        long user = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        cart.add(user, variant, 1);
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", user);
+        session.setAttribute("role", "CUSTOMER");
+
+        mvc.perform(post("/checkout").session(session).param("selectedVariantIds", String.valueOf(variant)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"recipientName\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Nhập địa chỉ giao hàng")));
+        mvc.perform(post("/order/submit").session(session)
+                        .param("selectedVariantIds", String.valueOf(variant)).param("addressId", "0")
+                        .param("recipientName", "New recipient").param("recipientPhone", "0912345678")
+                        .param("provinceCode", "P-CHECKOUT").param("wardName", "Ward 2")
+                        .param("addressDetail", "2 Test St"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/cart"));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class));
+        assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM user_addresses WHERE user_id=?", Integer.class, user));
+    }
+
+    @Test
     void checkoutSplitsMultipleShopsAndSavesNewDeliveryAddress() {
         long user = seed();
         long owner = seedOwnerForSecondShop();
@@ -135,6 +196,7 @@ class CartCheckoutIntegrationTests {
     @Test
     void shopOwnerProductScreensUseDashboardNavigationAndRealRoutes() throws Exception {
         long owner = seed();
+        long productId = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-CHECKOUT'", Long.class);
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("userId", owner);
         session.setAttribute("role", "SHOP_OWNER");
@@ -153,8 +215,26 @@ class CartCheckoutIntegrationTests {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"name\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"sku\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/shop/products/add\"")));
+        mvc.perform(get("/shop/product/" + productId).session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/shop/products\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/shop/product/" + productId + "/edit")));
+        mvc.perform(get("/shop/product/" + productId + "/edit").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/shop/product/" + productId + "/edit\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/shop/products\"")));
         mvc.perform(get("/shopowner/product-variants").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SKU-CHECKOUT")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/shopowner/product-variants\"")));
+        mvc.perform(get("/shopowner/product-variants").session(session).param("keyword", "SKU-CHECKOUT"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SKU-CHECKOUT")));
+        mvc.perform(get("/shopowner/product-variants").session(session).param("keyword", "no-such-sku"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Không tìm thấy biến thể phù hợp")));
+        mvc.perform(get("/shopowner/product-variants"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/shop/products"));
+                .andExpect(redirectedUrl("/login"));
     }
 }

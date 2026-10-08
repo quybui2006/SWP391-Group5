@@ -9,7 +9,8 @@
         <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/shopowner/home}"><span>⌂</span> Dashboard</a>
         <span class="nav-label">QUẢN LÝ CỬA HÀNG</span>
         <a th:classappend="${activePage == 'products'} ? ' active' : ''" th:href="@{/shop/products}"><span>▦</span> Products</a>
-        <a th:href="@{/shopowner/product-variants}"><span>▤</span> Product Variants</a>
+        <!-- Tan PTH integration: restore access to the DB-backed variants screen. -->
+        <a th:classappend="${activePage == 'variants'} ? ' active' : ''" th:href="@{/shopowner/product-variants}"><span>▤</span> Product Variants</a>
         <a href="#"><span>◌</span> Đơn hàng <b class="nav-count orange">4</b></a>
         <a href="#"><span>♧</span> Kho hàng</a>
         <span class="nav-label">KHÁC</span>

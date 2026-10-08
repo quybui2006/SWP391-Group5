@@ -32,7 +32,7 @@
     <div class="container header-inner">
 
         <a class="brand"
-           th:href="@{/}">
+           th:href="@{/shopowner/home}">
 
             <span class="brand-mark">F</span>
 
@@ -45,9 +45,9 @@
 
         <nav class="main-nav">
 
-            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/shopowner/home}">Dashboard</a>
 
-            <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/shop/products}">Sản phẩm</a>
 
             <a th:href="@{/#categories}">Danh mục</a>
 
@@ -62,8 +62,9 @@
                title="Tìm kiếm"
                aria-label="Tìm kiếm">⌕</a>
 
+            <!-- Tan PTH integration: take shop owners to their existing dashboard. -->
             <a class="login-btn"
-               th:href="@{/}">Quản lý cửa hàng</a>
+               th:href="@{/shopowner/home}">Quản lý cửa hàng</a>
 
         </div>
 
@@ -82,10 +83,10 @@
             <nav class="breadcrumb"
                  aria-label="breadcrumb">
 
-                <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/shopowner/home}">Dashboard</a>
                 <span class="sep">/</span>
 
-                <a th:href="@{/search}">Sản phẩm</a>
+                <a th:href="@{/shop/products}">Sản phẩm</a>
                 <span class="sep">/</span>
 
                 <span th:text="${form.name}">Tên sản phẩm</span>
@@ -245,7 +246,7 @@
                             class="btn btn-primary">Lưu thay đổi</button>
 
                     <a class="btn btn-secondary"
-                       th:href="@{/search}">Huỷ</a>
+                       th:href="@{/shop/products}">Huỷ</a>
 
                     <a class="btn btn-ghost"
                        th:href="@{/shop/product/{id}(id=${form.id})}">Xem trang sản phẩm</a>
