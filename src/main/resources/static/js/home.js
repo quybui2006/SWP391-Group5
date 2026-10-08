@@ -2,7 +2,7 @@
    FRESHFRUIT HOME
 ========================================================= */
 
-let cartCount = Number(
+window.cartCount = Number(
     localStorage.getItem("freshfruit-cart-count") || 0
 );
 
@@ -32,7 +32,7 @@ function updateCartCount() {
         return;
     }
 
-    cartBadge.textContent = cartCount;
+    cartBadge.textContent = window.cartCount;
 
 }
 
@@ -221,51 +221,8 @@ function addToCart(event, button) {
     }
 
 
-    const variantId =
-        button.getAttribute("data-variant-id");
-
-
-    if (!variantId) {
-        return;
-    }
-
-
-    /*
-     * Hiện tại frontend Home chỉ quản lý cart badge
-     * bằng localStorage.
-     *
-     * Khi backend Cart hoàn thiện,
-     * phần này có thể thay bằng API POST /cart.
-     */
-    cartCount += 1;
-
-
-    localStorage.setItem(
-        "freshfruit-cart-count",
-        cartCount
-    );
-
-
-    updateCartCount();
-
-
-    /*
-     * Button feedback
-     */
-    const oldText = button.innerHTML;
-
-    button.innerHTML = "✓";
-
-    button.classList.add("added");
-
-
-    setTimeout(function () {
-
-        button.innerHTML = oldText;
-
-        button.classList.remove("added");
-
-    }, 900);
+    // Tan PTH integration: persist the item through the shared cart endpoint.
+    if (window.addProductToCart) window.addProductToCart(button, 1);
 
 }
 

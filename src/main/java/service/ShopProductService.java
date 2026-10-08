@@ -2,6 +2,16 @@ package service;
 
 import dto.ProductDetailView;
 import dto.ProductEditView;
+import dto.ProductCreateRequest;
+import dto.ShopProductListItem;
+import entity.Unit;
+import entity.Shop;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +26,8 @@ import repository.ShopProductRepository;
 import repository.ShopRepository;
 import repository.VariantInventoryRepository;
 import repository.CategoryRepository;
+import repository.ProductVariantRepository;
+import repository.UnitRepository;
 import entity.Category;
 
 import java.math.BigDecimal;
@@ -57,6 +69,10 @@ public class ShopProductService {
     @Autowired private ProductCategoryLinkRepository categoryLinkRepository;
     @Autowired private ShopRepository shopRepository;
     @Autowired private CategoryRepository categoryRepository;
+    @Autowired private ProductVariantRepository variantRepository;
+    @Autowired private UnitRepository unitRepository;
+    @Autowired private ProductImageStorage imageStorage;
+    @Autowired private JdbcTemplate jdbc;
 
     // ======================== ĐỌC DỮ LIỆU ========================
 
@@ -70,6 +86,149 @@ public class ShopProductService {
         return productRepository.findByShopId(shopId).stream()
                 .map(this::toDetailView)
                 .toList();
+    }
+
+    public Page<ShopProductListItem> searchShopProducts(Long ownerUserId, String keyword, int page, int size) {
+        Long shopId = requireShopId(ownerUserId);
+        String term = keyword == null ? "" : keyword.trim();
+        String like = "%" + term.toLowerCase() + "%";
+        String condition = "p.shop_id=? AND (?='' OR LOWER(p.name) LIKE ? OR EXISTS "
+                + "(SELECT 1 FROM product_variants pv WHERE pv.product_id=p.id AND LOWER(pv.sku) LIKE ?))";
+        Long total = jdbc.queryForObject("SELECT COUNT(*) FROM products p WHERE " + condition,
+                Long.class, shopId, term, like, like);
+        List<ShopProductListItem> rows = jdbc.query("""
+                SELECT p.id, p.name, p.selling_status AS status, p.created_at,
+                    (SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image_url,
+                    (SELECT pv.sku FROM product_variants pv WHERE pv.product_id=p.id ORDER BY pv.id LIMIT 1) AS sku,
+                    (SELECT pv.price FROM product_variants pv WHERE pv.product_id=p.id ORDER BY pv.id LIMIT 1) AS price,
+                    (SELECT vi.quantity_on_hand FROM product_variants pv JOIN variant_inventory vi ON vi.variant_id=pv.id
+                        WHERE pv.product_id=p.id ORDER BY pv.id LIMIT 1) AS stock_quantity,
+                    (SELECT c.name FROM product_categories pc JOIN categories c ON c.id=pc.category_id
+                        WHERE pc.product_id=p.id ORDER BY c.name LIMIT 1) AS category_name
+                FROM products p WHERE %s
+                ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?
+                """.formatted(condition), (rs, row) -> new ShopProductListItem(
+                rs.getLong("id"), rs.getString("name"), rs.getString("image_url"),
+                rs.getString("sku"), rs.getString("category_name"), rs.getBigDecimal("price"),
+                (Integer) rs.getObject("stock_quantity"), rs.getString("status"),
+                rs.getTimestamp("created_at").toLocalDateTime()),
+                shopId, term, like, like, size, (long) page * size);
+        return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
+    }
+
+    // Tan PTH integration: expose the same persisted variant/inventory rows used by product detail.
+    public List<Map<String, Object>> searchShopVariants(Long ownerUserId, String keyword) {
+        Long shopId = requireShopId(ownerUserId);
+        String term = keyword == null ? "" : keyword.trim();
+        String like = "%" + term.toLowerCase() + "%";
+        return jdbc.queryForList("""
+                SELECT pv.id AS variant_id, p.id AS product_id, p.name AS product_name,
+                    pv.name AS variant_name, pv.sku, pv.specification, pv.price,
+                    u.name AS unit_name, COALESCE(vi.quantity_on_hand, 0) AS stock_quantity,
+                    COALESCE(vi.available_quantity, 0) AS available_quantity,
+                    pv.status AS variant_status, p.selling_status AS product_status
+                FROM product_variants pv
+                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
+                JOIN units u ON u.id = pv.base_unit_id
+                LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
+                WHERE pv.shop_id = ?
+                  AND (? = '' OR LOWER(p.name) LIKE ? OR LOWER(pv.name) LIKE ? OR LOWER(pv.sku) LIKE ?)
+                ORDER BY p.name, pv.name, pv.id
+                """, shopId, term, like, like, like);
+    }
+
+    public Map<String, Long> shopVariantSummary(Long ownerUserId) {
+        Long shopId = requireShopId(ownerUserId);
+        return jdbc.queryForMap("""
+                SELECT COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN pv.status = 'ACTIVE' AND p.selling_status = 'ACTIVE' THEN 1 ELSE 0 END), 0) AS active,
+                    COALESCE(SUM(CASE WHEN pv.status = 'DRAFT' THEN 1 ELSE 0 END), 0) AS draft,
+                    COALESCE(SUM(CASE WHEN pv.status IN ('PAUSED', 'ARCHIVED') OR p.selling_status IN ('PAUSED', 'ARCHIVED') THEN 1 ELSE 0 END), 0) AS paused
+                FROM product_variants pv
+                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
+                WHERE pv.shop_id = ?
+                """, shopId).entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey, entry -> ((Number) entry.getValue()).longValue()));
+    }
+
+    @Transactional
+    public void createProduct(Long ownerUserId, ProductCreateRequest form) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        if (form.getReceivedDate() != null && form.getExpiryDate() != null
+                && form.getExpiryDate().isBefore(form.getReceivedDate())) {
+            errors.put("expiryDate", "Hạn sử dụng phải từ ngày nhập trở đi.");
+        }
+        if (form.getImageFile() == null || form.getImageFile().isEmpty()) {
+            errors.put("imageFile", "Vui lòng chọn ảnh sản phẩm.");
+        }
+        if (!errors.isEmpty()) throw new ProductValidationException(errors);
+
+        Shop shop = shopRepository.findByOwnerId(ownerUserId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.FORBIDDEN, "Tài khoản chưa có cửa hàng."));
+        Category category = categoryRepository.findById(form.getCategoryId())
+                .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+                .orElseThrow(() -> new ProductValidationException("categoryId", "Danh mục không tồn tại hoặc đã ngừng hoạt động."));
+        Unit unit = unitRepository.findById(form.getUnitId())
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                .orElseThrow(() -> new ProductValidationException("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động."));
+
+        String batchCode = form.getBatchCode().trim();
+        String sku = form.getSku().trim();
+        if (productRepository.existsByShopIdAndBatchCode(shop.getId(), batchCode)) {
+            throw new ProductValidationException("batchCode", "Mã lô này đã được dùng trong cửa hàng.");
+        }
+        if (variantRepository.existsByShopIdAndSku(shop.getId(), sku)) {
+            throw new ProductValidationException("sku", "SKU này đã được dùng trong cửa hàng.");
+        }
+
+        String imageUrl = imageStorage.store(form.getImageFile());
+        try {
+            Product product = new Product();
+            product.setShopId(shop.getId());
+            product.setName(form.getName().trim());
+            product.setDescription(blankToNull(form.getDescription()));
+            product.setOrigin(blankToNull(form.getOrigin()));
+            product.setBatchCode(batchCode);
+            product.setReceivedDate(form.getReceivedDate());
+            product.setExpiryDate(form.getExpiryDate());
+            product.setApprovalStatus("DRAFT");
+            product.setSellingStatus("DRAFT");
+            product = productRepository.saveAndFlush(product);
+
+            categoryLinkRepository.replaceCategory(product.getId(), category.getId());
+
+            ProductVariant variant = new ProductVariant();
+            variant.setProduct(product);
+            variant.setShopId(shop.getId());
+            variant.setSku(sku);
+            variant.setName(form.getVariantName().trim());
+            variant.setBaseUnit(unit);
+            variant.setPrice(form.getPrice());
+            variant.setStatus("DRAFT");
+            variant.setImageUrl(imageUrl);
+            variant.setMinOrderQuantity(1);
+            variant = variantRepository.saveAndFlush(variant);
+
+            VariantInventory inventory = new VariantInventory();
+            inventory.setVariantId(variant.getId());
+            inventory.setInitialQuantity(form.getStockQuantity());
+            inventory.setQuantityOnHand(form.getStockQuantity());
+            inventory.setReservedQuantity(0);
+            inventory.setLowStockThresholdPct(form.getLowStockThresholdPct());
+            inventory.setStatus("ACTIVE");
+            inventory.setCreatedBy(ownerUserId);
+            inventoryRepository.save(inventory);
+
+            ProductImage image = new ProductImage();
+            image.setProductId(product.getId());
+            image.setImageUrl(imageUrl);
+            image.setSortOrder(0);
+            imageRepository.save(image);
+        } catch (RuntimeException ex) {
+            imageStorage.delete(imageUrl);
+            throw ex;
+        }
     }
 
     public ProductEditView buildEditForm(Long productId, Long ownerUserId) {
