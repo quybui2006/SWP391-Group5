@@ -22,9 +22,6 @@ public class User {
 
     @Column(name = "password_hash")
     private String passwordHash;
-
-    @Column(nullable=false)
-    private String status="ACTIVE";
     
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;
