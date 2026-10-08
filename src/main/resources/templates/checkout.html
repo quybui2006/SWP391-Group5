@@ -104,17 +104,22 @@
             <div class="right-col box-section">
                 <h3 class="box-title">Tóm tắt đơn hàng</h3>
 
-                <!-- Vòng lặp sản phẩm truyền từ CheckoutController -->
+                <!-- Vòng lặp sản phẩm truyền từ CheckoutController (ĐÃ SỬA .variant.) -->
                 <div style="margin-bottom: 25px;">
                     <div class="order-item" th:each="item : ${checkoutItems}">
+
+                        <!-- Input ẩn để lưu dữ liệu khi bấm submit đặt hàng sau này -->
+                        <input type="hidden" name="variantIds" th:value="${item.variant.id}" />
+                        <input type="hidden" name="quantities" th:value="${item.quantity}" />
+
                         <div class="order-item-info">
-                            <img th:src="${item.imageUrl}" class="item-img" alt="Product">
+                            <img th:src="${item.variant.imageUrl}" class="item-img" alt="Product">
                             <div>
-                                <div style="font-weight: 600; font-size: 0.95rem;" th:text="${item.productName}">Tên SP</div>
+                                <div style="font-weight: 600; font-size: 0.95rem;" th:text="${item.variant.product.name}">Tên SP</div>
                                 <div style="color: #666; font-size: 0.85rem;" th:text="'Số lượng: ' + ${item.quantity}">SL: 1</div>
                             </div>
                         </div>
-                        <div style="font-weight: 600;" th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</div>
+                        <div style="font-weight: 600;" th:text="${#numbers.formatDecimal(item.variant.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</div>
                     </div>
                 </div>
 
@@ -129,7 +134,9 @@
 
                 <div class="summary-total">
                     <span>Tổng cộng:</span>
-                    <span class="total-price" th:text="${#numbers.formatDecimal(totalItemsPrice + shippingFee, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
+                    <input type="hidden" name="totalAmount" th:value="${totalPayment}" />
+                    <!-- Sử dụng biến totalPayment bạn đã tính sẵn ở Controller -->
+                    <span class="total-price" th:text="${#numbers.formatDecimal(totalPayment, 0, 'COMMA', 0, 'POINT')} + '₫'">0₫</span>
                 </div>
 
                 <button type="submit" class="primary-btn" style="width: 100%; justify-content: center; margin-top: 25px; padding: 15px;">
