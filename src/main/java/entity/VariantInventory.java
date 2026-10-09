@@ -49,6 +49,9 @@ public class VariantInventory {
     @Column(name = "status", nullable = false)
     private String status = "ACTIVE";
 
+    @Column(name = "created_by", nullable = false)
+    private Long createdBy;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -68,6 +71,8 @@ public class VariantInventory {
     public void setLowStockThresholdPct(BigDecimal lowStockThresholdPct) { this.lowStockThresholdPct = lowStockThresholdPct; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Long getCreatedBy() { return createdBy; }
+    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
