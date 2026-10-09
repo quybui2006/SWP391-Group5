@@ -151,6 +151,41 @@ public class ShopProductService {
                 Map.Entry::getKey, entry -> ((Number) entry.getValue()).longValue()));
     }
 
+    public Map<String, Object> shopDashboard(Long ownerUserId) {
+        Shop shop = shopRepository.findByOwnerId(ownerUserId).orElse(null);
+        if (shop == null) return Map.of("name", "Chưa đăng ký cửa hàng", "approvalStatus", "NOT_REGISTERED", "operatingStatus", "CLOSED");
+        return Map.of("name", shop.getName(), "approvalStatus", shop.getApprovalStatus(), "operatingStatus", shop.getOperatingStatus());
+    }
+
+    public Map<String, Long> shopDashboardStats(Long ownerUserId) {
+        if (shopRepository.findByOwnerId(ownerUserId).isEmpty()) return Map.of("products", 0L, "variants", 0L, "active_variants", 0L, "low_stock", 0L);
+        Long shopId = requireShopId(ownerUserId);
+        return jdbc.queryForMap("""
+                SELECT COUNT(DISTINCT p.id) AS products,
+                    COUNT(pv.id) AS variants,
+                    COALESCE(SUM(CASE WHEN pv.status='ACTIVE' AND p.selling_status='ACTIVE' THEN 1 ELSE 0 END),0) AS active_variants,
+                    COALESCE(SUM(CASE WHEN vi.quantity_on_hand - vi.reserved_quantity <= vi.initial_quantity * vi.low_stock_threshold_pct / 100 THEN 1 ELSE 0 END),0) AS low_stock
+                FROM products p LEFT JOIN product_variants pv ON pv.product_id=p.id
+                    LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
+                WHERE p.shop_id=?
+                """, shopId).entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey, entry -> ((Number) entry.getValue()).longValue()));
+    }
+
+    public List<Map<String, Object>> recentShopVariants(Long ownerUserId) {
+        if (shopRepository.findByOwnerId(ownerUserId).isEmpty()) return List.of();
+        Long shopId = requireShopId(ownerUserId);
+        return jdbc.queryForList("""
+                SELECT pv.id AS variant_id, p.id AS product_id, p.name AS product_name,
+                       pv.name AS variant_name, pv.sku, pv.price,
+                       COALESCE(vi.quantity_on_hand,0) AS stock_quantity,
+                       pv.status AS variant_status, p.selling_status AS product_status
+                FROM product_variants pv JOIN products p ON p.id=pv.product_id
+                LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
+                WHERE pv.shop_id=? ORDER BY pv.id DESC LIMIT 5
+                """, shopId);
+    }
+
     @Transactional
     public void createProduct(Long ownerUserId, ProductCreateRequest form) {
         Map<String, String> errors = new LinkedHashMap<>();

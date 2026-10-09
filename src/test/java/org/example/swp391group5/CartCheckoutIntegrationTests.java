@@ -26,6 +26,32 @@ class CartCheckoutIntegrationTests {
     @Autowired CartService cart;
     @Autowired OrderCheckoutService checkout;
     @Autowired MockMvc mvc;
+    @Autowired service.ShopOrderService shopOrders;
+
+    @Test
+    void shopOwnerReadsAndAdvancesOnlyTheirOwnOrders() throws Exception {
+        long owner = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, owner);
+        cart.add(owner, variant, 1);
+        String code = checkout.placeOrder(owner, List.of(variant), address, null, null, null, null, null, null);
+        long id = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
+        var session = new MockHttpSession();
+        session.setAttribute("userId", owner);
+        session.setAttribute("role", "SHOP_OWNER");
+        mvc.perform(get("/shopowner/orders").session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(code)));
+        mvc.perform(get("/shopowner/orders/" + id).session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("SKU-CHECKOUT")));
+        String token = (String) session.getAttribute("shopOrderToken");
+        for (String expected : List.of("CONFIRMED", "PREPARING")) {
+            mvc.perform(post("/shopowner/orders/" + id + "/advance").session(session).param("token", token))
+                    .andExpect(redirectedUrl("/shopowner/orders/" + id));
+            assertEquals(expected, shopOrders.detail(owner, id).get("status"));
+        }
+        assertThrows(IllegalArgumentException.class, () -> shopOrders.advance(owner, id));
+        assertTrue(shopOrders.list(-1L).isEmpty());
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.detail(-1L, id));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.advance(-1L, id));
+    }
 
     private long seed() {
         jdbc.update("INSERT INTO provinces(code,name) VALUES ('P-CHECKOUT','Province checkout')");
@@ -201,7 +227,7 @@ class CartCheckoutIntegrationTests {
         session.setAttribute("userId", owner);
         session.setAttribute("role", "SHOP_OWNER");
 
-        mvc.perform(get("/shopowner/home"))
+        mvc.perform(get("/shopowner/home").session(session))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/shop/products\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("href=\"#\">◫ Products"))));

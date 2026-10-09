@@ -8,17 +8,27 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.ui.Model;
 import service.ShopProductService;
+import service.CurrentUserProvider;
+import service.ShopOrderService;
 
 @Controller
 public class ShopOwnerController {
     private final ShopProductService products;
+    private final CurrentUserProvider currentUser;
+    private final ShopOrderService orders;
 
-    public ShopOwnerController(ShopProductService products) {
-        this.products = products;
+    public ShopOwnerController(ShopProductService products, CurrentUserProvider currentUser, ShopOrderService orders) {
+        this.products = products; this.currentUser = currentUser; this.orders = orders;
     }
 
     @GetMapping("/shopowner/home")
-    public String shopOwnerHome() {
+    public String shopOwnerHome(jakarta.servlet.http.HttpServletRequest request, Model model) {
+        Long ownerId = currentUser.requireUserId(request);
+        model.addAttribute("ownerName", request.getSession(false).getAttribute("fullName"));
+        model.addAttribute("shop", products.shopDashboard(ownerId));
+        model.addAttribute("stats", products.shopDashboardStats(ownerId));
+        model.addAttribute("recentVariants", products.recentShopVariants(ownerId));
+        model.addAttribute("orderSummary", orders.summary(ownerId));
         return "shopowner/home";
     }
 

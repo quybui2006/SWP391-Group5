@@ -3,7 +3,7 @@
 <body>
 <aside class="sidebar" th:fragment="sidebar(activePage)">
     <a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>SHOP OWNER</small></span></a>
-    <div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong>My Fresh Shop</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div>
+    <div class="shop-switcher"><div class="shop-avatar">SO</div><div><strong th:text="${shopName ?: 'Cửa hàng của tôi'}">Cửa hàng của tôi</strong><small>Cửa hàng của tôi</small></div></div>
     <nav class="side-nav" aria-label="Điều hướng Shop Owner">
         <span class="nav-label">TỔNG QUAN</span>
         <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/shopowner/home}"><span>⌂</span> Dashboard</a>
@@ -11,13 +11,14 @@
         <a th:classappend="${activePage == 'products'} ? ' active' : ''" th:href="@{/shop/products}"><span>▦</span> Products</a>
         <!-- Tan PTH integration: restore access to the DB-backed variants screen. -->
         <a th:classappend="${activePage == 'variants'} ? ' active' : ''" th:href="@{/shopowner/product-variants}"><span>▤</span> Product Variants</a>
-        <a href="#"><span>◌</span> Đơn hàng <b class="nav-count orange">4</b></a>
-        <a href="#"><span>♧</span> Kho hàng</a>
+        <a th:classappend="${activePage == 'orders'} ? ' active' : ''" th:href="@{/shopowner/orders}"><span>◌</span> Đơn hàng</a>
+        <a href="#" data-pending><span>♧</span> Kho hàng</a>
         <span class="nav-label">KHÁC</span>
-        <a href="#"><span>⚙</span> Cài đặt</a>
-        <a href="#"><span>?</span> Trợ giúp</a>
+        <a href="#" data-pending><span>⚙</span> Cài đặt</a>
+        <a href="#" data-pending><span>?</span> Trợ giúp</a>
     </nav>
-    <div class="sidebar-footer"><div class="mini-user"><div class="avatar">AM</div><div><strong>Anna Manager</strong><small>Shop Owner</small></div><span>⋮</span></div></div>
+    <div class="sidebar-footer"><div class="mini-user"><div class="avatar">SO</div><div><strong th:text="${ownerName ?: 'Shop Owner'}">Shop Owner</strong><small>Shop Owner</small></div><span>⋮</span></div></div>
+    <script th:src="@{/js/shopowner.js}" defer></script>
 </aside>
 </body>
 </html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Chi tiết đơn hàng</title><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}"></head>
+<body><div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside><main class="main-content product-management">
+<header class="topbar"><div><a th:href="@{/shopowner/orders}">← Đơn hàng</a><h1 th:text="${order.order_code}"></h1></div></header>
+<section class="panel"><p th:if="${message}" th:text="${message}" role="status"></p>
+<p>Người nhận: <strong th:text="${order.recipient_name}"></strong> — <span th:text="${order.recipient_phone}"></span></p>
+<p th:text="${order.delivery_address + ', ' + order.delivery_ward_name + ', ' + order.delivery_province_name}"></p>
+<p>Ghi chú: <span th:text="${order.customer_note}"></span></p><p>Trạng thái: <strong th:text="${order.status}"></strong> / <span th:text="${order.payment_status}"></span> / <span th:text="${order.delivery_status}"></span></p>
+<table><thead><tr><th>Sản phẩm</th><th>Biến thể / SKU</th><th>Số lượng</th><th>Thành tiền</th></tr></thead><tbody><tr th:each="item : ${items}"><td th:text="${item.product_name}"></td><td th:text="${item.variant_name + ' / ' + item.sku}"></td><td th:text="${item.quantity}"></td><td th:text="${#numbers.formatInteger(item.line_total,1,'COMMA') + ' ₫'}"></td></tr></tbody></table>
+<p>Tổng tiền (gồm vận chuyển): <strong th:text="${#numbers.formatInteger(order.total_amount,1,'COMMA') + ' ₫'}"></strong></p>
+<form th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}" method="post" th:action="@{/shopowner/orders/{id}/advance(id=${order.id})}"><input type="hidden" name="token" th:value="${token}"><button class="button button-primary" th:text="${order.status == 'PENDING' ? 'Xác nhận đơn hàng' : 'Chuẩn bị hàng'}"></button></form>
+</section></main></div></body></html>

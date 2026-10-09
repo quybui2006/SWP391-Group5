@@ -192,6 +192,7 @@ CREATE TABLE orders (
     status VARCHAR(25) NOT NULL,
     payment_status VARCHAR(20) NOT NULL,
     delivery_status VARCHAR(25) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(id, shop_id)
 );
 
