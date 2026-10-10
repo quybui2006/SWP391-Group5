@@ -621,17 +621,22 @@
                             </strong>
 
 
+
                             <!-- ADD CART -->
-                            <button
-                                    class="add-btn"
-                                    type="button"
-                                    th:attr="data-variant-id=${variant.id}"
-                                    onclick="addToCart(event, this)"
-                                    aria-label="Thêm sản phẩm vào giỏ hàng">
+                            <form th:action="@{/cart/add}" method="POST" style="display: contents;" onsubmit="addToCartAjax(event, this)">
 
-                                +
+                                <input type="hidden" name="variantId" th:value="${variant.id}">
+                                <input type="hidden" name="quantity" value="1">
 
-                            </button>
+                                <button
+                                        class="add-btn"
+                                        type="submit"
+                                        aria-label="Thêm sản phẩm vào giỏ hàng"
+                                        onclick="event.stopPropagation();">
+                                    +
+                                </button>
+
+                            </form>
 
                         </div>
 
@@ -833,7 +838,38 @@
 ========================================================= -->
 
 <script th:src="@{/js/home.js}"></script>
+<script>
+    function addToCartAjax(event, form) {
 
+        event.preventDefault();
+
+
+        fetch(form.action, {
+            method: form.method,
+            body: new FormData(form)
+        }).then(response => {
+
+            if(response.ok || response.redirected) {
+
+
+                let cartBadge = document.getElementById('cartCount');
+                if(cartBadge) {
+                    let currentCount = parseInt(cartBadge.innerText) || 0;
+                    cartBadge.innerText = currentCount + 1; // Tăng lên 1
+
+
+                    cartBadge.style.transition = 'transform 0.2s';
+                    cartBadge.style.transform = 'scale(1.5)';
+                    setTimeout(() => {
+                        cartBadge.style.transform = 'scale(1)';
+                    }, 200);
+                }
+            }
+        }).catch(error => {
+            console.error('Lỗi khi thêm vào giỏ hàng:', error);
+        });
+    }
+</script>
 </body>
 
 </html>

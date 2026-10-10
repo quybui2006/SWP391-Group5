@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
@@ -98,10 +97,12 @@
             <!-- DANH SÁCH SẢN PHẨM -->
             <div th:each="item : ${cartItems}" class="cart-row">
                 <div>
+                    <!-- Đã gắn thêm th:data-price -->
                     <input type="checkbox"
                            class="custom-checkbox item-check"
                            name="selectedItemIds"
-                           th:value="${item.variantId}">
+                           th:value="${item.id}"
+                           th:data-price="${item.variant.price}">
                 </div>
 
                 <div class="product-col">
@@ -135,11 +136,13 @@
                             -
                         </button>
 
+                        <!-- Đã gắn sự kiện onchange -->
                         <input type="number"
                                class="qty-input"
                                name="quantities"
                                th:value="${item.quantity}"
-                               min="1">
+                               min="1"
+                               onchange="updateRowTotal(this)">
 
                         <button type="button"
                                 class="qty-btn"
@@ -149,7 +152,8 @@
                     </div>
                 </div>
 
-                <div class="total-col"
+                <!-- Đã thêm class row-total-price -->
+                <div class="total-col row-total-price"
                      th:text="${#numbers.formatDecimal(item.variant.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + '₫'">
                     0₫
                 </div>
@@ -187,7 +191,6 @@
     </section>
 </main>
 
-
 <footer class="site-footer">
     <div class="container footer-inner">
         <div>
@@ -208,16 +211,57 @@
 </footer>
 
 <script>
+    // Hàm xử lý khi bấm nút +/-
+    function changeQuantity(btn, delta) {
+        const input = btn.parentElement.querySelector('.qty-input');
+        let newVal = parseInt(input.value) + delta;
+
+        if (newVal >= 1) {
+            input.value = newVal;
+            updateRowTotal(input); // Cập nhật lại tiền của dòng này và tổng tiền
+        }
+    }
+
+    // Hàm cập nhật tiền của 1 dòng khi số lượng thay đổi
+    function updateRowTotal(inputElement) {
+        const row = inputElement.closest('.cart-row');
+        const checkbox = row.querySelector('.item-check');
+        const price = parseFloat(checkbox.dataset.price);
+        const qty = parseInt(inputElement.value);
+
+        // Cập nhật text thành tiền của dòng
+        const rowTotal = row.querySelector('.row-total-price');
+        rowTotal.innerText = new Intl.NumberFormat('vi-VN').format(price * qty) + '₫';
+
+        // Kích hoạt tính lại tổng tiền thanh toán
+        document.dispatchEvent(new Event('cartUpdated'));
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const itemChecks = document.querySelectorAll('.item-check');
         const selectAllTop = document.getElementById('selectAllTop');
         const selectAllBottom = document.getElementById('selectAllBottom');
         const btnCheckout = document.getElementById('btnCheckout');
         const countDisplay = document.getElementById('totalSelectedCount');
+        const totalPriceDisplay = document.getElementById('totalPrice');
 
         function updateCheckoutState() {
-            const selectedCount = Array.from(itemChecks).filter(cb => cb.checked).length;
+            let total = 0;
+            let selectedCount = 0;
+
+            itemChecks.forEach(cb => {
+                if (cb.checked) {
+                    selectedCount++;
+                    const price = parseFloat(cb.dataset.price);
+                    const row = cb.closest('.cart-row');
+                    const qty = parseInt(row.querySelector('.qty-input').value);
+                    total += (price * qty);
+                }
+            });
+
+            // Cập nhật UI
             countDisplay.innerText = selectedCount;
+            totalPriceDisplay.innerText = new Intl.NumberFormat('vi-VN').format(total) + '₫';
 
             if (selectedCount === 0) {
                 btnCheckout.classList.add('btn-disabled');
@@ -226,8 +270,8 @@
             }
 
             const allChecked = selectedCount > 0 && selectedCount === itemChecks.length;
-            if(selectAllTop) selectAllTop.checked = allChecked;
-            if(selectAllBottom) selectAllBottom.checked = allChecked;
+            if (selectAllTop) selectAllTop.checked = allChecked;
+            if (selectAllBottom) selectAllBottom.checked = allChecked;
         }
 
         function toggleAll(checked) {
@@ -235,12 +279,17 @@
             updateCheckoutState();
         }
 
-        if(selectAllTop) selectAllTop.addEventListener('change', e => toggleAll(e.target.checked));
-        if(selectAllBottom) selectAllBottom.addEventListener('change', e => toggleAll(e.target.checked));
+        // Lắng nghe sự kiện click chọn tất cả
+        if (selectAllTop) selectAllTop.addEventListener('change', e => toggleAll(e.target.checked));
+        if (selectAllBottom) selectAllBottom.addEventListener('change', e => toggleAll(e.target.checked));
+
+        // Lắng nghe sự kiện tick chọn từng sản phẩm
         itemChecks.forEach(cb => cb.addEventListener('change', updateCheckoutState));
+
+        // Lắng nghe sự kiện số lượng thay đổi (do nút +/- hoặc tự gõ)
+        document.addEventListener('cartUpdated', updateCheckoutState);
     });
 </script>
 
 </body>
 </html>
-
