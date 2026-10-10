@@ -4,39 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm sản phẩm | FreshFruit</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
 </head>
 <body>
-<header class="site-header">
-    <div class="container header-inner">
-        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
-            <span class="brand-mark">F</span>
-            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
-        </a>
-        <nav class="main-nav" aria-label="Điều hướng chính">
-            <a th:href="@{/}">Trang chủ</a>
-            <a th:href="@{/search}">Sản phẩm</a>
-            <a class="active" th:href="@{/shop/products}">Quản lý shop</a>
-        </nav>
-        <div class="header-actions">
-            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
-            <a class="login-btn" th:href="@{/shop/products}">Shop owner</a>
-        </div>
-    </div>
-</header>
-
-<main class="page-shell form-shell">
-    <section class="page-heading compact">
-        <div>
-            <p class="eyebrow">SẢN PHẨM MỚI</p>
-            <h1>Thêm sản phẩm</h1>
-            <p>Điền thông tin bên dưới. Sản phẩm mới sẽ được lưu ở trạng thái bản nháp.</p>
-        </div>
-    </section>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
+    <main class="main-content product-management">
+    <header class="topbar">
+        <div><p class="breadcrumb">Shop Owner / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Thêm mới</span></p><h1>Thêm sản phẩm</h1><p class="muted">Sản phẩm mới sẽ được lưu ở trạng thái bản nháp.</p></div>
+        <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách sản phẩm</a>
+    </header>
 
     <p class="alert alert-error" th:if="${serviceError}" th:text="${serviceError}">Lỗi hệ thống</p>
 
@@ -143,23 +121,7 @@
         </div>
     </form>
 </main>
-<footer class="site-footer">
-    <div class="container footer-inner">
-        <div>
-            <a class="brand footer-brand" th:href="@{/}">
-                <span class="brand-mark">F</span>
-                <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
-            </a>
-            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
-        </div>
-        <div class="footer-links">
-            <a th:href="@{/search}">Sản phẩm</a>
-            <a th:href="@{/#categories}">Danh mục</a>
-            <a th:href="@{/#about}">Về chúng tôi</a>
-        </div>
-        <small>© 2026 FreshFruit. All rights reserved.</small>
-    </div>
-</footer>
+</div>
 <script th:src="@{/js/shop-product.js}"></script>
 </body>
 </html>

@@ -89,9 +89,9 @@ public class AddressBookService {
     @Transactional
     public void delete(Long userId, Long id) {
         lockCustomer(userId); var address = owned(id, userId);
-        boolean wasDefault = address.isDefaultAddress();
+        if (address.isDefaultAddress()) {
+            throw new IllegalArgumentException("Không thể xóa địa chỉ mặc định. Vui lòng đặt một địa chỉ khác làm mặc định trước.");
+        }
         addresses.delete(address); addresses.flush();
-        var remaining = list(userId);
-        if (wasDefault && !remaining.isEmpty()) remaining.get(0).setDefaultAddress(true);
     }
 }

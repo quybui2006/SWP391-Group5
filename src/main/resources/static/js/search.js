@@ -2,7 +2,7 @@
    FRESHFRUIT SEARCH
 ========================================================= */
 
-let cartCount = Number(
+window.cartCount = Number(
     localStorage.getItem("freshfruit-cart-count") || 0
 );
 
@@ -32,7 +32,7 @@ function updateCartCount() {
         return;
     }
 
-    badge.textContent = cartCount;
+    badge.textContent = window.cartCount;
 
 }
 
@@ -168,56 +168,8 @@ function addToCart(event, button) {
     }
 
 
-    const variantId =
-        button.getAttribute("data-variant-id");
-
-
-    if (!variantId) {
-        return;
-    }
-
-
-    /*
-     * Hiện tại chỉ cập nhật cart badge.
-     *
-     * Khi backend Cart hoàn thiện,
-     * thay phần này bằng API POST.
-     */
-    cartCount += 1;
-
-
-    localStorage.setItem(
-        "freshfruit-cart-count",
-        cartCount
-    );
-
-
-    updateCartCount();
-
-
-    /*
-     * Button feedback
-     */
-    const oldText =
-        button.innerHTML;
-
-
-    button.innerHTML = "✓";
-
-    button.classList.add("added");
-
-    button.disabled = true;
-
-
-    setTimeout(function () {
-
-        button.innerHTML = oldText;
-
-        button.classList.remove("added");
-
-        button.disabled = false;
-
-    }, 800);
+    // Tan PTH integration: persist the item through the shared cart endpoint.
+    if (window.addProductToCart) window.addProductToCart(button, 1);
 
 }
 

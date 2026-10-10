@@ -1,7 +1,107 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Product Variants | FreshFruit</title><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"></head>
-<body><div class="app-shell"><aside class="sidebar"><a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>SHOP OWNER</small></span></a><div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong>My Fresh Shop</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div><nav class="side-nav"><span class="nav-label">TỔNG QUAN</span><a th:href="@{/shopowner/home}"><span>⌂</span> Dashboard</a><span class="nav-label">QUẢN LÝ CỬA HÀNG</span><a class="active" th:href="@{/shopowner/product-variants}"><span>▦</span> Product Variants <b class="nav-count">12</b></a><a href="#"><span>◫</span> Products</a><a href="#"><span>◌</span> Đơn hàng <b class="nav-count orange">4</b></a><a href="#"><span>♧</span> Kho hàng</a><span class="nav-label">KHÁC</span><a href="#"><span>⚙</span> Cài đặt</a><a href="#"><span>?</span> Trợ giúp</a></nav><div class="sidebar-footer"><div class="mini-user"><div class="avatar">AM</div><div><strong>Anna Manager</strong><small>Shop Owner</small></div><span>⋮</span></div></div></aside>
-<main class="main-content"><header class="topbar"><div><p class="breadcrumb">Shop Owner / <span>Product Variants</span></p><h1>Product Variants</h1><p class="muted">Quản lý các phiên bản và quy cách sản phẩm trong cửa hàng.</p></div><div class="top-actions"><button class="round-btn">⌕</button><button class="round-btn notification">♢<i></i></button><div class="top-user"><div class="avatar">AM</div><span>Anna Manager<br><small>Shop Owner</small></span><b>⌄</b></div></div></header>
-<section class="variant-toolbar"><div class="toolbar-left"><div class="search-box"><span>⌕</span><input id="variantSearch" type="search" placeholder="Tìm theo tên hoặc SKU..." oninput="filterVariants()"></div><button class="filter-btn">☷ Bộ lọc <span class="filter-dot">2</span></button></div><a class="primary-action" th:href="@{/shopowner/product-variants/new}">＋ Thêm Product Variant</a></section>
-<section class="variant-summary"><div><strong>12</strong><span>Tổng variants</span></div><div><strong class="green-text">08</strong><span>Đang bán</span></div><div><strong class="yellow-text">02</strong><span>Bản nháp</span></div><div><strong class="red-text">02</strong><span>Đang tạm dừng</span></div></section>
-<section class="panel table-panel full-table"><div class="table-top"><div><h2>Danh sách Product Variants</h2><p class="muted">Cập nhật lần cuối: hôm nay, 09:42</p></div><button class="export-btn">⇩ Xuất danh sách</button></div><div class="table-wrap"><table id="variantsTable"><thead><tr><th><input type="checkbox"></th><th>PRODUCT VARIANT</th><th>SKU</th><th>QUY CÁCH</th><th>GIÁ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI</th><th>THAO TÁC</th></tr></thead><tbody><tr><td><input type="checkbox"></td><td><div class="product-cell"><span class="fruit-thumb apple">🍎</span><div><strong>Táo Envy New Zealand</strong><small>Táo Envy</small></div></div></td><td>ENVY-1KG</td><td>1 kg</td><td><strong>₫ 185.000</strong></td><td><span class="stock good">124</span></td><td><span class="status active">Đang bán</span></td><td><a class="table-action" th:href="@{/shopowner/product-variants/edit/1}">Sửa</a><button class="delete-action">Xóa</button></td></tr><tr><td><input type="checkbox"></td><td><div class="product-cell"><span class="fruit-thumb mango">🥭</span><div><strong>Xoài cát Hòa Lộc</strong><small>Xoài cát</small></div></div></td><td>XCL-1KG</td><td>1 kg</td><td><strong>₫ 95.000</strong></td><td><span class="stock low">08</span></td><td><span class="status active">Đang bán</span></td><td><a class="table-action" th:href="@{/shopowner/product-variants/edit/2}">Sửa</a><button class="delete-action">Xóa</button></td></tr><tr><td><input type="checkbox"></td><td><div class="product-cell"><span class="fruit-thumb grape">🍇</span><div><strong>Nho xanh không hạt</strong><small>Nho xanh</small></div></div></td><td>GRN-500G</td><td>500 g</td><td><strong>₫ 129.000</strong></td><td><span class="stock good">56</span></td><td><span class="status draft">Bản nháp</span></td><td><a class="table-action" th:href="@{/shopowner/product-variants/edit/3}">Sửa</a><button class="delete-action">Xóa</button></td></tr><tr><td><input type="checkbox"></td><td><div class="product-cell"><span class="fruit-thumb orange-fruit">🍊</span><div><strong>Cam vàng Úc</strong><small>Cam vàng</small></div></div></td><td>ORG-2KG</td><td>2 kg</td><td><strong>₫ 210.000</strong></td><td><span class="stock good">42</span></td><td><span class="status paused">Tạm dừng</span></td><td><a class="table-action" th:href="@{/shopowner/product-variants/edit/4}">Sửa</a><button class="delete-action">Xóa</button></td></tr><tr><td><input type="checkbox"></td><td><div class="product-cell"><span class="fruit-thumb watermelon">🍉</span><div><strong>Dưa hấu không hạt</strong><small>Dưa hấu</small></div></div></td><td>WML-3KG</td><td>3 kg</td><td><strong>₫ 150.000</strong></td><td><span class="stock empty">00</span></td><td><span class="status paused">Tạm dừng</span></td><td><a class="table-action" th:href="@{/shopowner/product-variants/edit/5}">Sửa</a><button class="delete-action">Xóa</button></td></tr></tbody></table></div><div class="pagination"><span>Hiển thị 1–5 trong tổng số 12 variants</span><div><button>‹</button><button class="selected">1</button><button>2</button><button>3</button><button>›</button></div></div></section></main></div><script th:src="@{/js/shopowner.js}"></script></body></html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Variants | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <style>
+        .variant-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 20px}
+        .variant-stat{padding:17px 20px;border:1px solid var(--line);border-radius:10px;background:#fff}
+        .variant-stat strong{display:block;font-size:23px;line-height:1.2}
+        .variant-stat span{display:block;margin-top:5px;color:var(--muted);font-size:12px}
+        .variant-status{white-space:nowrap}
+        @media(max-width:760px){.variant-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('variants')}"></aside>
+    <main class="main-content product-management">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Shop Owner / <span>Product Variants</span></p>
+                <h1>Product Variants</h1>
+                <p class="muted">Danh sách biến thể và tồn kho thực tế của cửa hàng.</p>
+            </div>
+            <a class="button button-primary" th:href="@{/shop/products/add}">＋ Tạo sản phẩm và biến thể</a>
+        </header>
+
+        <section class="variant-summary" aria-label="Tổng quan biến thể">
+            <article class="variant-stat"><strong th:text="${variantSummary.total}">0</strong><span>Tổng biến thể</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.active}">0</strong><span>Đang bán</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.draft}">0</strong><span>Bản nháp</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.paused}">0</strong><span>Tạm dừng / lưu trữ</span></article>
+        </section>
+
+        <section class="panel">
+            <form class="search-bar" method="get" th:action="@{/shopowner/product-variants}">
+                <label class="sr-only" for="keyword">Tìm theo sản phẩm, biến thể hoặc SKU</label>
+                <input id="keyword" name="keyword" type="search" th:value="${keyword}"
+                       placeholder="Tìm theo tên sản phẩm, biến thể hoặc SKU">
+                <button class="button button-dark" type="submit">Tìm kiếm</button>
+                <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shopowner/product-variants}">Xóa lọc</a>
+            </form>
+
+            <div class="table-wrap" th:if="${!variants.isEmpty()}">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Sản phẩm / biến thể</th>
+                        <th>SKU</th>
+                        <th>Quy cách</th>
+                        <th>Giá bán</th>
+                        <th>Tồn kho</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="variant : ${variants}">
+                        <td>
+                            <div class="product-cell">
+                                <span class="image-placeholder">🍊</span>
+                                <div>
+                                    <a th:href="@{/shop/product/{id}(id=${variant.product_id})}"
+                                       th:text="${variant.product_name}">Tên sản phẩm</a>
+                                    <small th:text="${variant.variant_name}">Tên biến thể</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${variant.sku}">SKU</td>
+                        <td th:text="${variant.specification != null and !variant.specification.isEmpty() ? variant.specification : variant.unit_name}">Quy cách</td>
+                        <td th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</td>
+                        <td th:text="${variant.stock_quantity + ' ' + variant.unit_name}">0 kg</td>
+                        <td>
+                            <span class="badge badge-active variant-status"
+                                  th:if="${variant.variant_status == 'ACTIVE' and variant.product_status == 'ACTIVE'}">Đang bán</span>
+                            <span class="badge badge-draft variant-status"
+                                  th:if="${variant.variant_status == 'DRAFT'}">Bản nháp</span>
+                            <span class="badge variant-status"
+                                  th:if="${variant.variant_status != 'ACTIVE' and variant.variant_status != 'DRAFT'}"
+                                  th:text="${variant.variant_status}">Tạm dừng</span>
+                            <span class="badge badge-draft variant-status"
+                                  th:if="${variant.variant_status == 'ACTIVE' and variant.product_status != 'ACTIVE'}"
+                                  th:text="${variant.product_status == 'DRAFT' ? 'Sản phẩm nháp' : 'Chưa mở bán'}">Chưa mở bán</span>
+                        </td>
+                        <td class="product-actions">
+                            <a th:href="@{/shop/product/{id}(id=${variant.product_id})}">Chi tiết sản phẩm</a>
+                            <a th:href="@{/shop/product/{id}/edit(id=${variant.product_id})}">Sửa sản phẩm</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" th:if="${variants.isEmpty()}">
+                <span>🍐</span>
+                <h2 th:text="${keyword.isEmpty()} ? 'Chưa có biến thể nào' : 'Không tìm thấy biến thể phù hợp'">Chưa có biến thể nào</h2>
+                <p th:text="${keyword.isEmpty()} ? 'Biến thể đầu tiên sẽ được tạo cùng sản phẩm trong form thêm sản phẩm.' : 'Thử tìm bằng tên sản phẩm, tên biến thể hoặc SKU khác.'"></p>
+                <a class="button button-primary" th:href="@{/shop/products/add}">＋ Tạo sản phẩm và biến thể</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

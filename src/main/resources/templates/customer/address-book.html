@@ -31,7 +31,8 @@
             <div class="topbar-actions">
                 <a class="top-icon" th:href="@{/search}" aria-label="Tìm kiếm sản phẩm" title="Tìm kiếm">⌕</a>
                 <button class="top-icon notification" type="button" data-pending aria-label="Thông báo">♢<i></i></button>
-                <a class="cart-link" href="#" data-pending aria-label="Giỏ hàng">🛒 Giỏ hàng <span>0</span></a>
+            <!-- Tan PTH integration: link the address screen to the real customer cart. -->
+            <a class="cart-link" th:href="@{/cart}" aria-label="Giỏ hàng">🛒 Giỏ hàng</a>
             </div>
         </header>
         <section class="page-intro"><div><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Sổ địa chỉ</h1><p>Lưu địa chỉ nhận hàng để thanh toán thuận tiện hơn.</p></div><button class="primary-button" type="button" onclick="openAddressModal()">＋ Thêm địa chỉ mới</button></section>
@@ -50,7 +51,7 @@
                         <form method="post" th:unless="${a.defaultAddress}" th:action="@{/customer/account/address/default}"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="set-default" type="submit">Đặt làm mặc định</button></form>
                         <div class="card-buttons">
                             <button class="edit-link" type="button" th:attr="data-id=${a.id},data-name=${a.recipientName},data-phone=${a.recipientPhone},data-province=${provinceNames[a.provinceCode]},data-ward=${a.wardName},data-detail=${a.addressDetail},data-default=${a.defaultAddress}" onclick="openAddressModal(this)">Chỉnh sửa</button>
-                            <form method="post" th:action="@{/customer/account/address/delete}" onsubmit="return confirm('Xóa địa chỉ này? Nếu là mặc định, địa chỉ còn lại sẽ được chọn thay thế.')"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="delete-link" type="submit">Xóa</button></form>
+                            <form th:unless="${a.defaultAddress}" method="post" th:action="@{/customer/account/address/delete}" onsubmit="return confirm('Xóa địa chỉ này?')"><input type="hidden" name="token" th:value="${token}"><input type="hidden" name="id" th:value="${a.id}"><button class="delete-link" type="submit">Xóa</button></form>
                         </div>
                     </div>
                 </article>

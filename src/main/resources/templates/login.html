@@ -35,6 +35,8 @@
         <p th:if="${success}" th:text="${success}"></p>
 
         <form th:action="@{/login}" method="post">
+            <!-- Tan PTH integration: return to the requested customer screen after login. -->
+            <input type="hidden" name="continueTo" th:value="${continueTo}">
             <label for="email">Email</label>
             <input id="email" name="email" type="email"
                    autocomplete="username" maxlength="254" required>
