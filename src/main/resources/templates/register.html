@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký - FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+<main class="login-main">
+    <section class="login-card">
+        <span class="login-eyebrow">FRESHFRUIT</span>
+        <h1>Đăng ký khách hàng</h1>
+
+        <form th:action="@{/register}" th:object="${form}" method="post">
+            <label for="fullName">Họ tên</label>
+            <input id="fullName" th:field="*{fullName}" maxlength="150" required>
+            <p class="login-error" th:if="${#fields.hasErrors('fullName')}"
+               th:errors="*{fullName}"></p>
+
+            <label for="email">Email</label>
+            <input id="email" type="email" th:field="*{email}" maxlength="254" required>
+            <p class="login-error" th:if="${#fields.hasErrors('email')}"
+               th:errors="*{email}"></p>
+
+            <label for="phone">Số điện thoại (không bắt buộc)</label>
+            <input id="phone" type="tel" th:field="*{phone}" maxlength="20">
+
+            <label for="password">Mật khẩu</label>
+            <input id="password" name="password" type="password" minlength="8" required>
+            <p class="login-error" th:if="${#fields.hasErrors('password')}"
+               th:errors="*{password}"></p>
+
+            <label for="confirmPassword">Xác nhận mật khẩu</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" required>
+            <p class="login-error" th:if="${#fields.hasErrors('confirmPassword')}"
+               th:errors="*{confirmPassword}"></p>
+
+            <button type="submit">Đăng ký</button>
+        </form>
+        <p>Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
+    </section>
+</main>
+</body>
+</html>
