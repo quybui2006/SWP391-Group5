@@ -16,17 +16,21 @@ public class LoginController {
         this.loginService = loginService;
     }
     @GetMapping("/login")
-    public String loginPage(){
+    // Tan PTH integration: preserve the requested customer page through login.
+    public String loginPage(@RequestParam(required = false) String continueTo, Model model){
+        model.addAttribute("continueTo", safeContinueTo(continueTo));
         return "login";
     }
     @PostMapping("/login")
     public String login(@RequestParam String email,
                         @RequestParam String password,
+                        @RequestParam(required = false) String continueTo,
                         HttpServletRequest request,
                         Model model){
         var result = loginService.login(email, password);
         if(result.isEmpty()){
             model.addAttribute("error", "Emmail invalid.");
+            model.addAttribute("continueTo", safeContinueTo(continueTo));
             return "login";
         }
         HttpSession oldSession = request.getSession(false);
@@ -37,13 +41,22 @@ public class LoginController {
         session.setAttribute("fullName", account.fullName());
         session.setAttribute("role", account.role());
 
-        return switch (account.role()) {
+        if ("CUSTOMER".equals(account.role()) && continueTo != null) {
+            return "redirect:" + safeContinueTo(continueTo);
+        }
+
+        return switch (account.role()){
             case "ADMIN" -> "redirect:/admin";
             case "SHOP_OWNER" -> "redirect:/shopowner/home";
-            default -> "redirect:/home";
+            default -> "redirect:/";
         };
 
     }
+
+    public String login(String email, String password, HttpServletRequest request, Model model) {
+        return login(email, password, null, request, model);
+    }
+
     @PostMapping("/logout")
     public String logout(HttpServletRequest request){
         HttpSession session = request.getSession(false);
@@ -52,13 +65,17 @@ public class LoginController {
     }
     @GetMapping("/customer")
     public String customer(HttpServletRequest request){
-        return pageForRole(request, "CUSTOMER", "redirect:/home");
+        return pageForRole(request, "CUSTOMER", "customer");
     }
 
 
     @GetMapping("/shop-owner")
     public String shopOwner(HttpServletRequest request) {
-        return pageForRole(request, "SHOP_OWNER", "redirect:/shopowner/home");
+        HttpSession session = request.getSession(false);
+        if (session == null || !"SHOP_OWNER".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+        return "redirect:/shopowner/home";
     }
 
     @GetMapping("/admin")
@@ -72,5 +89,10 @@ public class LoginController {
             return "redirect:/login";
         }
         return view;
+    }
+
+    private String safeContinueTo(String path) {
+        return path != null && path.startsWith("/") && !path.startsWith("//") && !path.contains("\\")
+                ? path : "/";
     }
 }

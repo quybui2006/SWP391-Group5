@@ -161,3 +161,30 @@ tbody tr:hover { background: #fbfdfb; }
     .search-bar { flex-wrap: wrap; }
     .search-bar input { flex-basis: 100%; }
 }
+
+/* Tan PTH: product pages use the Shop Owner dashboard shell while retaining the existing DB form styles. */
+.product-management .topbar { align-items: center; margin-bottom: 24px; }
+.product-management .breadcrumb a { color: var(--green-dark); }
+.product-management .button { min-height: 38px; border-radius: 8px; white-space: nowrap; }
+.product-management .panel { padding: 20px 22px; }
+.product-management .search-bar { align-items: center; }
+.product-management .product-cell a { color: var(--ink); font-weight: 700; }
+.product-management .product-cell a:hover,
+.product-management .product-actions a:hover { color: var(--green-dark); text-decoration: underline; }
+.product-management .product-actions { white-space: nowrap; }
+.product-management .product-actions a { color: var(--green-dark); font-size: 12px; font-weight: 700; margin-right: 12px; }
+.product-management .product-actions a:last-child { margin-right: 0; }
+.product-management .form-card h2 { color: var(--ink); }
+.product-management .field input,
+.product-management .field select,
+.product-management .field textarea { min-height: 42px; border-radius: 8px; }
+.product-management .upload-box input { display: block; width: 100%; border: 0; padding: 0; }
+.product-management .upload-box { color: var(--ink); }
+.product-management .image-preview { flex: 0 0 auto; }
+
+@media (max-width: 720px) {
+    .product-management .topbar { align-items: flex-start; flex-direction: column; gap: 16px; }
+    .product-management .panel { padding: 14px; }
+    .product-management .form-actions { position: sticky; bottom: 0; padding: 12px; background: var(--bg); border-top: 1px solid var(--line); }
+    .product-management .upload-row { align-items: stretch; flex-direction: column; }
+}

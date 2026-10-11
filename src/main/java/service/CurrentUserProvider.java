@@ -4,33 +4,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import repository.ShopRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Cầu nối tạm với người dùng đang đăng nhập.
  *
  * Phần Authentication (User Login / Register - Sheet2 No.1, No.2) do
  * Nguyễn Hồng Hà phụ trách, chưa merge nên chưa có Spring Security.
- * Tạm lấy chủ của cửa hàng đầu tiên trong DB để chạy được demo.
- *
- * TODO(auth): khi nhánh Auth xong, thay phần requireUserId bằng
- *   SecurityContextHolder.getContext().getAuthentication().getName()
- *   rồi tra cứu user theo email, và bỏ hết class này.
- *
- * LƯU Ý: cách làm tạm này KHÔNG an toàn. Mọi shop đều thấy cùng một danh
- * sách sản phẩm. Phải thay trước khi nộp bài.
+ * Reads the authenticated shop owner's user id from the login session.
  */
 @Service
 public class CurrentUserProvider {
 
-    @Autowired
-    private ShopRepository shopRepository;
-
-    public Long requireUserId() {
-        return shopRepository.findAll().stream()
-                .map(shop -> shop.getOwnerId())
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        "Chưa có cửa hàng nào trong hệ thống. Hãy chạy seed-local.sql."));
+    public Long requireUserId(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null || !"SHOP_OWNER".equals(session.getAttribute("role"))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vui lòng đăng nhập bằng tài khoản Shop Owner.");
+        }
+        Object userId = session.getAttribute("userId");
+        if (!(userId instanceof Number number)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Phiên đăng nhập không hợp lệ.");
+        }
+        return number.longValue();
     }
 }
