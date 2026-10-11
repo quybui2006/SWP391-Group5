@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác minh email - FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+<main class="login-main">
+    <section class="login-card">
+        <h1>Xác minh email</h1>
+        <p>Nhập mã 6 chữ số trong email. Mã có hiệu lực 5 phút.</p>
+        <p class="login-error" th:if="${error}" th:text="${error}"></p>
+
+        <form th:action="@{/register/verify}" method="post">
+            <label for="code">Mã OTP</label>
+            <input id="code" name="code" inputmode="numeric"
+                   pattern="[0-9]{6}" maxlength="6" required>
+            <button type="submit">Xác minh</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>
