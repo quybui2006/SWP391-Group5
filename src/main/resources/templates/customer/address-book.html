@@ -15,10 +15,10 @@
         <div class="customer-profile"><div class="profile-avatar">KH</div><div><strong th:text="${customer.fullName}"></strong><span th:text="${customer.email}"></span></div></div>
         <nav class="customer-nav">
             <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
-            <a href="#" data-pending><span class="nav-symbol">♙</span>Thông tin cá nhân</a>
+            <a th:href="@{/customer/account}"><span class="nav-symbol">♙</span>Thông tin cá nhân</a>
             <a class="active" th:href="@{/customer/account/address}"><span class="nav-symbol">⌖</span>Sổ địa chỉ</a>
-            <a href="#" data-pending><span class="nav-symbol">▣</span>Đơn hàng của tôi</a>
-            <a href="#" data-pending><span class="nav-symbol">♡</span>Sản phẩm yêu thích</a>
+            <a th:href="@{/customer/account/orders}"><span class="nav-symbol">▣</span>Đơn hàng của tôi</a>
+            <a th:href="@{/customer/account/favorites}"><span class="nav-symbol">♡</span>Sản phẩm yêu thích</a>
             <span class="nav-caption second">KHÁC</span>
             <a href="#" data-pending><span class="nav-symbol">♧</span>Thông báo</a>
             <a href="#" data-pending><span class="nav-symbol">⚙</span>Cài đặt tài khoản</a>
