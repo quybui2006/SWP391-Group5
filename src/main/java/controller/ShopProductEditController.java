@@ -1,6 +1,7 @@
 package controller;
 
 import dto.ProductEditView;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,9 +34,9 @@ public class ShopProductEditController {
     private CategoryRepository categoryRepository;
 
     @GetMapping("/shop/product/{id}/edit")
-    public String editProduct(@PathVariable("id") Long id, Model model) {
+    public String editProduct(@PathVariable("id") Long id, HttpServletRequest request, Model model) {
         model.addAttribute("form",
-                shopProductService.buildEditForm(id, currentUserProvider.requireUserId()));
+                shopProductService.buildEditForm(id, currentUserProvider.requireUserId(request)));
         model.addAttribute("errors", Map.of());
         return "shopproductedit";
     }
@@ -44,10 +45,11 @@ public class ShopProductEditController {
     public String saveProduct(@PathVariable("id") Long id,
                               @ModelAttribute("form") ProductEditView form,
                               BindingResult binding,
+                              HttpServletRequest request,
                               Model model,
                               RedirectAttributes redirect) {
         try {
-            shopProductService.update(id, currentUserProvider.requireUserId(), form);
+            shopProductService.update(id, currentUserProvider.requireUserId(request), form);
             redirect.addFlashAttribute("success", "Cập nhật sản phẩm thành công.");
             return "redirect:/shop/product/" + id;
         } catch (ProductValidationException ex) {

@@ -4,15 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Dữ liệu cho màn hình Shop Owner - Xem chi tiết sản phẩm (Sheet2 No.7).
- *
- * Khác với trang của khách hàng: không có đánh giá, không có nút mua,
- * thay bằng trạng thái duyệt, tồn kho và nút quản lý.
- *
- * Giai đoạn làm giao diện: controller điền dữ liệu mẫu, chưa truy vấn
- * database. Sau này thay bằng service thật.
- */
 public class ProductDetailView {
 
     private Long id;
@@ -29,10 +20,8 @@ public class ProductDetailView {
     private BigDecimal price;
     private String unitName;
 
-    /** DRAFT / PENDING / APPROVED / REJECTED */
     private String approvalStatus;
 
-    /** DRAFT / ACTIVE / PAUSED / ARCHIVED */
     private String sellingStatus;
 
     private String rejectionReason;
@@ -40,7 +29,6 @@ public class ProductDetailView {
     private LocalDate receivedDate;
     private LocalDate expiryDate;
 
-    /** Còn bao nhiêu ngày tới hạn. */
     private long daysUntilExpiry;
     private boolean expiringSoon;
 
@@ -85,7 +73,6 @@ public class ProductDetailView {
     public List<VariantRow> getVariants() { return variants; }
     public void setVariants(List<VariantRow> variants) { this.variants = variants; }
 
-    /** Một biến thể kèm tồn kho. */
     public record VariantRow(Long id, String sku, String name, String specification,
                              String status, BigDecimal price, String unitName,
                              int quantityOnHand, int reservedQuantity,
