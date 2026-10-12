@@ -41,8 +41,23 @@ public class LoginController {
         session.setAttribute("fullName", account.fullName());
         session.setAttribute("role", account.role());
 
-        if ("CUSTOMER".equals(account.role()) && continueTo != null) {
-            return "redirect:" + safeContinueTo(continueTo);
+        // 1. Xử lý an toàn cho Customer
+        if ("CUSTOMER".equals(account.role())) {
+
+            // Kiểm tra biến continueTo không bị rỗng và không phải là dấu "/"
+            if (continueTo != null && !continueTo.trim().isEmpty() && !continueTo.trim().equals("/")) {
+                String safePath = safeContinueTo(continueTo);
+
+                // Cắt bỏ dấu "/" ở đầu nếu có để tránh lỗi ghép thành "redirect://"
+                if (safePath.startsWith("/")) {
+                    safePath = safePath.substring(1);
+                }
+
+                return "redirect:/" + safePath;
+            }
+
+            // Mặc định an toàn nhất là về trang chủ
+            return "redirect:/";
         }
 
         return switch (account.role()){

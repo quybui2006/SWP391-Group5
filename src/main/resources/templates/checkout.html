@@ -137,6 +137,11 @@
 
         <div class="header-actions">
             <a class="login-btn" th:href="@{/cart}">Quay lại giỏ hàng</a>
+            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
+               th:href="@{/customer/account}" th:title="${session.fullName}"
+               aria-label="Hồ sơ khách hàng">
+                <span th:text="${#strings.substring(session.fullName, 0, 1).toUpperCase()}">U</span>
+            </a>
         </div>
     </div>
 </header>
