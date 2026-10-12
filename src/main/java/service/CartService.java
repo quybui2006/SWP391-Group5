@@ -16,6 +16,13 @@ public class CartService {
         this.jdbc = jdbc;
     }
 
+    public void validateVariant(Long variantId, int quantity) {
+        if (variantId == null) throw new IllegalArgumentException("Sản phẩm không hợp lệ.");
+        if (quantity < 1 || quantity > 99) throw new IllegalArgumentException("Số lượng phải từ 1 đến 99.");
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM product_variants pv JOIN products p ON p.id=pv.product_id WHERE pv.id=? AND pv.status='ACTIVE' AND p.selling_status='ACTIVE'", Integer.class, variantId);
+        if (count == null || count == 0) throw new IllegalArgumentException("Sản phẩm hiện không còn mở bán.");
+    }
+
     /**
      * Thêm sản phẩm vào giỏ hàng của khách hàng.
      */
@@ -94,6 +101,19 @@ public class CartService {
                         "ORDER BY ci.id",
                 cartId
         );
+    }
+
+    /** Read catalog data for items held in a guest's HTTP session. */
+    public List<Map<String, Object>> guestItems(java.util.Map<Long, Integer> quantities) {
+        if (quantities == null || quantities.isEmpty()) return List.of();
+        String marks = String.join(",", java.util.Collections.nCopies(quantities.size(), "?"));
+        List<Object> args = new java.util.ArrayList<>(quantities.keySet());
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT pv.id AS variant_id,pv.name AS variant_name,p.name AS product_name,pv.image_url,pv.price,vi.available_quantity " +
+                        "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
+                        "WHERE pv.id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE'", args.toArray());
+        for (Map<String, Object> row : rows) row.put("quantity", quantities.get(((Number) row.get("variant_id")).longValue()));
+        return rows;
     }
 
     /**
