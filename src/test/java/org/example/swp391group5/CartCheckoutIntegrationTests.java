@@ -71,6 +71,42 @@ class CartCheckoutIntegrationTests {
     }
 
     @Test
+    void customerProfilePersistsAndAccountPagesRender() throws Exception {
+        long user = seed();
+        var session = new MockHttpSession();
+        session.setAttribute("userId", user);
+        session.setAttribute("role", "CUSTOMER");
+        mvc.perform(get("/customer/account")).andExpect(status().is3xxRedirection());
+        mvc.perform(post("/customer/account/profile").session(session)
+            .param("fullName", "Khách hàng Việt").param("phone", "0912345678")
+            .param("gender", "FEMALE").param("birthDate", "2000-01-02"))
+            .andExpect(redirectedUrl("/customer/account"));
+        assertEquals("Khách hàng Việt", jdbc.queryForObject("SELECT full_name FROM users WHERE id=?", String.class, user));
+        assertEquals("FEMALE", jdbc.queryForObject("SELECT gender FROM customer_profiles WHERE user_id=?", String.class, user));
+        var imageBytes = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(2, 2, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", imageBytes);
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/customer/account/profile")
+            .file(new org.springframework.mock.web.MockMultipartFile("avatar", "avatar.png", "image/png", imageBytes.toByteArray()))
+            .session(session).param("fullName", "Khách hàng Việt").param("gender", "FEMALE"))
+            .andExpect(redirectedUrl("/customer/account"));
+        mvc.perform(get("/customer/account/avatar").session(session)).andExpect(status().isOk())
+            .andExpect(content().bytes(imageBytes.toByteArray()));
+        mvc.perform(get("/customer/account/avatar")).andExpect(status().isUnauthorized());
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) VALUES (?,?)", user, variant);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, user);
+        cart.add(user, variant, 1);
+        checkout.placeOrder(user, List.of(variant), address, null, null, null, null, null, null);
+        for (String path : List.of("/customer/account", "/customer/account/orders", "/customer/account/favorites"))
+            mvc.perform(get(path).session(session)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Khách hàng Việt")));
+        mvc.perform(post("/customer/account/profile").session(session)
+            .param("fullName", "Invalid").param("birthDate", "2999-01-01"))
+            .andExpect(flash().attributeExists("error"));
+        assertEquals("Khách hàng Việt", jdbc.queryForObject("SELECT full_name FROM users WHERE id=?", String.class, user));
+    }
+
+    @Test
     void persistsCartAndCreatesOrderWhileReservingStockAtomically() {
         long user = seed();
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);

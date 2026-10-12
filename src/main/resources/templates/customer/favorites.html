@@ -1,1 +1,16 @@
-<!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title San pham yeu thich | FreshFruit</title><link rel="stylesheet" th:href="@{/css/customer-account.css}"><link rel="stylesheet" th:href="@{/css/customer-account-pages.css}"></head><body><div class="customer-shell"><aside th:replace="~{customer/account-fragments :: sidebar('favorites')}"></aside><main class="customer-main"><h1>San pham yeu thich</h1><p>Danh sach san pham ban da luu.</p><section class="favorite-grid"><article class="favorite-card" th:each="f:${favorites}"><a th:href="@{/product/{id}(id=${f.variant_id})}"><img th:if="${f.image_url != null}" th:src="${f.image_url}"><h3 th:text="${f.product_name}"></h3><p th:text="${f.variant_name+' - '+f.sku}"></p><strong th:text="${f.price}"></strong></a><form method="post" th:action="@{/customer/account/favorites/toggle}"><input type="hidden" name="variantId" th:value="${f.variant_id}"><input type="hidden" name="redirect" value="/customer/account/favorites"><button type="submit">Bo yeu thich</button></form></article><p th:if="${#lists.isEmpty(favorites)}">Ban chua luu san pham yeu thich nao.</p></section></main></div><script src="/js/customer-account-pages.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{customer/account-fragments :: head('Sản phẩm yêu thích')}"></head>
+<body><div class="customer-shell">
+<aside th:replace="~{customer/account-fragments :: sidebar('favorites')}"></aside>
+<main class="customer-main">
+    <header th:replace="~{customer/account-fragments :: topbar('Sản phẩm yêu thích')}"></header>
+    <section class="account-panel">
+        <div class="account-heading"><h1>Sản phẩm yêu thích</h1><p>Lưu lại những sản phẩm bạn yêu thích để dễ dàng tìm mua.</p></div>
+        <div class="favorite-grid"><article class="favorite-card" th:each="f : ${favorites}">
+            <a th:href="@{/product/{id}(id=${f.variant_id})}"><img th:src="${f.image_url != null and !#strings.isEmpty(f.image_url)} ? ${f.image_url} : @{/images/shopowner/product-placeholder.svg}" th:alt="${f.product_name}"><h3 th:text="${f.product_name}"></h3><p th:text="${f.variant_name + ' · ' + f.sku}"></p><strong th:text="${#numbers.formatInteger(f.price,1,'POINT') + ' ₫'}"></strong></a>
+            <form method="post" th:action="@{/customer/account/favorites/toggle}"><input type="hidden" name="variantId" th:value="${f.variant_id}"><button type="submit">Bỏ yêu thích</button></form>
+        </article></div>
+        <div class="account-empty" th:if="${#lists.isEmpty(favorites)}"><p>Bạn chưa lưu sản phẩm yêu thích nào.</p><a class="primary-button" th:href="@{/search}">Khám phá sản phẩm</a></div>
+    </section>
+</main></div><script th:src="@{/js/customer-account-pages.js}"></script></body></html>

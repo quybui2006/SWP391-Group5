@@ -1,1 +1,19 @@
-<!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Don hang cua toi | FreshFruit</title><link rel="stylesheet" th:href="@{/css/customer-account.css}"><link rel="stylesheet" th:href="@{/css/customer-account-pages.css}"></head><body><div class="customer-shell"><aside th:replace="~{customer/account-fragments :: sidebar('orders')}"></aside><main class="customer-main"><h1>Don hang cua toi</h1><p>Theo doi cac don hang da dat.</p><section class="account-card table-card"><table><thead><tr><th>Ma don</th><th>Cua hang</th><th>Tong tien</th><th>Trang thai</th><th>Thanh toan</th><th>Ngay dat</th></tr></thead><tbody><tr th:each="o:${orders}"><td th:text="${o.order_code}"></td><td th:text="${o.shop_name}"></td><td th:text="${o.total_amount}"></td><td th:text="${o.status}"></td><td th:text="${o.payment_status}"></td><td th:text="${o.created_at}"></td></tr><tr th:if="${#lists.isEmpty(orders)}"><td colspan="6">Ban chua co don hang nao.</td></tr></tbody></table></section></main></div><script src="/js/customer-account-pages.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{customer/account-fragments :: head('Đơn hàng của tôi')}"></head>
+<body><div class="customer-shell">
+<aside th:replace="~{customer/account-fragments :: sidebar('orders')}"></aside>
+<main class="customer-main">
+    <header th:replace="~{customer/account-fragments :: topbar('Đơn hàng của tôi')}"></header>
+    <section class="account-panel">
+        <div class="account-heading"><h1>Đơn hàng của tôi</h1><p>Theo dõi đơn hàng và trạng thái thanh toán của bạn.</p></div>
+        <div class="table-card"><table><thead><tr><th>Mã đơn</th><th>Cửa hàng</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thanh toán</th><th>Ngày đặt</th></tr></thead>
+        <tbody><tr th:each="o : ${orders}">
+            <td th:text="${o.order_code}"></td><td th:text="${o.shop_name}"></td><td th:text="${#numbers.formatInteger(o.total_amount,1,'POINT') + ' ₫'}"></td>
+            <td th:switch="${o.status}"><span th:case="'PENDING'">Chờ xác nhận</span><span th:case="'CONFIRMED'">Đã xác nhận</span><span th:case="'PREPARING'">Đang chuẩn bị</span><span th:case="'SHIPPING'">Đang giao hàng</span><span th:case="'DELIVERED'">Đã giao hàng</span><span th:case="'COMPLETED'">Hoàn thành</span><span th:case="'CANCELLED'">Đã hủy</span><span th:case="*">Đang xử lý</span></td>
+            <td th:switch="${o.payment_status}"><span th:case="'PAID'">Đã thanh toán</span><span th:case="'REFUNDED'">Đã hoàn tiền</span><span th:case="*">Chưa thanh toán</span></td>
+            <td th:text="${#dates.format(o.created_at,'dd/MM/yyyy HH:mm')}"></td>
+        </tr></tbody></table></div>
+        <div class="account-empty" th:if="${#lists.isEmpty(orders)}"><p>Bạn chưa có đơn hàng nào.</p><a class="primary-button" th:href="@{/search}">Khám phá sản phẩm</a></div>
+    </section>
+</main></div><script th:src="@{/js/customer-account-pages.js}"></script></body></html>
