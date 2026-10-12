@@ -15,6 +15,7 @@ public class EmailService {
         mail.setTo(to);
         mail.setSubject("Mã xác minh email.");
         mail.setText("OTP: " + code + "\nMã có hiệu lực 5 phút");
+        mail.setFrom("quybui0611@gmail.com");
         mailSender.send(mail);
     }
     public void sendPasswordResetEmail(String to, String code) {
@@ -22,6 +23,7 @@ public class EmailService {
         mail.setTo(to);
         mail.setSubject("Mã xác minh đặt lại mật khẩu.");
         mail.setText("OTP: "+code+"\nMã có hiệu lực 5 phút");
+        mail.setFrom("quybui0611@gmail.com");
         mailSender.send(mail);
     }
 }
