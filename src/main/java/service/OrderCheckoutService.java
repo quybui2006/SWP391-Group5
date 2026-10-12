@@ -105,17 +105,20 @@ public class OrderCheckoutService {
     }
 
     private Long insertId(String sql, Object... values) {
-        KeyHolder keys = new GeneratedKeyHolder();
+        org.springframework.jdbc.support.KeyHolder keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
         jdbc.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (int i = 0; i < values.length; i++) ps.setObject(i + 1, values[i]);
+            java.sql.PreparedStatement ps = connection.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
+            for (int i = 0; i < values.length; i++) {
+                ps.setObject(i + 1, values[i]);
+            }
             return ps;
         }, keys);
-        Object generatedId = keys.getKeyList().get(0).entrySet().stream()
-                .filter(entry -> "id".equalsIgnoreCase(entry.getKey()))
-                .map(Map.Entry::getValue).findFirst().orElse(null);
-        Number key = generatedId instanceof Number number ? number : null;
-        if (key == null) throw new IllegalStateException("Không lấy được mã bản ghi vừa tạo.");
+
+
+        Number key = keys.getKey();
+        if (key == null) {
+            throw new IllegalStateException("Không lấy được mã bản ghi vừa tạo.");
+        }
         return key.longValue();
     }
 }
