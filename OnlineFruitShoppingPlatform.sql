@@ -191,6 +191,15 @@ CREATE TABLE product_variants (
     FOREIGN KEY (product_id, shop_id) REFERENCES products(id, shop_id)
 );
 
+CREATE TABLE customer_favorites (
+    user_id BIGINT NOT NULL,
+    variant_id BIGINT NOT NULL,
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (user_id, variant_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+);
+
 CREATE TABLE variant_inventory (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     variant_id BIGINT NOT NULL,

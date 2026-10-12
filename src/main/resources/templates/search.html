@@ -102,14 +102,12 @@
             </a>
 
 
-            <!-- LOGIN -->
-            <a
-                    class="login-btn"
-                    th:href="@{/login}">
-
-                Đăng nhập
-
+            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
+               th:href="@{/customer/account}" th:title="${session.fullName}"
+               aria-label="Hồ sơ khách hàng" style="text-decoration:none">
+                <span th:text="${#strings.substring(session.fullName, 0, 1).toUpperCase()}">U</span>
             </a>
+            <a class="login-btn" th:if="${session.role == null}" th:href="@{/login}">Đăng nhập</a>
 
         </div>
 
@@ -722,6 +720,8 @@
 ========================================================= -->
 
 <script th:src="@{/js/search.js}"></script>
+<!-- Tan PTH integration: connect product cards to the database-backed cart. -->
+<script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
 
 </body>
 

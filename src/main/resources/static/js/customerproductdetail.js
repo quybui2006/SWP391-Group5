@@ -258,49 +258,18 @@ function toggleFavorite(button) {
     }
 
 
-    let favorites = JSON.parse(
-        localStorage.getItem("freshfruit-favorites") || "[]"
-    );
-
-
-    const numericId = Number(variantId);
-
-    const index = favorites.indexOf(numericId);
-
-
-    if (index === -1) {
-
-        favorites.push(numericId);
-
-        button.classList.add("active");
-
-        button.textContent = "♥";
-
-        button.setAttribute(
-            "aria-label",
-            "Bỏ khỏi yêu thích"
-        );
-
-    } else {
-
-        favorites.splice(index, 1);
-
-        button.classList.remove("active");
-
-        button.textContent = "♡";
-
-        button.setAttribute(
-            "aria-label",
-            "Thêm vào yêu thích"
-        );
-
-    }
-
-
-    localStorage.setItem(
-        "freshfruit-favorites",
-        JSON.stringify(favorites)
-    );
+    const form = document.createElement("form");
+    form.method = "post";
+    form.action = "/customer/account/favorites/toggle";
+    [["variantId", variantId], ["redirect", window.location.pathname]].forEach(([name, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
 
 }
 
@@ -332,23 +301,7 @@ function restoreFavoriteState() {
     );
 
 
-    const favorites = JSON.parse(
-        localStorage.getItem("freshfruit-favorites") || "[]"
-    );
-
-
-    if (favorites.includes(variantId)) {
-
-        button.classList.add("active");
-
-        button.textContent = "♥";
-
-        button.setAttribute(
-            "aria-label",
-            "Bỏ khỏi yêu thích"
-        );
-
-    }
+    // The server is the source of truth for favorites.
 
 }
 
