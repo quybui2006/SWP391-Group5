@@ -32,9 +32,8 @@
                 <thead>
                 <tr>
                     <th>Sản phẩm</th>
-                    <th>SKU</th>
                     <th>Danh mục</th>
-                    <th>Giá</th>
+                    <th>Biến thể</th>
                     <th>Tồn kho</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
@@ -51,9 +50,8 @@
                             <a th:href="@{/shop/product/{id}(id=${product.id})}" th:text="${product.name}">Tên sản phẩm</a>
                         </div>
                     </td>
-                    <td th:text="${product.sku}">SKU</td>
                     <td th:text="${product.categoryName}">Danh mục</td>
-                    <td th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' ₫'">0 ₫</td>
+                    <td th:text="${product.variantCount + ' biến thể'}">0 biến thể</td>
                     <td th:text="${product.stockQuantity}">0</td>
                     <td>
                         <span class="badge"

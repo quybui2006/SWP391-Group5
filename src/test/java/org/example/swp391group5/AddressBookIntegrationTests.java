@@ -52,10 +52,13 @@ class AddressBookIntegrationTests {
         assertEquals("Địa chỉ đã cập nhật", service.owned(second, owner).getAddressDetail());
         assertTrue(service.owned(second, owner).isDefaultAddress());
         assertThrows(IllegalArgumentException.class, () -> service.owned(firstId, other));
+        assertThrows(IllegalArgumentException.class, () -> service.delete(owner, second));
+        assertEquals(2, service.list(owner).size());
+        service.setDefault(owner, firstId);
         service.delete(owner, second);
         assertTrue(service.list(owner).get(0).isDefaultAddress());
-        service.delete(owner, firstId);
-        assertTrue(service.list(owner).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> service.delete(owner, firstId));
+        assertEquals(1, service.list(owner).size());
     }
     @Test
     void rejectsInvalidPhoneAndLocation() {

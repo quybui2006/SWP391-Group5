@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thông báo | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="customer-shell">
+    <aside th:replace="~{customer/account-fragments :: sidebar('notifications')}"></aside>
+    
+    <main class="customer-main">
+        <header class="customer-topbar">
+            <div class="breadcrumbs">
+                <span>Trang chủ</span> / <span>Tài khoản</span> / <strong>Thông báo</strong>
+            </div>
+            <div class="topbar-actions">
+                <a th:href="@{/}" class="cart-link">Về cửa hàng ➔</a>
+            </div>
+        </header>
+
+        <section class="page-intro">
+            <div>
+                <span class="eyebrow">HỘP THƯ & CẬP NHẬT</span>
+                <h1>Thông báo của tôi</h1>
+                <p>Cập nhật trạng thái đơn hàng, ưu đãi trái cây tươi và tin tức từ FreshFruit.</p>
+            </div>
+            <div>
+                <button type="button" id="markAllReadBtnPage" class="primary-button" style="background:#e8f8ee;color:#198b4e;border:1px solid #c8ebd2;font-size:13px;padding:9px 16px;">
+                    ✓ Đánh dấu tất cả đã đọc
+                </button>
+            </div>
+        </section>
+
+        <!-- Notification Filter Tabs -->
+        <div class="notif-page-tabs">
+            <button type="button" class="notif-tab active" data-filter="all">
+                Tất cả <span class="tab-badge" th:text="${#lists.size(notifications)}">0</span>
+            </button>
+            <button type="button" class="notif-tab" data-filter="unread">
+                Chưa đọc <span class="tab-badge unread-badge" id="pageUnreadBadge" th:text="${unreadCount}">0</span>
+            </button>
+            <button type="button" class="notif-tab" data-filter="order">
+                Đơn hàng
+            </button>
+            <button type="button" class="notif-tab" data-filter="promo">
+                Khuyến mãi
+            </button>
+            <button type="button" class="notif-tab" data-filter="system">
+                Hệ thống
+            </button>
+        </div>
+
+        <!-- Notifications List -->
+        <div class="notif-page-card">
+            <div class="notif-page-list" id="notifPageList">
+                <th:block th:if="${#lists.isEmpty(notifications)}">
+                    <div class="notif-empty-state">
+                        <div class="empty-icon">🔔</div>
+                        <h3>Bạn chưa có thông báo nào</h3>
+                        <p>Khi có đơn hàng mới hoặc ưu đãi trái cây hấp dẫn, FreshFruit sẽ gửi tin đến bạn tại đây.</p>
+                        <a th:href="@{/search}" class="primary-button" style="margin-top:14px;">Khám phá sản phẩm ngay</a>
+                    </div>
+                </th:block>
+
+                <th:block th:each="n : ${notifications}">
+                    <div class="notif-page-item" 
+                         th:classappend="${!n.read} ? ' unread' : ''"
+                         th:data-id="${n.id}"
+                         th:data-type="${#strings.toLowerCase(n.type)}"
+                         th:data-read="${n.read}">
+                        <div class="notif-item-icon" th:classappend="${n.badgeClass}" th:text="${n.icon}">
+                            🔔
+                        </div>
+                        <div class="notif-item-body">
+                            <div class="notif-item-header">
+                                <h4 class="notif-item-title" th:text="${n.title}">Tiêu đề thông báo</h4>
+                                <span class="notif-item-time" th:text="${n.timeAgo}" th:title="${n.createdAtFormatted}">Vừa xong</span>
+                            </div>
+                            <p class="notif-item-desc" th:text="${n.content}">Nội dung thông báo chi tiết...</p>
+                            <div class="notif-item-actions">
+                                <a th:if="${n.targetUrl != null}" th:href="${n.targetUrl}" class="notif-action-btn">
+                                    Xem chi tiết <span>➔</span>
+                                </a>
+                                <button th:if="${!n.read}" type="button" class="notif-mark-single-btn" th:data-id="${n.id}">
+                                    Đánh dấu đã đọc
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script th:src="@{/js/notifications.js}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Page tabs filter
+    const tabs = document.querySelectorAll(".notif-tab");
+    const items = document.querySelectorAll(".notif-page-item");
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+            tabs.forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+            const filter = this.getAttribute("data-filter");
+
+            items.forEach(item => {
+                const type = item.getAttribute("data-type") || "";
+                const isRead = item.getAttribute("data-read") === "true";
+
+                if (filter === "all") {
+                    item.style.display = "flex";
+                } else if (filter === "unread") {
+                    item.style.display = !isRead ? "flex" : "none";
+                } else if (filter === "order") {
+                    item.style.display = type.includes("order") ? "flex" : "none";
+                } else if (filter === "promo") {
+                    item.style.display = (type.includes("promo") || type.includes("product")) ? "flex" : "none";
+                } else if (filter === "system") {
+                    item.style.display = (type.includes("system") || type.includes("account")) ? "flex" : "none";
+                }
+            });
+        });
+    });
+
+    // Mark single as read on page
+    document.querySelectorAll(".notif-mark-single-btn").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const id = this.getAttribute("data-id");
+            fetch("/api/notifications/" + id + "/read", { method: "POST" })
+                .then(r => r.json())
+                .then(data => {
+                    const parent = btn.closest(".notif-page-item");
+                    if (parent) {
+                        parent.classList.remove("unread");
+                        parent.setAttribute("data-read", "true");
+                        btn.remove();
+                    }
+                    const badge = document.getElementById("pageUnreadBadge");
+                    if (badge) badge.textContent = data.unreadCount || 0;
+                    if (window.refreshNotifBadge) window.refreshNotifBadge(data.unreadCount);
+                });
+        });
+    });
+
+    // Mark all as read on page
+    const markAllBtn = document.getElementById("markAllReadBtnPage");
+    if (markAllBtn) {
+        markAllBtn.addEventListener("click", function () {
+            fetch("/api/notifications/read-all", { method: "POST" })
+                .then(r => r.json())
+                .then(() => {
+                    items.forEach(item => {
+                        item.classList.remove("unread");
+                        item.setAttribute("data-read", "true");
+                        const singleBtn = item.querySelector(".notif-mark-single-btn");
+                        if (singleBtn) singleBtn.remove();
+                    });
+                    const badge = document.getElementById("pageUnreadBadge");
+                    if (badge) badge.textContent = "0";
+                    if (window.refreshNotifBadge) window.refreshNotifBadge(0);
+                });
+        });
+    }
+});
+</script>
+</body>
+</html>

@@ -48,9 +48,9 @@
                 <table>
                     <thead>
                     <tr>
-                        <th>Sản phẩm / biến thể</th>
+                        <th>Biến thể</th>
                         <th>SKU</th>
-                        <th>Quy cách</th>
+                        <th>Đơn vị bán</th>
                         <th>Giá bán</th>
                         <th>Tồn kho</th>
                         <th>Trạng thái</th>
@@ -63,14 +63,14 @@
                             <div class="product-cell">
                                 <span class="image-placeholder">🍊</span>
                                 <div>
-                                    <a th:href="@{/shop/product/{id}(id=${variant.product_id})}"
-                                       th:text="${variant.product_name}">Tên sản phẩm</a>
-                                    <small th:text="${variant.variant_name}">Tên biến thể</small>
+                                    <a class="variant-primary" th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}"
+                                       th:text="${variant.variant_name}">Tên biến thể</a>
+                                    <small class="variant-parent" th:text="${variant.product_name}">Tên sản phẩm</small>
                                 </div>
                             </div>
                         </td>
                         <td th:text="${variant.sku}">SKU</td>
-                        <td th:text="${variant.specification != null and !variant.specification.isEmpty() ? variant.specification : variant.unit_name}">Quy cách</td>
+                        <td th:text="${variant.unit_name}">Đơn vị bán</td>
                         <td th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.stock_quantity + ' ' + variant.unit_name}">0 kg</td>
                         <td>
@@ -86,8 +86,8 @@
                                   th:text="${variant.product_status == 'DRAFT' ? 'Sản phẩm nháp' : 'Chưa mở bán'}">Chưa mở bán</span>
                         </td>
                         <td class="product-actions">
-                            <a th:href="@{/shop/product/{id}(id=${variant.product_id})}">Chi tiết sản phẩm</a>
-                            <a th:href="@{/shop/product/{id}/edit(id=${variant.product_id})}">Sửa sản phẩm</a>
+                            <a th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}">Chi tiết</a>
+                            <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}">Sửa biến thể</a>
                         </td>
                     </tr>
                     </tbody>

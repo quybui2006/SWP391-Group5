@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 @TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:freshfruit_cart_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1")
 class CartCheckoutIntegrationTests {
@@ -26,6 +26,32 @@ class CartCheckoutIntegrationTests {
     @Autowired CartService cart;
     @Autowired OrderCheckoutService checkout;
     @Autowired MockMvc mvc;
+    @Autowired service.ShopOrderService shopOrders;
+
+    @Test
+    void shopOwnerReadsAndAdvancesOnlyTheirOwnOrders() throws Exception {
+        long owner = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, owner);
+        cart.add(owner, variant, 1);
+        String code = checkout.placeOrder(owner, List.of(variant), address, null, null, null, null, null, null);
+        long id = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
+        var session = new MockHttpSession();
+        session.setAttribute("userId", owner);
+        session.setAttribute("role", "SHOP_OWNER");
+        mvc.perform(get("/shopowner/orders").session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(code)));
+        mvc.perform(get("/shopowner/orders/" + id).session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("SKU-CHECKOUT")));
+        String token = (String) session.getAttribute("shopOrderToken");
+        for (String expected : List.of("CONFIRMED", "PREPARING")) {
+            mvc.perform(post("/shopowner/orders/" + id + "/advance").session(session).param("token", token))
+                    .andExpect(redirectedUrl("/shopowner/orders/" + id));
+            assertEquals(expected, shopOrders.detail(owner, id).get("status"));
+        }
+        assertThrows(IllegalArgumentException.class, () -> shopOrders.advance(owner, id));
+        assertTrue(shopOrders.list(-1L).isEmpty());
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.detail(-1L, id));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.advance(-1L, id));
+    }
 
     private long seed() {
         jdbc.update("INSERT INTO provinces(code,name) VALUES ('P-CHECKOUT','Province checkout')");
@@ -42,6 +68,60 @@ class CartCheckoutIntegrationTests {
         jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,available_quantity,created_by) VALUES (?,?,?, ?,?)", variant, 20, 20, 20, user);
         jdbc.update("INSERT INTO user_addresses(user_id,recipient_name,recipient_phone,province_code,ward_name,address_detail,is_default) VALUES (?,?,?,?,?,?,TRUE)", user, "Recipient", "0912345678", "P-CHECKOUT", "Ward", "1 Test St");
         return user;
+    }
+
+    @Test
+    void customerProfilePersistsAndAccountPagesRender() throws Exception {
+        long user = seed();
+        var session = new MockHttpSession();
+        session.setAttribute("userId", user);
+        session.setAttribute("role", "CUSTOMER");
+        mvc.perform(get("/customer/account")).andExpect(status().is3xxRedirection());
+        mvc.perform(post("/customer/account/profile").session(session)
+            .param("fullName", "Khách hàng Việt").param("phone", "0912345678")
+            .param("gender", "FEMALE").param("birthDate", "2000-01-02"))
+            .andExpect(redirectedUrl("/customer/account"));
+        assertEquals("Khách hàng Việt", jdbc.queryForObject("SELECT full_name FROM users WHERE id=?", String.class, user));
+        assertEquals("FEMALE", jdbc.queryForObject("SELECT gender FROM customer_profiles WHERE user_id=?", String.class, user));
+        var imageBytes = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(2, 2, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", imageBytes);
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/customer/account/profile")
+            .file(new org.springframework.mock.web.MockMultipartFile("avatar", "avatar.png", "image/png", imageBytes.toByteArray()))
+            .session(session).param("fullName", "Khách hàng Việt").param("gender", "FEMALE"))
+            .andExpect(redirectedUrl("/customer/account"));
+        mvc.perform(get("/customer/account/avatar").session(session)).andExpect(status().isOk())
+            .andExpect(content().bytes(imageBytes.toByteArray()));
+        mvc.perform(get("/customer/account/avatar")).andExpect(status().isUnauthorized());
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        mvc.perform(post("/customer/account/favorites/save").param("variantId", String.valueOf(variant)).param("favorite", "true"))
+            .andExpect(status().isUnauthorized());
+        for (int i = 0; i < 2; i++)
+            mvc.perform(post("/customer/account/favorites/save").session(session)
+                .param("variantId", String.valueOf(variant)).param("favorite", "true"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.favorite").value(true));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=?", Integer.class, user));
+        mvc.perform(get("/customer/account/favorites/ids").session(session))
+            .andExpect(status().isOk()).andExpect(content().json("[" + variant + "]"));
+        var otherSession = new MockHttpSession();
+        otherSession.setAttribute("userId", -1L);
+        otherSession.setAttribute("role", "CUSTOMER");
+        mvc.perform(get("/customer/account/favorites/ids").session(otherSession))
+            .andExpect(content().json("[]"));
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, user);
+        cart.add(user, variant, 1);
+        checkout.placeOrder(user, List.of(variant), address, null, null, null, null, null, null);
+        for (String path : List.of("/customer/account", "/customer/account/orders", "/customer/account/favorites"))
+            mvc.perform(get(path).session(session)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Khách hàng Việt")));
+        mvc.perform(post("/customer/account/favorites/save").session(session)
+            .param("variantId", String.valueOf(variant)).param("favorite", "false"))
+            .andExpect(jsonPath("$.favorite").value(false));
+        mvc.perform(get("/customer/account/favorites/ids").session(session))
+            .andExpect(content().json("[]"));
+        mvc.perform(post("/customer/account/profile").session(session)
+            .param("fullName", "Invalid").param("birthDate", "2999-01-01"))
+            .andExpect(flash().attributeExists("error"));
+        assertEquals("Khách hàng Việt", jdbc.queryForObject("SELECT full_name FROM users WHERE id=?", String.class, user));
     }
 
     @Test
@@ -189,7 +269,7 @@ class CartCheckoutIntegrationTests {
         mvc.perform(get("/")).andExpect(status().isOk());
         mvc.perform(get("/login")).andExpect(status().isOk());
         mvc.perform(get("/search")).andExpect(status().isOk());
-        mvc.perform(get("/cart")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
+        mvc.perform(get("/cart")).andExpect(status().isOk());
         mvc.perform(get("/shop/products")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
     }
 
@@ -201,7 +281,7 @@ class CartCheckoutIntegrationTests {
         session.setAttribute("userId", owner);
         session.setAttribute("role", "SHOP_OWNER");
 
-        mvc.perform(get("/shopowner/home"))
+        mvc.perform(get("/shopowner/home").session(session))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/shop/products\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("href=\"#\">◫ Products"))));
@@ -213,7 +293,7 @@ class CartCheckoutIntegrationTests {
         mvc.perform(get("/shop/products/add").session(session))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"name\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"sku\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"batchCode\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/shop/products/add\"")));
         mvc.perform(get("/shop/product/" + productId).session(session))
                 .andExpect(status().isOk())

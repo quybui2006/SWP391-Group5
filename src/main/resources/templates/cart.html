@@ -1,23 +1,551 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Giỏ hàng | FreshFruit</title><link rel="stylesheet" th:href="@{/css/home.css}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Giỏ hàng | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+
     <style>
-        main{max-width:1100px;margin:36px auto;padding:0 20px;min-height:55vh}.cart-row{display:grid;grid-template-columns:36px minmax(220px,2fr) 1fr 1fr 100px;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid #e5e7eb}.cart-head{font-size:13px;color:#647067;font-weight:700}.product{display:flex;gap:14px;align-items:center}.product img{width:64px;height:64px;object-fit:cover;border-radius:6px;background:#f3f4f6}.qty{display:flex;align-items:center;gap:8px}.qty input{width:64px;padding:8px;border:1px solid #d1d5db;border-radius:4px}.remove,.checkout{border:0;cursor:pointer}.remove{background:transparent;color:#b42318}.summary{display:flex;justify-content:space-between;align-items:center;padding:22px 0}.notice{padding:12px;margin:12px 0;background:#eff8f1;color:#205c32}.error{background:#fff1f0;color:#9f251d}.empty{text-align:center;padding:50px 0}@media(max-width:700px){.cart-head{display:none}.cart-row{grid-template-columns:28px 1fr auto;gap:10px}.cart-row>*:nth-child(3),.cart-row>*:nth-child(4){grid-column:2}.cart-row>*:last-child{grid-column:3;grid-row:1}.summary{align-items:flex-start;gap:12px;flex-direction:column}}
+        main {
+            max-width: 1150px;
+            margin: 36px auto;
+            padding: 0 20px;
+            min-height: 55vh;
+        }
+
+        .cart-row {
+            display: grid;
+            grid-template-columns: 36px minmax(200px, 2fr)
+                1fr 1.5fr 1fr 65px;
+            gap: 14px;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .cart-head {
+            font-size: 13px;
+            color: #647067;
+            font-weight: 700;
+        }
+
+        .product {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .product img {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        .product-info {
+            overflow-wrap: anywhere;
+        }
+
+        .product-info small {
+            display: block;
+            color: #647067;
+            margin-top: 5px;
+        }
+
+        .qty {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .qty input {
+            width: 55px;
+            padding: 7px 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .qty-btn,
+        .qty-save {
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            padding: 6px 9px;
+        }
+
+        .qty-save {
+            font-size: 12px;
+        }
+
+        .remove {
+            border: 0;
+            background: transparent;
+            color: #b42318;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            padding: 24px 0;
+            margin-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .summary-total {
+            font-size: 16px;
+        }
+
+        .total-price {
+            color: #16803c;
+            font-size: 22px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .notice {
+            padding: 12px;
+            margin: 12px 0;
+            background: #eff8f1;
+            color: #205c32;
+        }
+
+        .error {
+            background: #fff1f0;
+            color: #9f251d;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 0;
+        }
+
+        .btn-disabled,
+        .checkout:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .checkout {
+            cursor: pointer;
+            border: 0;
+        }
+
+        .select-all {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 850px) {
+            .cart-head {
+                display: none;
+            }
+
+            .cart-row {
+                grid-template-columns: 28px minmax(0, 1fr) auto;
+                gap: 10px;
+            }
+
+            .cart-row > *:nth-child(3) {
+                grid-column: 2;
+            }
+
+            .cart-row > *:nth-child(4) {
+                grid-column: 2;
+            }
+
+            .cart-row > *:nth-child(5) {
+                grid-column: 2;
+            }
+
+            .cart-row > *:nth-child(6) {
+                grid-column: 3;
+                grid-row: 1;
+            }
+
+            .summary {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
+
 <body>
-<header class="site-header"><div class="container header-inner"><a class="brand" th:href="@{/}"><span class="brand-mark">F</span><span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span></a><nav class="main-nav"><a th:href="@{/}">Trang chủ</a><a th:href="@{/search}">Sản phẩm</a></nav><div class="header-actions"><form th:action="@{/logout}" method="post"><button class="login-btn" type="submit">Đăng xuất</button></form></div></div></header>
-<main><h1>Giỏ hàng</h1><p class="notice" th:if="${message}" th:text="${message}"></p><p class="notice error" th:if="${error}" th:text="${error}"></p>
-    <div class="cart-row cart-head" th:unless="${#lists.isEmpty(cartItems)}"><div></div><div>Sản phẩm</div><div>Đơn giá</div><div>Số lượng</div><div></div></div>
-    <div class="empty" th:if="${#lists.isEmpty(cartItems)}"><h2>Giỏ hàng đang trống</h2><a class="primary-btn" th:href="@{/search}">Tiếp tục mua sắm</a></div>
-    <div th:each="item : ${cartItems}" class="cart-row">
-        <div><input type="checkbox" name="selectedVariantIds" th:value="${item.variant_id}" form="checkoutForm" aria-label="Chọn sản phẩm"></div>
-        <div class="product"><img th:src="${item.image_url}" alt=""><div><strong th:text="${item.product_name}"></strong><div th:text="${item.variant_name}"></div><small th:text="${'Còn ' + item.available_quantity + ' sản phẩm'}"></small></div></div>
-        <strong th:text="${#numbers.formatDecimal(item.price,0,'COMMA',0,'POINT') + ' ₫'}"></strong>
-        <form class="qty" th:action="@{/cart/items/{id}/quantity(id=${item.id})}" method="post"><input type="number" name="quantity" min="1" max="99" th:value="${item.quantity}"><button type="submit">Cập nhật</button></form>
-        <form th:action="@{/cart/items/{id}/delete(id=${item.id})}" method="post"><button class="remove" type="submit">Xóa</button></form>
+
+<header class="site-header">
+    <div class="container header-inner">
+
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span>
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+        </a>
+
+        <nav class="main-nav">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/search}">Sản phẩm</a>
+        </nav>
+
+        <div class="header-actions">
+            <!-- Shopee Style Notification Bell -->
+            <div class="notif-wrapper" id="notifWrapper">
+                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
+                    <!-- Dynamic content loaded by notifications.js -->
+                </div>
+            </div>
+
+            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
+               th:href="@{/customer/account}" th:title="${session.fullName}"
+               aria-label="Hồ sơ khách hàng">
+                <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+            </a>
+            <a class="login-btn" th:if="${session.role == null}" th:href="@{/login}">Đăng nhập</a>
+        </div>
+
     </div>
-    <form id="checkoutForm" th:action="@{/checkout}" method="post" th:unless="${#lists.isEmpty(cartItems)}" class="summary"><span>Chọn các mặt hàng cần đặt.</span><button class="primary-btn checkout" type="submit">Thanh toán</button></form>
-</main></body></html>
+</header>
+
+<main>
+
+    <h1>🛒 Giỏ hàng của bạn</h1>
+
+    <p class="notice"
+       th:if="${message}"
+       th:text="${message}"></p>
+
+    <p class="notice error"
+       th:if="${error}"
+       th:text="${error}"></p>
+
+    <!-- Tiêu đề các cột -->
+    <div class="cart-row cart-head"
+         th:unless="${#lists.isEmpty(cartItems)}">
+
+        <div></div>
+        <div>Sản phẩm</div>
+        <div>Đơn giá</div>
+        <div>Số lượng</div>
+        <div>Thành tiền</div>
+        <div>Xóa</div>
+
+    </div>
+
+    <!-- Giỏ hàng trống -->
+    <div class="empty"
+         th:if="${#lists.isEmpty(cartItems)}">
+
+        <h2>Giỏ hàng đang trống</h2>
+
+        <p>Hãy chọn những sản phẩm tươi ngon mà bạn yêu thích.</p>
+
+        <a class="primary-btn" th:href="@{/search}">
+            Tiếp tục mua sắm
+        </a>
+
+    </div>
+
+    <!-- Danh sách sản phẩm -->
+    <div th:each="item : ${cartItems}"
+         class="cart-row cart-item">
+
+        <!-- Checkbox chọn sản phẩm thanh toán -->
+        <div>
+            <input type="checkbox"
+                   class="item-check"
+                   name="selectedVariantIds"
+                   th:value="${item['variant_id']}"
+                   th:attr="data-price=${item['price']}"
+                   form="checkoutForm"
+                   aria-label="Chọn sản phẩm">
+        </div>
+
+        <!-- Thông tin sản phẩm -->
+        <div class="product">
+
+            <img th:src="${item['image_url']}"
+                 th:alt="${item['product_name']}">
+
+            <div class="product-info">
+
+                <strong th:text="${item['product_name']}">
+                    Tên sản phẩm
+                </strong>
+
+                <div th:text="${item['variant_name']}">
+                    Phân loại
+                </div>
+
+                <small>
+                    Còn
+                    <span th:text="${item['available_quantity']}">0</span>
+                    sản phẩm
+                </small>
+
+            </div>
+
+        </div>
+
+        <!-- Đơn giá -->
+        <strong class="unit-price"
+                th:text="${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+            0 ₫
+        </strong>
+
+        <!-- Cập nhật số lượng -->
+        <form class="qty"
+              th:action="@{/cart/items/{id}/quantity(id=${item['id']})}"
+              method="post">
+
+            <button type="button"
+                    class="qty-btn"
+                    onclick="changeQuantity(this, -1)"
+                    aria-label="Giảm số lượng">
+                −
+            </button>
+
+            <input type="number"
+                   class="qty-input"
+                   name="quantity"
+                   min="1"
+                   max="99"
+                   th:value="${item['quantity']}"
+                   onchange="normalizeQuantity(this); updateRowTotal(this)"
+                   required>
+
+            <button type="button"
+                    class="qty-btn"
+                    onclick="changeQuantity(this, 1)"
+                    aria-label="Tăng số lượng">
+                +
+            </button>
+
+            <button type="submit" class="qty-save">
+                Cập nhật
+            </button>
+
+        </form>
+
+        <!-- Thành tiền -->
+        <strong class="row-total-price"
+                th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+            0 ₫
+        </strong>
+
+        <!-- Xóa sản phẩm -->
+        <form th:action="@{/cart/items/{id}/delete(id=${item['id']})}"
+              method="post">
+
+            <button type="submit"
+                    class="remove"
+                    onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
+                Xóa
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- Thanh thanh toán -->
+    <div class="summary"
+         th:unless="${#lists.isEmpty(cartItems)}">
+
+        <label class="select-all">
+            <input type="checkbox" id="selectAllBottom">
+            Chọn tất cả
+        </label>
+
+        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+
+            <div class="summary-total">
+                Đã chọn
+                <strong id="totalSelectedCount">0</strong>
+                sản phẩm:
+                <span class="total-price" id="totalPrice">0 ₫</span>
+            </div>
+
+            <form id="checkoutForm"
+                  th:action="@{/checkout}"
+                  method="post">
+
+                <button type="submit"
+                        class="primary-btn checkout btn-disabled"
+                        id="btnCheckout"
+                        disabled>
+                    Tiến hành đặt hàng →
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span>
+                    <strong>FreshFruit</strong>
+                    <small>Tươi ngon mỗi ngày</small>
+                </span>
+            </a>
+
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
+        </div>
+
+        <div class="footer-links">
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+        </div>
+
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+
+    </div>
+</footer>
+
+<script>
+    // Tăng hoặc giảm số lượng trên giao diện.
+    // Muốn lưu vào database, cần bấm nút Cập nhật.
+    function changeQuantity(button, delta) {
+        const input = button.parentElement.querySelector('.qty-input');
+
+        let quantity = parseInt(input.value, 10);
+
+        if (Number.isNaN(quantity)) {
+            quantity = 1;
+        }
+
+        quantity = Math.max(1, Math.min(99, quantity + delta));
+
+        input.value = quantity;
+
+        updateRowTotal(input);
+    }
+
+    function normalizeQuantity(input) {
+        let quantity = parseInt(input.value, 10);
+
+        if (Number.isNaN(quantity)) {
+            quantity = 1;
+        }
+
+        quantity = Math.max(1, Math.min(99, quantity));
+
+        input.value = quantity;
+    }
+
+    // Cập nhật thành tiền của một dòng.
+    function updateRowTotal(input) {
+        const row = input.closest('.cart-item');
+        const checkbox = row.querySelector('.item-check');
+
+        const price = Number(checkbox.dataset.price || 0);
+        const quantity = Math.max(
+            1,
+            Math.min(99, parseInt(input.value, 10) || 1)
+        );
+
+        row.querySelector('.row-total-price').textContent =
+            new Intl.NumberFormat('vi-VN').format(price * quantity) + ' ₫';
+
+        updateCheckoutState();
+    }
+
+    // Cập nhật tổng tiền của những sản phẩm được chọn.
+    function updateCheckoutState() {
+        const itemChecks = document.querySelectorAll('.item-check');
+        const selectAll = document.getElementById('selectAllBottom');
+        const countDisplay = document.getElementById('totalSelectedCount');
+        const totalPriceDisplay = document.getElementById('totalPrice');
+        const btnCheckout = document.getElementById('btnCheckout');
+
+        if (!countDisplay || !totalPriceDisplay || !btnCheckout) {
+            return;
+        }
+
+        let total = 0;
+        let selectedCount = 0;
+
+        itemChecks.forEach(function (checkbox) {
+            if (!checkbox.checked) {
+                return;
+            }
+
+            const row = checkbox.closest('.cart-item');
+            const quantityInput = row.querySelector('.qty-input');
+
+            const price = Number(checkbox.dataset.price || 0);
+            const quantity = parseInt(quantityInput.value, 10) || 1;
+
+            total += price * quantity;
+            selectedCount++;
+        });
+
+        countDisplay.textContent = selectedCount;
+
+        totalPriceDisplay.textContent =
+            new Intl.NumberFormat('vi-VN').format(total) + ' ₫';
+
+        btnCheckout.disabled = selectedCount === 0;
+        btnCheckout.classList.toggle('btn-disabled', selectedCount === 0);
+
+        if (selectAll) {
+            selectAll.checked =
+                itemChecks.length > 0 &&
+                selectedCount === itemChecks.length;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemChecks = document.querySelectorAll('.item-check');
+        const selectAll = document.getElementById('selectAllBottom');
+
+        itemChecks.forEach(function (checkbox) {
+            checkbox.addEventListener('change', updateCheckoutState);
+        });
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                itemChecks.forEach(function (checkbox) {
+                    checkbox.checked = selectAll.checked;
+                });
+
+                updateCheckoutState();
+            });
+        }
+
+        updateCheckoutState();
+    });
+</script>
+
+<script th:src="@{/js/notifications.js}"></script>
+
+</body>
+</html>

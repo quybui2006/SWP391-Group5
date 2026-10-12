@@ -1,23 +1,94 @@
+```html
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <body>
+
 <aside class="sidebar" th:fragment="sidebar(activePage)">
-    <a class="brand" th:href="@{/shopowner/home}"><span class="brand-mark">F</span><span>Fresh<span>Fruit</span><small>CHỦ CỬA HÀNG</small></span></a>
-    <div class="shop-switcher"><div class="shop-avatar">ME</div><div><strong>Cửa hàng FreshFruit</strong><small>Cửa hàng của tôi</small></div><span>⌄</span></div>
-    <nav class="side-nav" aria-label="Điều hướng Shop Owner">
+
+    <!-- Brand -->
+    <a class="brand" th:href="@{/shopowner/home}">
+        <span class="brand-mark">F</span>
+        <span>
+            Fresh<span>Fruit</span>
+            <small>CHỦ CỬA HÀNG</small>
+        </span>
+    </a>
+
+    <!-- Shop information -->
+    <div class="shop-switcher">
+        <div class="shop-avatar">SO</div>
+        <div>
+            <strong th:text="${shopName ?: 'Cửa hàng của tôi'}">
+                Cửa hàng của tôi
+            </strong>
+            <small>Cửa hàng của tôi</small>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="side-nav" aria-label="Điều hướng chủ cửa hàng">
+
         <span class="nav-label">TỔNG QUAN</span>
-        <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/shopowner/home}"><span>⌂</span> Tổng quan</a>
+
+        <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''"
+           th:href="@{/shopowner/home}">
+            <span>⌂</span> Tổng quan
+        </a>
+
         <span class="nav-label">QUẢN LÝ CỬA HÀNG</span>
-        <a th:classappend="${activePage == 'products'} ? ' active' : ''" th:href="@{/shop/products}"><span>▦</span> Sản phẩm</a>
-        <!-- Tan PTH integration: restore access to the DB-backed variants screen. -->
-        <a th:classappend="${activePage == 'variants'} ? ' active' : ''" th:href="@{/shopowner/product-variants}"><span>▤</span> Biến thể sản phẩm</a>
-        <a href="#"><span>◌</span> Đơn hàng <b class="nav-count orange">4</b></a>
-        <a href="#"><span>♧</span> Kho hàng</a>
+
+        <a th:classappend="${activePage == 'products'} ? ' active' : ''"
+           th:href="@{/shop/products}">
+            <span>▦</span> Sản phẩm
+        </a>
+
+        <a th:classappend="${activePage == 'variants'} ? ' active' : ''"
+           th:href="@{/shopowner/product-variants}">
+            <span>▤</span> Biến thể sản phẩm
+        </a>
+
+        <a th:classappend="${activePage == 'orders'} ? ' active' : ''"
+           th:href="@{/shopowner/orders}">
+            <span>◌</span> Đơn hàng
+        </a>
+
+        <a href="#" data-pending>
+            <span>♧</span> Kho hàng
+        </a>
+
         <span class="nav-label">KHÁC</span>
-        <a href="#"><span>⚙</span> Cài đặt</a>
-        <a href="#"><span>?</span> Trợ giúp</a>
+
+        <a href="#" data-pending>
+            <span>⚙</span> Cài đặt
+        </a>
+
+        <a href="#" data-pending>
+            <span>?</span> Trợ giúp
+        </a>
+
     </nav>
-    <div class="sidebar-footer"><div class="mini-user"><div class="avatar">AM</div><div><strong>Anna Manager</strong><small>Chủ cửa hàng</small></div><span>⋮</span></div></div>
+
+    <!-- Current user -->
+    <div class="sidebar-footer">
+        <div class="mini-user">
+            <div class="avatar">SO</div>
+
+            <div>
+                <strong th:text="${ownerName ?: 'Chủ cửa hàng'}">
+                    Chủ cửa hàng
+                </strong>
+                <small>Chủ cửa hàng</small>
+            </div>
+
+            <span>⋮</span>
+        </div>
+    </div>
+
+    <!-- Sidebar interactions -->
+    <script th:src="@{/js/shopowner.js}" defer></script>
+
 </aside>
+
 </body>
 </html>
+```

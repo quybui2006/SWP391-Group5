@@ -896,3 +896,15 @@ input {
         cursor: pointer;
     }
 }
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--green-light);
+    color: var(--green-dark);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+}

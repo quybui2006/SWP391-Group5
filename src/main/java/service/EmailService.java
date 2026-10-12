@@ -2,7 +2,9 @@ package service;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
 
+@Service
 public class EmailService {
     private final JavaMailSender mailSender;
     public EmailService(JavaMailSender mailSender) {
@@ -11,8 +13,17 @@ public class EmailService {
     public void sendEmail(String to, String code) {
         SimpleMailMessage mail = new SimpleMailMessage();
         mail.setTo(to);
-        mail.setSubject("Verify code ");
-        mail.setText("OTP: " + code + "5 minutes");
+        mail.setSubject("Mã xác minh email.");
+        mail.setText("OTP: " + code + "\nMã có hiệu lực 5 phút");
+        mail.setFrom("quybui0611@gmail.com");
+        mailSender.send(mail);
+    }
+    public void sendPasswordResetEmail(String to, String code) {
+        SimpleMailMessage mail = new SimpleMailMessage();
+        mail.setTo(to);
+        mail.setSubject("Mã xác minh đặt lại mật khẩu.");
+        mail.setText("OTP: "+code+"\nMã có hiệu lực 5 phút");
+        mail.setFrom("quybui0611@gmail.com");
         mailSender.send(mail);
     }
 }

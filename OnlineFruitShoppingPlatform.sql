@@ -38,6 +38,15 @@ CREATE TABLE users (
     FOREIGN KEY (membership_tier_id) REFERENCES membership_tiers(id)
 );
 
+CREATE TABLE customer_profiles (
+    user_id BIGINT PRIMARY KEY,
+    gender VARCHAR(10) NULL,
+    birth_date DATE NULL,
+    avatar MEDIUMBLOB NULL,
+    avatar_type VARCHAR(30) NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE roles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(40) NOT NULL UNIQUE,
@@ -189,6 +198,15 @@ CREATE TABLE product_variants (
     UNIQUE (id, shop_id),
     FOREIGN KEY (base_unit_id) REFERENCES units(id),
     FOREIGN KEY (product_id, shop_id) REFERENCES products(id, shop_id)
+);
+
+CREATE TABLE customer_favorites (
+    user_id BIGINT NOT NULL,
+    variant_id BIGINT NOT NULL,
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (user_id, variant_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
 
 CREATE TABLE variant_inventory (
@@ -449,10 +467,14 @@ CREATE TABLE loyalty_transactions (
 
 CREATE TABLE reviews (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    order_item_id BIGINT NOT NULL UNIQUE,
+    variant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    order_item_id BIGINT NULL UNIQUE,
     rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
     content VARCHAR(2000) NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (order_item_id) REFERENCES order_items(id)
 );
 
@@ -465,6 +487,8 @@ CREATE TABLE notifications (
     content VARCHAR(2000) NOT NULL,
     target_type VARCHAR(40) NULL,
     target_id BIGINT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     UNIQUE (user_id, event_key),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

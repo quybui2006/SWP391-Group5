@@ -1,908 +1,848 @@
 <!DOCTYPE html>
-<html lang="vi"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${variant.name + ' | FreshFruit - Trái cây tươi mỗi ngày'}">Chi tiết sản phẩm | FreshFruit</title>
 
-    <title th:text="${variant.name + ' - FreshFruit'}">
-        Chi tiết sản phẩm - FreshFruit
-    </title>
-
-    <link rel="stylesheet"
-          th:href="@{/css/customerproductdetail.css}">
-
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com">
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/customerproductdetail.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
 <!-- =========================================================
-     HEADER
+     HEADER (ĐỒNG BỘ 100% VỚI MÀN HOME)
 ========================================================= -->
 <header class="site-header">
-
     <div class="container header-inner">
 
-        <!-- Logo -->
-        <a class="brand"
-           th:href="@{/}">
-
+        <!-- Logo FreshFruit -->
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
             <span class="brand-mark">F</span>
-
-            <span class="brand-text">
+            <span>
                 <strong>FreshFruit</strong>
                 <small>Tươi ngon mỗi ngày</small>
             </span>
-
         </a>
 
-
-        <!-- Navigation -->
-        <nav class="main-nav">
-
-            <a th:href="@{/}">
-                Trang chủ
-            </a>
-
-            <a class="active"
-               th:href="@{/search}">
-                Sản phẩm
-            </a>
-
-            <a th:href="@{/#categories}">
-                Danh mục
-            </a>
-
-            <a th:href="@{/#about}">
-                Về chúng tôi
-            </a>
-
+        <!-- Main Nav -->
+        <nav class="main-nav" aria-label="Điều hướng chính">
+            <a th:href="@{/}">Trang chủ</a>
+            <a class="active" th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
         </nav>
 
-
-        <!-- Header actions -->
+        <!-- Header Actions -->
         <div class="header-actions">
+            <!-- Search Button -->
+            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
 
-            <a class="icon-btn"
-               th:href="@{/search}"
-               title="Tìm kiếm"
-               aria-label="Tìm kiếm">
+            <!-- Notification Bell -->
+            <div class="notif-wrapper" id="notifWrapper">
+                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
+                    <!-- Dynamic content loaded by notifications.js -->
+                </div>
+            </div>
 
-                ⌕
-
+            <!-- Cart Button -->
+            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng" aria-label="Giỏ hàng">
+                🛒
+                <span id="cartCount" class="cart-count">0</span>
             </a>
 
-            <a class="cart-btn"
-               th:href="@{/cart}"
-               title="Giỏ hàng">
+            <!-- User Auth Profile / Login Button -->
+            <th:block th:if="${session.role == 'CUSTOMER'}">
+                <a class="user-avatar" th:href="@{/customer/account}" th:title="${session.fullName}" aria-label="Hồ sơ khách hàng">
+                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+                </a>
+            </th:block>
 
-                <span class="cart-icon">🛒</span>
+            <th:block th:if="${session.role == 'SHOP_OWNER'}">
+                <a class="user-avatar" th:href="@{/shopowner/home}" th:title="${session.fullName}" aria-label="Quản lý cửa hàng">
+                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'S'}">S</span>
+                </a>
+            </th:block>
 
-                <span>Giỏ hàng</span>
+            <th:block th:if="${session.role == 'ADMIN'}">
+                <a class="user-avatar" th:href="@{/admin}" th:title="${session.fullName}" aria-label="Quản trị hệ thống">
+                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'A'}">A</span>
+                </a>
+            </th:block>
 
-                <span id="cartCount"
-                      class="cart-count">
-                    0
-                </span>
-
-            </a>
-
-            <a class="login-btn"
-               th:href="@{/login}">
-                Đăng nhập
-            </a>
-
+            <th:block th:if="${session.role == null}">
+                <a class="login-btn" th:href="@{/login(continueTo=@{/product/{id}(id=${variant.id})})}">Đăng nhập</a>
+            </th:block>
         </div>
 
     </div>
-
 </header>
 
 
 <!-- =========================================================
-     MAIN
+     MAIN BODY
 ========================================================= -->
-<main>
+<main class="page-body">
 
-    <!-- Breadcrumb -->
-    <section class="breadcrumb-section">
-
-        <div class="container breadcrumb">
-
-            <a th:href="@{/}">
-                Trang chủ
-            </a>
-
-            <span>/</span>
-
-            <a th:href="@{/search}">
-                Sản phẩm
-            </a>
-
-            <span>/</span>
-
-            <span class="current"
-                  th:text="${variant.name}">
-                Tên sản phẩm
-            </span>
-
-        </div>
-
-    </section>
-
+    <!-- Breadcrumb (Đồng bộ font & màu) -->
+    <div class="container breadcrumb-wrapper">
+        <nav class="breadcrumb-nav" aria-label="Đường dẫn">
+            <a th:href="@{/}">Trang chủ</a>
+            <span class="breadcrumb-arrow">/</span>
+            <a th:href="@{/search}">Sản phẩm</a>
+            <span class="breadcrumb-arrow">/</span>
+            <a th:href="@{/search}" th:text="${variant.product != null ? variant.product.name : 'Trái Cây'}">Trái Cây</a>
+            <span class="breadcrumb-arrow">/</span>
+            <span class="breadcrumb-current" th:text="${variant.name}">Tên sản phẩm</span>
+        </nav>
+    </div>
 
     <!-- =====================================================
-         PRODUCT DETAIL
+         1. MAIN PRODUCT CARD (BỐ CỤC SHOPEE - MÀU HOME)
     ====================================================== -->
-    <section class="product-detail-section">
+    <section class="container product-main-container">
+        <div class="fresh-product-card">
 
-        <div class="container">
+            <!-- LEFT COLUMN: Image Gallery & Social Share -->
+            <div class="product-gallery-col">
+                <!-- Large Main Image Frame -->
+                <div class="main-image-frame">
+                    <img id="mainProductImage"
+                         th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                         th:src="${variant.imageUrl}"
+                         th:alt="${variant.name}"
+                         onerror="handleImageError(this)">
 
-            <div class="product-detail-card">
-
-
-                <!-- =========================================
-                     LEFT - PRODUCT IMAGE
-                ========================================== -->
-                <div class="product-gallery">
-
-                    <div class="main-image-wrapper">
-
-                        <!-- Active status -->
-                        <span class="status-badge"
-                              th:if="${variant.status != null and variant.status.equalsIgnoreCase('ACTIVE')}">
-
-                            <span class="status-dot"></span>
-                            Đang bán
-
-                        </span>
-
-
-                        <!-- Image -->
-                        <img id="mainProductImage"
-                             th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
-                             th:src="${variant.imageUrl}"
-                             th:alt="${variant.name}"
-                             onerror="handleImageError(this)">
-
-
-                        <!-- Placeholder -->
-                        <div id="imagePlaceholder"
-                             class="image-placeholder"
-                             th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()} ? 'display:none' : 'display:flex'">
-
-                            <span>🍎</span>
-
-                            <p>
-                                Hình ảnh sản phẩm
-                            </p>
-
-                        </div>
-
+                    <div id="imagePlaceholder" class="image-placeholder"
+                         th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()} ? 'display:none' : 'display:flex'">
+                        <span class="placeholder-emoji">🍎</span>
+                        <p>Trái cây tươi FreshFruit</p>
                     </div>
 
-
-                    <!-- Thumbnail -->
-                    <div class="thumbnail-list">
-
-                        <button class="thumbnail active"
-                                type="button"
-                                onclick="selectThumbnail(this)">
-
-                            <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
-                                 th:src="${variant.imageUrl}"
-                                 th:alt="${variant.name}">
-
-                            <span th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">
-                                🍎
-                            </span>
-
-                        </button>
-
-                    </div>
-
+                    <!-- Badge Trạng thái Đang bán (Style màn Home) -->
+                    <span class="fresh-tag" th:if="${variant.status != null and variant.status.equalsIgnoreCase('ACTIVE')}">
+                        <span class="status-dot"></span> Đang bán
+                    </span>
                 </div>
 
-
-                <!-- =========================================
-                     RIGHT - PRODUCT INFORMATION
-                ========================================== -->
-                <div class="product-information">
-
-                    <!-- Category -->
-                    <div class="product-category"
-                         th:text="${variant.product != null ? variant.product.name : 'Trái cây'}">
-
-                        Trái cây
-
-                    </div>
-
-
-                    <!-- Product name -->
-                    <h1 class="product-title"
-                        th:text="${variant.name}">
-
-                        Tên sản phẩm
-
-                    </h1>
-
-
-                    <!-- Rating -->
-                    <div class="rating-row">
-
-                        <div class="stars">
-                            ★★★★★
-                        </div>
-
-                        <span class="rating-score">
-                            5.0
-                        </span>
-
-                        <span class="rating-divider">
-                            |
-                        </span>
-
-                        <span class="review-count">
-                            Sản phẩm FreshFruit
-                        </span>
-
-                    </div>
-
-
-                    <!-- Price -->
-                    <div class="price-block">
-
-                        <strong class="product-price"
-                                th:if="${variant.price != null}"
-                                th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-
-                            0 ₫
-
-                        </strong>
-
-                        <strong class="product-price"
-                                th:if="${variant.price == null}">
-
-                            Liên hệ
-
-                        </strong>
-
-                    </div>
-
-
-                    <!-- Divider -->
-                    <div class="info-divider"></div>
-
-
-                    <!-- Product meta -->
-                    <div class="product-meta">
-
-                        <div class="meta-row">
-
-                            <span class="meta-label">
-                                Danh mục
-                            </span>
-
-                            <strong
-                                    th:text="${variant.product != null ? variant.product.name : 'Chưa phân loại'}">
-
-                                Trái cây
-
-                            </strong>
-
-                        </div>
-
-
-                        <div class="meta-row">
-
-                            <span class="meta-label">
-                                Trạng thái
-                            </span>
-
-                            <strong class="available"
-                                    th:if="${variant.status != null and variant.status.equalsIgnoreCase('ACTIVE')}">
-
-                                <span class="small-dot"></span>
-                                Đang bán
-
-                            </strong>
-
-                            <strong class="unavailable"
-                                    th:unless="${variant.status != null and variant.status.equalsIgnoreCase('ACTIVE')}">
-
-                                Tạm ngừng bán
-
-                            </strong>
-
-                        </div>
-
-
-                        <div class="meta-row">
-
-                            <span class="meta-label">
-                                Mã sản phẩm
-                            </span>
-
-                            <strong th:text="'#' + ${variant.id}">
-                                #001
-                            </strong>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- Divider -->
-                    <div class="info-divider"></div>
-
-
-                    <!-- Quantity -->
-                    <div class="quantity-section">
-
-                        <span class="quantity-label">
-                            Số lượng
-                        </span>
-
-                        <div class="quantity-control">
-
-                            <button type="button"
-                                    onclick="decreaseQuantity()"
-                                    aria-label="Giảm số lượng">
-
-                                −
-
-                            </button>
-
-                            <input id="quantity"
-                                   type="number"
-                                   value="1"
-                                   min="1"
-                                   max="99"
-                                   aria-label="Số lượng">
-
-                            <button type="button"
-                                    onclick="increaseQuantity()"
-                                    aria-label="Tăng số lượng">
-
-                                +
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- CTA -->
-                    <div class="action-row">
-
-                        <button class="add-cart-btn"
-                                type="button"
-                                th:attr="data-variant-id=${variant.id}"
-                                onclick="addProductToCart(this)">
-
-                            <span class="cart-btn-icon">
-                                🛒
-                            </span>
-
-                            Thêm vào giỏ hàng
-
-                        </button>
-
-
-                        <button class="buy-now-btn"
-                                type="button"
-                                th:attr="data-variant-id=${variant.id}"
-                                onclick="buyNow(this)">
-
-                            Mua ngay
-
-                        </button>
-
-
-                        <button class="favorite-btn"
-                                id="favoriteBtn"
-                                type="button"
-                                onclick="toggleFavorite(this)"
-                                aria-label="Thêm vào yêu thích">
-
-                            ♡
-
-                        </button>
-
-                    </div>
-
-
-                    <!-- Benefits -->
-                    <div class="product-benefits">
-
-                        <div class="benefit-item">
-
-                            <div class="benefit-icon">
-                                ✓
-                            </div>
-
-                            <div>
-                                <strong>Sản phẩm chất lượng</strong>
-                                <span>Thông tin sản phẩm rõ ràng</span>
-                            </div>
-
-                        </div>
-
-
-                        <div class="benefit-item">
-
-                            <div class="benefit-icon">
-                                ✓
-                            </div>
-
-                            <div>
-                                <strong>Đặt hàng nhanh chóng</strong>
-                                <span>Quản lý đơn hàng dễ dàng</span>
-                            </div>
-
-                        </div>
-
-
-                        <div class="benefit-item">
-
-                            <div class="benefit-icon">
-                                ✓
-                            </div>
-
-                            <div>
-                                <strong>Hỗ trợ khách hàng</strong>
-                                <span>Luôn sẵn sàng hỗ trợ</span>
-                            </div>
-
-                        </div>
-
-                    </div>
-
+                <!-- Thumbnail Strip (Bố cục Shopee) -->
+                <div class="thumbnail-strip" id="thumbnailStrip">
+                    <button type="button" class="thumb-box active" onclick="selectThumbnail(this)">
+                        <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                             th:src="${variant.imageUrl}" th:alt="${variant.name}">
+                        <span th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">🍎</span>
+                    </button>
+                    <button type="button" class="thumb-box" onclick="selectThumbnail(this)">
+                        <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                             th:src="${variant.imageUrl}" th:alt="${variant.name + ' - Cận cảnh'}">
+                        <span th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">🌿</span>
+                    </button>
+                    <button type="button" class="thumb-box" onclick="selectThumbnail(this)">
+                        <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                             th:src="${variant.imageUrl}" th:alt="${variant.name + ' - Đóng hộp'}">
+                        <span th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">📦</span>
+                    </button>
+                    <button type="button" class="thumb-box" onclick="selectThumbnail(this)">
+                        <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                             th:src="${variant.imageUrl}" th:alt="${variant.name + ' - Nguồn gốc'}">
+                        <span th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">🚜</span>
+                    </button>
                 </div>
 
+                <!-- Social Share & Favorite Row -->
+                <div class="gallery-footer-row">
+                    <div class="share-group">
+                        <span class="share-label">Chia sẻ:</span>
+                        <button type="button" class="social-circle-btn fb" title="Chia sẻ Facebook" onclick="shareSocial('facebook')">f</button>
+                        <button type="button" class="social-circle-btn messenger" title="Gửi Messenger" onclick="shareSocial('messenger')">💬</button>
+                        <button type="button" class="social-circle-btn pinterest" title="Ghim Pinterest" onclick="shareSocial('pinterest')">P</button>
+                        <button type="button" class="social-circle-btn twitter" title="Chia sẻ X" onclick="shareSocial('twitter')">𝕏</button>
+                        <button type="button" class="social-circle-btn link-copy" title="Sao chép liên kết" onclick="copyProductLink()">🔗</button>
+                    </div>
+
+                    <div class="divider-vertical"></div>
+
+                    <div class="like-group">
+                        <button class="fresh-like-btn" id="favoriteBtn"
+                                th:attr="data-favorite-id=${variant.id}"
+                                type="button" onclick="toggleFavorite(event, this)">
+                            <span class="heart-icon">♡</span>
+                            <span>Đã thích (248)</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
-        </div>
+            <!-- RIGHT COLUMN: Product Information & Purchase Options -->
+            <div class="product-info-col">
 
-    </section>
-
-
-    <!-- =====================================================
-         PRODUCT INFORMATION
-    ====================================================== -->
-    <section class="product-info-section">
-
-        <div class="container">
-
-            <div class="product-info-card">
-
-                <div class="info-tabs">
-
-                    <button class="info-tab active"
-                            type="button"
-                            onclick="switchInfoTab('overview', this)">
-
-                        Thông tin sản phẩm
-
-                    </button>
-
-                    <button class="info-tab"
-                            type="button"
-                            onclick="switchInfoTab('details', this)">
-
-                        Chi tiết
-
-                    </button>
-
-                    <button class="info-tab"
-                            type="button"
-                            onclick="switchInfoTab('policy', this)">
-
-                        Chính sách
-
-                    </button>
-
+                <!-- Header: Badge FreshFruit Chọn + Tên sản phẩm -->
+                <div class="product-header-box">
+                    <span class="fresh-badge-pick">Yêu thích+</span>
+                    <h1 class="product-title" th:text="${variant.name}">Tên sản phẩm</h1>
                 </div>
 
+                <!-- Rating, Reviews & Sold Stats Row -->
+                <div class="fresh-stats-row">
+                    <a href="#reviews-section" class="stat-rating-link">
+                        <span class="stat-score" th:text="${reviewStats != null ? reviewStats.averageRatingFormatted : '5.0'}">5.0</span>
+                        <span class="stat-stars" th:text="${reviewStats != null ? reviewStats.stars : '★★★★★'}">★★★★★</span>
+                    </a>
+                    <span class="stat-divider">|</span>
 
-                <!-- Overview -->
-                <div id="overview"
-                     class="info-content active">
+                    <a href="#reviews-section" class="stat-reviews-link">
+                        <span class="stat-number" th:text="${reviewStats != null ? reviewStats.totalReviews : 0}">0</span>
+                        <span class="stat-text">Đánh Giá</span>
+                    </a>
+                    <span class="stat-divider">|</span>
 
-                    <h2>
-                        Thông tin sản phẩm
-                    </h2>
-
-                    <p>
-                        <strong
-                                th:text="${variant.name}">
-                            Tên sản phẩm
-                        </strong>
-                        là một sản phẩm đang được cung cấp trên hệ thống FreshFruit.
-                    </p>
-
-                    <p>
-                        Sản phẩm thuộc danh mục
-                        <strong
-                                th:text="${variant.product != null ? variant.product.name : 'sản phẩm'}">
-                            Trái cây
-                        </strong>.
-                    </p>
-
-                    <p>
-                        Vui lòng kiểm tra thông tin sản phẩm, số lượng và giá bán
-                        trước khi thêm sản phẩm vào giỏ hàng.
-                    </p>
-
-                </div>
-
-
-                <!-- Details -->
-                <div id="details"
-                     class="info-content">
-
-                    <h2>
-                        Chi tiết sản phẩm
-                    </h2>
-
-                    <div class="detail-table">
-
-                        <div class="detail-row">
-
-                            <span>
-                                Tên sản phẩm
-                            </span>
-
-                            <strong th:text="${variant.name}">
-                                Tên sản phẩm
-                            </strong>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <span>
-                                Danh mục
-                            </span>
-
-                            <strong
-                                    th:text="${variant.product != null ? variant.product.name : 'Chưa phân loại'}">
-                                Trái cây
-                            </strong>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <span>
-                                Giá bán
-                            </span>
-
-                            <strong
-                                    th:if="${variant.price != null}"
-                                    th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                                0 ₫
-                            </strong>
-
-                            <strong th:if="${variant.price == null}">
-                                Liên hệ
-                            </strong>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <span>
-                                Trạng thái
-                            </span>
-
-                            <strong th:text="${variant.status}">
-                                ACTIVE
-                            </strong>
-
-                        </div>
-
-
-                        <div class="detail-row">
-
-                            <span>
-                                Mã biến thể
-                            </span>
-
-                            <strong th:text="${variant.id}">
-                                1
-                            </strong>
-
-                        </div>
-
+                    <div class="stat-sold-box">
+                        <span class="stat-number">1.2k</span>
+                        <span class="stat-text">Đã Bán</span>
                     </div>
 
+                    <button type="button" class="report-action-btn" onclick="alert('Đã ghi nhận phản ánh của bạn về sản phẩm này.')">
+                        Tố cáo
+                    </button>
                 </div>
 
-
-                <!-- Policy -->
-                <div id="policy"
-                     class="info-content">
-
-                    <h2>
-                        Chính sách mua hàng
-                    </h2>
-
-                    <div class="policy-list">
-
-                        <div class="policy-item">
-
-                            <span class="policy-icon">
-                                ✓
-                            </span>
-
-                            <div>
-                                <strong>
-                                    Kiểm tra thông tin trước khi đặt hàng
-                                </strong>
-
-                                <p>
-                                    Khách hàng có thể kiểm tra sản phẩm,
-                                    số lượng và giá trước khi thêm vào giỏ hàng.
-                                </p>
-                            </div>
-
-                        </div>
-
-
-                        <div class="policy-item">
-
-                            <span class="policy-icon">
-                                ✓
-                            </span>
-
-                            <div>
-                                <strong>
-                                    Quản lý đơn hàng
-                                </strong>
-
-                                <p>
-                                    Đơn hàng được quản lý thông qua hệ thống
-                                    FreshFruit.
-                                </p>
-                            </div>
-
-                        </div>
-
-
-                        <div class="policy-item">
-
-                            <span class="policy-icon">
-                                ✓
-                            </span>
-
-                            <div>
-                                <strong>
-                                    Hỗ trợ khách hàng
-                                </strong>
-
-                                <p>
-                                    Liên hệ bộ phận hỗ trợ nếu cần thêm
-                                    thông tin về sản phẩm.
-                                </p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- =====================================================
-         RELATED PRODUCTS
-    ====================================================== -->
-    <section class="related-section">
-
-        <div class="container">
-
-            <div class="section-heading">
-
-                <div>
-
-                    <span class="section-kicker">
-                        EXPLORE MORE
+                <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
+                <div class="fresh-price-banner">
+                    <!-- Giá gốc gạch ngang -->
+                    <span class="price-old" th:if="${variant.price != null}"
+                          th:text="${#numbers.formatDecimal(variant.price * 1.25, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                        150.000 ₫
                     </span>
 
-                    <h2>
-                        Khám phá thêm sản phẩm
-                    </h2>
+                    <!-- Giá bán chính -->
+                    <span class="price-main" th:if="${variant.price != null}"
+                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                        120.000 ₫
+                    </span>
+                    <span class="price-main" th:if="${variant.price == null}">
+                        Liên hệ
+                    </span>
+
+                    <!-- Tag giảm giá -->
+                    <span class="discount-pill">GIẢM 20%</span>
+
+                    <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
+                </div>
+
+                <!-- Details Rows (Bố cục Shopee) -->
+                <div class="fresh-details-table">
+
+                    <!-- Voucher Shop -->
+                    <div class="detail-line">
+                        <span class="detail-label">Mã Giảm Giá Shop</span>
+                        <div class="detail-content vouchers-wrap">
+                            <span class="fresh-voucher-chip">Giảm 15k đơn từ 150k</span>
+                            <span class="fresh-voucher-chip">Giảm 30k đơn từ 300k</span>
+                            <span class="fresh-voucher-chip highlight">Giảm 10% cho khách mới</span>
+                        </div>
+                    </div>
+
+                    <!-- Bảo hiểm / Cam kết tươi ngon -->
+                    <div class="detail-line">
+                        <span class="detail-label">Bảo Hiểm</span>
+                        <div class="detail-content">
+                            <span class="insurance-badge">🛡️ Bảo hiểm Trái Cây Tươi Mới 100%</span>
+                            <span class="insurance-note">Đổi trả ngay nếu quả dập nát khi nhận hàng</span>
+                        </div>
+                    </div>
+
+                    <!-- Vận chuyển -->
+                    <div class="detail-line">
+                        <span class="detail-label">Vận Chuyển</span>
+                        <div class="detail-content shipping-content">
+                            <div class="shipping-row">
+                                <span class="shipping-icon">🚚</span>
+                                <div class="shipping-destination">
+                                    <span>Vận chuyển tới: </span>
+                                    <strong class="dest-text" th:text="${shopProvinceName != null && !shopProvinceName.isEmpty() ? shopProvinceName : 'Toàn quốc (Giao hỏa tốc 2H)'}">
+                                        Toàn quốc (Giao hỏa tốc 2H)
+                                    </strong>
+                                </div>
+                            </div>
+                            <div class="shipping-fee-row">
+                                <span class="shipping-fee">Phí Vận Chuyển: <strong>₫0 - ₫22.000</strong></span>
+                                <span class="free-shipping-tag">Miễn phí vận chuyển cho đơn từ 150.000₫</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quy cách / Phân loại hàng -->
+                    <div class="detail-line">
+                        <span class="detail-label">Quy Cách</span>
+                        <div class="detail-content variants-select-wrap">
+                            <button type="button" class="variant-spec-chip active" onclick="selectSpec(this)">
+                                <span th:text="${variant.specification != null && !variant.specification.isEmpty() ? variant.specification : (variant.baseUnit != null ? variant.baseUnit.name : 'Hộp tiêu chuẩn 1kg')}">
+                                    Hộp tiêu chuẩn 1kg
+                                </span>
+                                <span class="check-tick">✓</span>
+                            </button>
+                            <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
+                                <span>Combo 2 Hộp (Tiết kiệm 5%)</span>
+                                <span class="check-tick">✓</span>
+                            </button>
+                            <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
+                                <span>Thùng 5kg (Giá sỉ gia đình)</span>
+                                <span class="check-tick">✓</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Số lượng -->
+                    <div class="detail-line">
+                        <span class="detail-label">Số Lượng</span>
+                        <div class="detail-content quantity-wrapper">
+                            <div class="fresh-quantity-stepper">
+                                <button type="button" class="step-btn" onclick="decreaseQuantity()" aria-label="Giảm">−</button>
+                                <input id="quantity" type="number" value="1" min="1" max="99" aria-label="Số lượng">
+                                <button type="button" class="step-btn" onclick="increaseQuantity()" aria-label="Tăng">+</button>
+                            </div>
+                            <span class="stock-available-text">150 sản phẩm có sẵn</span>
+                        </div>
+                    </div>
 
                 </div>
 
-                <a th:href="@{/search}"
-                   class="view-all-btn">
+                <!-- Action CTA Buttons (Màu xanh Home chuẩn) -->
+                <div class="fresh-action-row">
+                    <button class="fresh-add-cart-btn" type="button"
+                            th:attr="data-variant-id=${variant.id}"
+                            onclick="addProductToCart(this)">
+                        <span class="cart-btn-icon">🛒</span>
+                        <span>Thêm Vào Giỏ Hàng</span>
+                    </button>
 
-                    Xem tất cả
-                    <span>→</span>
-
-                </a>
-
-            </div>
-
-
-            <div class="explore-card">
-
-                <div class="explore-icon">
-                    🍃
+                    <button class="fresh-buy-now-btn" type="button"
+                            th:attr="data-variant-id=${variant.id}"
+                            onclick="buyNow(this)">
+                        Mua Ngay
+                    </button>
                 </div>
 
-                <div class="explore-content">
-
-                    <h3>
-                        Tìm thêm sản phẩm phù hợp với bạn
-                    </h3>
-
-                    <p>
-                        Khám phá thêm nhiều sản phẩm FreshFruit
-                        theo danh mục và khoảng giá.
-                    </p>
-
+                <!-- FreshFruit Guarantee Banner -->
+                <div class="fresh-guarantee-bar">
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">🛡️</span>
+                        <span>FreshFruit Đảm Bảo</span>
+                    </div>
+                    <div class="guarantee-sub-item">
+                        <span class="check-icon">✓</span>
+                        <span>Trả hàng miễn phí 15 ngày</span>
+                    </div>
+                    <div class="guarantee-sub-item">
+                        <span class="check-icon">✓</span>
+                        <span>100% Trái cây tươi mới</span>
+                    </div>
+                    <div class="guarantee-sub-item">
+                        <span class="check-icon">✓</span>
+                        <span>Giao hỏa tốc 2H</span>
+                    </div>
                 </div>
-
-                <a th:href="@{/search}"
-                   class="explore-btn">
-
-                    Khám phá sản phẩm
-
-                </a>
 
             </div>
 
         </div>
+    </section>
 
+
+    <!-- =====================================================
+         2. SHOP PROFILE BANNER (KHUNG THÔNG TIN CỬA HÀNG)
+    ====================================================== -->
+    <section class="container shop-section">
+        <div class="fresh-shop-card">
+
+            <!-- Left: Avatar, Name & Buttons -->
+            <div class="shop-primary-info">
+                <div class="shop-avatar-container">
+                    <div class="shop-avatar-circle"
+                         th:text="${shop != null && shop.name != null && !shop.name.isEmpty() ? #strings.substring(shop.name, 0, 1).toUpperCase() : '🏪'}">
+                        🏪
+                    </div>
+                    <span class="shop-mall-badge">Mall</span>
+                </div>
+
+                <div class="shop-meta-info">
+                    <h2 class="shop-title" th:text="${shop != null ? shop.name : 'FreshFruit Nông Trại Xanh'}">
+                        FreshFruit Nông Trại Xanh
+                    </h2>
+
+                    <div class="shop-status-text">
+                        <span class="status-indicator-dot"></span>
+                        <span th:text="${shop != null and shop.operatingStatus == 'OPEN' ? 'Đang mở cửa' : 'Online 5 phút trước'}">
+                            Đang mở cửa
+                        </span>
+                    </div>
+
+                    <div class="shop-buttons-row">
+                        <a href="#reviews-section" class="shop-action-btn chat-btn">
+                            <span class="btn-icon">💬</span>
+                            <span>Chat Ngay</span>
+                        </a>
+
+                        <a th:href="@{/search}" class="shop-action-btn view-shop-btn">
+                            <span class="btn-icon">🏬</span>
+                            <span>Xem Shop</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="shop-vertical-divider"></div>
+
+            <!-- Right: 6 Shop Metrics Grid -->
+            <div class="shop-metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">Đánh Giá</span>
+                    <strong class="metric-value green">4.9k</strong>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Tỉ Lệ Phản Hồi</span>
+                    <strong class="metric-value green">100%</strong>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Thời Gian Phản Hồi</span>
+                    <strong class="metric-value green">trong vài phút</strong>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Sản Phẩm</span>
+                    <strong class="metric-value green">86</strong>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Tham Gia</span>
+                    <strong class="metric-value green">2 năm trước</strong>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-label">Khu Vực</span>
+                    <strong class="metric-value green" th:text="${shopProvinceName != null && !shopProvinceName.isEmpty() ? shopProvinceName : 'Hà Nội'}">
+                        Hà Nội
+                    </strong>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- =====================================================
+         3. CHI TIẾT SẢN PHẨM & MÔ TẢ
+    ====================================================== -->
+    <section class="container product-specs-section">
+        <div class="fresh-specs-card">
+
+            <!-- Phần 1: CHI TIẾT SẢN PHẨM -->
+            <div class="spec-section-header">
+                <h3>CHI TIẾT SẢN PHẨM</h3>
+            </div>
+
+            <div class="specs-table">
+                <div class="spec-row">
+                    <span class="spec-col-label">Danh Mục</span>
+                    <div class="spec-col-value spec-breadcrumb-link">
+                        <a th:href="@{/}">FreshFruit</a>
+                        <span>›</span>
+                        <a th:href="@{/search}">Trái Cây Tươi</a>
+                        <span>›</span>
+                        <a th:href="@{/search}" th:text="${variant.product != null ? variant.product.name : 'Trái Cây'}">Trái Cây</a>
+                    </div>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Kho Hàng</span>
+                    <span class="spec-col-value">150 sản phẩm</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Thương Hiệu</span>
+                    <span class="spec-col-value" th:text="${shop != null ? shop.name : 'FreshFruit Farm'}">FreshFruit Farm</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Xuất Xứ</span>
+                    <span class="spec-col-value" th:text="${variant.product != null && variant.product.origin != null ? variant.product.origin : 'Nông trại Việt Nam'}">Việt Nam</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Hạn Sử Dụng</span>
+                    <span class="spec-col-value" th:text="${variant.product != null && variant.product.expiryDate != null ? variant.product.expiryDate : '5 - 7 ngày bảo quản lạnh'}">5 - 7 ngày bảo quản lạnh</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Quy Cách Đóng Gói</span>
+                    <span class="spec-col-value" th:text="${variant.specification != null ? variant.specification : (variant.baseUnit != null ? variant.baseUnit.name : 'Hộp tiêu chuẩn 1kg')}">Hộp tiêu chuẩn 1kg</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Mã Biến Thể</span>
+                    <span class="spec-col-value" th:text="'#' + ${variant.id}">#001</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Mã Lô Nhập Kho</span>
+                    <span class="spec-col-value" th:text="${variant.product != null && variant.product.batchCode != null ? variant.product.batchCode : 'FF-BATCH-2026'}">FF-BATCH-2026</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-col-label">Gửi Từ</span>
+                    <span class="spec-col-value" th:text="${shopProvinceName != null && !shopProvinceName.isEmpty() ? shopProvinceName : 'Hà Nội'}">Hà Nội</span>
+                </div>
+            </div>
+
+            <!-- Phần 2: MÔ TẢ SẢN PHẨM -->
+            <div class="spec-section-header" style="margin-top: 32px;">
+                <h3>MÔ TẢ SẢN PHẨM</h3>
+            </div>
+
+            <div class="product-description-content">
+                <!-- Mô tả từ CSDL nếu có -->
+                <p class="db-description-paragraph" th:if="${variant.product != null and variant.product.description != null and !variant.product.description.isEmpty()}"
+                   th:text="${variant.product.description}">
+                    Mô tả sản phẩm
+                </p>
+
+                <!-- Tiêu chuẩn sản phẩm chất lượng cao chuẩn FreshFruit -->
+                <div class="desc-feature-block desc-green">
+                    <h4>🍎 ĐẶC ĐIỂM NỔI BẬT VÀ CHẤT LƯỢNG</h4>
+                    <ul>
+                        <li><strong th:text="${variant.name}">Sản phẩm</strong> được thu hoạch trực tiếp tại các nông trại đạt chuẩn VietGAP / GlobalGAP, đảm bảo độ tươi giòn và ngọt thanh tự nhiên.</li>
+                        <li>Trái cây được tuyển chọn kỹ lưỡng từng quả, kích thước đồng đều, vỏ căng bóng mọng nước, không bị trầy xước hay dập úng.</li>
+                        <li>100% tự nhiên, không sử dụng chất kích thích tăng trưởng hay chất bảo quản độc hại, an toàn tuyệt đối cho cả trẻ nhỏ và gia đình.</li>
+                        <li>Giàu vitamin A, C, chất xơ và các khoáng chất thiết yếu giúp tăng cường hệ miễn dịch và bồi bổ sức khỏe mỗi ngày.</li>
+                    </ul>
+                </div>
+
+                <div class="desc-feature-block desc-yellow">
+                    <h4>❄️ HƯỚNG DẪN BẢO QUẢN & SỬ DỤNG</h4>
+                    <ul>
+                        <li>Nên bảo quản trong ngăn mát tủ lạnh ở nhiệt độ từ <strong>4°C - 8°C</strong> để giữ trọn độ tươi giòn tốt nhất từ 5 - 7 ngày.</li>
+                        <li>Rửa nhẹ dưới vòi nước sạch hoặc ngâm nước muối loãng trước khi thưởng thức.</li>
+                        <li>Có thể dùng trực tiếp, ép nước trái cây nguyên chất, làm salad hoa quả hoặc kết hợp cùng sữa chua ăn kiêng.</li>
+                    </ul>
+                </div>
+
+                <div class="desc-feature-block desc-pink">
+                    <h4>🛡️ CAM KẾT VÀ CHÍNH SÁCH TỪ FRESHFRUIT</h4>
+                    <ul>
+                        <li><strong>Đổi trả 1 - 1 hoặc hoàn tiền 100%:</strong> Nếu khách hàng phát hiện sản phẩm bị dập nát, hỏng hóc hoặc không đúng mô tả khi nhận hàng.</li>
+                        <li><strong>Đóng gói chuyên nghiệp:</strong> Đóng thùng carton 3 lớp có màng xốp lưới chống sốc chuyên dụng bảo vệ từng quả trái cây trong suốt quá trình vận chuyển.</li>
+                        <li><strong>Hỗ trợ khách hàng:</strong> Đội ngũ chăm sóc khách hàng luôn sẵn sàng phản hồi và giải quyết nhanh chóng trong vòng 15 phút.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- =====================================================
+         4. ĐÁNH GIÁ SẢN PHẨM (CHUẨN SHOPEE - TONE FRESHFRUIT)
+    ====================================================== -->
+    <section class="container reviews-section" id="reviews-section">
+        <div class="fresh-reviews-card">
+
+            <!-- Section Title -->
+            <div class="reviews-title-box">
+                <h3>ĐÁNH GIÁ SẢN PHẨM</h3>
+            </div>
+
+            <!-- Alerts -->
+            <div class="fresh-alert success" th:if="${reviewSuccess}">
+                <span class="alert-icon">✓</span>
+                <span th:text="${reviewSuccess}">Đánh giá thành công!</span>
+            </div>
+            <div class="fresh-alert error" th:if="${reviewError}">
+                <span class="alert-icon">⚠️</span>
+                <span th:text="${reviewError}">Đã xảy ra lỗi</span>
+            </div>
+
+            <!-- Rating Overview Container -->
+            <div class="fresh-rating-overview">
+                <!-- Left: Big Score & Stars -->
+                <div class="score-summary-col">
+                    <div class="score-big-row">
+                        <span class="score-big" th:text="${reviewStats != null ? reviewStats.averageRatingFormatted : '5.0'}">5.0</span>
+                        <span class="score-out-of">trên 5</span>
+                    </div>
+                    <div class="score-stars-gold" th:text="${reviewStats != null ? reviewStats.stars : '★★★★★'}">
+                        ★★★★★
+                    </div>
+                </div>
+
+                <!-- Right: Star Filter Chips -->
+                <div class="filter-chips-col">
+                    <button type="button" class="filter-tab-chip active" data-rating="all" onclick="filterReviews('all', this)">
+                        Tất cả (<span th:text="${reviewStats != null ? reviewStats.totalReviews : 0}">0</span>)
+                    </button>
+                    <button type="button" class="filter-tab-chip" data-rating="5" onclick="filterReviews('5', this)">
+                        5 Sao (<span th:text="${reviewStats != null ? reviewStats.count5Star : 0}">0</span>)
+                    </button>
+                    <button type="button" class="filter-tab-chip" data-rating="4" onclick="filterReviews('4', this)">
+                        4 Sao (<span th:text="${reviewStats != null ? reviewStats.count4Star : 0}">0</span>)
+                    </button>
+                    <button type="button" class="filter-tab-chip" data-rating="3" onclick="filterReviews('3', this)">
+                        3 Sao (<span th:text="${reviewStats != null ? reviewStats.count3Star : 0}">0</span>)
+                    </button>
+                    <button type="button" class="filter-tab-chip" data-rating="2" onclick="filterReviews('2', this)">
+                        2 Sao (<span th:text="${reviewStats != null ? reviewStats.count2Star : 0}">0</span>)
+                    </button>
+                    <button type="button" class="filter-tab-chip" data-rating="1" onclick="filterReviews('1', this)">
+                        1 Sao (<span th:text="${reviewStats != null ? reviewStats.count1Star : 0}">0</span>)
+                    </button>
+                    <button type="button" class="filter-tab-chip" data-rating="all" onclick="filterReviews('all', this)">
+                        Có Bình Luận (<span th:text="${reviewStats != null ? reviewStats.totalReviews : 0}">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Review Writer (Customer Form) -->
+            <div class="review-compose-box" th:if="${isCustomer}">
+                <div class="compose-header">
+                    <div class="compose-avatar" th:text="${currentFullName != null && !currentFullName.isEmpty() ? #strings.substring(currentFullName, 0, 1).toUpperCase() : 'C'}">
+                        C
+                    </div>
+                    <div>
+                        <strong>Viết đánh giá sản phẩm</strong>
+                        <span class="compose-sub" th:text="'Đang đánh giá với tài khoản: ' + ${currentFullName}">Khách hàng</span>
+                    </div>
+                </div>
+
+                <form id="reviewForm" th:action="@{/product/{id}/review(id=${variant.id})}" method="POST" class="fresh-review-form">
+                    <!-- Interactive Star Rating -->
+                    <div class="compose-stars-row">
+                        <span class="field-label">Chất lượng sản phẩm:</span>
+                        <div class="star-rating-interactive" id="starPickerGroup">
+                            <span class="interactive-star active" data-val="1" onclick="setRating(1)" onmouseover="previewRating(1)" onmouseout="restoreRating()">★</span>
+                            <span class="interactive-star active" data-val="2" onclick="setRating(2)" onmouseover="previewRating(2)" onmouseout="restoreRating()">★</span>
+                            <span class="interactive-star active" data-val="3" onclick="setRating(3)" onmouseover="previewRating(3)" onmouseout="restoreRating()">★</span>
+                            <span class="interactive-star active" data-val="4" onclick="setRating(4)" onmouseover="previewRating(4)" onmouseout="restoreRating()">★</span>
+                            <span class="interactive-star active" data-val="5" onclick="setRating(5)" onmouseover="previewRating(5)" onmouseout="restoreRating()">★</span>
+                        </div>
+                        <span class="rating-verbal-hint" id="ratingTextHint">Tuyệt vời (5 sao)</span>
+                        <input type="hidden" name="rating" id="ratingInput" value="5">
+                    </div>
+
+                    <!-- Quick Positive Feedback Chips -->
+                    <div class="quick-chips-row">
+                        <span class="quick-label">Gợi ý nhanh:</span>
+                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('🌿 Trái cây rất tươi và giòn ngọt!')">🌿 Trái cây tươi ngọt</button>
+                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('📦 Đóng gói cẩn thận, không dập nát!')">📦 Đóng gói cẩn thận</button>
+                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('⚡ Giao hàng siêu nhanh đúng hẹn!')">⚡ Giao hàng siêu nhanh</button>
+                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('👍 Chất lượng quả to đều, rất đáng tiền!')">👍 Đáng giá tiền</button>
+                    </div>
+
+                    <!-- Review Textarea -->
+                    <div class="review-textarea-container">
+                        <textarea name="content" id="reviewContentInput" rows="3" maxlength="2000"
+                                  placeholder="Hãy chia sẻ cảm nhận thực tế về chất lượng quả tươi ngon, độ ngọt, bao bì đóng gói và thời gian giao hàng nhé..."
+                                  oninput="updateCharCount(this)" required></textarea>
+                        <span class="char-counter-tag" id="charCount">0/2000</span>
+                    </div>
+
+                    <div class="compose-btn-row">
+                        <button type="submit" class="submit-fresh-review-btn" id="submitReviewBtn">
+                            Gửi Đánh Giá Ngay
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Guest Login Prompt -->
+            <div class="guest-prompt-banner" th:unless="${isCustomer}">
+                <div class="prompt-icon">🔒</div>
+                <div class="prompt-text">
+                    <h4>Bạn muốn chia sẻ trải nghiệm về sản phẩm?</h4>
+                    <p>Khách vãng lai chỉ có thể xem đánh giá. Vui lòng <strong>đăng nhập tài khoản Khách Hàng</strong> để gửi đánh giá và tích điểm cùng FreshFruit.</p>
+                </div>
+                <a class="guest-login-button" th:href="@{/login(continueTo=@{/product/{id}(id=${variant.id})})}">
+                    Đăng Nhập Ngay
+                </a>
+            </div>
+
+            <!-- Reviews List -->
+            <div class="fresh-reviews-list" id="reviewsList">
+
+                <!-- Single Review Item -->
+                <div class="fresh-review-item" th:each="rev : ${reviews}" th:attr="data-star=${rev.rating}">
+                    <div class="reviewer-avatar-circle" th:text="${rev.userAvatarInitial}">
+                        K
+                    </div>
+
+                    <div class="reviewer-content-col">
+                        <div class="reviewer-name-row">
+                            <span class="reviewer-username" th:text="${rev.userName}">Customer Demo</span>
+                            <span class="verified-buyer-tag">✓ Đã mua hàng tại FreshFruit</span>
+                        </div>
+
+                        <div class="reviewer-stars-row">
+                            <span class="stars-gold-small" th:text="${rev.stars}">★★★★★</span>
+                        </div>
+
+                        <div class="reviewer-sub-info">
+                            <span th:text="${rev.formattedDate}">13/10/2026 10:30</span>
+                            <span class="sub-dot">|</span>
+                            <span th:text="'Phân loại hàng: ' + ${variant.name}">Phân loại hàng: Táo Fuji</span>
+                        </div>
+
+                        <div class="reviewer-comment-text" th:text="${rev.content}">
+                            Trái cây rất tươi và giòn ngọt! Quả to đều, không hề bị dập hay xước. Shop đóng gói thùng carton cẩn thận, giao hàng siêu nhanh.
+                        </div>
+
+                        <!-- Seller Response Card -->
+                        <div class="seller-reply-card">
+                            <strong class="seller-reply-title">Phản hồi của Người Bán:</strong>
+                            <p class="seller-reply-text">Dạ FreshFruit xin cảm ơn quý khách đã tin dùng và ủng hộ sản phẩm trái cây sạch của nông trại. Chúc bạn và gia đình thật nhiều sức khỏe!</p>
+                        </div>
+
+                        <!-- Helpful Button -->
+                        <div class="review-helpful-row">
+                            <button type="button" class="helpful-vote-btn" onclick="toggleHelpful(this)">
+                                <span class="thumb-icon">👍</span>
+                                <span>Hữu ích (12)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="reviews-empty-box" id="reviewsEmpty" th:if="${reviews == null or reviews.empty}">
+                    <div class="empty-leaf-icon">🍃</div>
+                    <h3>Chưa có đánh giá nào cho sản phẩm này</h3>
+                    <p>Hãy là người đầu tiên đặt mua và chia sẻ cảm nhận trải nghiệm nhé!</p>
+                </div>
+
+            </div>
+
+            <!-- Pagination Strip -->
+            <div class="fresh-pagination-strip" th:if="${reviews != null and !reviews.empty}">
+                <button type="button" class="page-nav-btn" disabled>‹</button>
+                <button type="button" class="page-nav-btn active">1</button>
+                <button type="button" class="page-nav-btn">2</button>
+                <button type="button" class="page-nav-btn">3</button>
+                <button type="button" class="page-nav-btn">›</button>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- =====================================================
+         5. CÓ THỂ BẠN CŨNG THÍCH (CARD SẢN PHẨM STYLE MÀN HOME)
+    ====================================================== -->
+    <section class="container related-products-section">
+        <div class="related-header">
+            <div>
+                <span class="section-kicker">GỢI Ý HÔM NAY</span>
+                <h3>Có thể bạn cũng thích</h3>
+            </div>
+            <a th:href="@{/search}" class="see-more-link">Xem tất cả <span>→</span></a>
+        </div>
+
+        <div class="product-grid">
+            <!-- Dynamic related products -->
+            <article class="product-card" th:each="rel, iter : ${relatedProducts}">
+                <a th:href="@{/product/{id}(id=${rel.id})}" class="product-card-link">
+                    <div class="product-image" th:classappend="${iter.index % 4 == 0 ? 'bg-pastel-red' : (iter.index % 4 == 1 ? 'bg-pastel-yellow' : (iter.index % 4 == 2 ? 'bg-pastel-purple' : 'bg-pastel-green'))}">
+                        <span class="fresh-tag">Đang bán</span>
+                        <img th:if="${rel.imageUrl != null and !rel.imageUrl.isEmpty()}"
+                             th:src="${rel.imageUrl}" th:alt="${rel.name}"
+                             onerror="this.style.display='none'">
+                        <div class="image-placeholder" th:if="${rel.imageUrl == null or rel.imageUrl.isEmpty()}">
+                            🍎
+                        </div>
+                    </div>
+
+                    <div class="product-content">
+                        <span class="product-category-name" th:text="${rel.product != null ? rel.product.name : 'Trái Cây'}">Trái Cây</span>
+                        <h4 class="product-card-name" th:text="${rel.name}">Tên sản phẩm</h4>
+                        <div class="product-bottom-row">
+                            <strong class="product-card-price" th:if="${rel.price != null}"
+                                    th:text="${#numbers.formatDecimal(rel.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                99.000 ₫
+                            </strong>
+                            <button type="button" class="add-btn-circle" th:attr="data-variant-id=${rel.id}" onclick="addProductToCart(this)" aria-label="Thêm vào giỏ hàng">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </article>
+
+            <!-- Fallback if relatedProducts is empty -->
+            <article class="product-card" th:if="${relatedProducts == null or relatedProducts.empty}">
+                <a th:href="@{/search}" class="product-card-link">
+                    <div class="product-image bg-pastel-red">
+                        <span class="fresh-tag">Đang bán</span>
+                        <div class="image-placeholder">🍎</div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-name">Táo Nhập Khẩu</span>
+                        <h4 class="product-card-name">Táo Envy New Zealand Tươi Giòn</h4>
+                        <div class="product-bottom-row">
+                            <strong class="product-card-price">180.000 ₫</strong>
+                            <button type="button" class="add-btn-circle" aria-label="Thêm vào giỏ">+</button>
+                        </div>
+                    </div>
+                </a>
+            </article>
+        </div>
     </section>
 
 </main>
 
 
 <!-- =========================================================
-     FOOTER
+     FOOTER (ĐỒNG BỘ 100% VỚI MÀN HOME)
 ========================================================= -->
 <footer class="site-footer">
-
-    <div class="container">
-
-        <div class="footer-main">
-
-            <div class="footer-brand-column">
-
-                <a class="brand footer-brand"
-                   th:href="@{/}">
-
-                    <span class="brand-mark">
-                        F
-                    </span>
-
-                    <span class="brand-text">
-                        <strong>FreshFruit</strong>
-                        <small>Tươi ngon mỗi ngày</small>
-                    </span>
-
-                </a>
-
-                <p>
-                    Trái cây tươi chất lượng,
-                    mang đến lựa chọn tốt hơn
-                    cho mỗi ngày.
-                </p>
-
-            </div>
-
-
-            <div class="footer-column">
-
-                <h3>
-                    Sản phẩm
-                </h3>
-
-                <a th:href="@{/search}">
-                    Tất cả sản phẩm
-                </a>
-
-                <a th:href="@{/search}">
-                    Sản phẩm mới
-                </a>
-
-                <a th:href="@{/search}">
-                    Sản phẩm nổi bật
-                </a>
-
-            </div>
-
-
-            <div class="footer-column">
-
-                <h3>
-                    Hỗ trợ
-                </h3>
-
-                <a th:href="@{/}">
-                    Trang chủ
-                </a>
-
-                <a th:href="@{/search}">
-                    Sản phẩm
-                </a>
-
-                <a th:href="@{/cart}">
-                    Giỏ hàng
-                </a>
-
-            </div>
-
-
-            <div class="footer-column">
-
-                <h3>
-                    FreshFruit
-                </h3>
-
-                <a th:href="@{/#about}">
-                    Về chúng tôi
-                </a>
-
-                <a th:href="@{/#categories}">
-                    Danh mục
-                </a>
-
-                <a th:href="@{/login}">
-                    Đăng nhập
-                </a>
-
-            </div>
-
+    <div class="container footer-inner">
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span>
+                    <strong>FreshFruit</strong>
+                    <small>Tươi ngon mỗi ngày</small>
+                </span>
+            </a>
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
         </div>
 
-
-        <div class="footer-bottom">
-
-            <span>
-                © 2026 FreshFruit. All rights reserved.
-            </span>
-
-            <span>
-                Tươi ngon mỗi ngày 🍃
-            </span>
-
+        <div class="footer-links">
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
         </div>
 
+        <small>© 2026 FreshFruit. All rights reserved.</small>
     </div>
-
 </footer>
 
+<!-- Toast notification element -->
+<div id="shopeeToast" class="fresh-toast" style="display: none;"></div>
 
 <!-- =========================================================
      JAVASCRIPT
 ========================================================= -->
 <script th:src="@{/js/customerproductdetail.js}"></script>
-<!-- Tan PTH integration: add handlers from a separate file to persist cart actions to the database. -->
+<script th:src="@{/js/favorites-integration.js}"></script>
 <script th:src="@{/js/cart-integration.js(v='20261008-1')}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 
 </body>
 </html>
