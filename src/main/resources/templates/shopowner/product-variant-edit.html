@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh sửa biến thể | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}">
+</head>
+<body>
+<div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('variants')}"></aside>
+<main class="main-content product-management">
+    <header class="topbar"><div>
+        <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Chỉnh sửa</span></p>
+        <h1>Chỉnh sửa biến thể</h1><p class="muted">Cập nhật thông tin bán hàng và tồn kho của biến thể.</p>
+    </div><a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách biến thể</a></header>
+    <p class="alert alert-error" th:if="${!errors.isEmpty()}">Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.</p>
+    <form class="product-form" method="post" th:action="@{/shopowner/product-variants/{id}/edit(id=${form.id})}" th:object="${form}">
+        <section class="form-card"><h2>Thông tin biến thể</h2><div class="form-grid">
+            <label class="field field-wide"><span>Sản phẩm</span><input type="text" th:value="${form.productName}" readonly></label>
+            <label class="field"><span>Tên biến thể <b>*</b></span><input type="text" th:field="*{variantName}" maxlength="150" required><em th:if="${errors.containsKey('variantName')}" th:text="${errors.get('variantName')}"></em></label>
+            <label class="field"><span>SKU <b>*</b></span><input type="text" th:field="*{sku}" maxlength="80" required><em th:if="${errors.containsKey('sku')}" th:text="${errors.get('sku')}"></em></label>
+            <label class="field field-wide"><span>Quy cách</span><input type="text" th:field="*{specification}" maxlength="1000" placeholder="Ví dụ: Khoảng 1kg, 5-7 quả"></label>
+            <label class="field"><span>Đơn vị <b>*</b></span><select th:field="*{unitId}"><option th:each="unit : ${form.units}" th:value="${unit.id}" th:text="${unit.name}"></option></select><em th:if="${errors.containsKey('unitId')}" th:text="${errors.get('unitId')}"></em></label>
+            <label class="field"><span>Giá bán (VNĐ) <b>*</b></span><input type="number" th:field="*{price}" min="1" step="1000" required><em th:if="${errors.containsKey('price')}" th:text="${errors.get('price')}"></em></label>
+            <label class="field"><span>Trạng thái</span><select th:field="*{status}"><option value="ACTIVE">Đang bán</option><option value="DRAFT">Bản nháp</option><option value="INACTIVE">Ngừng bán</option></select><em th:if="${errors.containsKey('status')}" th:text="${errors.get('status')}"></em></label>
+        </div></section>
+        <section class="form-card"><h2>Tồn kho</h2><div class="form-grid">
+            <label class="field"><span>Số lượng hiện có <b>*</b></span><input type="number" th:field="*{quantityOnHand}" min="0" step="1" required><small>Không được thấp hơn số lượng đang giữ trong đơn hàng.</small><em th:if="${errors.containsKey('quantityOnHand')}" th:text="${errors.get('quantityOnHand')}"></em></label>
+            <label class="field"><span>Ngưỡng cảnh báo (%) <b>*</b></span><input type="number" th:field="*{lowStockThresholdPct}" min="0" max="100" step="0.01" required><em th:if="${errors.containsKey('lowStockThresholdPct')}" th:text="${errors.get('lowStockThresholdPct')}"></em></label>
+        </div></section>
+        <div class="form-actions"><a class="button button-ghost" th:href="@{/shopowner/product-variants}">Hủy</a><button class="button button-primary" type="submit">Lưu biến thể</button></div>
+    </form>
+</main></div>
+</body></html>
