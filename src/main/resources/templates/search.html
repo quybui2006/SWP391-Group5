@@ -8,6 +8,7 @@
     <title>Tìm kiếm sản phẩm - FreshFruit</title>
 
     <link rel="stylesheet" th:href="@{/css/search.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
 
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
@@ -85,6 +86,16 @@
 
             </a>
 
+            <!-- Shopee Style Notification Bell -->
+            <div class="notif-wrapper" id="notifWrapper">
+                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
+                    <!-- Dynamic content loaded by notifications.js -->
+                </div>
+            </div>
 
             <!-- CART -->
             <a
@@ -105,7 +116,7 @@
             <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
                th:href="@{/customer/account}" th:title="${session.fullName}"
                aria-label="Hồ sơ khách hàng" style="text-decoration:none">
-                <span th:text="${#strings.substring(session.fullName, 0, 1).toUpperCase()}">U</span>
+                <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
             </a>
             <a class="login-btn" th:if="${session.role == null}" th:href="@{/login}">Đăng nhập</a>
 
@@ -724,6 +735,7 @@
 <script th:src="@{/js/favorites-integration.js}"></script>
 <!-- Tan PTH integration: connect product cards to the database-backed cart. -->
 <script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 
 </body>
 

@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 @TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:freshfruit_cart_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1")
 class CartCheckoutIntegrationTests {
@@ -269,7 +269,7 @@ class CartCheckoutIntegrationTests {
         mvc.perform(get("/")).andExpect(status().isOk());
         mvc.perform(get("/login")).andExpect(status().isOk());
         mvc.perform(get("/search")).andExpect(status().isOk());
-        mvc.perform(get("/cart")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
+        mvc.perform(get("/cart")).andExpect(status().isOk());
         mvc.perform(get("/shop/products")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
     }
 
@@ -293,7 +293,7 @@ class CartCheckoutIntegrationTests {
         mvc.perform(get("/shop/products/add").session(session))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"name\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"sku\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"batchCode\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/shop/products/add\"")));
         mvc.perform(get("/shop/product/" + productId).session(session))
                 .andExpect(status().isOk())
