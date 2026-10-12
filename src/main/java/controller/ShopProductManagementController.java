@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import repository.CategoryRepository;
-import repository.UnitRepository;
 import service.ProductValidationException;
 import service.ShopProductService;
 
@@ -25,15 +23,9 @@ import java.time.LocalDate;
 public class ShopProductManagementController {
     private static final int PAGE_SIZE = 10;
     private final ShopProductService products;
-    private final CategoryRepository categories;
-    private final UnitRepository units;
 
-    public ShopProductManagementController(ShopProductService products,
-                                           CategoryRepository categories,
-                                           UnitRepository units) {
+    public ShopProductManagementController(ShopProductService products) {
         this.products = products;
-        this.categories = categories;
-        this.units = units;
     }
 
     @GetMapping({"/shop/products", "/shopowner/products"})
@@ -54,30 +46,32 @@ public class ShopProductManagementController {
         ProductCreateRequest form = new ProductCreateRequest();
         form.setReceivedDate(LocalDate.now());
         model.addAttribute("productCreateRequest", form);
-        addFormOptions(model);
         return "shopowner/product-form";
     }
 
     @PostMapping({"/shop/products/add", "/shopowner/products/add"})
     public String create(@Valid @ModelAttribute("productCreateRequest") ProductCreateRequest form,
-                         BindingResult binding, HttpServletRequest request, Model model,
-                         RedirectAttributes redirect) {
+                        BindingResult binding, HttpServletRequest request, Model model,
+                        RedirectAttributes redirect) {
         Long ownerId = ownerId(request);
         if (ownerId == null) return "redirect:/login";
-        if (binding.hasErrors()) {
-            addFormOptions(model);
-            return "shopowner/product-form";
+        if (form.getImageFile() == null || form.getImageFile().isEmpty()) {
+            binding.rejectValue("imageFile", "imageFile.required", "Vui lòng chọn ảnh sản phẩm.");
         }
+        if (form.getReceivedDate() != null && form.getExpiryDate() != null
+                && !form.getExpiryDate().isAfter(form.getReceivedDate())) {
+            binding.rejectValue("expiryDate", "expiryDate.invalid", "Ngày hết hạn phải sau ngày nhập kho.");
+        }
+        if (binding.hasErrors()) return "shopowner/product-form";
         try {
-            products.createProduct(ownerId, form);
-            redirect.addFlashAttribute("success", "Sản phẩm đã được tạo và đang ở trạng thái nháp.");
+            Long productId = products.createProduct(ownerId, form);
+            redirect.addFlashAttribute("success", "Đã tạo sản phẩm và lưu ảnh thành công. Bạn có thể thêm biến thể trong mục Biến thể sản phẩm.");
             return "redirect:/shop/products";
         } catch (ProductValidationException ex) {
             ex.getFieldErrors().forEach(binding::rejectValue);
         } catch (DataIntegrityViolationException ex) {
-            model.addAttribute("serviceError", "Không thể lưu sản phẩm. Hãy kiểm tra mã lô, SKU và dữ liệu bắt buộc.");
+            model.addAttribute("serviceError", "Không thể lưu sản phẩm. Hãy kiểm tra mã lô và dữ liệu bắt buộc.");
         }
-        addFormOptions(model);
         return "shopowner/product-form";
     }
 
@@ -86,10 +80,5 @@ public class ShopProductManagementController {
         if (session == null || !"SHOP_OWNER".equals(session.getAttribute("role"))) return null;
         Object value = session.getAttribute("userId");
         return value instanceof Number number ? number.longValue() : null;
-    }
-
-    private void addFormOptions(Model model) {
-        model.addAttribute("categories", categories.findByIsActiveTrue());
-        model.addAttribute("units", units.findByIsActiveTrueOrderByNameAsc());
     }
 }

@@ -1,20 +1,30 @@
 package controller;
 
+import dto.ProductVariantCreateRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.data.domain.Page;
+import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import repository.UnitRepository;
+import service.ProductValidationException;
 import service.ShopProductService;
 
 @Controller
 public class ShopOwnerController {
     private final ShopProductService products;
+    private final UnitRepository units;
 
-    public ShopOwnerController(ShopProductService products) {
+    public ShopOwnerController(ShopProductService products, UnitRepository units) {
         this.products = products;
+        this.units = units;
     }
 
     @GetMapping("/shopowner/home")
@@ -22,7 +32,6 @@ public class ShopOwnerController {
         return "shopowner/home";
     }
 
-    // Tan PTH integration: restore the variants screen with rows scoped to the signed-in shop.
     @GetMapping("/shopowner/product-variants")
     public String productVariants(@RequestParam(defaultValue = "") String keyword,
                                   HttpServletRequest request, Model model) {
@@ -32,6 +41,46 @@ public class ShopOwnerController {
         model.addAttribute("variantSummary", products.shopVariantSummary(ownerId));
         model.addAttribute("keyword", keyword.trim());
         return "shopowner/product-variants";
+    }
+
+    @GetMapping("/shopowner/product-variants/add")
+    public String addVariantForm(@RequestParam(required = false) Long productId,
+                                 HttpServletRequest request, Model model) {
+        Long ownerId = ownerId(request);
+        if (ownerId == null) return "redirect:/login";
+        ProductVariantCreateRequest form = new ProductVariantCreateRequest();
+        form.setProductId(productId);
+        model.addAttribute("variantCreateRequest", form);
+        addVariantOptions(ownerId, model);
+        return "shopowner/product-variant-form";
+    }
+
+    @PostMapping("/shopowner/product-variants/add")
+    public String createVariant(@Valid @ModelAttribute("variantCreateRequest") ProductVariantCreateRequest form,
+                                BindingResult binding, HttpServletRequest request, Model model,
+                                RedirectAttributes redirect) {
+        Long ownerId = ownerId(request);
+        if (ownerId == null) return "redirect:/login";
+        if (binding.hasErrors()) {
+            addVariantOptions(ownerId, model);
+            return "shopowner/product-variant-form";
+        }
+        try {
+            products.createVariantInventory(ownerId, form);
+            redirect.addFlashAttribute("success", "Đã lưu biến thể và thông tin tồn kho.");
+            return "redirect:/shopowner/product-variants";
+        } catch (ProductValidationException ex) {
+            ex.getFieldErrors().forEach(binding::rejectValue);
+        } catch (DataIntegrityViolationException ex) {
+            model.addAttribute("serviceError", "Không thể lưu biến thể. Hãy kiểm tra SKU và dữ liệu bắt buộc.");
+        }
+        addVariantOptions(ownerId, model);
+        return "shopowner/product-variant-form";
+    }
+
+    private void addVariantOptions(Long ownerId, Model model) {
+        model.addAttribute("products", products.getListByShop(ownerId));
+        model.addAttribute("units", units.findByIsActiveTrueOrderByNameAsc());
     }
 
     private Long ownerId(HttpServletRequest request) {
