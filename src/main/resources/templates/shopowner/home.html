@@ -1,32 +1,391 @@
+```html
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop Owner | FreshFruit</title>
+
+    <title>Chủ cửa hàng | FreshFruit</title>
+
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+          rel="stylesheet">
 </head>
+
 <body>
+
 <div class="app-shell">
-    <!-- Tan PTH: shared sidebar removes the duplicate Products entry; Dashboard content/layout stays as-is. -->
+
+    <!-- Sidebar dùng chung -->
     <aside th:replace="~{shopowner/fragments :: sidebar('dashboard')}"></aside>
+
     <main class="main-content">
-        <header class="topbar"><div><p class="breadcrumb">Shop Owner / <span>Tổng quan</span></p><h1>Chào buổi sáng, <span th:text="${ownerName}">Shop Owner</span> <span>✦</span></h1><p class="muted" th:text="${shop.approvalStatus == 'NOT_REGISTERED' ? 'Tài khoản chưa có cửa hàng được liên kết.' : 'Đây là tình hình cửa hàng của bạn hôm nay.'}"></p></div><div class="top-actions"><button class="round-btn" data-pending>⌕</button><button class="round-btn notification" data-pending>♢<i></i></button><div class="top-user"><div class="avatar">SO</div><span th:text="${ownerName}">Shop Owner</span><b>⌄</b></div></div></header>
+
+        <!-- Header -->
+        <header class="topbar">
+
+            <div>
+                <p class="breadcrumb">
+                    Chủ cửa hàng / <span>Tổng quan</span>
+                </p>
+
+                <h1>
+                    Xin chào,
+                    <span th:text="${ownerName ?: 'Chủ cửa hàng'}">
+                        Chủ cửa hàng
+                    </span>
+                    <span>✦</span>
+                </h1>
+
+                <p class="muted"
+                   th:text="${shop.approvalStatus == 'NOT_REGISTERED'
+                   ? 'Tài khoản chưa có cửa hàng được liên kết.'
+                   : 'Đây là tình hình cửa hàng của bạn hôm nay.'}">
+                    Tổng quan hoạt động cửa hàng.
+                </p>
+            </div>
+
+            <div class="top-actions">
+
+                <button class="round-btn"
+                        type="button"
+                        data-pending
+                        aria-label="Tìm kiếm">
+                    ⌕
+                </button>
+
+                <button class="round-btn notification"
+                        type="button"
+                        data-pending
+                        aria-label="Thông báo">
+                    ♢<i></i>
+                </button>
+
+                <div class="top-user">
+                    <div class="avatar">SO</div>
+
+                    <span th:text="${ownerName ?: 'Chủ cửa hàng'}">
+                        Chủ cửa hàng
+                    </span>
+
+                    <b>⌄</b>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- Thống kê tổng quan: dữ liệu từ backend -->
         <section class="stats-grid">
-            <article class="stat-card"><div class="stat-icon green">↗</div><div><span>Doanh thu đơn hoàn tất</span><strong th:text="${#numbers.formatInteger(orderSummary.revenue,1,'COMMA') + ' ₫'}">0 ₫</strong><small>Tổng doanh thu, không gồm phí vận chuyển</small></div></article>
-            <article class="stat-card"><div class="stat-icon blue">▣</div><div><a th:href="@{/shopowner/orders}">Đơn hàng</a><strong th:text="${orderSummary.total}">0</strong><small th:text="${orderSummary.pending + ' đơn chờ xác nhận'}"></small></div></article>
-            <article class="stat-card"><div class="stat-icon purple">▤</div><div><span>Product Variants</span><strong th:text="${stats.variants}">0</strong><small class="neutral" th:text="${stats.active_variants + ' đang hoạt động'}">0 đang hoạt động</small></div><div class="sparkline purple-line">╲╱╲╱╱╲</div></article>
-            <article class="stat-card"><div class="stat-icon orange">!</div><div><span>Sắp hết hàng</span><strong th:text="${stats.low_stock}">0</strong><small class="warning">Cần kiểm tra hôm nay</small></div><div class="sparkline orange-line">╱╱╲╱╲╲</div></article>
+
+            <article class="stat-card">
+                <div class="stat-icon green">↗</div>
+
+                <div>
+                    <span>Doanh thu đơn hoàn tất</span>
+
+                    <strong
+                        th:text="${#numbers.formatInteger(orderSummary.revenue, 1, 'COMMA') + ' ₫'}">
+                        0 ₫
+                    </strong>
+
+                    <small>
+                        Tổng doanh thu, không gồm phí vận chuyển
+                    </small>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon blue">▣</div>
+
+                <div>
+                    <a th:href="@{/shopowner/orders}">
+                        Đơn hàng
+                    </a>
+
+                    <strong th:text="${orderSummary.total}">
+                        0
+                    </strong>
+
+                    <small
+                        th:text="${orderSummary.pending + ' đơn chờ xác nhận'}">
+                        0 đơn chờ xác nhận
+                    </small>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon purple">▤</div>
+
+                <div>
+                    <span>Biến thể sản phẩm</span>
+
+                    <strong th:text="${stats.variants}">
+                        0
+                    </strong>
+
+                    <small class="neutral"
+                           th:text="${stats.active_variants + ' đang hoạt động'}">
+                        0 đang hoạt động
+                    </small>
+                </div>
+
+                <div class="sparkline purple-line">╲╱╲╱╱╲</div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon orange">!</div>
+
+                <div>
+                    <span>Sắp hết hàng</span>
+
+                    <strong th:text="${stats.low_stock}">
+                        0
+                    </strong>
+
+                    <small class="warning">
+                        Cần kiểm tra tồn kho
+                    </small>
+                </div>
+
+                <div class="sparkline orange-line">╱╱╲╱╲╲</div>
+            </article>
+
         </section>
+
+        <!-- Thông tin cửa hàng và thao tác nhanh -->
         <section class="content-grid">
-            <article class="panel chart-panel"><div class="panel-heading"><div><h2>Thông tin cửa hàng</h2><p class="muted" th:text="${shop.name}"></p></div></div><p>Trạng thái duyệt: <strong th:text="${shop.approvalStatus}"></strong></p><p>Hoạt động: <strong th:text="${shop.operatingStatus}"></strong></p><p>Số sản phẩm: <strong th:text="${stats.products}"></strong></p><button class="select-btn" data-pending>Biểu đồ doanh thu — Tính năng đang phát triển</button></article>
-            <article class="panel quick-panel"><div class="panel-heading"><div><h2>Thao tác nhanh</h2><p class="muted">Quản lý cửa hàng dễ dàng hơn</p></div></div><div class="quick-actions"><a th:href="@{/shop/products/add}" class="quick-action"><span class="quick-icon green">＋</span><div><strong>Thêm sản phẩm</strong><small>Tạo sản phẩm và biến thể đầu tiên</small></div><b>→</b></a><a th:href="@{/shop/products}" class="quick-action"><span class="quick-icon blue">▦</span><div><strong>Danh sách sản phẩm</strong><small>Tìm kiếm và quản lý sản phẩm</small></div><b>→</b></a><a th:href="@{/shopowner/product-variants}" class="quick-action"><span class="quick-icon orange">▤</span><div><strong>Product Variants</strong><small>Quản lý các biến thể</small></div><b>→</b></a><a th:href="@{/shopowner/orders}" class="quick-action"><span class="quick-icon purple">◌</span><div><strong>Đơn hàng</strong><small>Xem đơn hàng của cửa hàng</small></div><b>→</b></a></div></article>
+
+            <article class="panel chart-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h2>Thông tin cửa hàng</h2>
+
+                        <p class="muted" th:text="${shop.name}">
+                            Tên cửa hàng
+                        </p>
+                    </div>
+                </div>
+
+                <p>
+                    Trạng thái duyệt:
+                    <strong th:text="${shop.approvalStatus}">
+                        Chưa xác định
+                    </strong>
+                </p>
+
+                <p>
+                    Trạng thái hoạt động:
+                    <strong th:text="${shop.operatingStatus}">
+                        Chưa xác định
+                    </strong>
+                </p>
+
+                <p>
+                    Số sản phẩm:
+                    <strong th:text="${stats.products}">
+                        0
+                    </strong>
+                </p>
+
+                <button class="select-btn"
+                        type="button"
+                        data-pending>
+                    Biểu đồ doanh thu — Đang phát triển
+                </button>
+
+            </article>
+
+            <article class="panel quick-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h2>Thao tác nhanh</h2>
+                        <p class="muted">
+                            Quản lý cửa hàng dễ dàng hơn
+                        </p>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+
+                    <a th:href="@{/shop/products/add}"
+                       class="quick-action">
+
+                        <span class="quick-icon green">＋</span>
+
+                        <div>
+                            <strong>Thêm sản phẩm</strong>
+                            <small>Thêm sản phẩm mới vào cửa hàng</small>
+                        </div>
+
+                        <b>→</b>
+                    </a>
+
+                    <a th:href="@{/shop/products}"
+                       class="quick-action">
+
+                        <span class="quick-icon blue">▦</span>
+
+                        <div>
+                            <strong>Danh sách sản phẩm</strong>
+                            <small>Tìm kiếm và quản lý sản phẩm</small>
+                        </div>
+
+                        <b>→</b>
+                    </a>
+
+                    <a th:href="@{/shopowner/product-variants}"
+                       class="quick-action">
+
+                        <span class="quick-icon orange">▤</span>
+
+                        <div>
+                            <strong>Biến thể sản phẩm</strong>
+                            <small>Quản lý biến thể và tồn kho</small>
+                        </div>
+
+                        <b>→</b>
+                    </a>
+
+                    <a th:href="@{/shopowner/orders}"
+                       class="quick-action">
+
+                        <span class="quick-icon purple">◌</span>
+
+                        <div>
+                            <strong>Đơn hàng</strong>
+                            <small>Xem đơn hàng của cửa hàng</small>
+                        </div>
+
+                        <b>→</b>
+                    </a>
+
+                </div>
+            </article>
+
         </section>
-        <section class="panel table-panel"><div class="panel-heading"><div><h2>Product Variants gần đây</h2><p class="muted">Các biến thể được cập nhật gần đây</p></div><a class="text-link" th:href="@{/shopowner/product-variants}">Xem tất cả →</a></div><div class="table-wrap"><table><thead><tr><th>PRODUCT VARIANT</th><th>SKU</th><th>GIÁ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI</th><th></th></tr></thead><tbody><tr th:each="v : ${recentVariants}"><td><div class="product-cell"><span class="fruit-thumb apple">🍎</span><div><strong th:text="${v.product_name}">Sản phẩm</strong><small th:text="${v.variant_name}">Biến thể</small></div></div></td><td th:text="${v.sku}">SKU</td><td><strong th:text="${#numbers.formatInteger(v.price,1,'COMMA') + ' ₫'}">0 ₫</strong></td><td><span class="stock good" th:text="${v.stock_quantity}">0</span></td><td><span class="status active" th:if="${v.variant_status == 'ACTIVE' and v.product_status == 'ACTIVE'}">Đang bán</span><span class="status draft" th:unless="${v.variant_status == 'ACTIVE' and v.product_status == 'ACTIVE'}" th:text="${v.variant_status}">Bản nháp</span></td><td><a class="more" th:href="@{/shop/product/{id}(id=${v.product_id})}">⋮</a></td></tr><tr th:if="${#lists.isEmpty(recentVariants)}"><td colspan="6" class="muted">Chưa có product variant nào.</td></tr></tbody></table></div></section>
+
+        <!-- Danh sách biến thể gần đây -->
+        <section class="panel table-panel">
+
+            <div class="panel-heading">
+
+                <div>
+                    <h2>Biến thể sản phẩm gần đây</h2>
+
+                    <p class="muted">
+                        Các biến thể được cập nhật gần đây
+                    </p>
+                </div>
+
+                <a class="text-link"
+                   th:href="@{/shopowner/product-variants}">
+                    Xem tất cả →
+                </a>
+
+            </div>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+                    <tr>
+                        <th>BIẾN THỂ SẢN PHẨM</th>
+                        <th>MÃ SKU</th>
+                        <th>GIÁ BÁN</th>
+                        <th>TỒN KHO</th>
+                        <th>TRẠNG THÁI</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:each="v : ${recentVariants}">
+
+                        <td>
+                            <div class="product-cell">
+
+                                <span class="fruit-thumb apple">🍎</span>
+
+                                <div>
+                                    <strong th:text="${v.product_name}">
+                                        Sản phẩm
+                                    </strong>
+
+                                    <small th:text="${v.variant_name}">
+                                        Biến thể
+                                    </small>
+                                </div>
+
+                            </div>
+                        </td>
+
+                        <td th:text="${v.sku}">
+                            SKU
+                        </td>
+
+                        <td>
+                            <strong
+                                th:text="${#numbers.formatInteger(v.price, 1, 'COMMA') + ' ₫'}">
+                                0 ₫
+                            </strong>
+                        </td>
+
+                        <td>
+                            <span class="stock good"
+                                  th:text="${v.stock_quantity}">
+                                0
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="status active"
+                                  th:if="${v.variant_status == 'ACTIVE'
+                                  and v.product_status == 'ACTIVE'}">
+                                Đang bán
+                            </span>
+
+                            <span class="status draft"
+                                  th:unless="${v.variant_status == 'ACTIVE'
+                                  and v.product_status == 'ACTIVE'}"
+                                  th:text="${v.variant_status}">
+                                Bản nháp
+                            </span>
+                        </td>
+
+                        <td>
+                            <a class="more"
+                               th:href="@{/shop/product/{id}(id=${v.product_id})}">
+                                ⋮
+                            </a>
+                        </td>
+
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(recentVariants)}">
+                        <td colspan="6" class="muted">
+                            Chưa có biến thể sản phẩm nào.
+                        </td>
+                    </tr>
+
+                    </tbody>
+                </table>
+
+            </div>
+        </section>
+
     </main>
+
 </div>
+
 </body>
 </html>
+```

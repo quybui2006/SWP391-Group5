@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Variants | FreshFruit</title>
+    <title>Biến thể sản phẩm | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
     <style>
@@ -21,11 +21,11 @@
     <main class="main-content product-management">
         <header class="topbar">
             <div>
-                <p class="breadcrumb">Shop Owner / <span>Product Variants</span></p>
-                <h1>Product Variants</h1>
+                <p class="breadcrumb">Chủ cửa hàng / <span>Biến thể sản phẩm</span></p>
+                <h1>Biến thể sản phẩm</h1>
                 <p class="muted">Danh sách biến thể và tồn kho thực tế của cửa hàng.</p>
             </div>
-            <a class="button button-primary" th:href="@{/shop/products/add}">＋ Tạo sản phẩm và biến thể</a>
+            <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm biến thể và tồn kho</a>
         </header>
 
         <section class="variant-summary" aria-label="Tổng quan biến thể">
@@ -97,8 +97,8 @@
             <div class="empty-state" th:if="${variants.isEmpty()}">
                 <span>🍐</span>
                 <h2 th:text="${keyword.isEmpty()} ? 'Chưa có biến thể nào' : 'Không tìm thấy biến thể phù hợp'">Chưa có biến thể nào</h2>
-                <p th:text="${keyword.isEmpty()} ? 'Biến thể đầu tiên sẽ được tạo cùng sản phẩm trong form thêm sản phẩm.' : 'Thử tìm bằng tên sản phẩm, tên biến thể hoặc SKU khác.'"></p>
-                <a class="button button-primary" th:href="@{/shop/products/add}">＋ Tạo sản phẩm và biến thể</a>
+                <p th:text="${keyword.isEmpty()} ? 'Hãy thêm biến thể và thiết lập tồn kho cho sản phẩm đã tạo.' : 'Thử tìm bằng tên sản phẩm, tên biến thể hoặc SKU khác.'"></p>
+                <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm biến thể và tồn kho</a>
             </div>
         </section>
     </main>
