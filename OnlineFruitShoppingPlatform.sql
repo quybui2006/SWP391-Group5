@@ -38,6 +38,15 @@ CREATE TABLE users (
     FOREIGN KEY (membership_tier_id) REFERENCES membership_tiers(id)
 );
 
+CREATE TABLE customer_profiles (
+    user_id BIGINT PRIMARY KEY,
+    gender VARCHAR(10) NULL,
+    birth_date DATE NULL,
+    avatar MEDIUMBLOB NULL,
+    avatar_type VARCHAR(30) NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE roles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(40) NOT NULL UNIQUE,

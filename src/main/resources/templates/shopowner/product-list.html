@@ -16,7 +16,7 @@
         <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
     </header>
 
-    <p class="alert alert-success" th:if="${success}">Sản phẩm đã được tạo và đang ở trạng thái nháp.</p>
+    <p class="alert alert-success" th:if="${success}" th:text="${success}">Đã lưu sản phẩm thành công.</p>
 
     <section class="panel">
         <form class="search-bar" method="get" th:action="@{/shop/products}">

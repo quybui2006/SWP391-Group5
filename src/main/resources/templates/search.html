@@ -506,6 +506,7 @@
                                     type="button"
                                     title="Yêu thích"
                                     aria-label="Thêm vào yêu thích"
+                                    th:attr="data-favorite-id=${variant.id}"
                                     onclick="toggleFavorite(event, this)">
 
                                 ♡
@@ -720,6 +721,7 @@
 ========================================================= -->
 
 <script th:src="@{/js/search.js}"></script>
+<script th:src="@{/js/favorites-integration.js}"></script>
 <!-- Tan PTH integration: connect product cards to the database-backed cart. -->
 <script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
 
