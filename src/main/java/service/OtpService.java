@@ -50,5 +50,32 @@ public class OtpService {
         otp.getUser().setEmailVerifiedAt(LocalDateTime.now());
         return true;
     }
+    public String createPasswordResetOtp(User user) {
+        String code = String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000));
+        EmailOtp otp = new EmailOtp();
+        otp.setUser(user);
+        otp.setEmail(user.getEmail());
+        otp.setPurpose("RESET_PASSWORD");
+        otp.setOtpHash(passwordEncoder.encode(code));
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        otps.save(otp);
+        return  code;
+    }
+    @Transactional
+    public boolean verifyPasswordResetOtp(String email,String code) {
+        if(email==null || code==null) return false;
+        EmailOtp otp=otps.findFirstByEmailIgnoreCaseAndPurposeOrderByIdDesc
+                (email.trim(), "RESET_PASSWORD").orElse(null);
+        if(otp==null||otp.getUsedAt()!=null||
+        !otp.getExpiresAt().isAfter(LocalDateTime.now())||otp.getFailedAttempts()>=5) {
+            return false;
+        }
+        if(!passwordEncoder.matches(code, otp.getOtpHash())) {
+            otp.setFailedAttempts(otp.getFailedAttempts() + 1);
+            return false;
+        }
+        otp.setUsedAt(LocalDateTime.now());
+        return  true;
+    }
 
 }

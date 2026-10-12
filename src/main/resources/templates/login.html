@@ -44,7 +44,9 @@
             <label for="password">Mật khẩu</label>
             <input id="password" name="password" type="password"
                    autocomplete="current-password" required>
-
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                <a th:href="@{/forgot-password}" style="font-size: 0.9rem; color: #2e7d32; text-decoration: none;">Quên mật khẩu?</a>
+            </div>
             <button type="submit">Đăng nhập</button>
         </form>
         <p>Chưa có tài khoản? <a th:href="@{/register}">Đăng ký khách hàng</a></p>
