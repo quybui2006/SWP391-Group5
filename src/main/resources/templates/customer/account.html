@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{customer/account-fragments :: head('Hồ sơ của tôi')}"></head>
-<body>
+<body class="customer-profile-page">
 <div class="customer-shell">
     <aside th:replace="~{customer/account-fragments :: sidebar('profile')}"></aside>
     <main class="customer-main">
@@ -22,7 +22,7 @@
                         <label><input type="radio" name="gender" value="OTHER" th:checked="${profile.gender == 'OTHER'}"> Khác</label>
                     </div></div>
                     <div class="profile-row"><label for="birthDate">Ngày sinh</label><input id="birthDate" name="birthDate" type="date" min="1900-01-01" th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" th:value="${profile.birth_date}"></div>
-                    <div class="profile-row save-row"><span></span><div><button class="primary-button" type="submit">Lưu thay đổi</button></div></div>
+                    <div class="profile-row save-row"><span></span><div class="profile-save-actions"><button class="primary-button" type="submit">Lưu</button></div></div>
                 </div>
                 <div class="avatar-panel">
                     <div class="avatar-preview"><img id="avatarPreview" th:src="${profile.has_avatar} ? @{/customer/account/avatar} : @{/images/customer-avatar.svg}" alt="Ảnh đại diện của bạn"></div>

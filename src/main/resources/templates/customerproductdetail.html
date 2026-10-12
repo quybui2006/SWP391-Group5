@@ -403,6 +403,7 @@
 
                         <button class="favorite-btn"
                                 id="favoriteBtn"
+                                th:attr="data-favorite-id=${variant.id}"
                                 type="button"
                                 onclick="toggleFavorite(this)"
                                 aria-label="Thêm vào yêu thích">
@@ -892,6 +893,7 @@
      JAVASCRIPT
 ========================================================= -->
 <script th:src="@{/js/customerproductdetail.js}"></script>
+<script th:src="@{/js/favorites-integration.js}"></script>
 <!-- Tan PTH integration: add handlers from a separate file to persist cart actions to the database. -->
 <script th:src="@{/js/cart-integration.js(v='20261008-1')}"></script>
 

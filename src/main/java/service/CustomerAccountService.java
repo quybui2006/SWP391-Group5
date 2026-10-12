@@ -20,13 +20,21 @@ public class CustomerAccountService {
         return jdbc.queryForMap("SELECT u.id,u.full_name,u.email,u.phone,u.status,p.gender,p.birth_date,(p.avatar IS NOT NULL) AS has_avatar FROM users u LEFT JOIN customer_profiles p ON p.user_id=u.id WHERE u.id=? AND u.status='ACTIVE'", userId);
     }
     public List<Map<String,Object>> orders(Long userId) {
-        return jdbc.queryForList("""
+        return jdbc.query("""
             SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_status,o.delivery_status,o.created_at,
                    s.name AS shop_name
             FROM orders o JOIN checkouts c ON c.id=o.checkout_id
             JOIN shops s ON s.id=o.shop_id
             WHERE c.user_id=? ORDER BY o.created_at DESC,o.id DESC
-            """, userId);
+            """, (rs, row) -> {
+                Map<String,Object> order = new java.util.LinkedHashMap<>();
+                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_status", "delivery_status", "shop_name"))
+                    order.put(column, rs.getObject(column));
+                var timestamp = rs.getTimestamp("created_at");
+                order.put("created_at", timestamp == null ? "—" : timestamp.toLocalDateTime()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                return order;
+            }, userId);
     }
     public List<Map<String,Object>> favorites(Long userId) {
         return jdbc.queryForList("""
@@ -88,6 +96,23 @@ public class CustomerAccountService {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=? AND variant_id=?", Integer.class, userId, variantId);
         if (count != null && count > 0) jdbc.update("DELETE FROM customer_favorites WHERE user_id=? AND variant_id=?", userId, variantId);
         else jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,id FROM product_variants WHERE id=? AND status='ACTIVE'", userId, variantId);
+    }
+    public List<Long> favoriteIds(Long userId) {
+        return jdbc.queryForList("SELECT variant_id FROM customer_favorites WHERE user_id=?", Long.class, userId);
+    }
+    @Transactional
+    public boolean setFavorite(Long userId, Long variantId, boolean favorite) {
+        // Serialize changes for this customer, including repeated clicks from other tabs.
+        jdbc.queryForObject("SELECT id FROM users WHERE id=? FOR UPDATE", Long.class, userId);
+        if (!favorite) {
+            jdbc.update("DELETE FROM customer_favorites WHERE user_id=? AND variant_id=?", userId, variantId);
+            return false;
+        }
+        if (!isFavorite(userId, variantId)) {
+            int inserted = jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,id FROM product_variants WHERE id=? AND status='ACTIVE'", userId, variantId);
+            if (inserted == 0) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Sản phẩm không còn khả dụng.");
+        }
+        return true;
     }
     public boolean isFavorite(Long userId, Long variantId) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=? AND variant_id=?", Integer.class, userId, variantId) > 0;

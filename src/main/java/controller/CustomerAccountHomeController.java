@@ -52,5 +52,21 @@ public class CustomerAccountHomeController {
     @GetMapping("/favorites")
     public String favorites(Model model,HttpSession session){ Long id=current(session);String r=login(id,"/customer/account/favorites");if(r!=null)return r;model.addAttribute("profile",account.profile(id));model.addAttribute("favorites",account.favorites(id));model.addAttribute("activePage","favorites");return "customer/favorites"; }
     @PostMapping("/favorites/toggle")
+    // HTML form used by the saved-products list.
     public String toggle(@RequestParam Long variantId,@RequestParam(defaultValue="/customer/account/favorites") String redirect,HttpSession session){Long id=current(session);if(id==null)return "redirect:/login";account.toggleFavorite(id,variantId);return "redirect:"+(redirect.startsWith("/")?redirect:"/customer/account/favorites");}
+    @GetMapping("/favorites/ids")
+    @ResponseBody
+    public java.util.List<Long> favoriteIds(HttpSession session) {
+        return account.favoriteIds(requireCustomer(session));
+    }
+    @PostMapping("/favorites/save")
+    @ResponseBody
+    public Map<String,Boolean> saveFavorite(@RequestParam Long variantId, @RequestParam boolean favorite, HttpSession session) {
+        return Map.of("favorite", account.setFavorite(requireCustomer(session), variantId, favorite));
+    }
+    private Long requireCustomer(HttpSession session) {
+        Long id = current(session);
+        if (id == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+        return id;
+    }
 }

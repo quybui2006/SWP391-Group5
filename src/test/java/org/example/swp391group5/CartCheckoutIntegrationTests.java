@@ -93,13 +93,31 @@ class CartCheckoutIntegrationTests {
             .andExpect(content().bytes(imageBytes.toByteArray()));
         mvc.perform(get("/customer/account/avatar")).andExpect(status().isUnauthorized());
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
-        jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) VALUES (?,?)", user, variant);
+        mvc.perform(post("/customer/account/favorites/save").param("variantId", String.valueOf(variant)).param("favorite", "true"))
+            .andExpect(status().isUnauthorized());
+        for (int i = 0; i < 2; i++)
+            mvc.perform(post("/customer/account/favorites/save").session(session)
+                .param("variantId", String.valueOf(variant)).param("favorite", "true"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.favorite").value(true));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=?", Integer.class, user));
+        mvc.perform(get("/customer/account/favorites/ids").session(session))
+            .andExpect(status().isOk()).andExpect(content().json("[" + variant + "]"));
+        var otherSession = new MockHttpSession();
+        otherSession.setAttribute("userId", -1L);
+        otherSession.setAttribute("role", "CUSTOMER");
+        mvc.perform(get("/customer/account/favorites/ids").session(otherSession))
+            .andExpect(content().json("[]"));
         long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, user);
         cart.add(user, variant, 1);
         checkout.placeOrder(user, List.of(variant), address, null, null, null, null, null, null);
         for (String path : List.of("/customer/account", "/customer/account/orders", "/customer/account/favorites"))
             mvc.perform(get(path).session(session)).andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Khách hàng Việt")));
+        mvc.perform(post("/customer/account/favorites/save").session(session)
+            .param("variantId", String.valueOf(variant)).param("favorite", "false"))
+            .andExpect(jsonPath("$.favorite").value(false));
+        mvc.perform(get("/customer/account/favorites/ids").session(session))
+            .andExpect(content().json("[]"));
         mvc.perform(post("/customer/account/profile").session(session)
             .param("fullName", "Invalid").param("birthDate", "2999-01-01"))
             .andExpect(flash().attributeExists("error"));

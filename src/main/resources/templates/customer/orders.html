@@ -12,7 +12,7 @@
             <td th:text="${o.order_code}"></td><td th:text="${o.shop_name}"></td><td th:text="${#numbers.formatInteger(o.total_amount,1,'POINT') + ' ₫'}"></td>
             <td th:switch="${o.status}"><span th:case="'PENDING'">Chờ xác nhận</span><span th:case="'CONFIRMED'">Đã xác nhận</span><span th:case="'PREPARING'">Đang chuẩn bị</span><span th:case="'SHIPPING'">Đang giao hàng</span><span th:case="'DELIVERED'">Đã giao hàng</span><span th:case="'COMPLETED'">Hoàn thành</span><span th:case="'CANCELLED'">Đã hủy</span><span th:case="*">Đang xử lý</span></td>
             <td th:switch="${o.payment_status}"><span th:case="'PAID'">Đã thanh toán</span><span th:case="'REFUNDED'">Đã hoàn tiền</span><span th:case="*">Chưa thanh toán</span></td>
-            <td th:text="${#dates.format(o.created_at,'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${o.created_at}"></td>
         </tr></tbody></table></div>
         <div class="account-empty" th:if="${#lists.isEmpty(orders)}"><p>Bạn chưa có đơn hàng nào.</p><a class="primary-button" th:href="@{/search}">Khám phá sản phẩm</a></div>
     </section>
