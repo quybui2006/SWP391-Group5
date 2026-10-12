@@ -1,5 +1,4 @@
-```java
-        package controller;
+package controller;
 
 import dto.ProductVariantCreateRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -178,4 +177,3 @@ public class ShopOwnerController {
                 : null;
     }
 }
-```
