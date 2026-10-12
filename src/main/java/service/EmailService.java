@@ -13,8 +13,15 @@ public class EmailService {
     public void sendEmail(String to, String code) {
         SimpleMailMessage mail = new SimpleMailMessage();
         mail.setTo(to);
-        mail.setSubject("Mã xác minh email");
-        mail.setText("OTP: " + code + "\nMã có hiệu lực");
+        mail.setSubject("Mã xác minh email.");
+        mail.setText("OTP: " + code + "\nMã có hiệu lực 5 phút");
+        mailSender.send(mail);
+    }
+    public void sendPasswordResetEmail(String to, String code) {
+        SimpleMailMessage mail = new SimpleMailMessage();
+        mail.setTo(to);
+        mail.setSubject("Mã xác minh đặt lại mật khẩu.");
+        mail.setText("OTP: "+code+"\nMã có hiệu lực 5 phút");
         mailSender.send(mail);
     }
 }

@@ -3,6 +3,7 @@ package service;
 import dto.ProductDetailView;
 import dto.ProductEditView;
 import dto.ProductCreateRequest;
+import dto.ProductVariantCreateRequest;
 import dto.ShopProductListItem;
 import entity.Unit;
 import entity.Shop;
@@ -187,36 +188,28 @@ public class ShopProductService {
     }
 
     @Transactional
-    public void createProduct(Long ownerUserId, ProductCreateRequest form) {
+    public Long createProduct(Long ownerUserId, ProductCreateRequest form) {
         Map<String, String> errors = new LinkedHashMap<>();
         if (form.getReceivedDate() != null && form.getExpiryDate() != null
-                && form.getExpiryDate().isBefore(form.getReceivedDate())) {
-            errors.put("expiryDate", "Hạn sử dụng phải từ ngày nhập trở đi.");
-        }
-        if (form.getImageFile() == null || form.getImageFile().isEmpty()) {
-            errors.put("imageFile", "Vui lòng chọn ảnh sản phẩm.");
+                && !form.getExpiryDate().isAfter(form.getReceivedDate())) {
+            errors.put("expiryDate", "Ngày hết hạn phải sau ngày nhập kho.");
         }
         if (!errors.isEmpty()) throw new ProductValidationException(errors);
 
         Shop shop = shopRepository.findByOwnerId(ownerUserId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.FORBIDDEN, "Tài khoản chưa có cửa hàng."));
-        Category category = categoryRepository.findById(form.getCategoryId())
-                .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
-                .orElseThrow(() -> new ProductValidationException("categoryId", "Danh mục không tồn tại hoặc đã ngừng hoạt động."));
-        Unit unit = unitRepository.findById(form.getUnitId())
-                .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
-                .orElseThrow(() -> new ProductValidationException("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động."));
 
         String batchCode = form.getBatchCode().trim();
-        String sku = form.getSku().trim();
         if (productRepository.existsByShopIdAndBatchCode(shop.getId(), batchCode)) {
             throw new ProductValidationException("batchCode", "Mã lô này đã được dùng trong cửa hàng.");
         }
-        if (variantRepository.existsByShopIdAndSku(shop.getId(), sku)) {
-            throw new ProductValidationException("sku", "SKU này đã được dùng trong cửa hàng.");
+
+        if (form.getImageFile() == null || form.getImageFile().isEmpty()) {
+            throw new ProductValidationException("imageFile", "Vui lòng chọn ảnh sản phẩm.");
         }
 
+        // Ảnh chính thuộc sản phẩm, không phụ thuộc việc đã tạo biến thể hay chưa.
         String imageUrl = imageStorage.store(form.getImageFile());
         try {
             Product product = new Product();
@@ -231,11 +224,38 @@ public class ShopProductService {
             product.setSellingStatus("DRAFT");
             product = productRepository.saveAndFlush(product);
 
-            categoryLinkRepository.replaceCategory(product.getId(), category.getId());
+            ProductImage image = new ProductImage();
+            image.setProductId(product.getId());
+            image.setImageUrl(imageUrl);
+            image.setSortOrder(0);
+            imageRepository.saveAndFlush(image);
+            return product.getId();
+        } catch (RuntimeException ex) {
+            imageStorage.delete(imageUrl);
+            throw ex;
+        }
+    }
 
+    @Transactional
+    public void createVariantInventory(Long ownerUserId, ProductVariantCreateRequest form) {
+        Product product = loadOwnedProduct(form.getProductId(), ownerUserId);
+        Unit unit = unitRepository.findById(form.getUnitId())
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                .orElseThrow(() -> new ProductValidationException("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động."));
+
+        String sku = form.getSku().trim();
+        if (variantRepository.existsByShopIdAndSku(product.getShopId(), sku)) {
+            throw new ProductValidationException("sku", "SKU này đã được dùng trong cửa hàng.");
+        }
+        if (form.getImageFile() == null || form.getImageFile().isEmpty()) {
+            throw new ProductValidationException("imageFile", "Vui lòng chọn ảnh sản phẩm.");
+        }
+
+        String imageUrl = imageStorage.store(form.getImageFile());
+        try {
             ProductVariant variant = new ProductVariant();
             variant.setProduct(product);
-            variant.setShopId(shop.getId());
+            variant.setShopId(product.getShopId());
             variant.setSku(sku);
             variant.setName(form.getVariantName().trim());
             variant.setBaseUnit(unit);
@@ -255,11 +275,13 @@ public class ShopProductService {
             inventory.setCreatedBy(ownerUserId);
             inventoryRepository.save(inventory);
 
-            ProductImage image = new ProductImage();
-            image.setProductId(product.getId());
-            image.setImageUrl(imageUrl);
-            image.setSortOrder(0);
-            imageRepository.save(image);
+            if (imageRepository.findByProductIdOrderBySortOrderAsc(product.getId()).isEmpty()) {
+                ProductImage image = new ProductImage();
+                image.setProductId(product.getId());
+                image.setImageUrl(imageUrl);
+                image.setSortOrder(0);
+                imageRepository.save(image);
+            }
         } catch (RuntimeException ex) {
             imageStorage.delete(imageUrl);
             throw ex;
@@ -375,9 +397,9 @@ public class ShopProductService {
         if (expiry == null) {
             errors.put("expiryDate", "Hạn sử dụng không được để trống");
         }
-        // CHECK (expiry_date >= received_date)
-        if (received != null && expiry != null && expiry.isBefore(received)) {
-            errors.put("expiryDate", "Hạn sử dụng phải từ ngày nhập kho trở đi");
+        // Quy tắc nghiệp vụ: expiry_date phải lớn hơn received_date
+        if (received != null && expiry != null && !expiry.isAfter(received)) {
+            errors.put("expiryDate", "Ngày hết hạn phải sau ngày nhập kho");
         }
 
         String approval = upperOrNull(form.getApprovalStatus());
