@@ -205,9 +205,12 @@
         </nav>
 
         <div class="header-actions">
-            <form th:action="@{/logout}" method="post">
-                <button class="login-btn" type="submit">Đăng xuất</button>
-            </form>
+            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
+               th:href="@{/customer/account}" th:title="${session.fullName}"
+               aria-label="Hồ sơ khách hàng">
+                <span th:text="${#strings.substring(session.fullName, 0, 1).toUpperCase()}">U</span>
+            </a>
+            <a class="login-btn" th:if="${session.role == null}" th:href="@{/login}">Đăng nhập</a>
         </div>
 
     </div>

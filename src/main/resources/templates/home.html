@@ -49,7 +49,19 @@
                 <span id="cartCount">0</span>
             </a>
 
-            <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+            <!-- Customer đăng nhập sẽ thấy avatar dẫn đến hồ sơ cá nhân. -->
+            <th:block th:if="${session.role == 'CUSTOMER'}">
+                <a class="user-avatar"
+                   th:href="@{/customer/account}"
+                   th:title="${session.fullName}"
+                   aria-label="Hồ sơ khách hàng">
+                    <span th:text="${#strings.substring(session.fullName, 0, 1).toUpperCase()}">U</span>
+                </a>
+            </th:block>
+
+            <th:block th:if="${session.role == null}">
+                <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+            </th:block>
 
         </div>
     </div>

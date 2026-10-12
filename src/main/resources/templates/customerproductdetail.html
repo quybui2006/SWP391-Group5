@@ -1,25 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi"
       xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title th:text="${variant.name + ' - FreshFruit'}">
-        Chi tiết sản phẩm - FreshFruit
-    </title>
-
-    <link rel="stylesheet"
-          th:href="@{/css/customerproductdetail.css}">
-
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com">
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
-
+    <link rel="stylesheet" th:href="@{/css/customerproductdetail.css}">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet">
 </head>
@@ -97,10 +85,13 @@
 
             </a>
 
-            <a class="login-btn"
-               th:href="@{/login}">
-                Đăng nhập
+            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
+               th:href="@{/customer/account}" th:title="${session.fullName}"
+               aria-label="Hồ sơ khách hàng"
+               style="width:40px;height:40px;border-radius:50%;background:#e8f5e9;color:#16803c;display:grid;place-items:center;text-decoration:none;font-weight:800">
+                <span th:text="${#strings.substring(session.fullName, 0, 1).toUpperCase()}">U</span>
             </a>
+            <a class="login-btn" th:if="${session.role == null}" th:href="@{/login}">Đăng nhập</a>
 
         </div>
 
