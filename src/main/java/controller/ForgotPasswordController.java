@@ -66,14 +66,13 @@ public class ForgotPasswordController {
         String code = otpService.createPasswordResetOtp(user);
         try {
             emailService.sendPasswordResetEmail(user.getEmail(), code);
-        } catch (MailException e) {
-            model.addAttribute("error", "Không thể gửi email OTP, vui lòng thử lại.");
+            session.setAttribute(RESET_EMAIL_SESSION_KEY, user.getEmail());
+            redirect.addFlashAttribute("message", "Mã OTP đặt lại mật khẩu đã được gửi tới " + user.getEmail() + ". Vui lòng kiểm tra hộp thư.");
+            return "redirect:/reset-password";
+        } catch (Exception e) {
+            model.addAttribute("error", "Không thể gửi email OTP: " + e.getMessage());
             return "forgot-password";
         }
-
-        session.setAttribute(RESET_EMAIL_SESSION_KEY, user.getEmail());
-        redirect.addFlashAttribute("message", "Mã OTP đã được gửi tới " + user.getEmail());
-        return "redirect:/reset-password";
     }
 
     @GetMapping("/reset-password")

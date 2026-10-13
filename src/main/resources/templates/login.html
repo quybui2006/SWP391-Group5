@@ -21,7 +21,7 @@
                 <small>Tươi ngon mỗi ngày</small>
             </span>
         </a>
-        <a th:href="@{/}">Về trang chủ</a>
+        <a th:href="@{/}" class="secondary-btn" style="min-height: 38px; padding: 0 16px;">Về trang chủ</a>
     </div>
 </header>
 
@@ -32,7 +32,11 @@
         <p>Đăng nhập để tiếp tục với FreshFruit.</p>
 
         <p class="login-error" th:if="${error}" th:text="${error}" role="alert"></p>
+        <p class="login-error" th:if="${param.error}" role="alert">Email hoặc mật khẩu không chính xác.</p>
         <p th:if="${success}" th:text="${success}"></p>
+        <p class="login-notice" th:if="${param.logout}" style="padding: 12px; color: var(--green-dark); background: var(--green-light); border-radius: 10px; font-weight: 600; margin-bottom: 12px;">
+            ✓ Bạn đã đăng xuất thành công.
+        </p>
 
         <form th:action="@{/login}" method="post">
             <!-- Tan PTH integration: return to the requested customer screen after login. -->
@@ -45,7 +49,7 @@
             <input id="password" name="password" type="password"
                    autocomplete="current-password" required>
             <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-                <a th:href="@{/forgot-password}" style="font-size: 0.9rem; color: #2e7d32; text-decoration: none;">Quên mật khẩu?</a>
+                <a th:href="@{/forgot-password}" style="font-size: 0.9rem; color: var(--green-dark); font-weight: 600; text-decoration: none;">Quên mật khẩu?</a>
             </div>
             <button type="submit">Đăng nhập</button>
         </form>

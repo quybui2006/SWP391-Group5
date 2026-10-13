@@ -6,185 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Giỏ hàng | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/cart.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
-
-    <style>
-        main {
-            max-width: 1150px;
-            margin: 36px auto;
-            padding: 0 20px;
-            min-height: 55vh;
-        }
-
-        .cart-row {
-            display: grid;
-            grid-template-columns: 36px minmax(200px, 2fr)
-                1fr 1.5fr 1fr 65px;
-            gap: 14px;
-            align-items: center;
-            padding: 18px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .cart-head {
-            font-size: 13px;
-            color: #647067;
-            font-weight: 700;
-        }
-
-        .product {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            min-width: 0;
-        }
-
-        .product img {
-            width: 64px;
-            height: 64px;
-            object-fit: cover;
-            border-radius: 6px;
-            background: #f3f4f6;
-            flex-shrink: 0;
-        }
-
-        .product-info {
-            overflow-wrap: anywhere;
-        }
-
-        .product-info small {
-            display: block;
-            color: #647067;
-            margin-top: 5px;
-        }
-
-        .qty {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        .qty input {
-            width: 55px;
-            padding: 7px 4px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        .qty-btn,
-        .qty-save {
-            cursor: pointer;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            background: white;
-            padding: 6px 9px;
-        }
-
-        .qty-save {
-            font-size: 12px;
-        }
-
-        .remove {
-            border: 0;
-            background: transparent;
-            color: #b42318;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 18px;
-            flex-wrap: wrap;
-            padding: 24px 0;
-            margin-top: 10px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .summary-total {
-            font-size: 16px;
-        }
-
-        .total-price {
-            color: #16803c;
-            font-size: 22px;
-            font-weight: 700;
-            margin-left: 8px;
-        }
-
-        .notice {
-            padding: 12px;
-            margin: 12px 0;
-            background: #eff8f1;
-            color: #205c32;
-        }
-
-        .error {
-            background: #fff1f0;
-            color: #9f251d;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 50px 0;
-        }
-
-        .btn-disabled,
-        .checkout:disabled {
-            opacity: .5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .checkout {
-            cursor: pointer;
-            border: 0;
-        }
-
-        .select-all {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        @media (max-width: 850px) {
-            .cart-head {
-                display: none;
-            }
-
-            .cart-row {
-                grid-template-columns: 28px minmax(0, 1fr) auto;
-                gap: 10px;
-            }
-
-            .cart-row > *:nth-child(3) {
-                grid-column: 2;
-            }
-
-            .cart-row > *:nth-child(4) {
-                grid-column: 2;
-            }
-
-            .cart-row > *:nth-child(5) {
-                grid-column: 2;
-            }
-
-            .cart-row > *:nth-child(6) {
-                grid-column: 3;
-                grid-row: 1;
-            }
-
-            .summary {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -192,7 +18,7 @@
 <header class="site-header">
     <div class="container header-inner">
 
-        <a class="brand" th:href="@{/}">
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
             <span class="brand-mark">F</span>
             <span>
                 <strong>FreshFruit</strong>
@@ -200,12 +26,17 @@
             </span>
         </a>
 
-        <nav class="main-nav">
+        <nav class="main-nav" aria-label="Điều hướng chính">
             <a th:href="@{/}">Trang chủ</a>
             <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
         </nav>
 
         <div class="header-actions">
+            <!-- Search Icon -->
+            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
+
             <!-- Shopee Style Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
                 <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
@@ -217,172 +48,218 @@
                 </div>
             </div>
 
-            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
-               th:href="@{/customer/account}" th:title="${session.fullName}"
-               aria-label="Hồ sơ khách hàng">
-                <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+            <!-- Cart Icon (Active) -->
+            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng" aria-label="Giỏ hàng" style="border-color: var(--green); color: var(--green); background: var(--green-light);">
+                🛒
+                <span id="cartCount" th:text="${cartItems != null ? #lists.size(cartItems) : 0}">0</span>
             </a>
-            <a class="login-btn" th:if="${session.role == null}" th:href="@{/login}">Đăng nhập</a>
+
+            <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
+            <th:block th:if="${session.role != null}">
+                <div class="user-menu-container">
+                    <div class="user-avatar" th:title="${session.fullName}">
+                        <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+                    </div>
+                    <div class="user-dropdown">
+                        <div class="user-dropdown-header">
+                            <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
+                            <p class="user-dropdown-email">
+                                <span th:if="${session.role == 'CUSTOMER'}">Khách hàng</span>
+                                <span th:if="${session.role == 'SHOP_OWNER'}">Chủ cửa hàng</span>
+                                <span th:if="${session.role == 'ADMIN'}">Quản trị viên</span>
+                            </p>
+                        </div>
+                        <div class="user-dropdown-links">
+                            <!-- Customer links -->
+                            <th:block th:if="${session.role == 'CUSTOMER'}">
+                                <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
+                                <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
+                                <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
+                                <a th:href="@{/customer/account/favorites}">❤️ Sản phẩm yêu thích</a>
+                                <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
+                            </th:block>
+
+                            <!-- Shop Owner links -->
+                            <th:block th:if="${session.role == 'SHOP_OWNER'}">
+                                <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
+                                <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
+                                <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
+                                <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
+                            </th:block>
+
+                            <!-- Admin links -->
+                            <th:block th:if="${session.role == 'ADMIN'}">
+                                <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
+                            </th:block>
+                        </div>
+                        <div class="user-dropdown-logout">
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit">🚪 Đăng xuất</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+
+            <th:block th:if="${session.role == null}">
+                <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+            </th:block>
         </div>
 
     </div>
 </header>
 
-<main>
+<main class="cart-main">
 
-    <h1>🛒 Giỏ hàng của bạn</h1>
+    <div class="cart-page-header">
+        <span class="cart-eyebrow">GIỎ HÀNG</span>
+        <h1>🛒 Giỏ hàng của bạn</h1>
+        <p th:unless="${#lists.isEmpty(cartItems)}">Kiểm tra các mặt hàng đã chọn và tiến hành đặt hàng để nhận trái cây tươi ngon tận nơi.</p>
+    </div>
 
-    <p class="notice"
-       th:if="${message}"
-       th:text="${message}"></p>
+    <div class="notice" th:if="${message}">
+        <span>✓</span>
+        <span th:text="${message}"></span>
+    </div>
 
-    <p class="notice error"
-       th:if="${error}"
-       th:text="${error}"></p>
-
-    <!-- Tiêu đề các cột -->
-    <div class="cart-row cart-head"
-         th:unless="${#lists.isEmpty(cartItems)}">
-
-        <div></div>
-        <div>Sản phẩm</div>
-        <div>Đơn giá</div>
-        <div>Số lượng</div>
-        <div>Thành tiền</div>
-        <div>Xóa</div>
-
+    <div class="notice error" th:if="${error}">
+        <span>⚠️</span>
+        <span th:text="${error}"></span>
     </div>
 
     <!-- Giỏ hàng trống -->
-    <div class="empty"
-         th:if="${#lists.isEmpty(cartItems)}">
-
-        <h2>Giỏ hàng đang trống</h2>
-
-        <p>Hãy chọn những sản phẩm tươi ngon mà bạn yêu thích.</p>
-
+    <div class="empty" th:if="${#lists.isEmpty(cartItems)}">
+        <div class="empty-icon-box">🛒</div>
+        <h2>Giỏ hàng của bạn đang trống</h2>
+        <p>Hãy chọn những sản phẩm trái cây tươi ngon, giàu vitamin để bồi bổ sức khỏe cho bạn và gia đình nhé!</p>
         <a class="primary-btn" th:href="@{/search}">
-            Tiếp tục mua sắm
+            Khám phá sản phẩm ngay →
         </a>
-
     </div>
 
-    <!-- Danh sách sản phẩm -->
-    <div th:each="item : ${cartItems}"
-         class="cart-row cart-item">
+    <!-- Bảng sản phẩm -->
+    <div class="cart-card" th:unless="${#lists.isEmpty(cartItems)}">
 
-        <!-- Checkbox chọn sản phẩm thanh toán -->
-        <div>
-            <input type="checkbox"
-                   class="item-check"
-                   name="selectedVariantIds"
-                   th:value="${item['variant_id']}"
-                   th:attr="data-price=${item['price']}"
-                   form="checkoutForm"
-                   aria-label="Chọn sản phẩm">
+        <!-- Tiêu đề các cột -->
+        <div class="cart-head">
+            <div></div>
+            <div>Sản phẩm</div>
+            <div>Đơn giá</div>
+            <div>Số lượng</div>
+            <div>Thành tiền</div>
+            <div>Thao tác</div>
         </div>
 
-        <!-- Thông tin sản phẩm -->
-        <div class="product">
+        <!-- Danh sách sản phẩm -->
+        <div th:each="item : ${cartItems}" class="cart-row cart-item">
 
-            <img th:src="${item['image_url']}"
-                 th:alt="${item['product_name']}">
-
-            <div class="product-info">
-
-                <strong th:text="${item['product_name']}">
-                    Tên sản phẩm
-                </strong>
-
-                <div th:text="${item['variant_name']}">
-                    Phân loại
-                </div>
-
-                <small>
-                    Còn
-                    <span th:text="${item['available_quantity']}">0</span>
-                    sản phẩm
-                </small>
-
+            <!-- Checkbox chọn sản phẩm thanh toán -->
+            <div>
+                <input type="checkbox"
+                       class="item-check"
+                       name="selectedVariantIds"
+                       th:value="${item['variant_id']}"
+                       th:attr="data-price=${item['price']}"
+                       form="checkoutForm"
+                       aria-label="Chọn sản phẩm">
             </div>
 
+            <!-- Thông tin sản phẩm -->
+            <div class="product">
+                <a th:href="@{/product/{id}(id=${item['variant_id']})}" class="product-thumb-link">
+                    <img th:src="${item['image_url']}" th:alt="${item['product_name']}">
+                </a>
+
+                <div class="product-info">
+                    <a th:href="@{/product/{id}(id=${item['variant_id']})}" class="product-title" th:text="${item['product_name']}">
+                        Tên sản phẩm
+                    </a>
+
+                    <div class="variant-badge" th:text="${item['variant_name']}">
+                        Phân loại
+                    </div>
+
+                    <small class="stock-tag">
+                        Còn <strong th:text="${item['available_quantity']}">0</strong> sản phẩm có sẵn
+                    </small>
+                </div>
+            </div>
+
+            <!-- Đơn giá -->
+            <strong class="unit-price"
+                    th:text="${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                0 ₫
+            </strong>
+
+            <!-- Cập nhật số lượng -->
+            <form class="qty"
+                  th:action="@{/cart/items/{id}/quantity(id=${item['id']})}"
+                  method="post">
+
+                <div class="qty-control">
+                    <button type="button"
+                            class="qty-btn"
+                            onclick="changeQuantity(this, -1)"
+                            aria-label="Giảm số lượng">
+                        −
+                    </button>
+
+                    <input type="number"
+                           class="qty-input"
+                           name="quantity"
+                           min="1"
+                           max="99"
+                           th:value="${item['quantity']}"
+                           onchange="normalizeQuantity(this); updateRowTotal(this)"
+                           required>
+
+                    <button type="button"
+                            class="qty-btn"
+                            onclick="changeQuantity(this, 1)"
+                            aria-label="Tăng số lượng">
+                        +
+                    </button>
+                </div>
+
+                <button type="submit" class="qty-save" title="Cập nhật số lượng">
+                    Cập nhật
+                </button>
+            </form>
+
+            <!-- Thành tiền -->
+            <strong class="row-total-price"
+                    th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                0 ₫
+            </strong>
+
+            <!-- Xóa sản phẩm -->
+            <form th:action="@{/cart/items/{id}/delete(id=${item['id']})}"
+                  method="post">
+
+                <button type="submit"
+                        class="remove"
+                        onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')"
+                        title="Xóa sản phẩm">
+                    🗑️ Xóa
+                </button>
+            </form>
+
         </div>
-
-        <!-- Đơn giá -->
-        <strong class="unit-price"
-                th:text="${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-            0 ₫
-        </strong>
-
-        <!-- Cập nhật số lượng -->
-        <form class="qty"
-              th:action="@{/cart/items/{id}/quantity(id=${item['id']})}"
-              method="post">
-
-            <button type="button"
-                    class="qty-btn"
-                    onclick="changeQuantity(this, -1)"
-                    aria-label="Giảm số lượng">
-                −
-            </button>
-
-            <input type="number"
-                   class="qty-input"
-                   name="quantity"
-                   min="1"
-                   max="99"
-                   th:value="${item['quantity']}"
-                   onchange="normalizeQuantity(this); updateRowTotal(this)"
-                   required>
-
-            <button type="button"
-                    class="qty-btn"
-                    onclick="changeQuantity(this, 1)"
-                    aria-label="Tăng số lượng">
-                +
-            </button>
-
-            <button type="submit" class="qty-save">
-                Cập nhật
-            </button>
-
-        </form>
-
-        <!-- Thành tiền -->
-        <strong class="row-total-price"
-                th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-            0 ₫
-        </strong>
-
-        <!-- Xóa sản phẩm -->
-        <form th:action="@{/cart/items/{id}/delete(id=${item['id']})}"
-              method="post">
-
-            <button type="submit"
-                    class="remove"
-                    onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
-                Xóa
-            </button>
-
-        </form>
 
     </div>
 
     <!-- Thanh thanh toán -->
-    <div class="summary"
-         th:unless="${#lists.isEmpty(cartItems)}">
+    <div class="summary" th:unless="${#lists.isEmpty(cartItems)}">
 
         <label class="select-all">
             <input type="checkbox" id="selectAllBottom">
-            Chọn tất cả
+            <span>Chọn tất cả</span>
         </label>
 
-        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+        <div class="summary-actions">
 
             <div class="summary-total">
-                Đã chọn
-                <strong id="totalSelectedCount">0</strong>
-                sản phẩm:
+                Đã chọn <strong id="totalSelectedCount">0</strong> sản phẩm:
                 <span class="total-price" id="totalPrice">0 ₫</span>
             </div>
 
@@ -391,7 +268,7 @@
                   method="post">
 
                 <button type="submit"
-                        class="primary-btn checkout btn-disabled"
+                        class="checkout btn-disabled"
                         id="btnCheckout"
                         disabled>
                     Tiến hành đặt hàng →
@@ -423,6 +300,7 @@
         <div class="footer-links">
             <a th:href="@{/search}">Sản phẩm</a>
             <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
         </div>
 
         <small>© 2026 FreshFruit. All rights reserved.</small>

@@ -244,6 +244,94 @@ img {
     transform: scale(1.05);
 }
 
+/* USER MENU & DROPDOWN */
+.user-menu-container {
+    position: relative;
+    margin-left: 4px;
+}
+
+.user-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 12px;
+    width: 220px;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    border: 1px solid var(--line);
+    z-index: 999;
+    overflow: hidden;
+}
+
+.user-menu-container:hover .user-dropdown {
+    display: block;
+}
+
+.user-dropdown-header {
+    padding: 14px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+
+.user-dropdown-header p {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-dropdown-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.user-dropdown-email {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.user-dropdown-links a,
+.user-dropdown-links button,
+.user-dropdown-logout button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ink);
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.user-dropdown-links a:hover {
+    background: var(--green-light);
+    color: var(--green-dark);
+}
+
+.user-dropdown-logout {
+    border-top: 1px solid var(--line);
+}
+
+.user-dropdown-logout button {
+    color: #dc3545;
+}
+
+.user-dropdown-logout button:hover {
+    background: #fdf3f4;
+    color: #c82333;
+}
+
 /* =========================================================
    BREADCRUMB
 ========================================================= */
