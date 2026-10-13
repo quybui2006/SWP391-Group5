@@ -41,8 +41,17 @@ public class LoginController {
         session.setAttribute("fullName", account.fullName());
         session.setAttribute("role", account.role());
 
-        if ("CUSTOMER".equals(account.role()) && continueTo != null) {
-            return "redirect:" + safeContinueTo(continueTo);
+
+        if ("CUSTOMER".equals(account.role())) {
+            if (continueTo != null && !continueTo.trim().isEmpty() && !continueTo.trim().equals("/")) {
+                String safePath = safeContinueTo(continueTo);
+                if (safePath.startsWith("/")) {
+                    safePath = safePath.substring(1);
+                }
+                return "redirect:/" + safePath;
+            }
+
+            return "redirect:/customer/account";
         }
 
         return switch (account.role()){

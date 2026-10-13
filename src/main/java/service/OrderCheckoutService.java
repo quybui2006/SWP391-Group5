@@ -11,19 +11,25 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 public class OrderCheckoutService {
     private static final BigDecimal SHIPPING_FEE = new BigDecimal("20000");
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
     public OrderCheckoutService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public List<Map<String, Object>> items(Long userId, List<Long> variantIds) {
         if (variantIds == null || variantIds.isEmpty()) return List.of();
         String marks = String.join(",", java.util.Collections.nCopies(variantIds.size(), "?"));
-        Object[] args = new Object[variantIds.size() + 1]; args[0] = userId;
-        for (int i = 0; i < variantIds.size(); i++) args[i + 1] = variantIds.get(i);
-        return jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.image_url,pv.price FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ")", args);
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        Object[] args = new Object[variantIds.size() + 3]; args[0] = now; args[1] = now; args[2] = userId;
+        for (int i = 0; i < variantIds.size(); i++) args[i + 3] = variantIds.get(i);
+        return jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.image_url,pv.price AS original_price, " +
+                "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price " +
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ")", args);
     }
 
     public List<Map<String, Object>> addresses(Long userId) {
@@ -55,9 +61,14 @@ public class OrderCheckoutService {
         }
         Map<String, Object> user = jdbc.queryForMap("SELECT email FROM users WHERE id=?", userId);
         String marks = String.join(",", java.util.Collections.nCopies(variantIds.size(), "?"));
-        Object[] args = new Object[variantIds.size() + 1]; args[0] = userId;
-        for (int i = 0; i < variantIds.size(); i++) args[i + 1] = variantIds.get(i);
-        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price,pv.image_url,p.expiry_date,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE' AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        Object[] args = new Object[variantIds.size() + 5]; args[0] = now; args[1] = now; args[2] = now; args[3] = now; args[4] = userId;
+        for (int i = 0; i < variantIds.size(); i++) args[i + 5] = variantIds.get(i);
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
+                "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
+                "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
+                "pv.image_url,p.expiry_date,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code " +
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE' AND p.approval_status='APPROVED' AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
         if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hoặc không mở bán.");
         BigDecimal subtotal = BigDecimal.ZERO;
         for (Map<String, Object> line : lines) {
@@ -87,7 +98,7 @@ public class OrderCheckoutService {
                 int quantity = ((Number) line.get("quantity")).intValue();
                 BigDecimal price = (BigDecimal) line.get("price");
                 if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity) != 1) throw new IllegalArgumentException("Tồn kho vừa thay đổi. Vui lòng kiểm tra lại giỏ hàng.");
-                Long itemId = insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,expiry_date,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'RESERVED')", orderId, shopId, variantId, inventoryId, line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, price, price, price.multiply(BigDecimal.valueOf(quantity)), line.get("expiry_date"));
+                Long itemId = insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,expiry_date,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'RESERVED')", orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)), line.get("expiry_date"));
                 int reservedAfter = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
                 int onHand = ((Number) line.get("quantity_on_hand")).intValue();
                 jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RESERVE',0,?,?,?,?,?)", inventoryId, itemId, quantity, onHand, reservedAfter, "reserve-" + itemId, userId);

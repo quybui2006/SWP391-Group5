@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Variants | FreshFruit</title>
+    <title>Biến thể sản phẩm | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
     <style>
@@ -21,11 +21,11 @@
     <main class="main-content product-management">
         <header class="topbar">
             <div>
-                <p class="breadcrumb">Shop Owner / <span>Product Variants</span></p>
-                <h1>Product Variants</h1>
+                <p class="breadcrumb">Chủ cửa hàng / <span>Biến thể sản phẩm</span></p>
+                <h1>Biến thể sản phẩm</h1>
                 <p class="muted">Danh sách biến thể và tồn kho thực tế của cửa hàng.</p>
             </div>
-            <a class="button button-primary" th:href="@{/shop/products/add}">＋ Tạo sản phẩm và biến thể</a>
+            <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm biến thể và tồn kho</a>
         </header>
 
         <section class="variant-summary" aria-label="Tổng quan biến thể">
@@ -48,9 +48,9 @@
                 <table>
                     <thead>
                     <tr>
-                        <th>Sản phẩm / biến thể</th>
+                        <th>Biến thể</th>
                         <th>SKU</th>
-                        <th>Quy cách</th>
+                        <th>Đơn vị bán</th>
                         <th>Giá bán</th>
                         <th>Tồn kho</th>
                         <th>Trạng thái</th>
@@ -63,14 +63,14 @@
                             <div class="product-cell">
                                 <span class="image-placeholder">🍊</span>
                                 <div>
-                                    <a th:href="@{/shop/product/{id}(id=${variant.product_id})}"
-                                       th:text="${variant.product_name}">Tên sản phẩm</a>
-                                    <small th:text="${variant.variant_name}">Tên biến thể</small>
+                                    <a class="variant-primary" th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}"
+                                       th:text="${variant.variant_name}">Tên biến thể</a>
+                                    <small class="variant-parent" th:text="${variant.product_name}">Tên sản phẩm</small>
                                 </div>
                             </div>
                         </td>
                         <td th:text="${variant.sku}">SKU</td>
-                        <td th:text="${variant.specification != null and !variant.specification.isEmpty() ? variant.specification : variant.unit_name}">Quy cách</td>
+                        <td th:text="${variant.unit_name}">Đơn vị bán</td>
                         <td th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.stock_quantity + ' ' + variant.unit_name}">0 kg</td>
                         <td>
@@ -86,8 +86,8 @@
                                   th:text="${variant.product_status == 'DRAFT' ? 'Sản phẩm nháp' : 'Chưa mở bán'}">Chưa mở bán</span>
                         </td>
                         <td class="product-actions">
-                            <a th:href="@{/shop/product/{id}(id=${variant.product_id})}">Chi tiết sản phẩm</a>
-                            <a th:href="@{/shop/product/{id}/edit(id=${variant.product_id})}">Sửa sản phẩm</a>
+                            <a th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}">Chi tiết</a>
+                            <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}">Sửa biến thể</a>
                         </td>
                     </tr>
                     </tbody>
@@ -97,8 +97,8 @@
             <div class="empty-state" th:if="${variants.isEmpty()}">
                 <span>🍐</span>
                 <h2 th:text="${keyword.isEmpty()} ? 'Chưa có biến thể nào' : 'Không tìm thấy biến thể phù hợp'">Chưa có biến thể nào</h2>
-                <p th:text="${keyword.isEmpty()} ? 'Biến thể đầu tiên sẽ được tạo cùng sản phẩm trong form thêm sản phẩm.' : 'Thử tìm bằng tên sản phẩm, tên biến thể hoặc SKU khác.'"></p>
-                <a class="button button-primary" th:href="@{/shop/products/add}">＋ Tạo sản phẩm và biến thể</a>
+                <p th:text="${keyword.isEmpty()} ? 'Hãy thêm biến thể và thiết lập tồn kho cho sản phẩm đã tạo.' : 'Thử tìm bằng tên sản phẩm, tên biến thể hoặc SKU khác.'"></p>
+                <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm biến thể và tồn kho</a>
             </div>
         </section>
     </main>

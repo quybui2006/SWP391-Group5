@@ -53,7 +53,12 @@ public class ShopProductEditController {
             redirect.addFlashAttribute("success", "Cập nhật sản phẩm thành công.");
             return "redirect:/shop/product/" + id;
         } catch (ProductValidationException ex) {
-            // Trả lại form, dữ liệu người gõ không mất
+            // Nạp lại dữ liệu chỉ đọc từ DB; approval_status không được tin từ form client.
+            ProductEditView savedState = shopProductService.buildEditForm(
+                    id, currentUserProvider.requireUserId(request));
+            form.setApprovalStatus(savedState.getApprovalStatus());
+            form.setShopName(savedState.getShopName());
+            form.setCategories(savedState.getCategories());
             model.addAttribute("errors", ex.getFieldErrors());
         }
         return "shopproductedit";

@@ -1,0 +1,91 @@
+/* Reference layout, scoped to the personal-profile screen. */
+.customer-profile-page .account-panel {
+    padding: 26px 36px 60px;
+    min-height: 620px;
+}
+.customer-profile-page .account-heading {
+    padding-bottom: 22px;
+    margin-bottom: 36px;
+}
+.customer-profile-page .account-heading h1 { font-size: 23px; font-weight: 500; }
+.customer-profile-page .account-heading p { color: var(--ink); font-size: 14px; }
+.customer-profile-page .profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 46px;
+    padding: 0;
+    align-items: start;
+}
+.customer-profile-page .profile-fields { display: flex; flex-direction: column; gap: 22px; }
+.customer-profile-page .profile-row {
+    display: grid;
+    grid-template-columns: 155px minmax(0, 1fr);
+    gap: 24px;
+    min-height: 42px;
+    margin: 0;
+}
+.customer-profile-page .profile-row > label,
+.customer-profile-page .field-caption { text-align: right; color: #808080; font-weight: 400; font-size: 14px; }
+.customer-profile-page .profile-row > input {
+    height: 46px;
+    border-radius: 2px;
+    border-color: #d9d9d9;
+    font-size: 14px;
+}
+.customer-profile-page .profile-value { min-height: 42px; font-size: 14px; gap: 8px; }
+.customer-profile-page .gender-options { gap: 15px; }
+.customer-profile-page .gender-options label {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    min-width: 0;
+    color: var(--ink);
+    font-size: 14px;
+}
+.customer-profile-page .gender-options input { width: 19px; height: 19px; }
+.customer-profile-page .avatar-panel {
+    align-self: start;
+    background: none;
+    border: 0;
+    border-left: 1px solid #ededed;
+    border-radius: 0;
+    padding: 24px 0 0 32px;
+}
+.customer-profile-page .avatar-preview {
+    width: 124px;
+    height: 124px;
+    border: 0;
+    box-shadow: none;
+    margin: 0 auto 24px;
+}
+.customer-profile-page .avatar-picker {
+    padding: 12px 24px;
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    color: #555;
+    font-size: 14px;
+    font-weight: 400;
+}
+.customer-profile-page .avatar-panel p { margin: 16px 0 0; color: #929292; font-size: 13px; line-height: 1.8; }
+.customer-profile-page .save-row { padding-top: 6px; border-top: 0; margin-top: 2px; }
+.customer-profile-page .save-row .primary-button { min-width: 88px; min-height: 46px; border-radius: 3px; box-shadow: none; }
+.customer-profile-page .feedback { margin-bottom: 24px; }
+@media (max-width: 1150px) {
+    .customer-profile-page .profile-layout { grid-template-columns: minmax(0, 1fr) 205px; gap: 24px; }
+    .customer-profile-page .profile-row { grid-template-columns: 120px minmax(0, 1fr); gap: 16px; }
+    .customer-profile-page .avatar-panel { padding-left: 20px; }
+}
+@media (max-width: 800px) {
+    .customer-profile-page .account-panel { padding: 24px 20px 36px; min-height: 0; }
+    .customer-profile-page .profile-layout { grid-template-columns: 1fr; gap: 32px; }
+    .customer-profile-page .avatar-panel { grid-row: 1; border-left: 0; border-bottom: 1px solid var(--line); padding: 0 0 24px; }
+    .customer-profile-page .profile-row { grid-template-columns: 125px minmax(0, 1fr); }
+    .customer-profile-page .save-row > span { display: block; }
+}
+@media (max-width: 480px) {
+    .customer-profile-page .profile-row { grid-template-columns: 1fr; gap: 8px; }
+    .customer-profile-page .profile-row > label,
+    .customer-profile-page .field-caption { text-align: left; }
+    .customer-profile-page .save-row > span { display: none; }
+}

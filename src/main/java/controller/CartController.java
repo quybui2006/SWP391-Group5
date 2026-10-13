@@ -21,12 +21,13 @@ public class CartController {
     @GetMapping("/cart")
     public String viewCart(HttpSession session, Model model) {
         Long userId = customerId(session);
-
-        if (userId == null) {
-            return "redirect:/login";
+        if (userId != null) model.addAttribute("cartItems", cart.items(userId));
+        else {
+            var quantities = guestCart(session);
+            var items = cart.guestItems(quantities);
+            items.forEach(item -> item.put("id", item.get("variant_id")));
+            model.addAttribute("cartItems", items);
         }
-
-        model.addAttribute("cartItems", cart.items(userId));
         return "cart";
     }
 
@@ -36,7 +37,7 @@ public class CartController {
     public int count(HttpSession session) {
         Long userId = customerId(session);
 
-        return userId == null ? 0 : cart.itemCount(userId);
+        return userId == null ? guestCart(session).values().stream().mapToInt(Integer::intValue).sum() : cart.itemCount(userId);
     }
 
     // Thêm sản phẩm bằng AJAX
@@ -49,13 +50,15 @@ public class CartController {
 
         Long userId = customerId(session);
 
-        if (userId == null) {
-            return ResponseEntity.status(401).build();
-        }
-
         try {
-            cart.add(userId, variantId, quantity);
-            return ResponseEntity.ok(cart.itemCount(userId));
+            if (userId != null) cart.add(userId, variantId, quantity);
+            else {
+                cart.validateVariant(variantId, quantity);
+                var guest = guestCart(session);
+                guest.put(variantId, Math.min(99, guest.getOrDefault(variantId, 0) + quantity));
+                session.setAttribute("guestCart", guest);
+            }
+            return ResponseEntity.ok(userId == null ? guestCart(session).values().stream().mapToInt(Integer::intValue).sum() : cart.itemCount(userId));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
@@ -71,12 +74,14 @@ public class CartController {
 
         Long userId = customerId(session);
 
-        if (userId == null) {
-            return "redirect:/login";
-        }
-
         try {
-            cart.add(userId, variantId, quantity);
+            if (userId != null) cart.add(userId, variantId, quantity);
+            else {
+                cart.validateVariant(variantId, quantity);
+                var guest = guestCart(session);
+                guest.put(variantId, Math.min(99, guest.getOrDefault(variantId, 0) + quantity));
+                session.setAttribute("guestCart", guest);
+            }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
@@ -94,12 +99,15 @@ public class CartController {
 
         Long userId = customerId(session);
 
-        if (userId == null) {
-            return "redirect:/login";
-        }
-
         try {
-            cart.update(userId, id, quantity);
+            if (userId != null) cart.update(userId, id, quantity);
+            else {
+                cart.validateVariant(id, quantity);
+                var guest = guestCart(session);
+                if (!guest.containsKey(id)) throw new IllegalArgumentException("Sản phẩm trong giỏ không tồn tại.");
+                guest.put(id, quantity);
+                session.setAttribute("guestCart", guest);
+            }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
@@ -115,11 +123,8 @@ public class CartController {
 
         Long userId = customerId(session);
 
-        if (userId == null) {
-            return "redirect:/login";
-        }
-
-        cart.remove(userId, id);
+        if (userId != null) cart.remove(userId, id);
+        else { var guest = guestCart(session); guest.remove(id); session.setAttribute("guestCart", guest); }
         return "redirect:/cart";
     }
 
@@ -131,11 +136,8 @@ public class CartController {
 
         Long userId = customerId(session);
 
-        if (userId == null) {
-            return "redirect:/login";
-        }
-
-        cart.remove(userId, id);
+        if (userId != null) cart.remove(userId, id);
+        else { var guest = guestCart(session); guest.remove(id); session.setAttribute("guestCart", guest); }
         return "redirect:/cart";
     }
 
@@ -150,5 +152,11 @@ public class CartController {
         return id instanceof Number number
                 ? number.longValue()
                 : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private java.util.Map<Long, Integer> guestCart(HttpSession session) {
+        Object value = session.getAttribute("guestCart");
+        return value instanceof java.util.Map<?, ?> map ? (java.util.Map<Long, Integer>) map : new java.util.LinkedHashMap<>();
     }
 }

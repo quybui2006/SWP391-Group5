@@ -7,6 +7,7 @@
     <title>FreshFruit - Trái cây tươi mỗi ngày</title>
 
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
@@ -41,6 +42,17 @@
                title="Tìm kiếm"
                aria-label="Tìm kiếm">⌕</a>
 
+            <!-- Shopee Style Notification Bell -->
+            <div class="notif-wrapper" id="notifWrapper">
+                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
+                    <!-- Dynamic content loaded by notifications.js -->
+                </div>
+            </div>
+
             <a class="icon-btn cart-btn"
                th:href="@{/cart}"
                title="Giỏ hàng"
@@ -49,7 +61,37 @@
                 <span id="cartCount">0</span>
             </a>
 
-            <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+            <!-- Customer đăng nhập sẽ thấy avatar dẫn đến hồ sơ cá nhân. -->
+            <th:block th:if="${session.role == 'CUSTOMER'}">
+                <a class="user-avatar"
+                   th:href="@{/customer/account}"
+                   th:title="${session.fullName}"
+                   aria-label="Hồ sơ khách hàng">
+                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+                </a>
+            </th:block>
+
+            <th:block th:if="${session.role == 'SHOP_OWNER'}">
+                <a class="user-avatar"
+                   th:href="@{/shopowner/home}"
+                   th:title="${session.fullName}"
+                   aria-label="Trang quản lý cửa hàng">
+                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'S'}">S</span>
+                </a>
+            </th:block>
+
+            <th:block th:if="${session.role == 'ADMIN'}">
+                <a class="user-avatar"
+                   th:href="@{/admin}"
+                   th:title="${session.fullName}"
+                   aria-label="Quản trị hệ thống">
+                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'A'}">A</span>
+                </a>
+            </th:block>
+
+            <th:block th:if="${session.role == null}">
+                <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+            </th:block>
 
         </div>
     </div>
@@ -255,6 +297,7 @@
                                 type="button"
                                 title="Yêu thích"
                                 aria-label="Thêm vào yêu thích"
+                                th:attr="data-favorite-id=${variant.id}"
                                 onclick="toggleFavorite(event, this)">
                             ♡
                         </button>
@@ -274,13 +317,14 @@
 
                         <div class="product-bottom">
 
+                            <span class="price-old" th:if="${variant.promotionalPrice != null}"
+                                  th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
+                            <strong class="price price-promotion"
+                                    th:if="${variant.price != null and variant.promotionalPrice != null}"
+                                    th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
                             <strong class="price"
-                                    th:if="${variant.price != null}"
-                                    th:text="${#numbers.formatDecimal(
-                                        variant.price, 0, 'COMMA', 0, 'POINT'
-                                    ) + ' ₫'}">
-                                0 ₫
-                            </strong>
+                                    th:if="${variant.price != null and variant.promotionalPrice == null}"
+                                    th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</strong>
 
                             <strong class="price"
                                     th:unless="${variant.price != null}">
@@ -406,6 +450,7 @@
 
 <!-- JAVASCRIPT -->
 <script th:src="@{/js/home.js}"></script>
+<script th:src="@{/js/favorites-integration.js}"></script>
 
 <script>
     // Cập nhật số lượng giỏ hàng từ server.
@@ -495,6 +540,9 @@
 
     document.addEventListener('DOMContentLoaded', refreshCartCount);
 </script>
+
+<script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 
 </body>
 </html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Chi tiết biến thể | FreshFruit</title>
+<link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}"></head>
+<body><div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('variants')}"></aside><main class="main-content product-management">
+<header class="topbar"><div><p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Chi tiết</span></p>
+<h1 th:text="${variant.variantName}">Chi tiết biến thể</h1><p class="muted">Sản phẩm: <strong th:text="${variant.productName}">Sản phẩm cha</strong></p></div>
+<div class="topbar-actions"><a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách</a><a class="button button-primary" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa biến thể</a></div></header>
+<section class="detail-grid"><div class="form-card"><h2>Thông tin bán hàng</h2><div class="detail-list">
+<div><span>Tên biến thể</span><strong th:text="${variant.variantName}">-</strong></div><div><span>SKU</span><strong th:text="${variant.sku}">-</strong></div>
+<div><span>Quy cách</span><strong th:text="${variant.specification ?: '-'}">-</strong></div><div><span>Đơn vị</span><strong th:text="${variant.unitName}">-</strong></div>
+<div><span>Giá bán</span><strong th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">-</strong></div><div><span>Trạng thái</span><strong th:text="${variant.status}">-</strong></div>
+</div></div><div class="form-card"><h2>Tồn kho</h2><div class="detail-list detail-list-single">
+<div><span>Hiện có</span><strong th:text="${variant.quantityOnHand + ' ' + variant.unitName}">-</strong></div><div><span>Đang giữ</span><strong th:text="${variant.reservedQuantity + ' ' + variant.unitName}">-</strong></div>
+<div><span>Có thể bán</span><strong th:text="${variant.availableQuantity + ' ' + variant.unitName}">-</strong></div><div><span>Ngưỡng cảnh báo</span><strong th:text="${variant.lowStockThresholdPct + '%'}">-</strong></div>
+</div></div></section></main></div></body></html>

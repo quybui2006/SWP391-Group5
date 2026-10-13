@@ -1,1 +1,53 @@
-<!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><body><aside class="customer-sidebar" th:fragment="sidebar(active)"><a class="customer-brand" th:href="@{/}"><span class="brand-mark">F</span><span><strong>Fresh<span>Fruit</span></strong><small>TƯƠI NGON MỖI NGÀY</small></span></a><div class="customer-profile"><div class="profile-avatar">KH</div><div><strong th:text="${profile.full_name}">Customer</strong><span th:text="${profile.email}">email</span></div></div><nav class="customer-nav"><span class="nav-caption">TÀI KHOẢN CỦA TÔI</span><a th:classappend="${active == 'profile'} ? ' active' : ''" th:href="@{/customer/account}"><span class="nav-symbol">♙</span>Thông tin cá nhân</a><a th:classappend="${active == 'address'} ? ' active' : ''" th:href="@{/customer/account/address}"><span class="nav-symbol">⌖</span>Sổ địa chỉ</a><a th:classappend="${active == 'orders'} ? ' active' : ''" th:href="@{/customer/account/orders}"><span class="nav-symbol">▣</span>Đơn hàng của tôi</a><a th:classappend="${active == 'favorites'} ? ' active' : ''" th:href="@{/customer/account/favorites}"><span class="nav-symbol">♡</span>Sản phẩm yêu thích</a><span class="nav-caption second">KHÁC</span><a href="#" data-pending><span class="nav-symbol">♧</span>Thông báo</a><a href="#" data-pending><span class="nav-symbol">⚙</span>Cài đặt tài khoản</a></nav><div class="sidebar-help"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Liên hệ với FreshFruit</small></div><b>→</b></div></aside></body></html>
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title + ' | FreshFruit'}"></title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-profile-layout.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+</head>
+<body>
+<aside class="customer-sidebar" th:fragment="sidebar(active)">
+    <a class="customer-brand" th:href="@{/}">
+        <span class="brand-mark">F</span>
+        <span><strong>Fresh<span>Fruit</span></strong><small>TƯƠI NGON MỖI NGÀY</small></span>
+    </a>
+    <div class="customer-profile">
+        <div class="profile-avatar">KH</div>
+        <div>
+            <strong th:text="${profile != null ? profile.full_name : session.fullName}">Customer</strong>
+            <span th:text="${profile != null ? profile.email : ''}"></span>
+        </div>
+    </div>
+    <nav class="customer-nav">
+        <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
+        <a th:classappend="${active == 'profile'} ? 'active'" th:href="@{/customer/account}">Thông tin cá nhân</a>
+        <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
+        <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
+        <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
+        <span class="nav-caption second">KHÁC</span>
+        <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
+        <a href="#" data-pending>Cài đặt tài khoản</a>
+    </nav>
+    <div th:replace="~{customer/account-fragments :: help}"></div>
+</aside>
+<div class="sidebar-help" th:fragment="help"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Liên hệ với FreshFruit</small></div><b>→</b></div>
+<header class="customer-topbar" th:fragment="topbar(title)">
+    <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><a th:href="@{/customer/account}">Tài khoản</a><span>/</span><strong th:text="${title}"></strong></div>
+    <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
+</header>
+<div class="topbar-actions" th:fragment="topbarActions">
+    <a class="top-icon" th:href="@{/search}" aria-label="Tìm kiếm sản phẩm" title="Tìm kiếm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+    </a>
+    <a class="top-icon notif-top-icon" th:href="@{/customer/account/notifications}" aria-label="Thông báo" title="Thông báo" style="font-size: 16px; display: inline-grid; place-items: center; text-decoration: none;">
+        🔔
+    </a>
+    <a class="cart-link" th:href="@{/cart}" aria-label="Giỏ hàng">🛒 Giỏ hàng</a>
+</div>
+</body>
+</html>

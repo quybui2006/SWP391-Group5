@@ -22,6 +22,13 @@ public class ProductVariant {
     @Column(name = "price", nullable = false)
     private BigDecimal price;
 
+    @Transient
+    private BigDecimal promotionalPrice;
+
+    public BigDecimal getPromotionalPrice() { return promotionalPrice; }
+    public void setPromotionalPrice(BigDecimal promotionalPrice) { this.promotionalPrice = promotionalPrice; }
+
+
     @Column(name = "status", nullable = false)
     private String status;
 
