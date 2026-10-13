@@ -104,7 +104,15 @@ public class OrderCheckoutService {
                 jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RESERVE',0,?,?,?,?,?)", inventoryId, itemId, quantity, onHand, reservedAfter, "reserve-" + itemId, userId);
             }
         }
-        jdbc.update("DELETE FROM cart_items WHERE cart_id=(SELECT id FROM carts WHERE user_id=?) AND variant_id IN (" + marks + ")", args);
+        Object[] deleteArgs = new Object[variantIds.size() + 1];
+        deleteArgs[0] = userId;
+        for (int i = 0; i < variantIds.size(); i++) {
+            deleteArgs[i + 1] = variantIds.get(i);
+        }
+
+
+        jdbc.update("DELETE FROM cart_items WHERE cart_id=(SELECT id FROM carts WHERE user_id=?) AND variant_id IN (" + marks + ")", deleteArgs);
+
         return String.join(", ", orderCodes);
     }
 

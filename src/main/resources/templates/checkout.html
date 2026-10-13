@@ -139,7 +139,7 @@
         </nav>
 
         <div class="header-actions">
-            <!-- Shopee Style Notification Bell -->
+
             <div class="notif-wrapper" id="notifWrapper">
                 <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
                     <span class="bell-icon">🔔</span>
@@ -180,7 +180,7 @@
           method="post"
           class="checkout-grid">
 
-        <!-- CỘT TRÁI: ĐỊA CHỈ VÀ GHI CHÚ -->
+
         <section class="checkout-section">
             <h2>Địa chỉ nhận hàng</h2>
 
@@ -284,7 +284,7 @@
             <p>Thanh toán khi nhận hàng (COD)</p>
         </section>
 
-        <!-- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG -->
+
         <section class="checkout-section">
             <h2>Sản phẩm</h2>
 
@@ -363,6 +363,34 @@
 </footer>
 
 <script th:src="@{/js/notifications.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
 
+        const addressRadios = document.querySelectorAll('input[name="addressId"]');
+
+
+        const newAddressFields = document.querySelectorAll('#recipientName, #recipientPhone, #provinceCode, #wardName, #addressDetail');
+
+
+        function toggleNewAddressFields() {
+
+            const newAddressRadio = document.querySelector('input[name="addressId"][value="0"]');
+            const isNewAddressChecked = newAddressRadio ? newAddressRadio.checked : true;
+
+            newAddressFields.forEach(field => {
+                field.disabled = !isNewAddressChecked;
+                field.required = isNewAddressChecked;
+            });
+        }
+
+
+        addressRadios.forEach(radio => {
+            radio.addEventListener('change', toggleNewAddressFields);
+        });
+
+
+        toggleNewAddressFields();
+    });
+</script>
 </body>
 </html>
