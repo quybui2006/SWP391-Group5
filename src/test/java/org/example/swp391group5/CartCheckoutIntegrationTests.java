@@ -270,7 +270,54 @@ class CartCheckoutIntegrationTests {
         mvc.perform(get("/login")).andExpect(status().isOk());
         mvc.perform(get("/search")).andExpect(status().isOk());
         mvc.perform(get("/cart")).andExpect(status().isOk());
+        mvc.perform(get("/forgot-password")).andExpect(status().isOk());
+        mvc.perform(get("/register")).andExpect(status().isOk());
+        mvc.perform(get("/register/verify").sessionAttr("pendingRegistrationEmail", "user@test.example")).andExpect(status().isOk());
         mvc.perform(get("/shop/products")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
+    }
+
+    @Test
+    void synchronizedUIAndBusinessFlowsValidation() throws Exception {
+        long user = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, user);
+
+        // 1. Guest empty cart renders empty state
+        mvc.perform(get("/cart"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Giỏ hàng của bạn đang trống")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/css/cart.css\"")));
+
+        // 2. Customer adds item to cart & views cart
+        cart.add(user, variant, 2);
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", user);
+        session.setAttribute("role", "CUSTOMER");
+        session.setAttribute("fullName", "Checkout User");
+
+        mvc.perform(get("/cart").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Apple")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("1kg")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("btnCheckout")));
+
+        // 3. Checkout page loads addresses, subtotal, and shipping fee
+        mvc.perform(post("/checkout").session(session).param("selectedVariantIds", String.valueOf(variant)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/css/checkout.css\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Địa chỉ nhận hàng")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Phí vận chuyển")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("btnPlaceOrder")));
+
+        // 4. Auth pages render with green brand styles
+        mvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/css/login.css\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Quên mật khẩu?")));
+
+        mvc.perform(get("/forgot-password"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Gửi mã OTP xác minh")));
     }
 
     @Test

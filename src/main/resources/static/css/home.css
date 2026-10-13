@@ -379,8 +379,11 @@ input {
 }
 
 .user-dropdown-links a,
-.user-dropdown-links button {
-    display: block;
+.user-dropdown-links button,
+.user-dropdown-logout button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     text-align: left;
     padding: 12px 16px;

@@ -19,8 +19,8 @@
     <div class="customer-profile">
         <div class="profile-avatar">KH</div>
         <div>
-            <strong th:text="${profile != null ? profile.full_name : session.fullName}">Customer</strong>
-            <span th:text="${profile != null ? profile.email : ''}"></span>
+            <strong th:text="${profile != null ? profile.full_name : (customer != null ? customer.fullName : session.fullName)}">Customer</strong>
+            <span th:text="${profile != null ? profile.email : (customer != null ? customer.email : '')}"></span>
         </div>
     </div>
     <nav class="customer-nav">
@@ -32,6 +32,11 @@
         <span class="nav-caption second">KHÁC</span>
         <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
         <a href="#" data-pending>Cài đặt tài khoản</a>
+        <form th:action="@{/logout}" method="post" style="margin: 12px 4px 0;">
+            <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 10px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 9px; padding: 10px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                <span style="font-size: 15px;">🚪</span> Đăng xuất
+            </button>
+        </form>
     </nav>
     <div th:replace="~{customer/account-fragments :: help}"></div>
 </aside>
@@ -48,6 +53,11 @@
         🔔
     </a>
     <a class="cart-link" th:href="@{/cart}" aria-label="Giỏ hàng">🛒 Giỏ hàng</a>
+    <form th:action="@{/logout}" method="post" style="display: inline-flex; margin: 0 0 0 6px;">
+        <button type="submit" class="top-icon logout-top-icon" title="Đăng xuất" aria-label="Đăng xuất" style="cursor: pointer; color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.25); background: #fff5f5; border-radius: 9px; font-size: 14px; width: 34px; height: 34px; display: inline-grid; place-items: center;">
+            🚪
+        </button>
+    </form>
 </div>
 </body>
 </html>

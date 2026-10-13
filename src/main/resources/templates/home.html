@@ -61,32 +61,51 @@
                 <span id="cartCount">0</span>
             </a>
 
-            <!-- Customer đăng nhập sẽ thấy avatar dẫn đến hồ sơ cá nhân. -->
-            <th:block th:if="${session.role == 'CUSTOMER'}">
-                <a class="user-avatar"
-                   th:href="@{/customer/account}"
-                   th:title="${session.fullName}"
-                   aria-label="Hồ sơ khách hàng">
-                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
-                </a>
-            </th:block>
+            <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
+            <th:block th:if="${session.role != null}">
+                <div class="user-menu-container">
+                    <div class="user-avatar" th:title="${session.fullName}">
+                        <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+                    </div>
+                    <div class="user-dropdown">
+                        <div class="user-dropdown-header">
+                            <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
+                            <p class="user-dropdown-email">
+                                <span th:if="${session.role == 'CUSTOMER'}">Khách hàng</span>
+                                <span th:if="${session.role == 'SHOP_OWNER'}">Chủ cửa hàng</span>
+                                <span th:if="${session.role == 'ADMIN'}">Quản trị viên</span>
+                            </p>
+                        </div>
+                        <div class="user-dropdown-links">
+                            <!-- Customer links -->
+                            <th:block th:if="${session.role == 'CUSTOMER'}">
+                                <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
+                                <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
+                                <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
+                                <a th:href="@{/customer/account/favorites}">❤️ Sản phẩm yêu thích</a>
+                                <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
+                            </th:block>
 
-            <th:block th:if="${session.role == 'SHOP_OWNER'}">
-                <a class="user-avatar"
-                   th:href="@{/shopowner/home}"
-                   th:title="${session.fullName}"
-                   aria-label="Trang quản lý cửa hàng">
-                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'S'}">S</span>
-                </a>
-            </th:block>
+                            <!-- Shop Owner links -->
+                            <th:block th:if="${session.role == 'SHOP_OWNER'}">
+                                <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
+                                <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
+                                <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
+                                <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
+                            </th:block>
 
-            <th:block th:if="${session.role == 'ADMIN'}">
-                <a class="user-avatar"
-                   th:href="@{/admin}"
-                   th:title="${session.fullName}"
-                   aria-label="Quản trị hệ thống">
-                    <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'A'}">A</span>
-                </a>
+                            <!-- Admin links -->
+                            <th:block th:if="${session.role == 'ADMIN'}">
+                                <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
+                            </th:block>
+                        </div>
+                        <div class="user-dropdown-logout">
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit">🚪 Đăng xuất</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </th:block>
 
             <th:block th:if="${session.role == null}">

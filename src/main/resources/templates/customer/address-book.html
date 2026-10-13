@@ -11,20 +11,7 @@
 </head>
 <body>
 <div class="customer-shell">
-    <aside class="customer-sidebar">
-        <a class="customer-brand" th:href="@{/}"><span class="brand-mark">F</span><span><strong>Fresh<span>Fruit</span></strong><small>TƯƠI NGON MỖI NGÀY</small></span></a>
-        <div class="customer-profile"><div class="profile-avatar">KH</div><div><strong th:text="${customer.fullName}"></strong><span th:text="${customer.email}"></span></div></div>
-        <nav class="customer-nav">
-            <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
-            <a th:href="@{/customer/account}">Thông tin cá nhân</a>
-            <a class="active" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
-            <a th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
-            <a th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
-            <span class="nav-caption second">KHÁC</span>
-            <a href="#" data-pending>Cài đặt tài khoản</a>
-        </nav>
-        <div th:replace="~{customer/account-fragments :: help}"></div>
-    </aside>
+    <aside th:replace="~{customer/account-fragments :: sidebar('address')}"></aside>
     <main class="customer-main">
         <header class="customer-topbar">
             <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><span>Tài khoản</span><span>/</span><strong>Sổ địa chỉ</strong></div>

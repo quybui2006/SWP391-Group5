@@ -4,10 +4,10 @@
 
 :root {
     --notif-shopee-red: #ee4d2d;
-    --notif-green: #28a866;
-    --notif-green-dark: #16804b;
-    --notif-unread-bg: #f3f9f5;
-    --notif-border: #e8eee9;
+    --notif-green: #2f8f46;
+    --notif-green-dark: #176b30;
+    --notif-unread-bg: #f3faf4;
+    --notif-border: #e8ece8;
     --notif-text-main: #17221c;
     --notif-text-sub: #667068;
     --notif-text-muted: #9aa59e;

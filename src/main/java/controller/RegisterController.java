@@ -58,33 +58,75 @@ public class RegisterController {
             throw ex;
         }
         var user = users.findById(userId).orElseThrow();
-        String email=user.getEmail();
+        String email = user.getEmail();
         session.setAttribute("pendingRegistrationEmail", email);
-        String code=otpService.createRegistrationOtp(user);
+        String code = otpService.createRegistrationOtp(user);
         try {
-            emailService.sendEmail(email,code);
-        }catch(MailException ex){
-            redirect.addFlashAttribute("error", "Chưa gửi được mã. Vui lòng thử lại");
+            emailService.sendEmail(email, code);
+            redirect.addFlashAttribute("message", "Mã xác minh OTP đã được gửi tới email của bạn. Vui lòng kiểm tra hộp thư đến (hoặc hòm thư Spam).");
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Không thể gửi email OTP: " + ex.getMessage());
         }
         return "redirect:/register/verify";
     }
+
     @GetMapping("/register/verify")
-    public String verifyPage(HttpSession session){
-        if(session.getAttribute("pendingRegistrationEmail")==null){
+    public String verifyPage(HttpSession session, Model model) {
+        String email = (String) session.getAttribute("pendingRegistrationEmail");
+        if (email == null) {
             return "redirect:/register";
         }
+        model.addAttribute("email", email);
         return "register-verify";
     }
+
+    @PostMapping("/register/resend-otp")
+    public String resendOtp(HttpSession session, RedirectAttributes redirect) {
+        String email = (String) session.getAttribute("pendingRegistrationEmail");
+        if (email == null) {
+            redirect.addFlashAttribute("error", "Phiên xác minh đã hết hạn. Vui lòng đăng ký lại.");
+            return "redirect:/register";
+        }
+
+        var userOpt = users.findByEmailIgnoreCase(email.trim());
+        if (userOpt.isEmpty()) {
+            redirect.addFlashAttribute("error", "Không tìm thấy thông tin tài khoản.");
+            return "redirect:/register";
+        }
+
+        var user = userOpt.get();
+        if (user.getEmailVerifiedAt() != null) {
+            redirect.addFlashAttribute("message", "Email của bạn đã được xác minh trước đó. Vui lòng đăng nhập.");
+            return "redirect:/login";
+        }
+
+        String code = otpService.createRegistrationOtp(user);
+        try {
+            emailService.sendEmail(email, code);
+            redirect.addFlashAttribute("message", "Mã xác minh mới đã được gửi tới email của bạn. Vui lòng kiểm tra hộp thư.");
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Không thể gửi email OTP: " + ex.getMessage());
+        }
+
+        return "redirect:/register/verify";
+    }
+
+    @GetMapping("/register/resend-otp")
+    public String resendOtpGet(HttpSession session, RedirectAttributes redirect) {
+        return resendOtp(session, redirect);
+    }
+
     @PostMapping("/register/verify")
     public String verify(@RequestParam String code, HttpSession session,
                          Model model,
                          RedirectAttributes redirect) {
-        String email=(String) session.getAttribute("pendingRegistrationEmail");
-        if(email==null) return "redirect:/register";
-        if(!code.matches("\\d{6}")||
-        !otpService.verifyRegistrationOtp(email,code)){
-        model.addAttribute("error", "Mã sai hoặc đã hết hạn");
-        return "register-verify";
+        String email = (String) session.getAttribute("pendingRegistrationEmail");
+        if (email == null) return "redirect:/register";
+        model.addAttribute("email", email);
+        if (!code.matches("\\d{6}") ||
+            !otpService.verifyRegistrationOtp(email, code)) {
+            model.addAttribute("error", "Mã sai hoặc đã hết hạn");
+            return "register-verify";
         }
         session.removeAttribute("pendingRegistrationEmail");
         redirect.addFlashAttribute("success", "Xác minh thành công. Bạn có thể đăng nhập");

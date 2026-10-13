@@ -6,6 +6,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import service.LoginService;
 
@@ -66,11 +68,13 @@ public class LoginController {
         return login(email, password, null, request, model);
     }
 
-    @PostMapping("/logout")
-    public String logout(HttpServletRequest request){
+    @RequestMapping(value = "/logout", method = {RequestMethod.GET, RequestMethod.POST})
+    public String logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if(session!=null) session.invalidate();
-        return "redirect:/login";
+        if (session != null) {
+            session.invalidate();
+        }
+        return "redirect:/login?logout=true";
     }
     @GetMapping("/customer")
     public String customer(HttpServletRequest request){

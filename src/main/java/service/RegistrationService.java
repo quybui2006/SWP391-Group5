@@ -34,8 +34,17 @@ public class RegistrationService {
 
         }
         String email=request.getEmail().trim().toLowerCase(Locale.ROOT);
-        if(users.existsByEmailIgnoreCase(email)){
-            throw new IllegalArgumentException("Email already exists");
+        var existingUser = users.findByEmailIgnoreCase(email);
+        if(existingUser.isPresent()){
+            User user = existingUser.get();
+            if(user.getEmailVerifiedAt() != null){
+                throw new IllegalArgumentException("Email already exists");
+            }
+            user.setFullName(request.getFullName().trim());
+            user.setPhone(request.getPhone());
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            User saved = users.save(user);
+            return saved.getId();
         }
         Role customerRole=roles.findByCode("CUSTOMER")
                 .orElseThrow(()->new IllegalArgumentException("Customer Role not found"));
