@@ -1,178 +1,32 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chỉnh sửa sản phẩm | FreshFruit</title>
-    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
-    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}">
 </head>
 <body>
 <div class="app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
     <main class="main-content product-management">
         <header class="topbar">
-            <div>
-                <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chỉnh sửa</span></p>
-                <h1>Chỉnh sửa sản phẩm</h1>
-                <p class="muted">Cập nhật thông tin sản phẩm. Sản phẩm được hậu kiểm sau khi đăng bán.</p>
-            </div>
+            <div><p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chỉnh sửa</span></p>
+                <h1>Chỉnh sửa sản phẩm</h1><p class="muted">Cập nhật thông tin sản phẩm. Sản phẩm được hậu kiểm sau khi đăng bán.</p></div>
             <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">← Xem chi tiết</a>
         </header>
-
         <p class="alert alert-error" th:if="${!errors.isEmpty()}">Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.</p>
-
-    <div class="container header-inner">
-
-        <a class="brand"
-           th:href="@{/shopowner/home}">
-
-            <span class="brand-mark">F</span>
-
-            <span class="brand-text">
-                <strong>FreshFruit</strong>
-                <small>Tươi ngon mỗi ngày</small>
-            </span>
-
-        </a>
-
-        <nav class="main-nav">
-
-            <a th:href="@{/shopowner/home}">Dashboard</a>
-
-            <a th:href="@{/shop/products}">Sản phẩm</a>
-
-            <a th:href="@{/#categories}">Danh mục</a>
-
-            <a th:href="@{/#about}">Về chúng tôi</a>
-
-        </nav>
-
-        <div class="header-actions">
-
-            <a class="icon-btn"
-               th:href="@{/search}"
-               title="Tìm kiếm"
-               aria-label="Tìm kiếm">⌕</a>
-
-            <!-- Tan PTH integration: take shop owners to their existing dashboard. -->
-            <a class="login-btn"
-               th:href="@{/shopowner/home}">Quản lý cửa hàng</a>
-
-            <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
-                <button type="submit" style="display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 11px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'" title="Đăng xuất">
-                    🚪 Đăng xuất
-                </button>
-            </form>
-
-        </div>
-
-    </div>
-
-</header>
-
-<main>
-
-    <!-- =====================================================
-         BREADCRUMB
-    ====================================================== -->
-    <section class="breadcrumb-section">
-        <div class="container">
-
-            <nav class="breadcrumb"
-                 aria-label="breadcrumb">
-
-            <a th:href="@{/shopowner/home}">Dashboard</a>
-                <span class="sep">/</span>
-
-                <a th:href="@{/shop/products}">Sản phẩm</a>
-                <span class="sep">/</span>
-
-                <span th:text="${form.name}">Tên sản phẩm</span>
-
-            </nav>
-
-        </div>
-    </section>
-
-    <!-- =====================================================
-         PAGE TITLE
-    ====================================================== -->
-    <section class="container page-title">
-        <h1>Chỉnh sửa sản phẩm</h1>
-        <p>Cập nhật thông tin sản phẩm của cửa hàng
-            <strong th:text="${form.shopName}">Tên cửa hàng</strong>.</p>
-    </section>
-
-    <!-- =====================================================
-         FORM
-    ====================================================== -->
-    <section class="container edit-layout">
-
-        <!-- Cột chính: form -->
-        <div class="card">
-
-            <div class="card-head">
         <form class="product-form" method="post" th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
-            <section class="form-card">
-                <h2>Thông tin sản phẩm</h2>
-                <div class="form-grid">
-                    <label class="field field-wide">
-                        <span>Tên sản phẩm <b>*</b></span>
-                        <input type="text" th:field="*{name}" maxlength="200" required>
-                        <em th:if="${errors.containsKey('name')}" th:text="${errors.get('name')}"></em>
-                    </label>
-                    <label class="field">
-                        <span>Mã lô</span>
-                        <input type="text" th:field="*{batchCode}" readonly>
-                        <small>Mã lô không thể thay đổi sau khi tạo.</small>
-                    </label>
-                    <label class="field">
-                        <span>Xuất xứ</span>
-                        <input type="text" th:field="*{origin}" maxlength="150">
-                        <em th:if="${errors.containsKey('origin')}" th:text="${errors.get('origin')}"></em>
-                    </label>
-                    <label class="field">
-                        <span>Danh mục</span>
-                        <select th:field="*{categoryId}">
-                            <option value="">Chọn danh mục</option>
-                            <option th:each="category : ${form.categories}" th:value="${category.id}" th:text="${category.name}"></option>
-                        </select>
-                        <em th:if="${errors.containsKey('categoryId')}" th:text="${errors.get('categoryId')}"></em>
-                    </label>
-                    <label class="field">
-                        <span>Ngày nhập <b>*</b></span>
-                        <input type="date" th:field="*{receivedDate}" required>
-                        <em th:if="${errors.containsKey('receivedDate')}" th:text="${errors.get('receivedDate')}"></em>
-                    </label>
-                    <label class="field">
-                        <span>Ngày hết hạn <b>*</b></span>
-                        <input type="date" th:field="*{expiryDate}" required>
-                        <em th:if="${errors.containsKey('expiryDate')}" th:text="${errors.get('expiryDate')}"></em>
-                    </label>
-                    <label class="field">
-                        <span>Trạng thái bán <b>*</b></span>
-                        <select th:field="*{sellingStatus}">
-                            <option value="DRAFT">Bản nháp</option>
-                            <option value="ACTIVE" th:disabled="${form.approvalStatus != 'APPROVED'}">Đang bán</option>
-                            <option value="PAUSED">Tạm ngừng</option>
-                            <option value="ARCHIVED">Đã ẩn</option>
-                        </select>
-                        <small th:if="${form.approvalStatus != 'APPROVED'}">Sản phẩm cần được Quản lý vận hành duyệt trước khi chuyển sang Đang bán.</small>
-                        <small th:if="${form.approvalStatus == 'APPROVED'}">Sản phẩm đã được duyệt; bạn có thể bật hoặc tạm ngừng bán.</small>
-                        <em th:if="${errors.containsKey('sellingStatus')}" th:text="${errors.get('sellingStatus')}"></em>
-                    </label>
-                    <label class="field field-wide">
-                        <span>Mô tả</span>
-                        <textarea th:field="*{description}" rows="5" maxlength="2000"></textarea>
-                        <em th:if="${errors.containsKey('description')}" th:text="${errors.get('description')}"></em>
-                    </label>
-                </div>
-            </section>
-            <div class="form-actions">
-                <a class="button button-ghost" th:href="@{/shop/products}">Hủy</a>
-                <button class="button button-primary" type="submit">Lưu thay đổi</button>
-            </div>
+            <section class="form-card"><h2>Thông tin sản phẩm</h2><div class="form-grid">
+                <label class="field field-wide"><span>Tên sản phẩm <b>*</b></span><input type="text" th:field="*{name}" maxlength="200" required><em th:if="${errors.containsKey('name')}" th:text="${errors.get('name')}"></em></label>
+                <label class="field"><span>Mã lô</span><input type="text" th:field="*{batchCode}" readonly><small>Mã lô là duy nhất trong cửa hàng và không thể thay đổi sau khi tạo.</small></label>
+                <label class="field"><span>Xuất xứ</span><input type="text" th:field="*{origin}" maxlength="150"><em th:if="${errors.containsKey('origin')}" th:text="${errors.get('origin')}"></em></label>
+                <label class="field"><span>Danh mục</span><select th:field="*{categoryId}"><option value="">Chọn danh mục</option><option th:each="category : ${form.categories}" th:value="${category.id}" th:text="${category.name}"></option></select><em th:if="${errors.containsKey('categoryId')}" th:text="${errors.get('categoryId')}"></em></label>
+                <label class="field"><span>Ngày nhập <b>*</b></span><input type="date" th:field="*{receivedDate}" required><em th:if="${errors.containsKey('receivedDate')}" th:text="${errors.get('receivedDate')}"></em></label>
+                <label class="field"><span>Ngày hết hạn <b>*</b></span><input type="date" th:field="*{expiryDate}" required><em th:if="${errors.containsKey('expiryDate')}" th:text="${errors.get('expiryDate')}"></em></label>
+                <label class="field"><span>Trạng thái bán <b>*</b></span><select th:field="*{sellingStatus}"><option value="DRAFT">Bản nháp</option><option value="ACTIVE">Đang bán</option><option value="PAUSED">Tạm ngừng</option><option value="ARCHIVED">Đã ẩn</option></select><small>Có thể mở bán ngay; sản phẩm sẽ được hậu kiểm.</small><em th:if="${errors.containsKey('sellingStatus')}" th:text="${errors.get('sellingStatus')}"></em></label>
+                <label class="field field-wide"><span>Mô tả</span><textarea th:field="*{description}" rows="5" maxlength="2000"></textarea><em th:if="${errors.containsKey('description')}" th:text="${errors.get('description')}"></em></label>
+            </div></section>
+            <div class="form-actions"><a class="button button-ghost" th:href="@{/shop/products}">Hủy</a><button class="button button-primary" type="submit">Lưu thay đổi</button></div>
         </form>
     </main>
 </div>

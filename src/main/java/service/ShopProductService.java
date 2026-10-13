@@ -157,6 +157,10 @@ public class ShopProductService {
         Map<String, String> errors = new LinkedHashMap<>();
         String name = blankToNull(form.getVariantName()); String sku = blankToNull(form.getSku());
         if (name == null || name.length() > 150) errors.put("variantName", "Tên biến thể phải có từ 1 đến 150 ký tự.");
+        if (name != null && variantRepository.existsByProduct_IdAndNameIgnoreCaseAndIdNot(
+                variant.getProduct().getId(), name, variantId)) {
+            errors.put("variantName", "Tên biến thể này đã tồn tại trong sản phẩm.");
+        }
         if (sku == null || sku.length() > 80) errors.put("sku", "SKU phải có từ 1 đến 80 ký tự.");
         if (sku != null && !sku.equals(variant.getSku()) && variantRepository.existsByShopIdAndSku(variant.getShopId(), sku)) errors.put("sku", "SKU này đã được dùng trong cửa hàng.");
         if (form.getPrice() == null || form.getPrice().signum() <= 0) errors.put("price", "Giá bán phải lớn hơn 0.");
