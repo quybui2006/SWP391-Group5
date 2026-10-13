@@ -16,6 +16,7 @@
 
 <!-- =========================================================
      HEADER (ĐỒNG BỘ 100% VỚI MÀN HOME)
+========================================================= -->
 <header class="site-header">
     <div class="container header-inner">
 
@@ -116,6 +117,7 @@
 
 <!-- =========================================================
      MAIN BODY
+========================================================= -->
 <main class="page-body">
 
     <!-- Breadcrumb (Đồng bộ font & màu) -->
@@ -733,13 +735,74 @@
         </div>
     </section>
 
+    <!-- =====================================================
+         5. RELATED PRODUCTS SECTION (GỢI Ý HÔM NAY)
+    ====================================================== -->
+    <section class="container related-products-section">
+        <div class="related-header">
+            <div>
+                <span class="section-kicker">GỢI Ý HÔM NAY</span>
+                <h3>Có thể bạn cũng thích</h3>
+            </div>
+            <a th:href="@{/search}" class="see-more-link">Xem tất cả <span>→</span></a>
+        </div>
 
+        <div class="product-grid">
+            <!-- Dynamic related products -->
+            <article class="product-card" th:each="rel, iter : ${relatedProducts}">
+                <a th:href="@{/product/{id}(id=${rel.id})}" class="product-card-link">
+                    <div class="product-image" th:classappend="${iter.index % 4 == 0 ? 'bg-pastel-red' : (iter.index % 4 == 1 ? 'bg-pastel-yellow' : (iter.index % 4 == 2 ? 'bg-pastel-purple' : 'bg-pastel-green'))}">
+                        <span class="fresh-tag">Đang bán</span>
+                        <img th:if="${rel.imageUrl != null and !rel.imageUrl.isEmpty()}"
+                             th:src="${rel.imageUrl}" th:alt="${rel.name}"
+                             onerror="this.style.display='none'">
+                        <div class="image-placeholder" th:if="${rel.imageUrl == null or rel.imageUrl.isEmpty()}">
+                            🍎
+                        </div>
+                    </div>
+
+                    <div class="product-content">
+                        <span class="product-category-name" th:text="${rel.product != null ? rel.product.name : 'Trái Cây'}">Trái Cây</span>
+                        <h4 class="product-card-name" th:text="${rel.name}">Tên sản phẩm</h4>
+                        <div class="product-bottom-row">
+                            <strong class="product-card-price" th:if="${rel.price != null}"
+                                    th:text="${#numbers.formatDecimal(rel.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                99.000 ₫
+                            </strong>
+                            <button type="button" class="add-btn-circle" th:attr="data-variant-id=${rel.id}" onclick="addProductToCart(this)" aria-label="Thêm vào giỏ hàng">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </article>
+
+            <!-- Fallback if relatedProducts is empty -->
+            <article class="product-card" th:if="${relatedProducts == null or relatedProducts.empty}">
+                <a th:href="@{/search}" class="product-card-link">
+                    <div class="product-image bg-pastel-red">
+                        <span class="fresh-tag">Đang bán</span>
+                        <div class="image-placeholder">🍎</div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-name">Táo Nhập Khẩu</span>
+                        <h4 class="product-card-name">Táo Envy New Zealand Tươi Giòn</h4>
+                        <div class="product-bottom-row">
+                            <strong class="product-card-price">180.000 ₫</strong>
+                            <button type="button" class="add-btn-circle" aria-label="Thêm vào giỏ">+</button>
+                        </div>
+                    </div>
+                </a>
+            </article>
+        </div>
+    </section>
 
 </main>
 
 
 <!-- =========================================================
      FOOTER (ĐỒNG BỘ 100% VỚI MÀN HOME)
+========================================================= -->
 <footer class="site-footer">
     <div class="container footer-inner">
         <div>
@@ -768,6 +831,7 @@
 
 <!-- =========================================================
      JAVASCRIPT
+========================================================= -->
 <script th:src="@{/js/customerproductdetail.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
 <script th:src="@{/js/cart-integration.js(v='20261008-1')}"></script>
