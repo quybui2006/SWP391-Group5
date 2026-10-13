@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle + ' | FreshFruit Operations'}">FreshFruit Operations</title>
+    <link rel="stylesheet" th:href="@{/css/operations.css}">
+</head>
+<body>
+<aside th:fragment="sidebar(activePage)" class="operations-sidebar">
+    <a class="operations-brand" th:href="@{/operations/shops}" aria-label="FreshFruit Operations">
+        <span class="brand-mark">F</span>
+        <span><strong>FreshFruit</strong><small>OPERATIONS</small></span>
+    </a>
+    <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+    <nav aria-label="Điều hướng quản lý vận hành">
+        <a th:href="@{/operations/shops}"
+           th:classappend="${activePage == 'shops'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">▦</span><span>Duyệt mở Shop</span>
+        </a>
+        <a th:href="@{/operations/products}"
+           th:classappend="${activePage == 'products'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">▤</span><span>Duyệt sản phẩm</span>
+        </a>
+    </nav>
+    <div class="sidebar-bottom">
+        <span class="operator-dot"></span>
+        <span><strong>Operations Manager</strong><small>Khu vực nội bộ sàn</small></span>
+    </div>
+</aside>
+<header th:fragment="pageHeader(title, subtitle)" class="operations-topbar">
+    <div>
+        <p class="eyebrow">FRESHFRUIT / OPERATIONS</p>
+        <h1 th:text="${title}">Duyệt yêu cầu</h1>
+        <p class="page-subtitle" th:text="${subtitle}">Xử lý các yêu cầu đang chờ duyệt.</p>
+    </div>
+    <div class="secure-label"><span aria-hidden="true">●</span> Khu vực quản trị nội bộ</div>
+</header>
+<div th:fragment="toastHost" id="toastHost" class="toast-host" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

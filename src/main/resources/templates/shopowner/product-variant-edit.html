@@ -21,7 +21,15 @@
             <label class="field field-wide"><span>Quy cách</span><input type="text" th:field="*{specification}" maxlength="1000" placeholder="Ví dụ: Khoảng 1kg, 5-7 quả"></label>
             <label class="field"><span>Đơn vị <b>*</b></span><select th:field="*{unitId}"><option th:each="unit : ${form.units}" th:value="${unit.id}" th:text="${unit.name}"></option></select><em th:if="${errors.containsKey('unitId')}" th:text="${errors.get('unitId')}"></em></label>
             <label class="field"><span>Giá bán (VNĐ) <b>*</b></span><input type="number" th:field="*{price}" min="1" step="1000" required><em th:if="${errors.containsKey('price')}" th:text="${errors.get('price')}"></em></label>
-            <label class="field"><span>Trạng thái</span><select th:field="*{status}"><option value="ACTIVE">Đang bán</option><option value="DRAFT">Bản nháp</option><option value="INACTIVE">Ngừng bán</option></select><em th:if="${errors.containsKey('status')}" th:text="${errors.get('status')}"></em></label>
+            <label class="field"><span>Trạng thái</span>
+                <select th:field="*{status}">
+                    <option value="DRAFT">Bản nháp</option>
+                    <option value="ACTIVE" th:if="${form.productApproved}">Đang bán</option>
+                    <option value="INACTIVE" th:if="${form.productApproved}">Ngừng bán</option>
+                </select>
+                <small th:if="${!form.productApproved}">Sản phẩm cần được Quản lý vận hành duyệt trước khi bán.</small>
+                <em th:if="${errors.containsKey('status')}" th:text="${errors.get('status')}"></em>
+            </label>
         </div></section>
         <section class="form-card"><h2>Tồn kho</h2><div class="form-grid">
             <label class="field"><span>Số lượng hiện có <b>*</b></span><input type="number" th:field="*{quantityOnHand}" min="0" step="1" required><small>Không được thấp hơn số lượng đang giữ trong đơn hàng.</small><em th:if="${errors.containsKey('quantityOnHand')}" th:text="${errors.get('quantityOnHand')}"></em></label>

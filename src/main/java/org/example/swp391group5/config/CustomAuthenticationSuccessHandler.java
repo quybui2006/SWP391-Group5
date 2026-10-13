@@ -36,6 +36,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
             switch (userDetails.getPrimaryRole()) {
                 case "ADMIN" -> response.sendRedirect("/admin");
+                case "OPERATIONS_MANAGER" -> response.sendRedirect("/operations/shops");
                 case "SHOP_OWNER" -> response.sendRedirect("/shopowner/home");
                 default -> response.sendRedirect("/customer/account");
             }

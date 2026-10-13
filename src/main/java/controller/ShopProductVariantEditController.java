@@ -40,7 +40,14 @@ public class ShopProductVariantEditController {
             redirect.addFlashAttribute("success", "Đã cập nhật biến thể và tồn kho.");
             return "redirect:/shopowner/product-variants";
         } catch (ProductValidationException ex) {
-            form.setUnits(products.activeUnitOptions());
+            ProductVariantEditForm savedState = products.buildVariantEditForm(
+                    id, currentUser.requireUserId(request));
+            form.setUnits(savedState.getUnits());
+            form.setProductName(savedState.getProductName());
+            form.setProductApproved(savedState.isProductApproved());
+            if (!savedState.isProductApproved() && !"DRAFT".equalsIgnoreCase(form.getStatus())) {
+                form.setStatus("DRAFT");
+            }
             model.addAttribute("errors", ex.getFieldErrors());
             return "shopowner/product-variant-edit";
         }

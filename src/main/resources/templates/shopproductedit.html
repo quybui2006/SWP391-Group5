@@ -63,11 +63,12 @@
                         <span>Trạng thái bán <b>*</b></span>
                         <select th:field="*{sellingStatus}">
                             <option value="DRAFT">Bản nháp</option>
-                            <option value="ACTIVE">Đang bán</option>
+                            <option value="ACTIVE" th:disabled="${form.approvalStatus != 'APPROVED'}">Đang bán</option>
                             <option value="PAUSED">Tạm ngừng</option>
                             <option value="ARCHIVED">Đã ẩn</option>
                         </select>
-                        <small>Có thể mở bán ngay; sản phẩm sẽ được hậu kiểm.</small>
+                        <small th:if="${form.approvalStatus != 'APPROVED'}">Sản phẩm cần được Quản lý vận hành duyệt trước khi chuyển sang Đang bán.</small>
+                        <small th:if="${form.approvalStatus == 'APPROVED'}">Sản phẩm đã được duyệt; bạn có thể bật hoặc tạm ngừng bán.</small>
                         <em th:if="${errors.containsKey('sellingStatus')}" th:text="${errors.get('sellingStatus')}"></em>
                     </label>
                     <label class="field field-wide">

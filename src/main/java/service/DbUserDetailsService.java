@@ -40,7 +40,8 @@ public class DbUserDetailsService implements UserDetailsService {
                 map(ur->ur.getRole().getCode())
                 .collect(Collectors.toSet());
 
-        String primaryRole=roleCodes.contains("ADMIN") ? "ADMIN"
+        String primaryRole = roleCodes.contains("ADMIN") ? "ADMIN"
+                : roleCodes.contains("OPERATIONS_MANAGER") ? "OPERATIONS_MANAGER"
                 : roleCodes.contains("SHOP_OWNER") ? "SHOP_OWNER"
                 : roleCodes.contains("CUSTOMER") ? "CUSTOMER" : "CUSTOMER";
 

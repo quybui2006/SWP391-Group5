@@ -38,6 +38,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,6 +63,7 @@ public class ShopProductService {
 
     /** Cảnh báo khi còn tối đa 3 ngày tới hạn. */
     private static final long EXPIRY_WARNING_DAYS = 3L;
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired private ShopProductRepository productRepository;
     @Autowired private ProductImageRepository imageRepository;
@@ -97,7 +99,7 @@ public class ShopProductService {
         Long total = jdbc.queryForObject("SELECT COUNT(*) FROM products p WHERE " + condition,
                 Long.class, shopId, term, like, like);
         List<ShopProductListItem> rows = jdbc.query("""
-                SELECT p.id, p.name, p.selling_status AS status, p.created_at,
+                SELECT p.id, p.name, p.selling_status AS status, p.approval_status, p.rejection_reason, p.created_at,
                     (SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image_url,
                      (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id=p.id) AS variant_count,
                      (SELECT COALESCE(SUM(vi.quantity_on_hand), 0) FROM product_variants pv LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
@@ -110,6 +112,7 @@ public class ShopProductService {
                 rs.getLong("id"), rs.getString("name"), rs.getString("image_url"),
                 ((Number) rs.getObject("variant_count")).intValue(), rs.getString("category_name"),
                 ((Number) rs.getObject("stock_quantity")).intValue(), rs.getString("status"),
+                rs.getString("approval_status"), rs.getString("rejection_reason"),
                 rs.getTimestamp("created_at").toLocalDateTime()),
                 shopId, term, like, like, size, (long) page * size);
         return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
@@ -126,8 +129,11 @@ public class ShopProductService {
                 .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy tồn kho biến thể."));
         ProductVariantEditForm form = new ProductVariantEditForm();
         form.setId(variant.getId()); form.setProductName(variant.getProduct().getName());
+        form.setProductApproved("APPROVED".equals(variant.getProduct().getApprovalStatus()));
         form.setVariantName(variant.getName()); form.setSku(variant.getSku()); form.setSpecification(variant.getSpecification());
-        form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice()); form.setStatus(variant.getStatus());
+        // UI không được hiển thị ACTIVE / INACTIVE nếu sản phẩm cha chưa được duyệt.
+        form.setStatus(form.isProductApproved() ? variant.getStatus() : "DRAFT");
+        form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice());
         form.setQuantityOnHand(inventory.getQuantityOnHand()); form.setLowStockThresholdPct(inventory.getLowStockThresholdPct());
         form.setUnits(activeUnitOptions());
         return form;
@@ -156,12 +162,18 @@ public class ShopProductService {
         if (form.getPrice() == null || form.getPrice().signum() <= 0) errors.put("price", "Giá bán phải lớn hơn 0.");
         if (form.getQuantityOnHand() == null || form.getQuantityOnHand() < inventory.getReservedQuantity()) errors.put("quantityOnHand", "Tồn kho không được thấp hơn số lượng đang giữ cho đơn hàng.");
         if (form.getLowStockThresholdPct() == null || form.getLowStockThresholdPct().signum() < 0 || form.getLowStockThresholdPct().compareTo(new BigDecimal("100")) > 0) errors.put("lowStockThresholdPct", "Ngưỡng cảnh báo phải từ 0 đến 100.");
-        if (!Set.of("DRAFT", "ACTIVE", "INACTIVE").contains(upperOrNull(form.getStatus()))) errors.put("status", "Trạng thái biến thể không hợp lệ.");
+        String requestedStatus = upperOrNull(form.getStatus());
+        if (requestedStatus == null || !Set.of("DRAFT", "ACTIVE", "INACTIVE").contains(requestedStatus)) {
+            errors.put("status", "Trạng thái biến thể không hợp lệ.");
+        } else if (!"APPROVED".equals(variant.getProduct().getApprovalStatus())
+                && !"DRAFT".equals(requestedStatus)) {
+            errors.put("status", "Sản phẩm cần được Quản lý vận hành duyệt trước khi bán.");
+        }
         Unit unit = form.getUnitId() == null ? null : unitRepository.findById(form.getUnitId()).filter(u -> Boolean.TRUE.equals(u.getIsActive())).orElse(null);
         if (unit == null) errors.put("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động.");
         if (!errors.isEmpty()) throw new ProductValidationException(errors);
         variant.setName(name); variant.setSku(sku); variant.setSpecification(blankToNull(form.getSpecification()));
-        variant.setPrice(form.getPrice()); variant.setStatus(upperOrNull(form.getStatus())); variant.setBaseUnit(unit);
+        variant.setPrice(form.getPrice()); variant.setStatus(requestedStatus); variant.setBaseUnit(unit);
         inventory.setQuantityOnHand(form.getQuantityOnHand()); inventory.setLowStockThresholdPct(form.getLowStockThresholdPct());
         variantRepository.save(variant); inventoryRepository.save(inventory);
     }
@@ -269,11 +281,12 @@ public class ShopProductService {
             product.setBatchCode(batchCode);
             product.setReceivedDate(form.getReceivedDate());
             product.setExpiryDate(form.getExpiryDate());
-            // Hậu kiểm: sản phẩm không đi qua luồng chờ duyệt trước khi bán.
-            // Các cột approval_* được giữ để tương thích schema/dữ liệu cũ.
-            product.setApprovalStatus("APPROVED");
-            product.setReviewedAt(utcNow());
+            // Sản phẩm mới luôn phải qua luồng DRAFT -> PENDING -> APPROVED.
+            product.setApprovalStatus("DRAFT");
             product.setSellingStatus("DRAFT");
+            product.setSubmittedAt(null);
+            product.setReviewedAt(null);
+            product.setRejectionReason(null);
             product = productRepository.saveAndFlush(product);
 
             ProductImage image = new ProductImage();
@@ -349,6 +362,7 @@ public class ShopProductService {
         form.setOrigin(product.getOrigin());
         form.setDescription(product.getDescription());
         form.setBatchCode(product.getBatchCode());
+        form.setApprovalStatus(product.getApprovalStatus());
         form.setSellingStatus(product.getSellingStatus());
         form.setReceivedDate(product.getReceivedDate());
         form.setExpiryDate(product.getExpiryDate());
@@ -372,31 +386,62 @@ public class ShopProductService {
     public void update(Long productId, Long ownerUserId, ProductEditView form) {
         Product product = loadOwnedProduct(productId, ownerUserId);
 
+        if ("PENDING".equals(product.getApprovalStatus())) {
+            throw new ProductValidationException("name",
+                    "Sản phẩm đang chờ Quản lý vận hành duyệt nên chưa thể chỉnh sửa.");
+        }
+
         validate(form);
 
         String name = form.getName().trim();
         String origin = blankToNull(form.getOrigin());
         String description = blankToNull(form.getDescription());
-        String sellingStatus = form.getSellingStatus().trim().toUpperCase();
+        String sellingStatus = upperOrNull(form.getSellingStatus());
+        String currentApprovalStatus = product.getApprovalStatus();
+
+        if ("ACTIVE".equals(sellingStatus) && !"APPROVED".equals(currentApprovalStatus)) {
+            throw new ProductValidationException("sellingStatus",
+                    "Sản phẩm cần được Quản lý vận hành duyệt trước khi chuyển sang Đang bán.");
+        }
 
         product.setName(name);
         product.setOrigin(origin);
         product.setDescription(description);
         product.setReceivedDate(form.getReceivedDate());
         product.setExpiryDate(form.getExpiryDate());
-        // Hậu kiểm: không nhận approvalStatus từ form. Giá trị nội bộ này chỉ
-        // giữ tương thích với CHECK constraint của schema cũ.
-        product.setApprovalStatus("APPROVED");
         product.setSellingStatus(sellingStatus);
-        product.setSubmittedAt(null);
-        product.setReviewedAt(utcNow());
-        product.setRejectionReason(null);
+
+        // Sửa yêu cầu đã bị từ chối sẽ đưa nó về DRAFT để chủ shop chỉnh sửa rồi gửi duyệt lại.
+        // Tuyệt đối không tự nâng approval_status lên APPROVED khi Shop Owner bấm Lưu.
+        if ("REJECTED".equals(currentApprovalStatus)) {
+            product.setApprovalStatus("DRAFT");
+            product.setSellingStatus("DRAFT");
+            product.setSubmittedAt(null);
+            product.setReviewedAt(null);
+            product.setRejectionReason(null);
+        }
 
         productRepository.save(product);
 
         // Giữ đúng một danh mục cho sản phẩm
         if (form.getCategoryId() != null) {
             categoryLinkRepository.replaceCategory(productId, form.getCategoryId());
+        }
+    }
+
+    /** Shop Owner chỉ được gửi sản phẩm DRAFT sang Operations Manager duyệt. */
+    @Transactional
+    public void submitForApproval(Long productId, Long ownerUserId) {
+        Product product = loadOwnedProduct(productId, ownerUserId);
+        if (!"DRAFT".equals(product.getApprovalStatus())) {
+            throw new ProductValidationException("approvalStatus",
+                    "Chỉ sản phẩm ở trạng thái Bản nháp mới có thể gửi duyệt.");
+        }
+        int changed = productRepository.submitDraftForApproval(
+                productId, product.getShopId(), LocalDateTime.now(BUSINESS_ZONE));
+        if (changed != 1) {
+            throw new ProductValidationException("approvalStatus",
+                    "Trạng thái sản phẩm đã thay đổi. Vui lòng tải lại danh sách và thử lại.");
         }
     }
 

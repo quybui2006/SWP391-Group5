@@ -9,6 +9,8 @@
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
 
     <style>
+        .price-old { color: #7a8580; text-decoration: line-through; font-size: 0.85em; margin-right: 6px; }
+        .price-promotion { color: #d62828; }
         main {
             max-width: 1100px;
             margin: 36px auto;
@@ -292,10 +294,11 @@
                     Tên sản phẩm
                 </span>
 
-                <strong th:text="${#numbers.formatDecimal(
-                    item.price * item.quantity, 0, 'COMMA', 0, 'POINT'
-                ) + ' ₫'}">
-                    0 ₫
+                <strong>
+                    <small class="price-old" th:if="${item.original_price != null and item.price < item.original_price}"
+                           th:text="${#numbers.formatDecimal(item.original_price * item.quantity, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</small>
+                    <span th:classappend="${item.price < item.original_price} ? ' price-promotion' : ''"
+                          th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</span>
                 </strong>
             </div>
 

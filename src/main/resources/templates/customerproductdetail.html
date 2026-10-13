@@ -216,39 +216,18 @@
 
                 <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
                 <div class="fresh-price-banner">
-                    <!-- Giá gốc gạch ngang -->
-                    <span class="price-old" th:if="${variant.price != null}"
-                          th:text="${#numbers.formatDecimal(variant.price * 1.25, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                        150.000 ₫
-                    </span>
-
-                    <!-- Giá bán chính -->
-                    <span class="price-main" th:if="${variant.price != null}"
-                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                        120.000 ₫
-                    </span>
-                    <span class="price-main" th:if="${variant.price == null}">
-                        Liên hệ
-                    </span>
-
-                    <!-- Tag giảm giá -->
-                    <span class="discount-pill">GIẢM 20%</span>
-
-                    <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
+                    <span class="price-old" th:if="${variant.promotionalPrice != null}"
+                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
+                    <span class="price-main price-promotion" th:if="${variant.promotionalPrice != null}"
+                          th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</span>
+                    <span class="price-main" th:if="${variant.promotionalPrice == null and variant.price != null}"
+                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
+                    <span class="price-main" th:if="${variant.price == null}">Liên hệ</span>
+                    <span class="price-tag-sub" th:if="${variant.promotionalPrice != null}">Giá ưu đãi đang áp dụng</span>
                 </div>
 
                 <!-- Details Rows (Bố cục Shopee) -->
                 <div class="fresh-details-table">
-
-                    <!-- Voucher Shop -->
-                    <div class="detail-line">
-                        <span class="detail-label">Mã Giảm Giá Shop</span>
-                        <div class="detail-content vouchers-wrap">
-                            <span class="fresh-voucher-chip">Giảm 15k đơn từ 150k</span>
-                            <span class="fresh-voucher-chip">Giảm 30k đơn từ 300k</span>
-                            <span class="fresh-voucher-chip highlight">Giảm 10% cho khách mới</span>
-                        </div>
-                    </div>
 
                     <!-- Bảo hiểm / Cam kết tươi ngon -->
                     <div class="detail-line">
@@ -287,14 +266,6 @@
                                 <span th:text="${variant.specification != null && !variant.specification.isEmpty() ? variant.specification : (variant.baseUnit != null ? variant.baseUnit.name : 'Hộp tiêu chuẩn 1kg')}">
                                     Hộp tiêu chuẩn 1kg
                                 </span>
-                                <span class="check-tick">✓</span>
-                            </button>
-                            <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
-                                <span>Combo 2 Hộp (Tiết kiệm 5%)</span>
-                                <span class="check-tick">✓</span>
-                            </button>
-                            <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
-                                <span>Thùng 5kg (Giá sỉ gia đình)</span>
                                 <span class="check-tick">✓</span>
                             </button>
                         </div>
@@ -638,15 +609,6 @@
                         <input type="hidden" name="rating" id="ratingInput" value="5">
                     </div>
 
-                    <!-- Quick Positive Feedback Chips -->
-                    <div class="quick-chips-row">
-                        <span class="quick-label">Gợi ý nhanh:</span>
-                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('🌿 Trái cây rất tươi và giòn ngọt!')">🌿 Trái cây tươi ngọt</button>
-                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('📦 Đóng gói cẩn thận, không dập nát!')">📦 Đóng gói cẩn thận</button>
-                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('⚡ Giao hàng siêu nhanh đúng hẹn!')">⚡ Giao hàng siêu nhanh</button>
-                        <button type="button" class="quick-chip-btn" onclick="addReviewTag('👍 Chất lượng quả to đều, rất đáng tiền!')">👍 Đáng giá tiền</button>
-                    </div>
-
                     <!-- Review Textarea -->
                     <div class="review-textarea-container">
                         <textarea name="content" id="reviewContentInput" rows="3" maxlength="2000"
@@ -742,67 +704,6 @@
     </section>
 
 
-    <!-- =====================================================
-         5. CÓ THỂ BẠN CŨNG THÍCH (CARD SẢN PHẨM STYLE MÀN HOME)
-    ====================================================== -->
-    <section class="container related-products-section">
-        <div class="related-header">
-            <div>
-                <span class="section-kicker">GỢI Ý HÔM NAY</span>
-                <h3>Có thể bạn cũng thích</h3>
-            </div>
-            <a th:href="@{/search}" class="see-more-link">Xem tất cả <span>→</span></a>
-        </div>
-
-        <div class="product-grid">
-            <!-- Dynamic related products -->
-            <article class="product-card" th:each="rel, iter : ${relatedProducts}">
-                <a th:href="@{/product/{id}(id=${rel.id})}" class="product-card-link">
-                    <div class="product-image" th:classappend="${iter.index % 4 == 0 ? 'bg-pastel-red' : (iter.index % 4 == 1 ? 'bg-pastel-yellow' : (iter.index % 4 == 2 ? 'bg-pastel-purple' : 'bg-pastel-green'))}">
-                        <span class="fresh-tag">Đang bán</span>
-                        <img th:if="${rel.imageUrl != null and !rel.imageUrl.isEmpty()}"
-                             th:src="${rel.imageUrl}" th:alt="${rel.name}"
-                             onerror="this.style.display='none'">
-                        <div class="image-placeholder" th:if="${rel.imageUrl == null or rel.imageUrl.isEmpty()}">
-                            🍎
-                        </div>
-                    </div>
-
-                    <div class="product-content">
-                        <span class="product-category-name" th:text="${rel.product != null ? rel.product.name : 'Trái Cây'}">Trái Cây</span>
-                        <h4 class="product-card-name" th:text="${rel.name}">Tên sản phẩm</h4>
-                        <div class="product-bottom-row">
-                            <strong class="product-card-price" th:if="${rel.price != null}"
-                                    th:text="${#numbers.formatDecimal(rel.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                                99.000 ₫
-                            </strong>
-                            <button type="button" class="add-btn-circle" th:attr="data-variant-id=${rel.id}" onclick="addProductToCart(this)" aria-label="Thêm vào giỏ hàng">
-                                +
-                            </button>
-                        </div>
-                    </div>
-                </a>
-            </article>
-
-            <!-- Fallback if relatedProducts is empty -->
-            <article class="product-card" th:if="${relatedProducts == null or relatedProducts.empty}">
-                <a th:href="@{/search}" class="product-card-link">
-                    <div class="product-image bg-pastel-red">
-                        <span class="fresh-tag">Đang bán</span>
-                        <div class="image-placeholder">🍎</div>
-                    </div>
-                    <div class="product-content">
-                        <span class="product-category-name">Táo Nhập Khẩu</span>
-                        <h4 class="product-card-name">Táo Envy New Zealand Tươi Giòn</h4>
-                        <div class="product-bottom-row">
-                            <strong class="product-card-price">180.000 ₫</strong>
-                            <button type="button" class="add-btn-circle" aria-label="Thêm vào giỏ">+</button>
-                        </div>
-                    </div>
-                </a>
-            </article>
-        </div>
-    </section>
 
 </main>
 

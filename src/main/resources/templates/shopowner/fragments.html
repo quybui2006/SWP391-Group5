@@ -47,6 +47,11 @@
             <span>▤</span> Biến thể sản phẩm
         </a>
 
+        <a th:classappend="${activePage == 'promotions'} ? ' active' : ''"
+           th:href="@{/shop/promotions}">
+            <span>％</span> Khuyến mãi
+        </a>
+
         <a th:classappend="${activePage == 'orders'} ? ' active' : ''"
            th:href="@{/shopowner/orders}">
             <span>◌</span> Đơn hàng
