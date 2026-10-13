@@ -6,7 +6,6 @@ import entity.ProductVariant;
 import entity.Province;
 import entity.Review;
 import entity.Shop;
-import repository.ProductVariantRepository;
 import repository.ProvinceRepository;
 import repository.ShopRepository;
 import service.ProductService;
@@ -29,9 +28,6 @@ public class CustomerProductDetailController {
 
     @Autowired
     private ProductService productService;
-
-    @Autowired
-    private ProductVariantRepository productVariantRepository;
 
     @Autowired
     private ShopRepository shopRepository;
@@ -99,14 +95,6 @@ public class CustomerProductDetailController {
         model.addAttribute("isCustomer", isCustomer);
         model.addAttribute("currentUserId", currentUserId);
         model.addAttribute("currentFullName", currentFullName);
-
-        // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)
-        List<ProductVariant> allActiveVariants = productVariantRepository.findByStatusAndProduct_SellingStatus("ACTIVE", "ACTIVE");
-        List<ProductVariant> relatedProducts = allActiveVariants.stream()
-                .filter(v -> !v.getId().equals(id))
-                .limit(6)
-                .toList();
-        model.addAttribute("relatedProducts", relatedProducts);
 
         return "customerproductdetail";
     }

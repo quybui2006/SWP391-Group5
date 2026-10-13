@@ -181,10 +181,35 @@ tbody tr:hover { background: #fbfdfb; }
 .product-management .upload-box input { display: block; width: 100%; border: 0; padding: 0; }
 .product-management .upload-box { color: var(--ink); }
 .product-management .image-preview { flex: 0 0 auto; }
+.product-management .topbar-actions { display: flex; align-items: center; gap: 10px; }
+.product-management .detail-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .8fr); gap: 18px; margin-bottom: 18px; }
+.product-management .detail-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+.product-management .detail-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.product-management .detail-list span { color: var(--muted); }
+.product-management .detail-list strong { color: var(--ink); text-align: right; }
+.product-management .description-block { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.product-management .description-block h3 { margin: 0 0 8px; font-size: 14px; }
+.product-management .description-block p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; white-space: pre-line; }
+.product-management .status-panel { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 22px; padding: 15px; border-radius: 12px; background: #f8fcf8; }
+.product-management .status-panel strong { font-size: 14px; }
+.product-management .status-panel p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.product-management .status-dot { width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px var(--green-light); }
+.product-management .button-block { width: 100%; }
+.product-management .variants-card { margin-bottom: 24px; }
+.product-management .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.product-management .section-heading h2 { margin-bottom: 5px; }
+.product-management .section-heading p { margin: 0; font-size: 13px; }
+.product-management .empty-cell { padding: 28px; color: var(--muted); text-align: center; }
+.product-management .product-action-link { color: var(--green-dark); font-weight: 700; font-size: 12px; }
+.product-management .variant-primary { display: block; color: var(--ink); font-weight: 800; }
+.product-management .variant-parent { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
 
 @media (max-width: 720px) {
     .product-management .topbar { align-items: flex-start; flex-direction: column; gap: 16px; }
     .product-management .panel { padding: 14px; }
     .product-management .form-actions { position: sticky; bottom: 0; padding: 12px; background: var(--bg); border-top: 1px solid var(--line); }
     .product-management .upload-row { align-items: stretch; flex-direction: column; }
+    .product-management .topbar-actions { width: 100%; }
+    .product-management .detail-grid, .product-management .detail-list { grid-template-columns: 1fr; }
+    .product-management .section-heading { align-items: flex-start; flex-direction: column; }
 }

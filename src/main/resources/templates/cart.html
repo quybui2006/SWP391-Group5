@@ -11,6 +11,186 @@
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        .price-old { color: #7a8580; text-decoration: line-through; font-size: 0.85em; margin-right: 6px; }
+        .price-promotion { color: #d62828; }
+        main {
+            max-width: 1150px;
+            margin: 36px auto;
+            padding: 0 20px;
+            min-height: 55vh;
+        }
+
+        .cart-row {
+            display: grid;
+            grid-template-columns: 36px minmax(200px, 2fr)
+                1fr 1.5fr 1fr 65px;
+            gap: 14px;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .cart-head {
+            font-size: 13px;
+            color: #647067;
+            font-weight: 700;
+        }
+
+        .product {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .product img {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        .product-info {
+            overflow-wrap: anywhere;
+        }
+
+        .product-info small {
+            display: block;
+            color: #647067;
+            margin-top: 5px;
+        }
+
+        .qty {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .qty input {
+            width: 55px;
+            padding: 7px 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .qty-btn,
+        .qty-save {
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            padding: 6px 9px;
+        }
+
+        .qty-save {
+            font-size: 12px;
+        }
+
+        .remove {
+            border: 0;
+            background: transparent;
+            color: #b42318;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            padding: 24px 0;
+            margin-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .summary-total {
+            font-size: 16px;
+        }
+
+        .total-price {
+            color: #16803c;
+            font-size: 22px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .notice {
+            padding: 12px;
+            margin: 12px 0;
+            background: #eff8f1;
+            color: #205c32;
+        }
+
+        .error {
+            background: #fff1f0;
+            color: #9f251d;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 0;
+        }
+
+        .btn-disabled,
+        .checkout:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .checkout {
+            cursor: pointer;
+            border: 0;
+        }
+
+        .select-all {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 850px) {
+            .cart-head {
+                display: none;
+            }
+
+            .cart-row {
+                grid-template-columns: 28px minmax(0, 1fr) auto;
+                gap: 10px;
+            }
+
+            .cart-row > *:nth-child(3) {
+                grid-column: 2;
+            }
+
+            .cart-row > *:nth-child(4) {
+                grid-column: 2;
+            }
+
+            .cart-row > *:nth-child(5) {
+                grid-column: 2;
+            }
+
+            .cart-row > *:nth-child(6) {
+                grid-column: 3;
+                grid-row: 1;
+            }
+
+            .summary {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -245,6 +425,66 @@
             </form>
 
         </div>
+
+        <!-- Đơn giá -->
+        <div class="unit-price-wrap">
+            <small class="price-old" th:if="${item['original_price'] != null and item['price'] < item['original_price']}"
+                   th:text="${#numbers.formatDecimal(item['original_price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</small>
+            <strong class="unit-price" th:classappend="${item['price'] < item['original_price']} ? ' price-promotion' : ''"
+                    th:text="${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
+        </div>
+
+        <!-- Cập nhật số lượng -->
+        <form class="qty"
+              th:action="@{/cart/items/{id}/quantity(id=${item['id']})}"
+              method="post">
+
+            <button type="button"
+                    class="qty-btn"
+                    onclick="changeQuantity(this, -1)"
+                    aria-label="Giảm số lượng">
+                −
+            </button>
+
+            <input type="number"
+                   class="qty-input"
+                   name="quantity"
+                   min="1"
+                   max="99"
+                   th:value="${item['quantity']}"
+                   onchange="normalizeQuantity(this); updateRowTotal(this)"
+                   required>
+
+            <button type="button"
+                    class="qty-btn"
+                    onclick="changeQuantity(this, 1)"
+                    aria-label="Tăng số lượng">
+                +
+            </button>
+
+            <button type="submit" class="qty-save">
+                Cập nhật
+            </button>
+
+        </form>
+
+        <!-- Thành tiền -->
+        <strong class="row-total-price"
+                th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+            0 ₫
+        </strong>
+
+        <!-- Xóa sản phẩm -->
+        <form th:action="@{/cart/items/{id}/delete(id=${item['id']})}"
+              method="post">
+
+            <button type="submit"
+                    class="remove"
+                    onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
+                Xóa
+            </button>
+
+        </form>
 
     </div>
 

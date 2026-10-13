@@ -10,6 +10,117 @@
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        .price-old { color: #7a8580; text-decoration: line-through; font-size: 0.85em; margin-right: 6px; }
+        .price-promotion { color: #d62828; }
+        main {
+            max-width: 1100px;
+            margin: 36px auto;
+            padding: 0 20px;
+            min-height: 55vh;
+        }
+
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .checkout-section {
+            padding: 24px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .checkout-section h2 {
+            font-size: 20px;
+            margin: 0 0 18px;
+        }
+
+        .address-option {
+            display: block;
+            padding: 14px 0;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            line-height: 1.7;
+        }
+
+        .address-option input {
+            margin-right: 8px;
+        }
+
+        .form-group {
+            margin: 16px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font: inherit;
+        }
+
+        .note {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .line span {
+            overflow-wrap: anywhere;
+        }
+
+        .totals {
+            margin-top: 18px;
+        }
+
+        .grand {
+            font-size: 19px;
+            font-weight: 800;
+            border-top: 2px solid #ddd;
+            padding-top: 16px;
+            margin-top: 10px;
+        }
+
+        .primary-btn {
+            cursor: pointer;
+            border: none;
+        }
+
+        .empty-address {
+            padding: 12px;
+            background: #f8faf8;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 720px) {
+            .checkout-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .checkout-section {
+                padding: 18px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -266,6 +377,12 @@
                         0 ₫
                     </strong>
                 </div>
+                <strong>
+                    <small class="price-old" th:if="${item.original_price != null and item.price < item.original_price}"
+                           th:text="${#numbers.formatDecimal(item.original_price * item.quantity, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</small>
+                    <span th:classappend="${item.price < item.original_price} ? ' price-promotion' : ''"
+                          th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</span>
+                </strong>
             </div>
 
             <input type="hidden"

@@ -2,6 +2,9 @@ package service;
 
 import entity.ProductVariant;
 import repository.ProductVariantRepository;
+import repository.PromotionalPriceRepository;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +16,11 @@ public class ProductService {
 
     @Autowired
     private ProductVariantRepository productVariantRepository;
+
+    @Autowired
+    private PromotionalPriceRepository promotionalPriceRepository;
+
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     public List searchAndFilterProducts(String keyword, List categoryIds, String priceRange) {
         BigDecimal minPrice = null;
@@ -38,8 +46,15 @@ public class ProductService {
     }
 
     public ProductVariant getProductVariantById(Long id) {
-        return productVariantRepository.findById(id)
-                .filter(v -> "ACTIVE".equals(v.getStatus()) && "ACTIVE".equals(v.getProduct().getSellingStatus()))
+        ProductVariant variant = productVariantRepository.findById(id)
+                .filter(v -> "ACTIVE".equals(v.getStatus())
+                        && "ACTIVE".equals(v.getProduct().getSellingStatus())
+                        && "APPROVED".equals(v.getProduct().getApprovalStatus()))
                 .orElse(null);
+        if (variant != null) {
+            variant.setPromotionalPrice(promotionalPriceRepository
+                    .findActivePriceByVariantId(id, LocalDateTime.now(BUSINESS_ZONE)).orElse(null));
+        }
+        return variant;
     }
 }

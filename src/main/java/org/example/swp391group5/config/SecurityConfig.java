@@ -34,8 +34,17 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register/**", "/forgot-password/**", "/reset-password/**").permitAll()
 
                         // Phân quyền cho từng khu vực
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+//                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // ---> SỬA DÒNG NÀY: Đổi từ .hasRole("OPERATIONS_MANAGER") thành .permitAll() để bypass
+                        .requestMatchers("/operations/**").permitAll()
+
                         .requestMatchers("/shopowner/**", "/shop-owner/**").hasAnyRole("SHOP_OWNER", "ADMIN")
+                        .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
+                        /////////////////////////////////////////////////////////////////////////////////////
+
+                        .requestMatchers("/operations/**").hasRole("OPERATIONS_MANAGER")
+                        .requestMatchers("/shop/**", "/shopowner/**", "/shop-owner/**").hasAnyRole("SHOP_OWNER", "ADMIN")
                         .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
 
                         // Các request còn lại

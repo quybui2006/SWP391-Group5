@@ -17,6 +17,7 @@
     </header>
 
     <p class="alert alert-success" th:if="${success}" th:text="${success}">Đã lưu sản phẩm thành công.</p>
+    <p class="alert" id="approvalToast" role="status" aria-live="polite" hidden></p>
 
     <section class="panel">
         <form class="search-bar" method="get" th:action="@{/shop/products}">
@@ -32,11 +33,11 @@
                 <thead>
                 <tr>
                     <th>Sản phẩm</th>
-                    <th>SKU</th>
                     <th>Danh mục</th>
-                    <th>Giá</th>
+                    <th>Biến thể</th>
                     <th>Tồn kho</th>
-                    <th>Trạng thái</th>
+                    <th>Trạng thái bán</th>
+                    <th>Duyệt</th>
                     <th>Ngày tạo</th>
                     <th>Thao tác</th>
                 </tr>
@@ -51,19 +52,28 @@
                             <a th:href="@{/shop/product/{id}(id=${product.id})}" th:text="${product.name}">Tên sản phẩm</a>
                         </div>
                     </td>
-                    <td th:text="${product.sku}">SKU</td>
                     <td th:text="${product.categoryName}">Danh mục</td>
-                    <td th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' ₫'">0 ₫</td>
+                    <td th:text="${product.variantCount + ' biến thể'}">0 biến thể</td>
                     <td th:text="${product.stockQuantity}">0</td>
                     <td>
                         <span class="badge"
                               th:classappend="${product.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'"
                               th:text="${product.status == 'ACTIVE'} ? 'Đang bán' : 'Bản nháp'">Bản nháp</span>
                     </td>
+                    <td class="approval-cell">
+                        <span class="badge approval-badge"
+                              th:classappend="${product.approvalStatus == 'APPROVED'} ? ' badge-active' : ' badge-draft'"
+                              th:text="${product.approvalStatus == 'PENDING'} ? 'Chờ duyệt' : (${product.approvalStatus == 'APPROVED'} ? 'Đã duyệt' : (${product.approvalStatus == 'REJECTED'} ? 'Bị từ chối' : 'Bản nháp'))">Bản nháp</span>
+                        <small class="rejection-reason" th:if="${product.approvalStatus == 'REJECTED' and product.rejectionReason != null}"
+                               th:text="${'Lý do: ' + product.rejectionReason}">Lý do từ chối</small>
+                    </td>
                     <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
                     <td class="product-actions">
                         <a th:href="@{/shop/product/{id}(id=${product.id})}">Chi tiết</a>
                         <a th:href="@{/shop/product/{id}/edit(id=${product.id})}">Sửa</a>
+                        <button class="button button-ghost submit-approval-button" type="button"
+                                th:if="${product.approvalStatus == 'DRAFT'}"
+                                th:attr="data-url=@{/shop/products/{id}/submit-approval(id=${product.id})}">Gửi duyệt</button>
                     </td>
                 </tr>
                 </tbody>
@@ -90,5 +100,6 @@
     </section>
 </main>
 </div>
+<script th:src="@{/js/product-approval.js}" defer></script>
 </body>
 </html>

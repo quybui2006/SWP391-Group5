@@ -1583,3 +1583,7 @@ input {
         cursor: pointer;
     }
 }
+
+/* Promotion prices */
+.price-old { color: #7a8580; text-decoration: line-through; font-size: 0.85em; margin-right: 6px; }
+.price-promotion { color: #d62828 !important; }

@@ -2019,3 +2019,6 @@ img {
         gap: 16px;
     }
 }
+
+/* Current promotional price */
+.price-promotion { color: #d62828 !important; }

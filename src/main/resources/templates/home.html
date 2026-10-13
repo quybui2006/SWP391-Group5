@@ -336,13 +336,14 @@
 
                         <div class="product-bottom">
 
+                            <span class="price-old" th:if="${variant.promotionalPrice != null}"
+                                  th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
+                            <strong class="price price-promotion"
+                                    th:if="${variant.price != null and variant.promotionalPrice != null}"
+                                    th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
                             <strong class="price"
-                                    th:if="${variant.price != null}"
-                                    th:text="${#numbers.formatDecimal(
-                                        variant.price, 0, 'COMMA', 0, 'POINT'
-                                    ) + ' ₫'}">
-                                0 ₫
-                            </strong>
+                                    th:if="${variant.price != null and variant.promotionalPrice == null}"
+                                    th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</strong>
 
                             <strong class="price"
                                     th:unless="${variant.price != null}">
