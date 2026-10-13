@@ -244,12 +244,6 @@
 
                 <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
                 <div class="fresh-price-banner">
-                    <!-- Giá gốc gạch ngang -->
-                    <span class="price-old" th:if="${variant.price != null}"
-                          th:text="${#numbers.formatDecimal(variant.price * 1.25, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                        150.000 ₫
-                    </span>
-
                     <!-- Giá bán chính -->
                     <span class="price-main" th:if="${variant.price != null}"
                           th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
@@ -259,16 +253,13 @@
                         Liên hệ
                     </span>
 
-                    <!-- Tag giảm giá -->
-                    <span class="discount-pill">GIẢM 20%</span>
-
                     <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
                 </div>
 
                 <!-- Details Rows (Bố cục Shopee) -->
                 <div class="fresh-details-table">
 
-                    <!-- Voucher Shop -->
+                    <!-- Voucher Shop (Chỉ giữ voucher của shop) -->
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
                         <div class="detail-content vouchers-wrap">
@@ -287,26 +278,6 @@
                         </div>
                     </div>
 
-                    <!-- Vận chuyển -->
-                    <div class="detail-line">
-                        <span class="detail-label">Vận Chuyển</span>
-                        <div class="detail-content shipping-content">
-                            <div class="shipping-row">
-                                <span class="shipping-icon">🚚</span>
-                                <div class="shipping-destination">
-                                    <span>Vận chuyển tới: </span>
-                                    <strong class="dest-text" th:text="${shopProvinceName != null && !shopProvinceName.isEmpty() ? shopProvinceName : 'Toàn quốc (Giao hỏa tốc 2H)'}">
-                                        Toàn quốc (Giao hỏa tốc 2H)
-                                    </strong>
-                                </div>
-                            </div>
-                            <div class="shipping-fee-row">
-                                <span class="shipping-fee">Phí Vận Chuyển: <strong>₫0 - ₫22.000</strong></span>
-                                <span class="free-shipping-tag">Miễn phí vận chuyển cho đơn từ 150.000₫</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Quy cách / Phân loại hàng -->
                     <div class="detail-line">
                         <span class="detail-label">Quy Cách</span>
@@ -318,7 +289,7 @@
                                 <span class="check-tick">✓</span>
                             </button>
                             <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
-                                <span>Combo 2 Hộp (Tiết kiệm 5%)</span>
+                                <span>Combo 2 Hộp</span>
                                 <span class="check-tick">✓</span>
                             </button>
                             <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
@@ -393,18 +364,22 @@
 
             <!-- Left: Avatar, Name & Buttons -->
             <div class="shop-primary-info">
-                <div class="shop-avatar-container">
-                    <div class="shop-avatar-circle"
-                         th:text="${shop != null && shop.name != null && !shop.name.isEmpty() ? #strings.substring(shop.name, 0, 1).toUpperCase() : '🏪'}">
-                        🏪
+                <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-avatar-link" title="Xem cửa hàng">
+                    <div class="shop-avatar-container">
+                        <div class="shop-avatar-circle"
+                             th:text="${shop != null && shop.name != null && !shop.name.isEmpty() ? #strings.substring(shop.name, 0, 1).toUpperCase() : '🏪'}">
+                            🏪
+                        </div>
+                        <span class="shop-mall-badge">Mall</span>
                     </div>
-                    <span class="shop-mall-badge">Mall</span>
-                </div>
+                </a>
 
                 <div class="shop-meta-info">
-                    <h2 class="shop-title" th:text="${shop != null ? shop.name : 'FreshFruit Nông Trại Xanh'}">
-                        FreshFruit Nông Trại Xanh
-                    </h2>
+                    <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-title-link" title="Xem cửa hàng">
+                        <h2 class="shop-title" th:text="${shop != null ? shop.name : 'FreshFruit Nông Trại Xanh'}">
+                            FreshFruit Nông Trại Xanh
+                        </h2>
+                    </a>
 
                     <div class="shop-status-text">
                         <span class="status-indicator-dot"></span>
@@ -414,12 +389,12 @@
                     </div>
 
                     <div class="shop-buttons-row">
-                        <a href="#reviews-section" class="shop-action-btn chat-btn">
+                        <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-action-btn chat-btn" onclick="alert('Đang kết nối nhân viên tư vấn của ' + (document.querySelector('.shop-title') ? document.querySelector('.shop-title').innerText : 'cửa hàng') + '...'); return false;">
                             <span class="btn-icon">💬</span>
                             <span>Chat Ngay</span>
                         </a>
 
-                        <a th:href="@{/search}" class="shop-action-btn view-shop-btn">
+                        <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-action-btn view-shop-btn">
                             <span class="btn-icon">🏬</span>
                             <span>Xem Shop</span>
                         </a>

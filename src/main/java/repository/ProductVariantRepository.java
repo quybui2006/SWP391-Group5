@@ -42,4 +42,16 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("filterByCategory") boolean filterByCategory,
             @Param("categoryIds") List categoryIds);
+
+    // Lấy danh sách sản phẩm theo shop, có lọc theo category và keyword
+    @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
+            "JOIN pv.product p LEFT JOIN p.categories c " +
+            "WHERE (pv.shopId = :shopId OR p.shopId = :shopId) " +
+            "AND pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' " +
+            "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+            "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<ProductVariant> findByShopAndCategoryAndKeyword(
+            @Param("shopId") Long shopId,
+            @Param("categoryId") Long categoryId,
+            @Param("keyword") String keyword);
 }

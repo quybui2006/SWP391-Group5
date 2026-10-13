@@ -677,7 +677,7 @@ img {
     border-radius: 14px;
     padding: 18px 24px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 14px;
     margin-bottom: 24px;
     flex-wrap: wrap;
@@ -1046,8 +1046,30 @@ img {
     border: 1px solid #fff;
 }
 
+.shop-avatar-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.shop-avatar-link:hover .shop-avatar-circle {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
 .shop-meta-info {
     flex: 1;
+}
+
+.shop-title-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.shop-title-link:hover .shop-title {
+    color: var(--green);
+    transition: color 0.2s ease;
 }
 
 .shop-title {

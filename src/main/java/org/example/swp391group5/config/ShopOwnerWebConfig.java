@@ -46,6 +46,7 @@ public class ShopOwnerWebConfig implements WebMvcConfigurer {
                 }
                 return true;
             }
-        }).addPathPatterns("/shopowner/**", "/shop/**");
+        }).addPathPatterns("/shopowner/**", "/shop/**")
+          .excludePathPatterns("/shop/{id:[0-9]+}", "/shops/**", "/shop-profile/**");
     }
 }
