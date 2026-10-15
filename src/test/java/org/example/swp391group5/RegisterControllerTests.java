@@ -1,7 +1,7 @@
 package org.example.swp391group5;
 
-import controller.RegisterController;
-import dto.RegisterRequest;
+import controller.login.RegisterController;
+import dto.login.RegisterRequest;
 import entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,9 +11,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import repository.UserRepository;
-import service.EmailService;
-import service.OtpService;
-import service.RegistrationService;
+import service.login.EmailService;
+import service.login.OtpService;
+import service.login.RegistrationService;
 
 import java.util.Optional;
 

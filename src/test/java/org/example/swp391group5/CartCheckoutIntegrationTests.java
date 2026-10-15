@@ -9,13 +9,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import service.CartService;
-import service.OrderCheckoutService;
+import service.customer.CartService;
+import service.customer.OrderCheckoutService;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import service.shop.ShopOrderService;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -26,7 +27,7 @@ class CartCheckoutIntegrationTests {
     @Autowired CartService cart;
     @Autowired OrderCheckoutService checkout;
     @Autowired MockMvc mvc;
-    @Autowired service.ShopOrderService shopOrders;
+    @Autowired service.shop.ShopOrderService shopOrders;
 
     @Test
     void shopOwnerReadsAndAdvancesOnlyTheirOwnOrders() throws Exception {

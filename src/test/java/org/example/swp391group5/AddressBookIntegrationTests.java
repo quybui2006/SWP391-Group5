@@ -1,13 +1,13 @@
 package org.example.swp391group5;
 
-import dto.AddressForm;
+import dto.customer.AddressForm;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import service.AddressBookService;
-import service.AddressLocationService;
+import service.customer.AddressBookService;
+import service.customer.AddressLocationService;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
