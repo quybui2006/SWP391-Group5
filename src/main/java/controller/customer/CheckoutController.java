@@ -32,7 +32,7 @@ public class CheckoutController {
                 .map(item -> ((Number) item.get("shop_id")).longValue()).distinct().count()));
         model.addAttribute("shippingFee", shippingFee);
         model.addAttribute("total", subtotal.add(shippingFee));
-        return "checkout";
+        return "customer/checkout";
     }
 
     @PostMapping("/order/submit")

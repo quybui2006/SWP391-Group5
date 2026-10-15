@@ -28,7 +28,7 @@ public class CartController {
             items.forEach(item -> item.put("id", item.get("variant_id")));
             model.addAttribute("cartItems", items);
         }
-        return "cart";
+        return "customer/cart";
     }
 
     // Đếm số lượng sản phẩm trong giỏ

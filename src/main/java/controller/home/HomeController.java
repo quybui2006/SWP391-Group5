@@ -24,6 +24,6 @@ public class HomeController {
         model.addAttribute("products", featuredProducts);
 
         // 3. Trả về tên file giao diện (sẽ map với thư mục templates/home.html)
-        return "home";
+        return "home/home";
     }
 }

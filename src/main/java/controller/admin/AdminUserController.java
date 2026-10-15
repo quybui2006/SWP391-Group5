@@ -38,7 +38,7 @@ public class AdminUserController {
         List<UserListItemDto> users = adminUserService.getAllUsers(keyword);
         model.addAttribute("users", users);
         model.addAttribute("keyword", keyword);
-        return "user-list";
+        return "admin/user-list";
     }
 
     @GetMapping("/{id}")
@@ -49,7 +49,7 @@ public class AdminUserController {
             UserDetailDto user = adminUserService.getUserDetail(id);
             model.addAttribute("user", user);
             model.addAttribute("allRoles", roleRepository.findAll());
-            return "user-detail";
+            return "admin/user-detail";
         } catch (IllegalArgumentException e) {
             return "redirect:/admin/users";
         }
@@ -63,7 +63,7 @@ public class AdminUserController {
             model.addAttribute("form", new UserCreateRequest());
         }
         model.addAttribute("allRoles", roleRepository.findAll());
-        return "user-create";
+        return "admin/user-create";
     }
 
     @PostMapping("/create")
@@ -76,7 +76,7 @@ public class AdminUserController {
 
         if (errors.hasErrors()) {
             model.addAttribute("allRoles", roleRepository.findAll());
-            return "user-create";
+            return "admin/user-create";
         }
 
         try {
@@ -87,7 +87,7 @@ public class AdminUserController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("allRoles", roleRepository.findAll());
             model.addAttribute("error", e.getMessage());
-            return "user-create";
+            return "admin/user-create";
         }
     }
 }

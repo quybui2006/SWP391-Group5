@@ -41,7 +41,7 @@ public class ForgotPasswordController {
 
     @GetMapping("/forgot-password")
     public String showForgotPasswordPage() {
-        return "forgot-password";
+        return "login/forgot-password";
     }
 
     @PostMapping("/forgot-password")
@@ -51,17 +51,17 @@ public class ForgotPasswordController {
                                          RedirectAttributes redirect) {
         if (email == null || email.isBlank()) {
             model.addAttribute("error", "Vui lòng nhập email của bạn.");
-            return "forgot-password";
+            return "login/forgot-password";
         }
         Optional<User> userOpt = users.findByEmailIgnoreCase(email.trim());
         if (userOpt.isEmpty()) {
             model.addAttribute("error", "User này chưa được đăng ký trên hệ thống.");
-            return "forgot-password";
+            return "login/forgot-password";
         }
         User user = userOpt.get();
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
             model.addAttribute("error", "Tài khoản của bạn bị khóa hoặc chưa kích hoạt.");
-            return "forgot-password";
+            return "login/forgot-password";
         }
         String code = otpService.createPasswordResetOtp(user);
         try {
@@ -71,7 +71,7 @@ public class ForgotPasswordController {
             return "redirect:/reset-password";
         } catch (Exception e) {
             model.addAttribute("error", "Không thể gửi email OTP: " + e.getMessage());
-            return "forgot-password";
+            return "login/forgot-password";
         }
     }
 
@@ -85,7 +85,7 @@ public class ForgotPasswordController {
             model.addAttribute("form", new PasswordResetRequest());
         }
         model.addAttribute("email", email);
-        return "reset-password";
+        return "login/reset-password";
     }
 
     @PostMapping("/reset-password")
@@ -104,13 +104,13 @@ public class ForgotPasswordController {
             errors.rejectValue("confirmPassword", "mismatch", "Mật khẩu xác nhận không khớp.");
         }
         if (errors.hasErrors()) {
-            return "reset-password";
+            return "login/reset-password";
         }
 
         boolean verified = otpService.verifyPasswordResetOtp(email, form.getCode());
         if (!verified) {
             model.addAttribute("error", "Mã OTP không hợp lệ, đã hết hạn hoặc bạn đã thử sai quá 5 lần.");
-            return "reset-password";
+            return "login/reset-password";
         }
 
         User user = users.findByEmailIgnoreCase(email).orElse(null);

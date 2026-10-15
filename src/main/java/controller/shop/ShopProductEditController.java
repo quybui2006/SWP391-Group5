@@ -38,7 +38,7 @@ public class ShopProductEditController {
         model.addAttribute("form",
                 shopProductService.buildEditForm(id, currentUserProvider.requireUserId(request)));
         model.addAttribute("errors", Map.of());
-        return "shopproductedit";
+        return "shopowner/shopproductedit";
     }
 
     @PostMapping("/shop/product/{id}/edit")
@@ -61,6 +61,6 @@ public class ShopProductEditController {
             form.setCategories(savedState.getCategories());
             model.addAttribute("errors", ex.getFieldErrors());
         }
-        return "shopproductedit";
+        return "shopowner/shopproductedit";
     }
 }

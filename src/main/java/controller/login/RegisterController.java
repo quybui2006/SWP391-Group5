@@ -34,7 +34,7 @@ public class RegisterController {
     @GetMapping("/register")
     public String showForm(org.springframework.ui.Model model) {
         model.addAttribute("form", new RegisterRequest());
-        return "register";
+        return "login/register";
     }
 
     @PostMapping("/register")
@@ -46,14 +46,14 @@ public class RegisterController {
         && !form.getPassword().equals(form.getConfirmPassword())){
             errors.rejectValue("confirmPassword", "misMatch", "Mật khẩu xác nhận không khớp");
         }
-        if(errors.hasErrors()){return "register";}
+        if(errors.hasErrors()){return "login/register";}
         Long userId;
         try{
             userId = registrationService.register(form);
         }catch(IllegalArgumentException ex){
             if("Email already exists".equalsIgnoreCase(ex.getMessage())){
                 errors.rejectValue("email", "duplicate", "Email đã được sử dụng");
-                return "register";
+                return "login/register";
             }
             throw ex;
         }
@@ -77,7 +77,7 @@ public class RegisterController {
             return "redirect:/register";
         }
         model.addAttribute("email", email);
-        return "register-verify";
+        return "login/register-verify";
     }
 
     @PostMapping("/register/resend-otp")
@@ -126,7 +126,7 @@ public class RegisterController {
         if (!code.matches("\\d{6}") ||
             !otpService.verifyRegistrationOtp(email, code)) {
             model.addAttribute("error", "Mã sai hoặc đã hết hạn");
-            return "register-verify";
+            return "login/register-verify";
         }
         session.removeAttribute("pendingRegistrationEmail");
         redirect.addFlashAttribute("success", "Xác minh thành công. Bạn có thể đăng nhập");

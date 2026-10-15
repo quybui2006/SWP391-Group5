@@ -45,6 +45,6 @@ public class SearchController {
         model.addAttribute("priceRange", priceRange);
         model.addAttribute("resultCount", searchResults.size());
 
-        return "search";
+        return "home/search";
     }
 }

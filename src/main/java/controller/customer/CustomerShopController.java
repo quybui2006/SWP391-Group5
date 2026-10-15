@@ -155,6 +155,6 @@ public class CustomerShopController {
         model.addAttribute("resultCount", sortedVariants.size());
         model.addAttribute("shopVouchers", shopVouchers);
 
-        return "customershop";
+        return "customer/customershop";
     }
 }

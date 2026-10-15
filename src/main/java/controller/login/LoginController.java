@@ -21,7 +21,7 @@ public class LoginController {
     // Tan PTH integration: preserve the requested customer page through login.
     public String loginPage(@RequestParam(required = false) String continueTo, Model model){
         model.addAttribute("continueTo", safeContinueTo(continueTo));
-        return "login";
+        return "login/login";
     }
     @PostMapping("/login")
     public String login(@RequestParam String email,
@@ -33,7 +33,7 @@ public class LoginController {
         if(result.isEmpty()){
             model.addAttribute("error", "Emmail invalid.");
             model.addAttribute("continueTo", safeContinueTo(continueTo));
-            return "login";
+            return "login/login";
         }
         HttpSession oldSession = request.getSession(false);
         if(oldSession!=null) oldSession.invalidate();
@@ -93,7 +93,7 @@ public class LoginController {
 
     @GetMapping("/admin")
     public String admin(HttpServletRequest request) {
-        return pageForRole(request, "ADMIN", "admin");
+        return pageForRole(request, "ADMIN", "admin/admin");
     }
 
     private String pageForRole(HttpServletRequest request, String requiredRole, String view){

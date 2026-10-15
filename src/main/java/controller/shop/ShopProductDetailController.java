@@ -27,6 +27,6 @@ public class ShopProductDetailController {
     public String productDetail(@PathVariable("id") Long id, HttpServletRequest request, Model model) {
         model.addAttribute("product",
                 shopProductService.getDetail(id, currentUserProvider.requireUserId(request)));
-        return "shopproductdetail";
+        return "shopowner/shopproductdetail";
     }
 }

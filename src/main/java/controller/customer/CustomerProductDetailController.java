@@ -106,7 +106,7 @@ public class CustomerProductDetailController {
                 .toList();
         model.addAttribute("relatedProducts", relatedProducts);
 
-        return "customerproductdetail";
+        return "customer/customerproductdetail";
     }
 
     /**
