@@ -100,6 +100,12 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 24px;">
+            <a th:href="@{/admin/users}" style="text-decoration: none; color: inherit;">
+                <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa; cursor: pointer;">
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">👥 Quản lý người dùng</h3>
+                    <p style="color: var(--muted); font-size: 13px; margin: 0;">Xem danh sách, chi tiết & thêm mới</p>
+                </div>
+            </a>
             <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
                 <h3 style="margin: 0 0 8px; font-size: 16px;">👤 Tài khoản</h3>
                 <p style="color: var(--muted); font-size: 13px; margin: 0;" th:text="${session.fullName ?: 'Admin'}">Admin</p>
