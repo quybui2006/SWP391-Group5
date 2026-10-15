@@ -5,11 +5,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
+import entity.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import repository.UserRepository;
 
 @Service
 public class CustomerAccountService {
     private final JdbcTemplate jdbc;
-    public CustomerAccountService(JdbcTemplate jdbc) { this.jdbc = jdbc; ensureFavoritesTable(); }
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public CustomerAccountService(JdbcTemplate jdbc, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.jdbc = jdbc;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        ensureFavoritesTable();
+    }
 
     private void ensureFavoritesTable() {
         jdbc.execute("CREATE TABLE IF NOT EXISTS customer_profiles (user_id BIGINT PRIMARY KEY, gender VARCHAR(10), birth_date DATE, avatar MEDIUMBLOB, avatar_type VARCHAR(30), FOREIGN KEY(user_id) REFERENCES users(id))");
@@ -116,5 +127,25 @@ public class CustomerAccountService {
     }
     public boolean isFavorite(Long userId, Long variantId) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=? AND variant_id=?", Integer.class, userId, variantId) > 0;
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        if (oldPassword == null || oldPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Mật khẩu không được để trống.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không chính xác.");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

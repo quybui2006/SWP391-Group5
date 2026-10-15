@@ -53,7 +53,7 @@ public class LoginController {
                 return "redirect:/" + safePath;
             }
 
-            return "redirect:/customer/account";
+            return "redirect:/";
         }
 
         return switch (account.role()){
@@ -78,7 +78,7 @@ public class LoginController {
     }
     @GetMapping("/customer")
     public String customer(HttpServletRequest request){
-        return pageForRole(request, "CUSTOMER", "customer");
+        return "redirect:/";
     }
 
 

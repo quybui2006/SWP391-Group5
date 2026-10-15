@@ -8,6 +8,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.CustomerAccountService;
 import service.NotificationService;
 import java.util.Map;
+import dto.ChangePasswordRequest;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
+
 
 @Controller
 @RequestMapping("/customer/account")
@@ -130,5 +134,51 @@ public class CustomerAccountHomeController {
         model.addAttribute("unreadCount", notificationService.getUnreadCount(id));
         model.addAttribute("activePage", "notifications");
         return "customer/notifications";
+    }
+
+    @GetMapping("/change-password")
+    public String changePasswordPage(Model model, HttpSession session) {
+        Long id = current(session);
+        String redirect = login(id, "/customer/account/change-password");
+        if (redirect != null) return redirect;
+
+        model.addAttribute("profile", account.profile(id));
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form", new ChangePasswordRequest());
+        }
+        model.addAttribute("activePage", "changePassword");
+        return "customer/change-password";
+    }
+
+    @PostMapping("/change-password")
+    public String changePassword(@Valid @ModelAttribute("form") ChangePasswordRequest form,
+                                 BindingResult errors,
+                                 HttpSession session,
+                                 Model model,
+                                 RedirectAttributes ra) {
+        Long id = current(session);
+        String redirect = login(id, "/customer/account/change-password");
+        if (redirect != null) return redirect;
+
+        if (form.getNewPassword() != null && !form.getNewPassword().equals(form.getConfirmPassword())) {
+            errors.rejectValue("confirmPassword", "mismatch", "Mật khẩu xác nhận không khớp.");
+        }
+
+        if (errors.hasErrors()) {
+            model.addAttribute("profile", account.profile(id));
+            model.addAttribute("activePage", "changePassword");
+            return "customer/change-password";
+        }
+
+        try {
+            account.changePassword(id, form.getOldPassword(), form.getNewPassword());
+            ra.addFlashAttribute("message", "Đổi mật khẩu thành công!");
+            return "redirect:/customer/account/change-password";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("profile", account.profile(id));
+            model.addAttribute("activePage", "changePassword");
+            model.addAttribute("error", e.getMessage());
+            return "customer/change-password";
+        }
     }
 }
