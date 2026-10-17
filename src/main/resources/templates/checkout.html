@@ -363,6 +363,27 @@
 </footer>
 
 <script th:src="@{/js/notifications.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addressRadios = document.querySelectorAll('input[name="addressId"]');
+        const newAddressFields = document.querySelectorAll('#recipientName, #recipientPhone, #provinceCode, #wardName, #addressDetail');
 
+        function toggleNewAddressFields() {
+            const newAddressRadio = document.querySelector('input[name="addressId"][value="0"]');
+            const isNewAddressChecked = newAddressRadio ? newAddressRadio.checked : true;
+
+            newAddressFields.forEach(field => {
+                field.disabled = !isNewAddressChecked;
+                field.required = isNewAddressChecked;
+            });
+        }
+
+        addressRadios.forEach(radio => {
+            radio.addEventListener('change', toggleNewAddressFields);
+        });
+
+        toggleNewAddressFields();
+    });
+</script>
 </body>
 </html>
