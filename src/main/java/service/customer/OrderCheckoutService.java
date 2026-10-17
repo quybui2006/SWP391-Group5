@@ -104,7 +104,15 @@ public class OrderCheckoutService {
                 jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RESERVE',0,?,?,?,?,?)", inventoryId, itemId, quantity, onHand, reservedAfter, "reserve-" + itemId, userId);
             }
         }
-        jdbc.update("DELETE FROM cart_items WHERE cart_id=(SELECT id FROM carts WHERE user_id=?) AND variant_id IN (" + marks + ")", args);
+        Object[] deleteArgs = new Object[variantIds.size() + 1];
+        deleteArgs[0] = userId;
+        for (int i = 0; i < variantIds.size(); i++) {
+            deleteArgs[i + 1] = variantIds.get(i);
+        }
+
+
+        jdbc.update("DELETE FROM cart_items WHERE cart_id=(SELECT id FROM carts WHERE user_id=?) AND variant_id IN (" + marks + ")", deleteArgs);
+
         return String.join(", ", orderCodes);
     }
 
@@ -116,17 +124,20 @@ public class OrderCheckoutService {
     }
 
     private Long insertId(String sql, Object... values) {
-        KeyHolder keys = new GeneratedKeyHolder();
+        org.springframework.jdbc.support.KeyHolder keys = new org.springframework.jdbc.support.GeneratedKeyHolder();
         jdbc.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (int i = 0; i < values.length; i++) ps.setObject(i + 1, values[i]);
+            java.sql.PreparedStatement ps = connection.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS);
+            for (int i = 0; i < values.length; i++) {
+                ps.setObject(i + 1, values[i]);
+            }
             return ps;
         }, keys);
-        Object generatedId = keys.getKeyList().get(0).entrySet().stream()
-                .filter(entry -> "id".equalsIgnoreCase(entry.getKey()))
-                .map(Map.Entry::getValue).findFirst().orElse(null);
-        Number key = generatedId instanceof Number number ? number : null;
-        if (key == null) throw new IllegalStateException("Không lấy được mã bản ghi vừa tạo.");
+
+
+        Number key = keys.getKey();
+        if (key == null) {
+            throw new IllegalStateException("Không lấy được mã bản ghi vừa tạo.");
+        }
         return key.longValue();
     }
 }

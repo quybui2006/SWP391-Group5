@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Xác nhận đơn hàng | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/home.css}">
-    <link rel="stylesheet" th:href="@{/css/checkout.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         .price-old { color: #7a8580; text-decoration: line-through; font-size: 0.85em; margin-right: 6px; }
@@ -127,7 +124,7 @@
 
 <header class="site-header">
     <div class="container header-inner">
-        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+        <a class="brand" th:href="@{/}">
             <span class="brand-mark">F</span>
             <span>
                 <strong>FreshFruit</strong>
@@ -135,17 +132,13 @@
             </span>
         </a>
 
-        <nav class="main-nav" aria-label="Điều hướng chính">
+        <nav class="main-nav">
             <a th:href="@{/}">Trang chủ</a>
             <a th:href="@{/search}">Sản phẩm</a>
-            <a th:href="@{/#categories}">Danh mục</a>
             <a th:href="@{/#about}">Về chúng tôi</a>
         </nav>
 
         <div class="header-actions">
-            <!-- Search Icon -->
-            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
-
             <!-- Shopee Style Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
                 <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
@@ -157,226 +150,150 @@
                 </div>
             </div>
 
-            <!-- Cart Icon -->
-            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng" aria-label="Giỏ hàng">
-                🛒
-                <span id="cartCount">0</span>
+            <a class="login-btn" th:href="@{/cart}">Quay lại giỏ hàng</a>
+            <a class="user-avatar" th:if="${session.role == 'CUSTOMER'}"
+               th:href="@{/customer/account}" th:title="${session.fullName}"
+               aria-label="Hồ sơ khách hàng">
+                <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
             </a>
-
-            <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
-            <th:block th:if="${session.role != null}">
-                <div class="user-menu-container">
-                    <div class="user-avatar" th:title="${session.fullName}">
-                        <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
-                    </div>
-                    <div class="user-dropdown">
-                        <div class="user-dropdown-header">
-                            <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
-                            <p class="user-dropdown-email">
-                                <span th:if="${session.role == 'CUSTOMER'}">Khách hàng</span>
-                                <span th:if="${session.role == 'SHOP_OWNER'}">Chủ cửa hàng</span>
-                                <span th:if="${session.role == 'ADMIN'}">Quản trị viên</span>
-                            </p>
-                        </div>
-                        <div class="user-dropdown-links">
-                            <!-- Customer links -->
-                            <th:block th:if="${session.role == 'CUSTOMER'}">
-                                <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
-                                <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
-                                <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
-                                <a th:href="@{/customer/account/favorites}">❤️ Sản phẩm yêu thích</a>
-                                <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
-                            </th:block>
-
-                            <!-- Shop Owner links -->
-                            <th:block th:if="${session.role == 'SHOP_OWNER'}">
-                                <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
-                                <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
-                                <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
-                                <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
-                            </th:block>
-
-                            <!-- Admin links -->
-                            <th:block th:if="${session.role == 'ADMIN'}">
-                                <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
-                            </th:block>
-                        </div>
-                        <div class="user-dropdown-logout">
-                            <form th:action="@{/logout}" method="post">
-                                <button type="submit">🚪 Đăng xuất</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </th:block>
-            <th:block th:if="${session.role == null}">
-                <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
-            </th:block>
         </div>
     </div>
 </header>
 
-<main class="checkout-main">
+<main>
+    <h1>Xác nhận đơn hàng</h1>
 
-    <div class="checkout-page-header">
-        <span class="checkout-eyebrow">THANH TOÁN & ĐẶT HÀNG</span>
-        <h1>📦 Xác nhận đơn hàng</h1>
-        <p>Vui lòng kiểm tra địa chỉ nhận hàng và thông tin đơn hàng trước khi bấm Đặt hàng.</p>
-    </div>
+    <p th:if="${error}"
+       class="empty-address"
+       style="color:#b42318"
+       th:text="${error}"></p>
 
-    <div th:if="${error}" class="checkout-error" role="alert">
-        <span>⚠️</span>
-        <span th:text="${error}"></span>
-    </div>
-
-    <div th:if="${#lists.isEmpty(addresses)}" class="empty-address-alert">
-        <span>ℹ️</span>
-        <div>
-            Bạn chưa có địa chỉ đã lưu. Hãy nhập thông tin địa chỉ giao hàng bên dưới hoặc
-            <a th:href="@{/customer/account/address}">quản lý sổ địa chỉ</a>.
-        </div>
+    <div th:if="${#lists.isEmpty(addresses)}" class="empty-address">
+        Bạn chưa có địa chỉ đã lưu. Hãy nhập địa chỉ giao hàng bên dưới
+        hoặc
+        <a th:href="@{/customer/account/address}">
+            quản lý sổ địa chỉ
+        </a>.
     </div>
 
     <form th:action="@{/order/submit}"
           method="post"
-          class="checkout-grid"
-          id="orderSubmitForm">
+          class="checkout-grid">
 
         <!-- CỘT TRÁI: ĐỊA CHỈ VÀ GHI CHÚ -->
         <section class="checkout-section">
-            <h2>📍 Địa chỉ nhận hàng</h2>
+            <h2>Địa chỉ nhận hàng</h2>
 
-            <div class="address-options-list" th:unless="${#lists.isEmpty(addresses)}">
-                <label class="address-option" th:each="address, item : ${addresses}">
-                    <div class="address-header">
-                        <input type="radio"
-                               name="addressId"
-                               th:value="${address.id}"
-                               th:checked="${address.is_default or item.first}"
-                               onchange="toggleNewAddressFields(false)">
-                        <span class="recipient-name" th:text="${address.recipient_name}">Người nhận</span>
-                        <span class="recipient-phone" th:text="'(' + ${address.recipient_phone} + ')'">(0912345678)</span>
-                        <span class="default-tag" th:if="${address.is_default}">Mặc định</span>
-                    </div>
-                    <div class="address-body"
-                         th:text="${address.address_detail + ', ' + address.ward_name + ', ' + address.province_name}">
-                        Địa chỉ chi tiết
-                    </div>
-                </label>
-            </div>
+            <label class="address-option"
+                   th:each="address, item : ${addresses}">
 
-            <!-- Tùy chọn nhập địa chỉ mới -->
-            <label class="new-address-toggle">
+                <input type="radio"
+                       name="addressId"
+                       th:value="${address.id}"
+                       th:checked="${address.is_default or item.first}">
+
+                <strong th:text="${address.recipient_name}">
+                    Người nhận
+                </strong>
+
+                ·
+
+                <span th:text="${address.recipient_phone}">
+                    Số điện thoại
+                </span>
+
+                <br>
+
+                <span th:text="${address.address_detail + ', ' +
+                    address.ward_name + ', ' + address.province_name}">
+                    Địa chỉ
+                </span>
+            </label>
+
+            <label class="address-option">
                 <input type="radio"
                        name="addressId"
                        value="0"
-                       id="radioNewAddress"
-                       th:checked="${#lists.isEmpty(addresses)}"
-                       onchange="toggleNewAddressFields(true)">
-                <span>+ Nhập địa chỉ giao hàng mới</span>
+                       th:checked="${#lists.isEmpty(addresses)}">
+
+                Nhập địa chỉ giao hàng mới
             </label>
 
-            <!-- Form điền địa chỉ mới -->
-            <div class="new-address-fields" id="newAddressFields">
-                <div class="section-subtitle">Thông tin người nhận mới</div>
-
-                <div class="form-group">
-                    <label for="recipientName">Họ và tên người nhận</label>
-                    <input class="form-control"
-                           id="recipientName"
-                           type="text"
-                           name="recipientName"
-                           placeholder="Ví dụ: Nguyễn Văn A"
-                           maxlength="150"
-                           autocomplete="name">
-                </div>
-
-                <div class="form-group">
-                    <label for="recipientPhone">Số điện thoại liên hệ</label>
-                    <input class="form-control"
-                           id="recipientPhone"
-                           type="tel"
-                           name="recipientPhone"
-                           placeholder="Ví dụ: 0912345678"
-                           maxlength="20"
-                           autocomplete="tel">
-                </div>
-
-                <div class="form-group">
-                    <label for="provinceCode">Tỉnh / Thành phố</label>
-                    <select class="form-control"
-                            id="provinceCode"
-                            name="provinceCode">
-                        <option value="">-- Chọn tỉnh / thành phố --</option>
-                        <option th:each="province : ${provinces}"
-                                th:value="${province.code}"
-                                th:text="${province.name}">
-                        </option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="wardName">Phường / Xã</label>
-                    <input class="form-control"
-                           id="wardName"
-                           type="text"
-                           name="wardName"
-                           placeholder="Ví dụ: Phường Bến Nghé"
-                           maxlength="150">
-                </div>
-
-                <div class="form-group">
-                    <label for="addressDetail">Địa chỉ cụ thể (Số nhà, tên đường, tòa nhà)</label>
-                    <input class="form-control"
-                           id="addressDetail"
-                           type="text"
-                           name="addressDetail"
-                           placeholder="Ví dụ: 123 Lê Lợi, Căn hộ A102"
-                           maxlength="500"
-                           autocomplete="street-address">
-                </div>
+            <div class="form-group">
+                <label for="recipientName">Tên người nhận</label>
+                <input class="form-control"
+                       id="recipientName"
+                       type="text"
+                       name="recipientName"
+                       maxlength="150"
+                       autocomplete="name">
             </div>
 
-            <!-- Ghi chú đơn hàng -->
-            <div class="form-group" style="margin-top: 24px;">
-                <label for="customerNote">📝 Ghi chú cho người bán / giao hàng</label>
+            <div class="form-group">
+                <label for="recipientPhone">Số điện thoại</label>
+                <input class="form-control"
+                       id="recipientPhone"
+                       type="tel"
+                       name="recipientPhone"
+                       maxlength="20"
+                       autocomplete="tel">
+            </div>
+
+            <div class="form-group">
+                <label for="provinceCode">Tỉnh/thành</label>
+                <select class="form-control"
+                        id="provinceCode"
+                        name="provinceCode">
+                    <option value="">Chọn tỉnh/thành</option>
+
+                    <option th:each="province : ${provinces}"
+                            th:value="${province.code}"
+                            th:text="${province.name}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="wardName">Phường/xã</label>
+                <input class="form-control"
+                       id="wardName"
+                       type="text"
+                       name="wardName"
+                       maxlength="150">
+            </div>
+
+            <div class="form-group">
+                <label for="addressDetail">Địa chỉ cụ thể</label>
+                <input class="form-control"
+                       id="addressDetail"
+                       type="text"
+                       name="addressDetail"
+                       maxlength="500"
+                       autocomplete="street-address">
+            </div>
+
+            <div class="form-group">
+                <label for="customerNote">Ghi chú đơn hàng</label>
                 <textarea class="form-control note"
                           id="customerNote"
                           name="customerNote"
-                          placeholder="Ví dụ: Giao vào giờ hành chính, gọi trước khi đến..."
                           maxlength="1000"></textarea>
             </div>
 
-            <!-- Phương thức thanh toán -->
-            <h2 style="margin-top: 32px;">💳 Phương thức thanh toán</h2>
-            <div class="payment-card">
-                <div class="payment-icon">💵</div>
-                <div class="payment-info">
-                    <strong>Thanh toán khi nhận hàng (COD)</strong>
-                    <small>Kiểm tra hàng trước khi thanh toán cho nhân viên giao vận</small>
-                </div>
-            </div>
+            <h2>Phương thức thanh toán</h2>
+            <p>Thanh toán khi nhận hàng (COD)</p>
         </section>
 
         <!-- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG -->
         <section class="checkout-section">
-            <h2>🛒 Chi tiết sản phẩm</h2>
+            <h2>Sản phẩm</h2>
 
-            <div class="order-items-list">
-                <div th:each="item : ${checkoutItems}" class="order-item-row">
-                    <div class="order-item-name">
-                        <strong th:text="${item.product_name}">Tên sản phẩm</strong>
-                        <div style="color: var(--muted); font-size: 12px; margin-top: 2px;"
-                             th:text="${item.variant_name} + ' × ' + ${item.quantity}">
-                            Phân loại × Số lượng
-                        </div>
-                    </div>
+            <div th:each="item : ${checkoutItems}" class="line">
+                <span th:text="${item.product_name + ' - ' +
+                    item.variant_name + ' × ' + item.quantity}">
+                    Tên sản phẩm
+                </span>
 
-                    <strong class="order-item-price"
-                            th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                        0 ₫
-                    </strong>
-                </div>
                 <strong>
                     <small class="price-old" th:if="${item.original_price != null and item.price < item.original_price}"
                            th:text="${#numbers.formatDecimal(item.original_price * item.quantity, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</small>
@@ -390,38 +307,42 @@
                    th:each="id : ${selectedVariantIds}"
                    th:value="${id}">
 
-            <div class="totals-breakdown">
-                <div class="totals-row">
-                    <span>Tạm tính hàng hóa</span>
-                    <strong th:text="${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+            <div class="totals">
+                <div class="line">
+                    <span>Tạm tính</span>
+                    <span th:text="${#numbers.formatDecimal(
+                        subtotal, 0, 'COMMA', 0, 'POINT'
+                    ) + ' ₫'}">
                         0 ₫
-                    </strong>
+                    </span>
                 </div>
 
-                <div class="totals-row">
-                    <span>Phí vận chuyển</span>
-                    <strong th:text="${#numbers.formatDecimal(shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                <div class="line">
+                    <span>Phí giao hàng</span>
+                    <span th:text="${#numbers.formatDecimal(
+                        shippingFee, 0, 'COMMA', 0, 'POINT'
+                    ) + ' ₫'}">
                         0 ₫
-                    </strong>
+                    </span>
                 </div>
 
-                <div class="totals-row grand">
+                <div class="line grand">
                     <span>Tổng thanh toán</span>
-                    <span class="grand-price"
-                          th:text="${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                    <span th:text="${#numbers.formatDecimal(
+                        total, 0, 'COMMA', 0, 'POINT'
+                    ) + ' ₫'}">
                         0 ₫
                     </span>
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit-order" id="btnPlaceOrder">
-                <span>Xác nhận Đặt hàng</span>
-                <span>→</span>
+            <button type="submit"
+                    class="primary-btn"
+                    style="width:100%;justify-content:center;margin-top:22px">
+                Đặt hàng
             </button>
         </section>
-
     </form>
-
 </main>
 
 <footer class="site-footer">
@@ -437,41 +358,32 @@
             <p>Trái cây tươi chất lượng, giao tận nơi.</p>
         </div>
 
-        <div class="footer-links">
-            <a th:href="@{/search}">Sản phẩm</a>
-            <a th:href="@{/#categories}">Danh mục</a>
-            <a th:href="@{/#about}">Về chúng tôi</a>
-        </div>
-
         <small>© 2026 FreshFruit. All rights reserved.</small>
     </div>
 </footer>
 
+<script th:src="@{/js/notifications.js}"></script>
 <script>
-    function toggleNewAddressFields(show) {
-        const fields = document.getElementById('newAddressFields');
-        if (!fields) return;
-        if (show) {
-            fields.style.display = 'block';
-        } else {
-            // If user has saved addresses and picks one, dim or keep optional
-            const radioNew = document.getElementById('radioNewAddress');
-            if (radioNew && !radioNew.checked) {
-                fields.style.display = 'none';
-            }
-        }
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const addressRadios = document.querySelectorAll('input[name="addressId"]');
+        const newAddressFields = document.querySelectorAll('#recipientName, #recipientPhone, #provinceCode, #wardName, #addressDetail');
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const radioNew = document.getElementById('radioNewAddress');
-        if (radioNew) {
-            toggleNewAddressFields(radioNew.checked);
+        function toggleNewAddressFields() {
+            const newAddressRadio = document.querySelector('input[name="addressId"][value="0"]');
+            const isNewAddressChecked = newAddressRadio ? newAddressRadio.checked : true;
+
+            newAddressFields.forEach(field => {
+                field.disabled = !isNewAddressChecked;
+                field.required = isNewAddressChecked;
+            });
         }
+
+        addressRadios.forEach(radio => {
+            radio.addEventListener('change', toggleNewAddressFields);
+        });
+
+        toggleNewAddressFields();
     });
 </script>
-
-<script th:src="@{/js/notifications.js}"></script>
-<script th:src="@{/js/cart-integration.js}"></script>
-
 </body>
 </html>
