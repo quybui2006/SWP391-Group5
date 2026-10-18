@@ -14,33 +14,20 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     boolean existsByShopIdAndSku(Long shopId, String sku);
 
-    /** Chỉ trả biến thể đang bán thuộc sản phẩm được duyệt để tạo khuyến mãi. */
+    /** Hậu kiểm: biến thể đang bán của sản phẩm ACTIVE có thể được chọn tạo khuyến mãi dù approval_status còn PENDING. */
     @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p " +
             "WHERE pv.shopId = :shopId AND pv.status = 'ACTIVE' " +
-            "AND p.approvalStatus = 'APPROVED' " +
+            "AND p.sellingStatus = 'ACTIVE' " +
             "ORDER BY pv.name ASC")
     List<ProductVariant> findPromotionEligibleVariants(@Param("shopId") Long shopId);
 
-    // Tìm các biến thể sản phẩm đang ACTIVE
-    // và thuộc về Product cũng đang ACTIVE
-    List<ProductVariant> findByStatusAndProduct_SellingStatusAndProduct_ApprovalStatus(
-            String variantStatus,
-            String productStatus,
-            String approvalStatus
-    );
-
-    // Tìm kiếm sản phẩm theo tên (chứa từ khóa) và trạng thái ACTIVE
-    List findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatusAndProduct_ApprovalStatus(
-            String keyword,
-            String variantStatus,
-            String productStatus,
-            String approvalStatus
-    );
+    /** Danh mục khách hàng theo hậu kiểm: chỉ xét trạng thái bán của sản phẩm, không xét approval_status. */
+    List<ProductVariant> findByStatusAndProduct_SellingStatus(String variantStatus, String productStatus);
 
     // Câu Query kết hợp Tìm kiếm (keyword) + Lọc giá (min/max) + Lọc Danh mục
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p LEFT JOIN p.categories c " +
-            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
+            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' " +
             "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +

@@ -7,10 +7,8 @@ import java.util.List;
 
 /**
  * Bảng product_categories là bảng nối nhiều-nhiều giữa products và categories.
- *
- * Vì entity.Category chưa khai báo quan hệ ngược (List products) nên không
- * thể thao tác qua JPA. Dùng JdbcTemplate cho gọn, không phải sửa file
- * của người khác.
+ * Dùng JdbcTemplate để thao tác trực tiếp với bảng nối, đồng thời giữ tương
+ * thích với các luồng hiện có chưa dùng quan hệ JPA hai chiều.
  */
 @Repository
 public class ProductCategoryLinkRepository {
@@ -36,7 +34,24 @@ public class ProductCategoryLinkRepository {
     }
 
     /**
-     * Mỗi sản phẩm giữ đúng một danh mục: xoá hết liên kết cũ rồi gắn mới.
+     * Thêm nhiều liên kết danh mục cho sản phẩm mới.
+     * Phương thức được gọi trong transaction của tầng service.
+     */
+    public void addCategories(Long productId, List<Long> categoryIds) {
+        if (productId == null || categoryIds == null || categoryIds.isEmpty()) {
+            return;
+        }
+        for (Long categoryId : categoryIds.stream().distinct().toList()) {
+            if (categoryId != null) {
+                jdbc.update("INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)",
+                        productId, categoryId);
+            }
+        }
+    }
+
+    /**
+     * Thay thế danh mục đang có. Giữ lại để tương thích với màn hình chỉnh sửa
+     * hiện đang cho chọn một danh mục.
      */
     public void replaceCategory(Long productId, Long categoryId) {
         jdbc.update("DELETE FROM product_categories WHERE product_id = ?", productId);

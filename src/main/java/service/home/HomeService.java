@@ -25,7 +25,7 @@ public class HomeService {
 
     public List<ProductVariant> getActiveProductsForHome() {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        List<ProductVariant> variants = productVariantRepository.findByStatusAndProduct_SellingStatusAndProduct_ApprovalStatus("ACTIVE", "ACTIVE", "APPROVED");
+        List<ProductVariant> variants = productVariantRepository.findByStatusAndProduct_SellingStatus("ACTIVE", "ACTIVE");
         if (variants.isEmpty()) return variants;
         List<Long> variantIds = variants.stream().map(ProductVariant::getId).toList();
         Map<Long, java.math.BigDecimal> activePrices = promotionalPriceRepository

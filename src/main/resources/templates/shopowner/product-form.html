@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm sản phẩm | FreshFruit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
 </head>
@@ -33,8 +34,13 @@
                     </label>
                     <label class="field field-wide">
                         <span>Ảnh sản phẩm <b>*</b></span>
-                        <input id="productImage" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" required aria-describedby="productImageHelp">
-                        <small id="productImageHelp">Bắt buộc. Chỉ chấp nhận ảnh JPG hoặc PNG, dung lượng tối đa 5 MB.</small>
+                        <input id="productImage" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" required
+                               aria-describedby="productImageHelp productImageValidationError"
+                               data-upload-max-bytes="5242880" data-upload-allowed-types="image/jpeg,image/png"
+                               data-upload-label="Ảnh sản phẩm" data-upload-error-id="productImageValidationError"
+                               data-upload-preview-id="productImagePreview">
+                        <small id="productImageHelp">Bắt buộc. Chỉ chấp nhận ảnh JPG hoặc PNG, dung lượng tối đa 5 MB. Ảnh vượt giới hạn sẽ bị chặn trước khi gửi biểu mẫu.</small>
+                        <small id="productImageValidationError" class="upload-validation-error" role="alert" aria-live="polite" hidden></small>
                         <em th:errors="*{imageFile}"></em>
                         <img id="productImagePreview" alt="Xem trước ảnh sản phẩm" style="display:none; max-width:220px; max-height:180px; margin-top:10px; border-radius:10px; object-fit:contain;">
                     </label>
@@ -43,6 +49,21 @@
                         <input type="text" th:field="*{batchCode}" maxlength="60" placeholder="Ví dụ: CAM-20261012" required>
                         <em th:errors="*{batchCode}"></em>
                     </label>
+                    <div class="field">
+                        <label for="categoryIds" class="form-label fw-semibold">
+                            Danh mục <span class="text-danger">*</span>
+                        </label>
+
+                        <select id="categoryIds"
+                                class="form-select"
+                                th:field="*{categoryIds}">
+                            <option value="">Chọn danh mục</option>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.name}">
+                            </option>
+                        </select>
+                    </div>
                     <label class="field">
                         <span>Xuất xứ</span>
                         <input type="text" th:field="*{origin}" maxlength="150" placeholder="Ví dụ: Vĩnh Long">
@@ -65,6 +86,7 @@
                         <textarea th:field="*{description}" rows="4" placeholder="Mô tả ngắn về chất lượng, đặc điểm sản phẩm..."></textarea>
                         <em th:errors="*{description}"></em>
                     </label>
+
                 </div>
             </section>
             <div class="form-actions">
@@ -72,30 +94,9 @@
                 <button class="button button-primary" type="submit">Lưu sản phẩm</button>
             </div>
         </form>
+        <script th:src="@{/js/upload-validation.js?v=20261017}"></script>
         <script>
             (() => {
-                const imageInput = document.getElementById("productImage");
-                const imagePreview = document.getElementById("productImagePreview");
-                if (imageInput && imagePreview) {
-                    imageInput.addEventListener("change", () => {
-                        const file = imageInput.files && imageInput.files[0];
-                        if (!file) {
-                            imagePreview.removeAttribute("src");
-                            imagePreview.style.display = "none";
-                            return;
-                        }
-                        if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-                            imageInput.setCustomValidity("Chỉ chấp nhận ảnh JPG/PNG tối đa 5 MB.");
-                            imageInput.reportValidity();
-                            imageInput.value = "";
-                            imagePreview.style.display = "none";
-                            return;
-                        }
-                        imageInput.setCustomValidity("");
-                        imagePreview.src = URL.createObjectURL(file);
-                        imagePreview.style.display = "block";
-                    });
-                }
                 const received = document.getElementById("receivedDate");
                 const expiry = document.getElementById("expiryDate");
                 if (!received || !expiry) return;

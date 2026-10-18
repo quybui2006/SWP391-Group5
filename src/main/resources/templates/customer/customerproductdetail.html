@@ -244,14 +244,14 @@
 
                 <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
                 <div class="fresh-price-banner">
-                    <!-- Giá bán chính -->
-                    <span class="price-main" th:if="${variant.price != null}"
-                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                        120.000 ₫
-                    </span>
-                    <span class="price-main" th:if="${variant.price == null}">
-                        Liên hệ
-                    </span>
+                    <!-- Giá khuyến mãi đang có hiệu lực (giờ Việt Nam) -->
+                    <span class="price-old" th:if="${variant.price != null and variant.promotionalPrice != null}"
+                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">120.000 ₫</span>
+                    <span class="price-main" th:if="${variant.price != null and variant.promotionalPrice != null}"
+                          th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">99.000 ₫</span>
+                    <span class="price-main" th:if="${variant.price != null and variant.promotionalPrice == null}"
+                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">120.000 ₫</span>
+                    <span class="price-main" th:if="${variant.price == null}">Liên hệ</span>
 
                     <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
                 </div>

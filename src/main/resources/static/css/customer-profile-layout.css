@@ -89,3 +89,7 @@
     .customer-profile-page .field-caption { text-align: left; }
     .customer-profile-page .save-row > span { display: none; }
 }
+
+
+.upload-validation-error { display: block; margin-top: 6px; color: #b42318; font-size: 0.875rem; line-height: 1.45; }
+.upload-validation-error[hidden] { display: none !important; }

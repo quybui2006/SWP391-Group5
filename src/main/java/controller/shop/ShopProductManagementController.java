@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.shop.ProductValidationException;
 import service.shop.ShopProductService;
 import service.shop.ProductNotFoundException;
+import repository.CategoryRepository;
 
 import java.time.LocalDate;
 
@@ -30,9 +31,12 @@ import java.time.LocalDate;
 public class ShopProductManagementController {
     private static final int PAGE_SIZE = 10;
     private final ShopProductService products;
+    private final CategoryRepository categoryRepository;
 
-    public ShopProductManagementController(ShopProductService products) {
+    public ShopProductManagementController(ShopProductService products,
+                                          CategoryRepository categoryRepository) {
         this.products = products;
+        this.categoryRepository = categoryRepository;
     }
 
     @GetMapping({"/shop/products", "/shopowner/products"})
@@ -53,6 +57,7 @@ public class ShopProductManagementController {
         ProductCreateRequest form = new ProductCreateRequest();
         form.setReceivedDate(LocalDate.now());
         model.addAttribute("productCreateRequest", form);
+        populateActiveCategories(model);
         return "shopowner/product-form";
     }
 
@@ -69,16 +74,27 @@ public class ShopProductManagementController {
                 && !form.getExpiryDate().isAfter(form.getReceivedDate())) {
             binding.rejectValue("expiryDate", "expiryDate.invalid", "Ngày hết hạn phải sau ngày nhập kho.");
         }
-        if (binding.hasErrors()) return "shopowner/product-form";
+        if (binding.hasErrors()) {
+            populateActiveCategories(model);
+            return "shopowner/product-form";
+        }
         try {
             Long productId = products.createProduct(ownerId, form);
-            redirect.addFlashAttribute("success", "Đã tạo sản phẩm và lưu ảnh thành công. Bạn có thể thêm biến thể trong mục Biến thể sản phẩm.");
+            redirect.addFlashAttribute("success", "Đã tạo sản phẩm và đưa lên sàn theo cơ chế hậu kiểm. Bạn có thể thêm biến thể trong mục Biến thể sản phẩm; Quản lý vận hành sẽ kiểm tra sau.");
             return "redirect:/shop/products";
         } catch (ProductValidationException ex) {
-            ex.getFieldErrors().forEach(binding::rejectValue);
+            // The service supplies user-facing text, not a Spring message-code.
+            // Passing it as rejectValue's second argument makes Thymeleaf resolve
+            // that Vietnamese sentence as a message key and can trigger NoSuchMessageException.
+            ex.getFieldErrors().forEach((field, message) -> {
+                if (field != null && !field.isBlank() && message != null && !message.isBlank()) {
+                    binding.rejectValue(field, null, message);
+                }
+            });
         } catch (DataIntegrityViolationException ex) {
-            model.addAttribute("serviceError", "Không thể lưu sản phẩm. Hãy kiểm tra mã lô và dữ liệu bắt buộc.");
+            model.addAttribute("serviceError", "Không thể lưu sản phẩm. Hãy kiểm tra mã lô, danh mục và dữ liệu bắt buộc.");
         }
+        populateActiveCategories(model);
         return "shopowner/product-form";
     }
 
@@ -95,7 +111,7 @@ public class ShopProductManagementController {
         try {
             products.submitForApproval(id, ownerId);
             return ResponseEntity.ok(new SubmitProductApprovalResponse(
-                    true, "Đã gửi yêu cầu duyệt sản phẩm đến Quản lý vận hành.", "PENDING"));
+                    true, "Sản phẩm đã được đưa vào hàng đợi hậu kiểm.", "PENDING"));
         } catch (ProductValidationException ex) {
             String message = ex.getFieldErrors().values().stream().findFirst()
                     .orElse("Dữ liệu sản phẩm chưa hợp lệ.");
@@ -112,6 +128,10 @@ public class ShopProductManagementController {
             return ResponseEntity.badRequest().body(new SubmitProductApprovalResponse(false,
                     "Không thể gửi duyệt do dữ liệu chưa đáp ứng điều kiện hệ thống. Vui lòng tải lại và thử lại.", null));
         }
+    }
+
+    private void populateActiveCategories(Model model) {
+        model.addAttribute("categories", categoryRepository.findByIsActiveTrue());
     }
 
     private Long ownerId(HttpServletRequest request) {

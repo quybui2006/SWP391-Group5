@@ -41,6 +41,7 @@ import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,10 +130,13 @@ public class ShopProductService {
                 .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy tồn kho biến thể."));
         ProductVariantEditForm form = new ProductVariantEditForm();
         form.setId(variant.getId()); form.setProductName(variant.getProduct().getName());
-        form.setProductApproved("APPROVED".equals(variant.getProduct().getApprovalStatus()));
+        boolean productCanSell = "ACTIVE".equals(variant.getProduct().getSellingStatus())
+                && ("PENDING".equals(variant.getProduct().getApprovalStatus())
+                    || "APPROVED".equals(variant.getProduct().getApprovalStatus()));
+        form.setProductCanSell(productCanSell);
         form.setVariantName(variant.getName()); form.setSku(variant.getSku()); form.setSpecification(variant.getSpecification());
-        // UI không được hiển thị ACTIVE / INACTIVE nếu sản phẩm cha chưa được duyệt.
-        form.setStatus(form.isProductApproved() ? variant.getStatus() : "DRAFT");
+        // Hậu kiểm: sản phẩm PENDING nhưng ACTIVE vẫn cho phép quản lý trạng thái biến thể.
+        form.setStatus(productCanSell ? variant.getStatus() : "DRAFT");
         form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice());
         form.setQuantityOnHand(inventory.getQuantityOnHand()); form.setLowStockThresholdPct(inventory.getLowStockThresholdPct());
         form.setUnits(activeUnitOptions());
@@ -165,9 +169,11 @@ public class ShopProductService {
         String requestedStatus = upperOrNull(form.getStatus());
         if (requestedStatus == null || !Set.of("DRAFT", "ACTIVE", "INACTIVE").contains(requestedStatus)) {
             errors.put("status", "Trạng thái biến thể không hợp lệ.");
-        } else if (!"APPROVED".equals(variant.getProduct().getApprovalStatus())
+        } else if (!("ACTIVE".equals(variant.getProduct().getSellingStatus())
+                    && ("PENDING".equals(variant.getProduct().getApprovalStatus())
+                        || "APPROVED".equals(variant.getProduct().getApprovalStatus())))
                 && !"DRAFT".equals(requestedStatus)) {
-            errors.put("status", "Sản phẩm cần được Quản lý vận hành duyệt trước khi bán.");
+            errors.put("status", "Sản phẩm chưa ở trạng thái mở bán; chưa thể bật bán cho biến thể.");
         }
         Unit unit = form.getUnitId() == null ? null : unitRepository.findById(form.getUnitId()).filter(u -> Boolean.TRUE.equals(u.getIsActive())).orElse(null);
         if (unit == null) errors.put("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động.");
@@ -257,6 +263,28 @@ public class ShopProductService {
         }
         if (!errors.isEmpty()) throw new ProductValidationException(errors);
 
+        // Danh mục gửi từ form phải tồn tại và đang hoạt động; không tin trực tiếp ID từ client.
+        List<Long> selectedCategoryIds = new java.util.ArrayList<>();
+        if (form.getCategoryIds() != null) {
+            Set<Long> uniqueCategoryIds = new LinkedHashSet<>();
+            for (Long categoryId : form.getCategoryIds()) {
+                if (categoryId == null) {
+                    throw new ProductValidationException("categoryIds", "Danh mục không hợp lệ. Vui lòng chọn lại.");
+                }
+                uniqueCategoryIds.add(categoryId);
+            }
+            selectedCategoryIds.addAll(uniqueCategoryIds);
+        }
+        if (!selectedCategoryIds.isEmpty()) {
+            Set<Long> activeCategoryIds = categoryRepository.findByIsActiveTrue().stream()
+                    .map(Category::getId)
+                    .collect(Collectors.toSet());
+            if (!activeCategoryIds.containsAll(selectedCategoryIds)) {
+                throw new ProductValidationException("categoryIds",
+                        "Một hoặc nhiều danh mục không tồn tại hoặc đã ngừng hoạt động. Vui lòng tải lại trang.");
+            }
+        }
+
         Shop shop = shopRepository.findByOwnerId(ownerUserId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.FORBIDDEN, "Tài khoản chưa có cửa hàng."));
@@ -281,13 +309,17 @@ public class ShopProductService {
             product.setBatchCode(batchCode);
             product.setReceivedDate(form.getReceivedDate());
             product.setExpiryDate(form.getExpiryDate());
-            // Sản phẩm mới luôn phải qua luồng DRAFT -> PENDING -> APPROVED.
-            product.setApprovalStatus("DRAFT");
-            product.setSellingStatus("DRAFT");
-            product.setSubmittedAt(null);
+            // HẬU KIỂM: xuất bản ngay sau khi tạo. Operations Manager kiểm tra sau;
+            // nếu từ chối, repository sẽ chuyển selling_status sang PAUSED để gỡ khỏi sàn.
+            product.setApprovalStatus("PENDING");
+            product.setSellingStatus("ACTIVE");
+            product.setSubmittedAt(LocalDateTime.now(BUSINESS_ZONE));
             product.setReviewedAt(null);
             product.setRejectionReason(null);
             product = productRepository.saveAndFlush(product);
+
+            // Lưu product trước để lấy ID, sau đó ghi tất cả liên kết danh mục trong cùng transaction.
+            categoryLinkRepository.addCategories(product.getId(), selectedCategoryIds);
 
             ProductImage image = new ProductImage();
             image.setProductId(product.getId());
@@ -325,7 +357,11 @@ public class ShopProductService {
             variant.setName(form.getVariantName().trim());
             variant.setBaseUnit(unit);
             variant.setPrice(form.getPrice());
-            variant.setStatus("DRAFT");
+            // HẬU KIỂM: biến thể của sản phẩm đang được mở bán có thể hiển thị ngay,
+            // không phải chờ approval_status chuyển sang APPROVED.
+            boolean productCanSell = "ACTIVE".equals(product.getSellingStatus())
+                    && ("PENDING".equals(product.getApprovalStatus()) || "APPROVED".equals(product.getApprovalStatus()));
+            variant.setStatus(productCanSell ? "ACTIVE" : "DRAFT");
             variant.setImageUrl(imageUrl);
             variant.setMinOrderQuantity(1);
             variant = variantRepository.saveAndFlush(variant);
@@ -399,9 +435,12 @@ public class ShopProductService {
         String sellingStatus = upperOrNull(form.getSellingStatus());
         String currentApprovalStatus = product.getApprovalStatus();
 
-        if ("ACTIVE".equals(sellingStatus) && !"APPROVED".equals(currentApprovalStatus)) {
+        // Hậu kiểm: sản phẩm PENDING được phép tiếp tục ACTIVE. Sản phẩm DRAFT/REJECTED
+        // vẫn phải gửi lại để được đưa về PENDING trước khi xuất bản.
+        if ("ACTIVE".equals(sellingStatus)
+                && !("APPROVED".equals(currentApprovalStatus) || "PENDING".equals(currentApprovalStatus))) {
             throw new ProductValidationException("sellingStatus",
-                    "Sản phẩm cần được Quản lý vận hành duyệt trước khi chuyển sang Đang bán.");
+                    "Sản phẩm cần được gửi lên hệ thống hậu kiểm trước khi mở bán.");
         }
 
         product.setName(name);
@@ -429,13 +468,75 @@ public class ShopProductService {
         }
     }
 
-    /** Shop Owner chỉ được gửi sản phẩm DRAFT sang Operations Manager duyệt. */
+    /**
+     * Lưu trữ sản phẩm thay vì xóa cứng để không phá vỡ lịch sử đơn hàng,
+     * biến thể và các khóa ngoại liên quan. Chỉ chủ cửa hàng sở hữu mới được thao tác.
+     */
+    @Transactional
+    public void archiveProduct(Long productId, Long ownerUserId) {
+        Product product = loadOwnedProduct(productId, ownerUserId);
+        // Cho phép chủ shop gỡ sản phẩm đang chờ hậu kiểm khỏi sàn ngay lập tức.
+        // Operations Manager vẫn có thể xử lý approval_status riêng; approve không tự bật lại bán.
+        product.setSellingStatus("ARCHIVED");
+        productRepository.save(product);
+    }
+
+    /**
+     * Xóa cứng sản phẩm chỉ khi chưa phát sinh lịch sử giao dịch/đơn hàng/đánh giá.
+     * Nếu đã có lịch sử thì yêu cầu lưu trữ để không làm mất dữ liệu nghiệp vụ.
+     */
+    @Transactional
+    public void deleteProduct(Long productId, Long ownerUserId) {
+        Product product = loadOwnedProduct(productId, ownerUserId);
+
+        Long variantCount = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM product_variants WHERE product_id = ?", Long.class, productId);
+        if (variantCount != null && variantCount > 0) {
+            Long orderHistory = jdbc.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM order_items oi
+                    JOIN product_variants pv ON pv.id = oi.variant_id
+                    WHERE pv.product_id = ?
+                    """, Long.class, productId);
+            Long reviewHistory = jdbc.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM reviews r
+                    JOIN product_variants pv ON pv.id = r.variant_id
+                    WHERE pv.product_id = ?
+                    """, Long.class, productId);
+            Long inventoryHistory = jdbc.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM inventory_transactions it
+                    JOIN variant_inventory vi ON vi.id = it.inventory_id
+                    JOIN product_variants pv ON pv.id = vi.variant_id
+                    WHERE pv.product_id = ?
+                    """, Long.class, productId);
+            if ((orderHistory != null && orderHistory > 0)
+                    || (reviewHistory != null && reviewHistory > 0)
+                    || (inventoryHistory != null && inventoryHistory > 0)) {
+                throw new ProductValidationException("product",
+                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho. Hãy dùng Lưu trữ sản phẩm.");
+            }
+
+            // Chỉ dọn dữ liệu phụ khi chưa có lịch sử cần bảo toàn.
+            jdbc.update("DELETE ci FROM cart_items ci JOIN product_variants pv ON pv.id = ci.variant_id WHERE pv.product_id = ?", productId);
+            jdbc.update("DELETE cf FROM customer_favorites cf JOIN product_variants pv ON pv.id = cf.variant_id WHERE pv.product_id = ?", productId);
+            jdbc.update("DELETE pp FROM promotional_prices pp JOIN product_variants pv ON pv.id = pp.variant_id WHERE pv.product_id = ?", productId);
+            jdbc.update("DELETE vi FROM variant_inventory vi JOIN product_variants pv ON pv.id = vi.variant_id WHERE pv.product_id = ?", productId);
+            jdbc.update("DELETE FROM product_variants WHERE product_id = ?", productId);
+        }
+        jdbc.update("DELETE FROM product_images WHERE product_id = ?", productId);
+        jdbc.update("DELETE FROM product_categories WHERE product_id = ?", productId);
+        jdbc.update("DELETE FROM products WHERE id = ? AND shop_id = ?", productId, product.getShopId());
+    }
+
+    /** Dành cho sản phẩm DRAFT cũ: chuyển sang PENDING và xuất bản theo cơ chế hậu kiểm. */
     @Transactional
     public void submitForApproval(Long productId, Long ownerUserId) {
         Product product = loadOwnedProduct(productId, ownerUserId);
         if (!"DRAFT".equals(product.getApprovalStatus())) {
             throw new ProductValidationException("approvalStatus",
-                    "Chỉ sản phẩm ở trạng thái Bản nháp mới có thể gửi duyệt.");
+                    "Chỉ sản phẩm ở trạng thái Bản nháp mới có thể gửi vào hàng đợi hậu kiểm.");
         }
         int changed = productRepository.submitDraftForApproval(
                 productId, product.getShopId(), LocalDateTime.now(BUSINESS_ZONE));

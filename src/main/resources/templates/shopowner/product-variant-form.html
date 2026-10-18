@@ -56,7 +56,7 @@
                     </label>
                     <label class="field">
                         <span>Giá bán (VNĐ) <b>*</b></span>
-                        <input type="number" th:field="*{price}" min="1" step="1000" placeholder="50000" required>
+                        <input type="number" th:field="*{price}" min="1" step="1" placeholder="50000" required>
                         <em th:errors="*{price}"></em>
                     </label>
                 </div>
@@ -80,12 +80,16 @@
 
             <section class="form-card">
                 <h2>Hình ảnh biến thể</h2>
-                <div class="upload-row">
+                <div class="upload-row upload-validation-row">
                     <label class="upload-box" for="imageFile">
-                        <input id="imageFile" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" required>
+                        <input id="imageFile" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" required
+                               aria-describedby="variantImageHelp variantImageValidationError"
+                               data-upload-max-bytes="5242880" data-upload-allowed-types="image/jpeg,image/png"
+                               data-upload-label="Ảnh biến thể" data-upload-error-id="variantImageValidationError">
                         <span>Chọn ảnh JPG hoặc PNG</span>
-                        <small>Dung lượng tối đa 5 MB</small>
+                        <small id="variantImageHelp">Dung lượng tối đa 5 MB. Ảnh vượt giới hạn sẽ bị chặn trước khi gửi biểu mẫu.</small>
                     </label>
+                    <small id="variantImageValidationError" class="upload-validation-error" role="alert" aria-live="polite" hidden></small>
                 </div>
                 <em class="field-error" th:errors="*{imageFile}"></em>
             </section>
@@ -98,5 +102,6 @@
     </main>
 </div>
 <script th:src="@{/js/shop-product.js}"></script>
+<script th:src="@{/js/upload-validation.js?v=20261017}"></script>
 </body>
 </html>

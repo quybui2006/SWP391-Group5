@@ -64,16 +64,30 @@ public class OrderCheckoutService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         Object[] args = new Object[variantIds.size() + 5]; args[0] = now; args[1] = now; args[2] = now; args[3] = now; args[4] = userId;
         for (int i = 0; i < variantIds.size(); i++) args[i + 5] = variantIds.get(i);
-        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
+        // HẬU KIỂM: lấy cả sản phẩm đã bị tạm ngừng/từ chối để có thể chặn checkout
+        // bằng tên cụ thể. FOR UPDATE khóa các dòng liên quan trong suốt lúc chốt đơn,
+        // tránh Operations Manager từ chối đúng giữa bước kiểm tra và tạo đơn.
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.status AS variant_status,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
-                "pv.image_url,p.expiry_date,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code " +
-                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE' AND p.approval_status='APPROVED' AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
-        if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hoặc không mở bán.");
+                "pv.image_url,p.expiry_date,p.name AS product_name,p.selling_status AS product_selling_status,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity, " +
+                "s.province_code AS shop_province_code,s.name AS shop_name,s.approval_status AS shop_approval_status,s.operating_status AS shop_operating_status " +
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") FOR UPDATE", args);
+        if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hàng. Vui lòng tải lại giỏ hàng.");
         BigDecimal subtotal = BigDecimal.ZERO;
         for (Map<String, Object> line : lines) {
+            String productName = String.valueOf(line.get("product_name"));
+            if (!"ACTIVE".equals(line.get("product_selling_status"))) {
+                throw new IllegalArgumentException("Sản phẩm " + productName + " đã bị gỡ khỏi sàn.");
+            }
+            if (!"ACTIVE".equals(line.get("variant_status"))) {
+                throw new IllegalArgumentException("Phân loại của sản phẩm " + productName + " hiện không còn mở bán.");
+            }
+            if (!"APPROVED".equals(line.get("shop_approval_status")) || !"OPEN".equals(line.get("shop_operating_status"))) {
+                throw new IllegalArgumentException("Cửa hàng " + line.get("shop_name") + " hiện không hoạt động.");
+            }
             int quantity = ((Number) line.get("quantity")).intValue();
-            if (quantity > ((Number) line.get("available_quantity")).intValue()) throw new IllegalArgumentException("Số lượng tồn kho không đủ cho " + line.get("product_name") + ".");
+            if (quantity > ((Number) line.get("available_quantity")).intValue()) throw new IllegalArgumentException("Số lượng tồn kho không đủ cho " + productName + ".");
             subtotal = subtotal.add(((BigDecimal) line.get("price")).multiply(BigDecimal.valueOf(quantity)));
         }
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(

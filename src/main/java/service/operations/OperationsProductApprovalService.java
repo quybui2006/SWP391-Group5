@@ -1,6 +1,7 @@
 package service.operations;
 
 import dto.operations.PendingProductApprovalDto;
+import dto.operations.RejectApprovalRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +32,23 @@ public class OperationsProductApprovalService {
         }
     }
 
+    /** Hậu kiểm: khi từ chối, repository đồng thời chuyển selling_status sang PAUSED để gỡ khỏi sàn. */
+    @Transactional
+    public void rejectProduct(Long productId, RejectApprovalRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thiếu thông tin từ chối sản phẩm.");
+        }
+        rejectProduct(productId, request.getRejectionReason());
+    }
+
+    /** Giữ overload chuỗi để tương thích với các caller nội bộ cũ. */
     @Transactional
     public void rejectProduct(Long productId, String rejectionReason) {
         String reason = normalizeReason(rejectionReason);
         requireExistingProduct(productId);
         if (products.rejectPending(productId, reason) == 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Yêu cầu đăng sản phẩm không còn ở trạng thái chờ duyệt.");
+                    "Yêu cầu hậu kiểm không còn ở trạng thái chờ xử lý.");
         }
     }
 

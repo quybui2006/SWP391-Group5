@@ -36,12 +36,20 @@
                         <small th:if="${#fields.hasErrors('promotionalPrice')}" th:errors="*{promotionalPrice}">Lỗi giá</small>
                         <small>Giá khuyến mãi phải thấp hơn giá bán hiện tại của biến thể.</small>
                     </label>
-                    <label class="field"><span>Bắt đầu <b>*</b></span>
-                        <input id="startsAt" type="datetime-local" th:field="*{startsAt}" required>
+                    <label class="field"><span>Bắt đầu (giờ Việt Nam) <b>*</b></span>
+                        <input id="startsAtDisplay" type="text" inputmode="numeric" autocomplete="off"
+                               th:value="${promotionForm.startsAt == null ? '' : #temporals.format(promotionForm.startsAt, 'dd/MM/yyyy HH:mm')}"
+                               placeholder="dd/MM/yyyy HH:mm" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}" required>
+                        <input id="startsAt" type="hidden" th:field="*{startsAt}">
+                        <small>Nhập theo định dạng ngày/tháng/năm giờ:phút, ví dụ 19/10/2026 14:30.</small>
                         <small th:if="${#fields.hasErrors('startsAt')}" th:errors="*{startsAt}">Lỗi thời gian bắt đầu</small>
                     </label>
-                    <label class="field"><span>Kết thúc <b>*</b></span>
-                        <input id="endsAt" type="datetime-local" th:field="*{endsAt}" required>
+                    <label class="field"><span>Kết thúc (giờ Việt Nam) <b>*</b></span>
+                        <input id="endsAtDisplay" type="text" inputmode="numeric" autocomplete="off"
+                               th:value="${promotionForm.endsAt == null ? '' : #temporals.format(promotionForm.endsAt, 'dd/MM/yyyy HH:mm')}"
+                               placeholder="dd/MM/yyyy HH:mm" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4} [0-9]{2}:[0-9]{2}" required>
+                        <input id="endsAt" type="hidden" th:field="*{endsAt}">
+                        <small>Nhập theo định dạng ngày/tháng/năm giờ:phút.</small>
                         <small th:if="${#fields.hasErrors('endsAt')}" th:errors="*{endsAt}">Lỗi thời gian kết thúc</small>
                     </label>
                     <label class="field full"><span>Trạng thái</span>
@@ -60,13 +68,24 @@
 <script>
 (() => {
     const form = document.getElementById('promotionForm');
+    const startDisplay = document.getElementById('startsAtDisplay');
+    const endDisplay = document.getElementById('endsAtDisplay');
     const start = document.getElementById('startsAt');
     const end = document.getElementById('endsAt');
     const error = document.getElementById('clientError');
-    if (!form || !start || !end || !error) return;
+    if (!form || !startDisplay || !endDisplay || !start || !end || !error) return;
 
-    // Build current wall-clock time in Asia/Ho_Chi_Minh, matching the server's business zone.
-    const vietnamNow = () => {
+    // Convert dd/MM/yyyy HH:mm (Vietnamese display) to LocalDateTime's ISO format.
+    const toIso = value => {
+        const match = /^([0-3]\d)\/([01]\d)\/(\d{4}) ([0-2]\d):([0-5]\d)$/.exec(value.trim());
+        if (!match) return null;
+        const [, day, month, year, hour, minute] = match;
+        const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+        if (d.getFullYear() !== Number(year) || d.getMonth() !== Number(month) - 1 ||
+            d.getDate() !== Number(day) || Number(hour) > 23) return null;
+        return `${year}-${month}-${day}T${hour}:${minute}`;
+    };
+    const vietnamNowIso = () => {
         const parts = new Intl.DateTimeFormat('en-CA', {
             timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
@@ -77,18 +96,18 @@
     const validate = () => {
         error.hidden = true;
         error.textContent = '';
-        if (start.value && start.value < vietnamNow()) {
-            error.textContent = 'Thời điểm bắt đầu phải từ thời điểm hiện tại trở đi (giờ Việt Nam).';
-            error.hidden = false; return false;
-        }
-        if (start.value && end.value && end.value <= start.value) {
-            error.textContent = 'Thời điểm kết thúc phải sau thời điểm bắt đầu.';
-            error.hidden = false; return false;
-        }
+        const startIso = toIso(startDisplay.value);
+        const endIso = toIso(endDisplay.value);
+        if (!startIso) { error.textContent = 'Ngày bắt đầu không hợp lệ. Hãy nhập dd/MM/yyyy HH:mm.'; error.hidden = false; return false; }
+        if (!endIso) { error.textContent = 'Ngày kết thúc không hợp lệ. Hãy nhập dd/MM/yyyy HH:mm.'; error.hidden = false; return false; }
+        if (startIso < vietnamNowIso()) { error.textContent = 'Thời điểm bắt đầu phải từ thời điểm hiện tại trở đi (giờ Việt Nam).'; error.hidden = false; return false; }
+        if (endIso <= startIso) { error.textContent = 'Thời điểm kết thúc phải sau thời điểm bắt đầu.'; error.hidden = false; return false; }
+        start.value = startIso;
+        end.value = endIso;
         return true;
     };
-    start.addEventListener('change', validate);
-    end.addEventListener('change', validate);
+    startDisplay.addEventListener('change', validate);
+    endDisplay.addEventListener('change', validate);
     form.addEventListener('submit', event => { if (!validate()) event.preventDefault(); });
 })();
 </script>

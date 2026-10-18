@@ -20,14 +20,14 @@
             <label class="field"><span>SKU <b>*</b></span><input type="text" th:field="*{sku}" maxlength="80" required><em th:if="${errors.containsKey('sku')}" th:text="${errors.get('sku')}"></em></label>
             <label class="field field-wide"><span>Quy cách</span><input type="text" th:field="*{specification}" maxlength="1000" placeholder="Ví dụ: Khoảng 1kg, 5-7 quả"></label>
             <label class="field"><span>Đơn vị <b>*</b></span><select th:field="*{unitId}"><option th:each="unit : ${form.units}" th:value="${unit.id}" th:text="${unit.name}"></option></select><em th:if="${errors.containsKey('unitId')}" th:text="${errors.get('unitId')}"></em></label>
-            <label class="field"><span>Giá bán (VNĐ) <b>*</b></span><input type="number" th:field="*{price}" min="1" step="1000" required><em th:if="${errors.containsKey('price')}" th:text="${errors.get('price')}"></em></label>
+            <label class="field"><span>Giá bán (VNĐ) <b>*</b></span><input type="number" th:field="*{price}" min="1" step="1" required><em th:if="${errors.containsKey('price')}" th:text="${errors.get('price')}"></em></label>
             <label class="field"><span>Trạng thái</span>
                 <select th:field="*{status}">
                     <option value="DRAFT">Bản nháp</option>
-                    <option value="ACTIVE" th:if="${form.productApproved}">Đang bán</option>
-                    <option value="INACTIVE" th:if="${form.productApproved}">Ngừng bán</option>
+                    <option value="ACTIVE" th:if="${form.productCanSell}">Đang bán</option>
+                    <option value="INACTIVE" th:if="${form.productCanSell}">Ngừng bán</option>
                 </select>
-                <small th:if="${!form.productApproved}">Sản phẩm cần được Quản lý vận hành duyệt trước khi bán.</small>
+                <small th:if="${!form.productCanSell}">Sản phẩm chưa ở trạng thái mở bán; biến thể chỉ có thể được bật bán khi sản phẩm ACTIVE.</small>
                 <em th:if="${errors.containsKey('status')}" th:text="${errors.get('status')}"></em>
             </label>
         </div></section>

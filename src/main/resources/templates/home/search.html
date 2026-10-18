@@ -16,6 +16,11 @@
     <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
             rel="stylesheet">
+    <style>
+        .price-display { display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+        .price-old { color:#858585; font-size:.86em; text-decoration:line-through; }
+        .price-promotion { color:#d62828; }
+    </style>
 </head>
 
 <body>
@@ -596,20 +601,13 @@
 
 
                                 <!-- PRICE -->
-                                <strong
-                                        class="price"
-                                        th:if="${variant.price != null}"
-                                        th:text="${#numbers.formatDecimal(
-                                            variant.price,
-                                            0,
-                                            'COMMA',
-                                            0,
-                                            'POINT'
-                                        ) + ' ₫'}">
-
-                                    0 ₫
-
-                                </strong>
+                                <div class="price-display" th:if="${variant.price != null and variant.promotionalPrice != null}">
+                                    <del class="price price-old" th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</del>
+                                    <strong class="price price-promotion" th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
+                                </div>
+                                <strong class="price"
+                                        th:if="${variant.price != null and variant.promotionalPrice == null}"
+                                        th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
 
 
                                 <strong
