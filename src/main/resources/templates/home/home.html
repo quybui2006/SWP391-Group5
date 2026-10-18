@@ -58,7 +58,7 @@
                title="Giỏ hàng"
                aria-label="Giỏ hàng">
                 🛒
-                <span id="cartCount">0</span>
+                <span id="cartCount" class="cart-count">0</span>
             </a>
 
             <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
@@ -350,10 +350,11 @@
                                 Liên hệ
                             </strong>
 
-                            <!-- Add to cart -->
+                            <!-- Add to cart (Đã gắn data-variant-id chuẩn xác) -->
                             <form th:action="@{/cart/items}"
                                   method="post"
                                   class="add-cart-form"
+                                  th:attr="data-variant-id=${variant.id}"
                                   onclick="event.stopPropagation()"
                                   onsubmit="addToCart(event, this)">
 
@@ -367,6 +368,7 @@
 
                                 <button class="add-btn"
                                         type="submit"
+                                        th:attr="data-variant-id=${variant.id}"
                                         aria-label="Thêm sản phẩm vào giỏ hàng">
                                     +
                                 </button>
@@ -484,10 +486,8 @@
                 return;
             }
 
-            const count = Number.parseInt(
-                (await response.text()).trim(),
-                10
-            );
+            const text = await response.text();
+            const count = Number.parseInt(text.trim(), 10);
 
             const badge = document.getElementById('cartCount');
 
@@ -529,13 +529,12 @@
                 throw new Error(message || 'Không thể thêm sản phẩm vào giỏ hàng.');
             }
 
-            // CartController trả về tổng số lượng sản phẩm trong giỏ.
+            // Đọc text 1 lần duy nhất
             const countText = (await response.text()).trim();
             const count = Number.parseInt(countText, 10);
 
             if (Number.isFinite(count)) {
                 const badge = document.getElementById('cartCount');
-
                 if (badge) {
                     badge.textContent = count;
                 }
@@ -560,7 +559,6 @@
     document.addEventListener('DOMContentLoaded', refreshCartCount);
 </script>
 
-<script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
 <script th:src="@{/js/notifications.js}"></script>
 
 </body>

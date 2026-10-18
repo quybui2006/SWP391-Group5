@@ -120,7 +120,7 @@
 ========================================================= -->
 <main class="page-body">
 
-    <!-- Breadcrumb (Đồng bộ font & màu) -->
+    <!-- Breadcrumb -->
     <div class="container breadcrumb-wrapper">
         <nav class="breadcrumb-nav" aria-label="Đường dẫn">
             <a th:href="@{/}">Trang chủ</a>
@@ -155,13 +155,13 @@
                         <p>Trái cây tươi FreshFruit</p>
                     </div>
 
-                    <!-- Badge Trạng thái Đang bán (Style màn Home) -->
+                    <!-- Badge Trạng thái Đang bán -->
                     <span class="fresh-tag" th:if="${variant.status != null and variant.status.equalsIgnoreCase('ACTIVE')}">
                         <span class="status-dot"></span> Đang bán
                     </span>
                 </div>
 
-                <!-- Thumbnail Strip (Bố cục Shopee) -->
+                <!-- Thumbnail Strip -->
                 <div class="thumbnail-strip" id="thumbnailStrip">
                     <button type="button" class="thumb-box active" onclick="selectThumbnail(this)">
                         <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
@@ -242,9 +242,8 @@
                     </button>
                 </div>
 
-                <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
+                <!-- Price Banner -->
                 <div class="fresh-price-banner">
-                    <!-- Giá bán chính -->
                     <span class="price-main" th:if="${variant.price != null}"
                           th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
                         120.000 ₫
@@ -256,10 +255,10 @@
                     <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
                 </div>
 
-                <!-- Details Rows (Bố cục Shopee) -->
+                <!-- Details Rows -->
                 <div class="fresh-details-table">
 
-                    <!-- Voucher Shop (Chỉ giữ voucher của shop) -->
+                    <!-- Voucher Shop -->
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
                         <div class="detail-content vouchers-wrap">
@@ -269,7 +268,7 @@
                         </div>
                     </div>
 
-                    <!-- Bảo hiểm / Cam kết tươi ngon -->
+                    <!-- Bảo hiểm -->
                     <div class="detail-line">
                         <span class="detail-label">Bảo Hiểm</span>
                         <div class="detail-content">
@@ -314,18 +313,18 @@
 
                 </div>
 
-                <!-- Action CTA Buttons (Màu xanh Home chuẩn) -->
+                <!-- Action CTA Buttons -->
                 <div class="fresh-action-row">
                     <button class="fresh-add-cart-btn" type="button"
                             th:attr="data-variant-id=${variant.id}"
-                            onclick="addProductToCart(this)">
+                            onclick="addProductToCart(event, this)">
                         <span class="cart-btn-icon">🛒</span>
                         <span>Thêm Vào Giỏ Hàng</span>
                     </button>
 
                     <button class="fresh-buy-now-btn" type="button"
                             th:attr="data-variant-id=${variant.id}"
-                            onclick="buyNow(this)">
+                            onclick="buyNow(event, this)">
                         Mua Ngay
                     </button>
                 </div>
@@ -357,7 +356,7 @@
 
 
     <!-- =====================================================
-         2. SHOP PROFILE BANNER (KHUNG THÔNG TIN CỬA HÀNG)
+         2. SHOP PROFILE BANNER
     ====================================================== -->
     <section class="container shop-section">
         <div class="fresh-shop-card">
@@ -514,13 +513,11 @@
             </div>
 
             <div class="product-description-content">
-                <!-- Mô tả từ CSDL nếu có -->
                 <p class="db-description-paragraph" th:if="${variant.product != null and variant.product.description != null and !variant.product.description.isEmpty()}"
                    th:text="${variant.product.description}">
                     Mô tả sản phẩm
                 </p>
 
-                <!-- Tiêu chuẩn sản phẩm chất lượng cao chuẩn FreshFruit -->
                 <div class="desc-feature-block desc-green">
                     <h4>🍎 ĐẶC ĐIỂM NỔI BẬT VÀ CHẤT LƯỢNG</h4>
                     <ul>
@@ -555,7 +552,7 @@
 
 
     <!-- =====================================================
-         4. ĐÁNH GIÁ SẢN PHẨM (CHUẨN SHOPEE - TONE FRESHFRUIT)
+         4. ĐÁNH GIÁ SẢN PHẨM
     ====================================================== -->
     <section class="container reviews-section" id="reviews-section">
         <div class="fresh-reviews-card">
@@ -627,7 +624,6 @@
                 </div>
 
                 <form id="reviewForm" th:action="@{/product/{id}/review(id=${variant.id})}" method="POST" class="fresh-review-form">
-                    <!-- Interactive Star Rating -->
                     <div class="compose-stars-row">
                         <span class="field-label">Chất lượng sản phẩm:</span>
                         <div class="star-rating-interactive" id="starPickerGroup">
@@ -641,7 +637,6 @@
                         <input type="hidden" name="rating" id="ratingInput" value="5">
                     </div>
 
-                    <!-- Review Textarea -->
                     <div class="review-textarea-container">
                         <textarea name="content" id="reviewContentInput" rows="3" maxlength="2000"
                                   placeholder="Hãy chia sẻ cảm nhận thực tế về chất lượng quả tươi ngon, độ ngọt, bao bì đóng gói và thời gian giao hàng nhé..."
@@ -769,7 +764,11 @@
                                     th:text="${#numbers.formatDecimal(rel.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
                                 99.000 ₫
                             </strong>
-                            <button type="button" class="add-btn-circle" th:attr="data-variant-id=${rel.id}" onclick="addProductToCart(this)" aria-label="Thêm vào giỏ hàng">
+                            <!-- Chặn sự kiện click của thẻ <a> bao ngoài và gọi đúng hàm thêm giỏ hàng -->
+                            <button type="button" class="add-btn-circle"
+                                    th:attr="data-variant-id=${rel.id}"
+                                    onclick="addRelatedToCart(event, this)"
+                                    aria-label="Thêm vào giỏ hàng">
                                 +
                             </button>
                         </div>
@@ -801,7 +800,7 @@
 
 
 <!-- =========================================================
-     FOOTER (ĐỒNG BỘ 100% VỚI MÀN HOME)
+     FOOTER
 ========================================================= -->
 <footer class="site-footer">
     <div class="container footer-inner">
@@ -834,7 +833,139 @@
 ========================================================= -->
 <script th:src="@{/js/customerproductdetail.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
-<script th:src="@{/js/cart-integration.js(v='20261008-1')}"></script>
+
+<script>
+    // Cập nhật số lượng trên icon giỏ hàng
+    async function refreshCartCount() {
+        try {
+            const response = await fetch('/cart/count', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            if (!response.ok) return;
+            const text = await response.text();
+            const count = Number.parseInt(text.trim(), 10);
+            const badge = document.getElementById('cartCount');
+            if (badge && Number.isFinite(count)) {
+                badge.textContent = count;
+            }
+        } catch (error) {
+            console.error('Lỗi cập nhật số lượng giỏ hàng:', error);
+        }
+    }
+
+    // Gửi yêu cầu thêm sản phẩm vào giỏ qua endpoint chuẩn /cart/items
+    async function sendAddToCartRequest(variantId, quantity) {
+        const formData = new FormData();
+        formData.append('variantId', variantId);
+        formData.append('quantity', quantity);
+
+        const response = await fetch('/cart/items', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (response.status === 401) {
+            window.location.href = '/login?continueTo=' + encodeURIComponent(window.location.pathname);
+            return null;
+        }
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || 'Không thể thêm sản phẩm vào giỏ hàng.');
+        }
+
+        const countText = (await response.text()).trim();
+        const count = Number.parseInt(countText, 10);
+        const badge = document.getElementById('cartCount');
+        if (badge && Number.isFinite(count)) {
+            badge.textContent = count;
+        } else {
+            await refreshCartCount();
+        }
+        return true;
+    }
+
+    // Xử lý nút "Thêm Vào Giỏ Hàng" chính
+    async function addProductToCart(event, button) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const variantId = button.getAttribute('data-variant-id');
+        const qtyInput = document.getElementById('quantity');
+        const quantity = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
+
+        button.disabled = true;
+        try {
+            const ok = await sendAddToCartRequest(variantId, quantity);
+            if (ok) {
+                if (typeof showToast === 'function') {
+                    showToast('✓ Đã thêm sản phẩm vào giỏ hàng!');
+                } else {
+                    alert('Đã thêm sản phẩm vào giỏ hàng!');
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            alert(error.message || 'Không thể thêm vào giỏ hàng.');
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    // Xử lý nút "+" ở danh sách sản phẩm liên quan
+    async function addRelatedToCart(event, button) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const variantId = button.getAttribute('data-variant-id');
+        button.disabled = true;
+        try {
+            const ok = await sendAddToCartRequest(variantId, 1);
+            if (ok) {
+                const oldText = button.textContent;
+                button.textContent = '✓';
+                setTimeout(() => { button.textContent = oldText; }, 1000);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Không thể thêm sản phẩm vào giỏ hàng.');
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    // Xử lý nút "Mua Ngay": Thêm vào giỏ -> Chuyển sang /cart -> Tự động tích chọn sản phẩm
+    async function buyNow(event, button) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const variantId = button.getAttribute('data-variant-id');
+        const qtyInput = document.getElementById('quantity');
+        const quantity = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
+
+        button.disabled = true;
+        try {
+            const ok = await sendAddToCartRequest(variantId, quantity);
+            if (ok) {
+                window.location.href = '/cart?selected=' + encodeURIComponent(variantId);
+            }
+        } catch (error) {
+            console.error(error);
+            alert(error.message || 'Không thể thực hiện Mua Ngay.');
+            button.disabled = false;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', refreshCartCount);
+</script>
+
 <script th:src="@{/js/notifications.js}"></script>
 
 </body>
