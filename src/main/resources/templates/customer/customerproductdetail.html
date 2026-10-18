@@ -612,7 +612,7 @@
             </div>
 
             <!-- Review Writer (Customer Form) -->
-            <div class="review-compose-box" th:if="${isCustomer}">
+            <div class="review-compose-box" th:if="${canReview}">
                 <div class="compose-header">
                     <div class="compose-avatar" th:text="${currentFullName != null && !currentFullName.isEmpty() ? #strings.substring(currentFullName, 0, 1).toUpperCase() : 'C'}">
                         C
@@ -705,7 +705,35 @@
                                 <span class="thumb-icon">👍</span>
                                 <span>Hữu ích (12)</span>
                             </button>
+                            <span th:if="${isCustomer and currentUserId != null and rev.userId == currentUserId}"
+                                  class="review-owner-actions">
+                                <button type="button" class="review-owner-button"
+                                        th:attr="data-review-id=${rev.id},data-review-rating=${rev.rating},data-review-content=${rev.content}"
+                                        onclick="openReviewEdit(this)">Sửa</button>
+                                <form th:action="@{/product/{id}/review/{reviewId}/delete(id=${variant.id},reviewId=${rev.id})}"
+                                      method="post" style="display:inline"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa đánh giá này?')">
+                                    <button type="submit" class="review-owner-button review-delete-button">Xóa</button>
+                                </form>
+                            </span>
                         </div>
+                        <form class="review-edit-form" th:id="'review-edit-' + ${rev.id}"
+                              th:action="@{/product/{id}/review/{reviewId}/edit(id=${variant.id},reviewId=${rev.id})}"
+                              method="post" style="display:none">
+                            <div class="edit-rating-row">
+                                <label>Đánh giá:</label>
+                                <select name="rating" th:value="${rev.rating}">
+                                    <option value="5">★★★★★ 5 sao</option>
+                                    <option value="4">★★★★☆ 4 sao</option>
+                                    <option value="3">★★★☆☆ 3 sao</option>
+                                    <option value="2">★★☆☆☆ 2 sao</option>
+                                    <option value="1">★☆☆☆☆ 1 sao</option>
+                                </select>
+                            </div>
+                            <textarea name="content" rows="3" maxlength="2000" th:text="${rev.content}"></textarea>
+                            <button type="submit" class="review-owner-button">Lưu thay đổi</button>
+                            <button type="button" class="review-owner-button" onclick="closeReviewEdit(this)">Hủy</button>
+                        </form>
                     </div>
                 </div>
 
@@ -961,6 +989,20 @@
             alert(error.message || 'Không thể thực hiện Mua Ngay.');
             button.disabled = false;
         }
+    }
+
+    function openReviewEdit(button) {
+        const form = document.getElementById('review-edit-' + button.dataset.reviewId);
+        if (form) {
+            form.style.display = 'block';
+            form.querySelector('select').value = button.dataset.reviewRating;
+            form.querySelector('textarea').value = button.dataset.reviewContent;
+        }
+    }
+
+    function closeReviewEdit(button) {
+        const form = button.closest('.review-edit-form');
+        if (form) form.style.display = 'none';
     }
 
     document.addEventListener('DOMContentLoaded', refreshCartCount);

@@ -98,6 +98,7 @@ public class CustomerProductDetailController {
         model.addAttribute("reviewStats", reviewStats);
         model.addAttribute("isCustomer", isCustomer);
         model.addAttribute("currentUserId", currentUserId);
+        model.addAttribute("canReview", isCustomer && reviewService.canReview(id, currentUserId));
         // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)
         List<ProductVariant> allActiveVariants = productVariantRepository.findByStatusAndProduct_SellingStatusAndProduct_ApprovalStatus("ACTIVE", "ACTIVE", "APPROVED");
         List<ProductVariant> relatedProducts = allActiveVariants.stream()
@@ -135,8 +136,14 @@ public class CustomerProductDetailController {
             return "redirect:/product/" + id + "#reviews-section";
         }
 
-        reviewService.addReview(id, userId, rating, content);
-        redirectAttributes.addFlashAttribute("reviewSuccess", "Cảm ơn bạn! Đánh giá của bạn đã được đăng thành công.");
+        try {
+            Long orderItemId = reviewService.findPurchasableOrderItem(id, userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm đã mua và giao thành công."));
+            reviewService.addReview(id, userId, orderItemId, rating, content);
+            redirectAttributes.addFlashAttribute("reviewSuccess", "Cảm ơn bạn! Đánh giá của bạn đã được đăng thành công.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("reviewError", ex.getMessage());
+        }
 
         return "redirect:/product/" + id + "#reviews-section";
     }
@@ -178,7 +185,16 @@ public class CustomerProductDetailController {
             return ResponseEntity.badRequest().body(err);
         }
 
-        Review saved = reviewService.addReview(id, userId, rating, content);
+        Long orderItemId = reviewService.findPurchasableOrderItem(id, userId).orElse(null);
+        if (orderItemId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("success", false, "message", "Bạn chỉ có thể đánh giá sản phẩm đã mua và giao thành công."));
+        }
+        Review saved;
+        try {
+            saved = reviewService.addReview(id, userId, orderItemId, rating, content);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", ex.getMessage()));
+        }
         List<ReviewDto> updatedReviews = reviewService.getReviewsForVariant(id);
         ReviewStatsDto updatedStats = reviewService.getReviewStats(id);
 
@@ -189,5 +205,36 @@ public class CustomerProductDetailController {
         res.put("stats", updatedStats);
 
         return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/product/{id}/review/{reviewId}/edit")
+    public String updateReview(@PathVariable Long id, @PathVariable Long reviewId,
+                               @RequestParam Integer rating, @RequestParam String content,
+                               HttpSession session, RedirectAttributes redirect) {
+        if (session == null || !"CUSTOMER".equals(session.getAttribute("role")) || !(session.getAttribute("userId") instanceof Number)) {
+            return "redirect:/login?continueTo=/product/" + id;
+        }
+        try {
+            reviewService.updateReview(reviewId, id, ((Number) session.getAttribute("userId")).longValue(), rating, content);
+            redirect.addFlashAttribute("reviewSuccess", "Đã cập nhật đánh giá.");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("reviewError", ex.getMessage());
+        }
+        return "redirect:/product/" + id + "#reviews-section";
+    }
+
+    @PostMapping("/product/{id}/review/{reviewId}/delete")
+    public String deleteReview(@PathVariable Long id, @PathVariable Long reviewId,
+                               HttpSession session, RedirectAttributes redirect) {
+        if (session == null || !"CUSTOMER".equals(session.getAttribute("role")) || !(session.getAttribute("userId") instanceof Number)) {
+            return "redirect:/login?continueTo=/product/" + id;
+        }
+        try {
+            reviewService.deleteReview(reviewId, id, ((Number) session.getAttribute("userId")).longValue());
+            redirect.addFlashAttribute("reviewSuccess", "Đã xóa đánh giá.");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("reviewError", ex.getMessage());
+        }
+        return "redirect:/product/" + id + "#reviews-section";
     }
 }
