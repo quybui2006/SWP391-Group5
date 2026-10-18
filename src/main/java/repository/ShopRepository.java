@@ -19,7 +19,6 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
 
     @Query("""
             SELECT new dto.operations.PendingShopApprovalDto(
-
                 s.id, s.name, u.fullName, u.email, s.phone, s.provinceCode,
                 s.wardName, s.addressDetail, s.description, s.createdAt
             )

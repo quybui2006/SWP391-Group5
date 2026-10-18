@@ -37,7 +37,6 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
 
     @Query("""
             SELECT new dto.operations.PendingProductApprovalDto(
-
                 p.id, p.name, p.batchCode, s.name, p.origin,
                 p.receivedDate, p.expiryDate, p.submittedAt
             )

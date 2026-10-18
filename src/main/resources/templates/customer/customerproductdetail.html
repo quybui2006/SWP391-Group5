@@ -244,17 +244,6 @@
 
                 <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
                 <div class="fresh-price-banner">
-<<<<<<< HEAD
-
-                    <span class="price-old" th:if="${variant.promotionalPrice != null}"
-                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
-                    <span class="price-main price-promotion" th:if="${variant.promotionalPrice != null}"
-                          th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</span>
-                    <span class="price-main" th:if="${variant.promotionalPrice == null and variant.price != null}"
-                          th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
-                    <span class="price-main" th:if="${variant.price == null}">Liên hệ</span>
-                    <span class="price-tag-sub" th:if="${variant.promotionalPrice != null}">Giá ưu đãi đang áp dụng</span>
-=======
                     <!-- Giá bán chính -->
                     <span class="price-main" th:if="${variant.price != null}"
                           th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
@@ -271,8 +260,6 @@
                 <!-- Details Rows (Bố cục Shopee) -->
                 <div class="fresh-details-table">
 
-<<<<<<< HEAD
-=======
                     <!-- Voucher Shop (Chỉ giữ voucher của shop) -->
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
