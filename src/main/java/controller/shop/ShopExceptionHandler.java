@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import service.shop.ProductNotFoundException;
 
 /**
@@ -38,4 +39,15 @@ public class ShopExceptionHandler {
         log.warn("Vi phạm ràng buộc database: {}", ex.getMostSpecificCause().getMessage());
         return "error/400";
     }
+    /**
+     * Fallback cho client bỏ qua kiểm tra tại trình duyệt. Giao diện bình thường đã
+     * chặn trước khi submit; backend vẫn phải từ chối request vượt giới hạn.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public String handleUploadTooLarge(MaxUploadSizeExceededException ex) {
+        log.warn("Từ chối request upload vượt giới hạn multipart.");
+        return "error/413";
+    }
+
 }

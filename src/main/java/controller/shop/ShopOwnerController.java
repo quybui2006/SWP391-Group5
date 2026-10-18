@@ -138,7 +138,14 @@ public class ShopOwnerController {
             return "redirect:/shopowner/product-variants";
 
         } catch (ProductValidationException ex) {
-            ex.getFieldErrors().forEach(binding::rejectValue);
+            // These are display messages from the service, not message-code keys.
+            // Keep them as default messages so Thymeleaf does not try to resolve
+            // the literal Vietnamese sentence through MessageSource.
+            ex.getFieldErrors().forEach((field, message) -> {
+                if (field != null && !field.isBlank() && message != null && !message.isBlank()) {
+                    binding.rejectValue(field, null, message);
+                }
+            });
 
         } catch (DataIntegrityViolationException ex) {
             model.addAttribute(

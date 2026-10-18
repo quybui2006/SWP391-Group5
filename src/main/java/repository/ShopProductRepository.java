@@ -23,11 +23,11 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsByShopIdAndBatchCode(Long shopId, String batchCode);
 
-    /** Chuyển DRAFT -> PENDING có điều kiện, tránh submit lặp hoặc race condition. */
+    /** Hậu kiểm: chuyển DRAFT -> PENDING và đưa sản phẩm lên sàn ngay nếu hợp lệ. */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
             UPDATE products
-               SET approval_status = 'PENDING', selling_status = 'DRAFT',
+               SET approval_status = 'PENDING', selling_status = 'ACTIVE',
                    submitted_at = :submittedAt, reviewed_at = NULL, rejection_reason = NULL
              WHERE id = :productId AND shop_id = :shopId AND approval_status = 'DRAFT'
             """, nativeQuery = true)
@@ -51,6 +51,6 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
     int approvePending(@Param("productId") Long productId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = "UPDATE products SET approval_status = 'REJECTED', reviewed_at = NOW(), rejection_reason = :reason WHERE id = :productId AND approval_status = 'PENDING'", nativeQuery = true)
+    @Query(value = "UPDATE products SET approval_status = 'REJECTED', selling_status = 'PAUSED', reviewed_at = NOW(), rejection_reason = :reason WHERE id = :productId AND approval_status = 'PENDING'", nativeQuery = true)
     int rejectPending(@Param("productId") Long productId, @Param("reason") String reason);
 }
