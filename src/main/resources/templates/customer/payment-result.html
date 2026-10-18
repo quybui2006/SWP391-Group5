@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isSuccess ? 'Thanh toán thành công | FreshFruit' : 'Chi tiết thanh toán | FreshFruit'}">Kết quả thanh toán</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --fresh-green: #16803c;
+            --fresh-green-dark: #14532d;
+            --fresh-green-grad: linear-gradient(135deg, #16803c 0%, #22c55e 100%);
+            --fresh-bg: #f8faf9;
+            --danger-red: #dc2626;
+            --danger-bg: #fef2f2;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+        }
+
+        body {
+            background-color: var(--fresh-bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1;
+            padding-bottom: 50px;
+        }
+
+        /* =====================================================
+           GIAO DIỆN 1: THANH TOÁN / ĐẶT HÀNG THÀNH CÔNG
+        ====================================================== */
+        .success-hero-banner {
+            background: var(--fresh-green-grad);
+            color: #ffffff;
+            padding: 48px 20px 44px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(22, 128, 60, 0.18);
+        }
+
+        .success-hero-inner {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .success-title-row {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .check-circle-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: var(--fresh-green);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .order-code-pill {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 14px;
+            margin-bottom: 26px;
+            font-weight: 500;
+        }
+
+        .hero-btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            max-width: 460px;
+            margin: 0 auto;
+        }
+
+        .hero-outline-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border: 1.5px solid #ffffff;
+            border-radius: 8px;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .hero-outline-btn:hover {
+            background: #ffffff;
+            color: var(--fresh-green);
+        }
+
+        /* Mục Có thể bạn cũng thích */
+        .result-container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .recommend-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 36px 0 22px;
+            color: var(--fresh-green-dark);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .recommend-divider::before,
+        .recommend-divider::after {
+            content: "";
+            width: 70px;
+            height: 1px;
+            background: #cbd5e1;
+        }
+
+        .recommend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 18px;
+        }
+
+        .rec-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rec-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(22, 128, 60, 0.1);
+            border-color: #bbf7d0;
+        }
+
+        .rec-img-wrap {
+            height: 180px;
+            background: #f0fdf4;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rec-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .rec-body {
+            padding: 12px 14px;
+        }
+
+        .rec-cat {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .rec-title {
+            font-size: 14.5px;
+            font-weight: 600;
+            margin: 4px 0 10px;
+            color: #111827;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .rec-price {
+            color: var(--fresh-green);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* =====================================================
+           GIAO DIỆN 2: CHI TIẾT THANH TOÁN THẤT BẠI
+        ====================================================== */
+        .failed-wrapper {
+            max-width: 520px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+
+        .failed-top-bar {
+            background: var(--fresh-green-grad);
+            color: #ffffff;
+            padding: 20px 24px;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .failed-top-bar h2 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .close-x-btn {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 22px;
+            line-height: 1;
+            opacity: 0.9;
+        }
+
+        .failed-main-card {
+            background: #ffffff;
+            border-radius: 0 0 14px 14px;
+            padding: 32px 24px 28px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            border-top: none;
+        }
+
+        .failed-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--danger-red);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .bang-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--danger-red);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .failed-amount {
+            font-size: 36px;
+            font-weight: 800;
+            color: #111827;
+            margin: 6px 0 16px;
+        }
+
+        .failed-method-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-sub);
+            font-size: 14px;
+            padding: 6px 14px;
+            background: #f0fdf4;
+            border-radius: 99px;
+        }
+
+        .failed-alert-box {
+            margin-top: 18px;
+            background: var(--danger-bg);
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            color: var(--danger-red);
+            font-size: 14.5px;
+            font-weight: 500;
+        }
+
+        .btn-confirm-failed {
+            display: block;
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            background: var(--fresh-green);
+            color: #ffffff;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: background 0.2s;
+        }
+
+        .btn-confirm-failed:hover {
+            background: var(--fresh-green-dark);
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER CHUNG CỦA WEB -->
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span>
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+        </a>
+
+        <nav class="main-nav">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/search}">Sản phẩm</a>
+        </nav>
+
+        <div class="header-actions">
+            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng">
+                🛒
+                <span id="cartCount" class="cart-count">0</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    <!-- =========================================================
+         TRƯỜNG HỢP 1: THANH TOÁN / ĐẶT HÀNG THÀNH CÔNG
+    ========================================================== -->
+    <th:block th:if="${isSuccess}">
+        <section class="success-hero-banner">
+            <div class="success-hero-inner">
+                <div class="success-title-row">
+                    <span class="check-circle-icon">✓</span>
+                    <span th:if="${paymentMethod == 'VNPAY'}"
+                          th:text="'Bạn đã thanh toán ' + ${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')} + '₫'">
+                        Bạn đã thanh toán 11.250₫
+                    </span>
+                    <span th:if="${paymentMethod != 'VNPAY'}"
+                          th:text="'Đặt hàng thành công ' + ${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')} + '₫'">
+                        Đặt hàng thành công
+                    </span>
+                </div>
+
+                <div th:if="${orderCodes != null and !#strings.isEmpty(orderCodes)}">
+                    <span class="order-code-pill" th:text="'Mã đơn hàng: ' + ${orderCodes}">Mã đơn hàng: FF-123</span>
+                </div>
+
+                <div class="hero-btn-group">
+                    <a class="hero-outline-btn" th:href="@{/}">Trang chủ</a>
+                    <a class="hero-outline-btn" th:href="@{/customer/account/orders}">Đơn mua</a>
+                </div>
+            </div>
+        </section>
+
+        <div class="result-container">
+            <!-- Danh sách sản phẩm gợi ý: Có thể bạn cũng thích -->
+            <div th:if="${suggestedProducts != null and !#lists.isEmpty(suggestedProducts)}">
+                <div class="recommend-divider">Có thể bạn cũng thích</div>
+
+                <div class="recommend-grid">
+                    <a class="rec-card"
+                       th:each="prod : ${suggestedProducts}"
+                       th:href="@{/product/{id}(id=${prod['id']})}">
+                        <div class="rec-img-wrap">
+                            <img th:if="${prod['image_url'] != null and !#strings.isEmpty(prod['image_url'])}"
+                                 th:src="${prod['image_url']}"
+                                 th:alt="${prod['name']}"
+                                 onerror="this.style.display='none'">
+                            <span th:if="${prod['image_url'] == null or #strings.isEmpty(prod['image_url'])}"
+                                  style="font-size: 40px;">🍎</span>
+                        </div>
+                        <div class="rec-body">
+                            <div class="rec-cat" th:text="${prod['product_name']}">Trái cây tươi</div>
+                            <div class="rec-title" th:text="${prod['name']}">Tên sản phẩm</div>
+                            <div class="rec-price"
+                                 th:text="${#numbers.formatDecimal(prod['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                120.000 ₫
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+
+    <!-- =========================================================
+         TRƯỜNG HỢP 2: THANH TOÁN THẤT BẠI
+    ========================================================== -->
+    <th:block th:unless="${isSuccess}">
+        <div class="failed-wrapper">
+            <div class="failed-top-bar">
+                <h2>Chi tiết thanh toán</h2>
+                <a class="close-x-btn" th:href="@{/cart}" title="Đóng">✕</a>
+            </div>
+
+            <div class="failed-main-card">
+                <div class="failed-status-badge">
+                    <span class="bang-circle">!</span>
+                    <span>Thanh toán thất bại</span>
+                </div>
+
+                <div class="failed-amount"
+                     th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT') + '₫'}">
+                    11,250₫
+                </div>
+
+                <div class="failed-method-row">
+                    <span>💳</span>
+                    <span th:text="${paymentMethodLabel ?: 'Cổng thanh toán trực tuyến VNPay'}">
+                        Cổng thanh toán trực tuyến VNPay
+                    </span>
+                </div>
+
+                <div class="failed-alert-box">
+                    <span class="bang-circle" style="flex-shrink: 0;">!</span>
+                    <span>Vui lòng thử lại hoặc chọn phương thức thanh toán khác.</span>
+                </div>
+
+                <a class="btn-confirm-failed" th:href="@{/cart}">Đồng ý</a>
+            </div>
+        </div>
+    </th:block>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span>
+                    <strong>FreshFruit</strong>
+                    <small>Tươi ngon mỗi ngày</small>
+                </span>
+            </a>
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
+        </div>
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+    </div>
+</footer>
+
+<script>
+    fetch('/cart/count', { method: 'GET', credentials: 'same-origin' })
+        .then(r => r.ok ? r.text() : '0')
+        .then(t => {
+            const badge = document.getElementById('cartCount');
+            const c = parseInt(t.trim(), 10);
+            if (badge && !isNaN(c)) badge.textContent = c;
+        }).catch(() => {});
+</script>
+
+</body>
+</html>
