@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,8 +42,9 @@ class VoucherRequestValidationTests {
         request.setMinOrderValue(new BigDecimal("100000"));
         request.setMaxUsages(100);
         request.setIsPublic(true);
-        request.setStartsAt(LocalDateTime.of(2026, 10, 19, 14, 30));
-        request.setEndsAt(LocalDateTime.of(2026, 10, 20, 18, 0));
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        request.setStartsAt(today.atTime(14, 30));
+        request.setEndsAt(today.plusDays(1).atTime(18, 0));
         return request;
     }
 
@@ -91,6 +94,26 @@ class VoucherRequestValidationTests {
         VoucherRequest request = validPercentageVoucher();
         request.setEndsAt(request.getStartsAt());
         assertTrue(invalidProperties(request).contains("dateRangeValid"));
+    }
+
+
+    @Test
+    void rejectsVoucherStartDateBeforeTodayInVietnam() {
+        VoucherRequest request = validPercentageVoucher();
+        LocalDate yesterday = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1);
+        request.setStartsAt(yesterday.atTime(14, 30));
+        request.setEndsAt(yesterday.plusDays(2).atTime(18, 0));
+        assertTrue(invalidProperties(request).contains("startDateNotBeforeToday"));
+    }
+
+    @Test
+    void acceptsVoucherStartDateInFuture() {
+        VoucherRequest request = validPercentageVoucher();
+        LocalDate futureDate = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(10);
+        request.setStartsAt(futureDate.atTime(14, 30));
+        request.setEndsAt(futureDate.plusDays(1).atTime(18, 0));
+        assertFalse(invalidProperties(request).contains("startDateNotBeforeToday"));
+        assertFalse(invalidProperties(request).contains("dateRangeValid"));
     }
 
     @Test
