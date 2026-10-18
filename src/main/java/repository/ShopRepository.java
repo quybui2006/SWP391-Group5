@@ -1,6 +1,6 @@
 package repository;
 
-import dto.PendingShopApprovalDto;
+import dto.operations.PendingShopApprovalDto;
 import entity.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -18,7 +18,7 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
     Optional<Shop> findByOwnerId(Long ownerId);
 
     @Query("""
-            SELECT new dto.PendingShopApprovalDto(
+            SELECT new dto.operations.PendingShopApprovalDto(
                 s.id, s.name, u.fullName, u.email, s.phone, s.provinceCode,
                 s.wardName, s.addressDetail, s.description, s.createdAt
             )

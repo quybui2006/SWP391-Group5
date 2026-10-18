@@ -1,6 +1,6 @@
 package repository;
 
-import dto.PendingProductApprovalDto;
+import dto.operations.PendingProductApprovalDto;
 import entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -36,7 +36,7 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
                                @Param("submittedAt") LocalDateTime submittedAt);
 
     @Query("""
-            SELECT new dto.PendingProductApprovalDto(
+            SELECT new dto.operations.PendingProductApprovalDto(
                 p.id, p.name, p.batchCode, s.name, p.origin,
                 p.receivedDate, p.expiryDate, p.submittedAt
             )

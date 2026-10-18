@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .checkout-page { padding: 36px 0 64px; background: #f8faf9; min-height: 75vh; }
+        .checkout-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 24px; align-items: start; }
+        .checkout-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .checkout-card h3 { margin: 0 0 18px; font-size: 18px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 8px; }
+        .address-option, .payment-option { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+        .address-option:hover, .payment-option:hover { border-color: #16803c; background: #f0fdf4; }
+        .address-option input[type="radio"], .payment-option input[type="radio"] { margin-top: 4px; accent-color: #16803c; transform: scale(1.15); }
+        .new-address-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #d1d5db; }
+        .new-address-fields .full-width { grid-column: 1 / -1; }
+        .form-control { width: 100%; padding: 11px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; font-family: inherit; box-sizing: border-box; }
+        .form-control:focus { outline: none; border-color: #16803c; box-shadow: 0 0 0 3px rgba(22, 128, 60, 0.12); }
+        .summary-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; gap: 12px; }
+        .summary-line { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; color: #4b5563; font-size: 14.5px; }
+        .summary-total { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb; font-size: 18px; font-weight: 800; color: #16803c; }
+        .submit-order-btn { width: 100%; margin-top: 20px; padding: 14px; background: #16803c; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+        .submit-order-btn:hover { background: #14532d; }
+        @media (max-width: 860px) { .checkout-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+        </a>
+        <nav class="main-nav">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/cart}">Quay lại giỏ hàng</a>
+        </nav>
+    </div>
+</header>
+
+<main class="checkout-page">
+    <div class="container">
+        <h1 style="margin: 0 0 24px; font-size: 26px;">📦 Xác nhận đặt hàng</h1>
+
+        <form th:action="@{/order/submit}" method="post" id="checkoutForm">
+            <!-- Danh sách sản phẩm đã chọn -->
+            <input type="hidden" name="selectedVariantIds" th:each="vid : ${selectedVariantIds}" th:value="${vid}">
+
+            <div class="checkout-grid">
+                <!-- CỘT TRÁI: ĐỊA CHỈ & PHƯƠNG THỨC THANH TOÁN -->
+                <div>
+                    <!-- 1. Địa chỉ nhận hàng -->
+                    <div class="checkout-card">
+                        <h3>📍 Địa chỉ nhận hàng</h3>
+
+                        <div th:if="${addresses != null and !addresses.isEmpty()}">
+                            <label class="address-option" th:each="addr, stat : ${addresses}">
+                                <input type="radio" name="addressId" th:value="${addr['id']}"
+                                       th:checked="${addr['is_default'] == 1 or stat.first}"
+                                       onchange="toggleAddressFields()">
+                                <div>
+                                    <div>
+                                        <strong th:text="${addr['recipient_name']}">Nguyễn Văn A</strong>
+                                        <span style="color:#6b7280;" th:text="' | ' + ${addr['recipient_phone']}">0901234567</span>
+                                        <span th:if="${addr['is_default'] == 1}"
+                                              style="background:#dcfce7; color:#16803c; font-size:11px; padding:2px 8px; border-radius:99px; margin-left:6px; font-weight:600;">Mặc định</span>
+                                    </div>
+                                    <div style="font-size:13.5px; color:#4b5563; margin-top:4px;"
+                                         th:text="${addr['address_detail'] + ', ' + addr['ward_name'] + ', ' + addr['province_name']}">
+                                        Địa chỉ chi tiết
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="address-option">
+                                <input type="radio" name="addressId" value="" id="newAddressRadio" onchange="toggleAddressFields()">
+                                <div><strong>+ Sử dụng địa chỉ giao hàng mới</strong></div>
+                            </label>
+                        </div>
+
+                        <!-- Khung nhập địa chỉ mới -->
+                        <div id="newAddressContainer" class="new-address-fields"
+                             th:style="${addresses != null and !addresses.isEmpty()} ? 'display:none;' : 'display:grid;'">
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Họ và tên người nhận *</label>
+                                <input type="text" name="recipientName" class="form-control new-addr-input" placeholder="Nhập họ tên">
+                            </div>
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Số điện thoại *</label>
+                                <input type="text" name="recipientPhone" class="form-control new-addr-input" placeholder="Nhập số điện thoại">
+                            </div>
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Tỉnh / Thành phố *</label>
+                                <select name="provinceCode" class="form-control new-addr-input">
+                                    <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                                    <option th:each="prov : ${provinces}" th:value="${prov['code']}" th:text="${prov['name']}"></option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Phường / Xã *</label>
+                                <input type="text" name="wardName" class="form-control new-addr-input" placeholder="Nhập Phường / Xã">
+                            </div>
+                            <div class="full-width">
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Số nhà, tên đường *</label>
+                                <input type="text" name="addressDetail" class="form-control new-addr-input" placeholder="Ví dụ: Số 12 Ngõ 34 Đường Láng">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Phương thức thanh toán -->
+                    <div class="checkout-card">
+                        <h3>💳 Phương thức thanh toán</h3>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="COD" checked>
+                            <div>
+                                <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                <div style="font-size:13px; color:#6b7280; margin-top:2px;">Kiểm tra trái cây tươi ngon rồi mới thanh toán tiền mặt cho Shipper.</div>
+                            </div>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="VNPAY">
+                            <div>
+                                <strong>Thanh toán trực tuyến qua cổng VNPay (ATM / QR / Thẻ nội địa)</strong>
+                                <div style="font-size:13px; color:#6b7280; margin-top:2px;">Chuyển hướng an toàn sang cổng thanh toán VNPay Sandbox.</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 3. Ghi chú đơn hàng -->
+                    <div class="checkout-card">
+                        <h3>📝 Ghi chú cho cửa hàng</h3>
+                        <textarea name="customerNote" rows="2" class="form-control"
+                                  placeholder="Lưu ý giờ giao hàng hoặc yêu cầu đóng gói..."></textarea>
+                    </div>
+                </div>
+
+                <!-- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG & TÍNH TIỀN -->
+                <div>
+                    <div class="checkout-card">
+                        <h3>🛒 Đơn hàng của bạn</h3>
+
+                        <div th:each="item : ${checkoutItems}" class="summary-item">
+                            <div>
+                                <div style="font-weight:600; color:#111827;" th:text="${item['name']}">Tên sản phẩm</div>
+                                <small style="color:#6b7280;"
+                                       th:text="'SL: ' + ${item['quantity']} + ' × ' + ${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                                    SL: 1 x 100.000 ₫
+                                </small>
+                            </div>
+                            <strong style="color:#111827;"
+                                    th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                100.000 ₫
+                            </strong>
+                        </div>
+
+                        <!-- Phần tính tiền đã đổi tên theo đúng yêu cầu -->
+                        <div style="margin-top: 16px;">
+                            <div class="summary-line">
+                                <span>Tổng tiền hàng</span>
+                                <strong style="color:#111827;"
+                                        th:text="${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                            </div>
+                            <div class="summary-line">
+                                <span>Phí vận chuyển</span>
+                                <strong style="color:#111827;"
+                                        th:text="${#numbers.formatDecimal(shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}">20.000 ₫</strong>
+                            </div>
+                            <div class="summary-total">
+                                <span>Thành tiền</span>
+                                <span th:text="${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-order-btn">Đặt hàng ngay</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    function toggleAddressFields() {
+        const newAddressRadio = document.getElementById('newAddressRadio');
+        const container = document.getElementById('newAddressContainer');
+        const inputs = document.querySelectorAll('.new-addr-input');
+
+        const useNewAddress = !newAddressRadio || newAddressRadio.checked;
+
+        if (container) {
+            container.style.display = useNewAddress ? 'grid' : 'none';
+        }
+        inputs.forEach(input => {
+            input.disabled = !useNewAddress;
+            input.required = useNewAddress;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', toggleAddressFields);
+</script>
+
+</body>
+</html>

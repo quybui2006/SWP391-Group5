@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị hệ thống | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .admin-main {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            min-height: 60vh;
+        }
+        .admin-card {
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(24, 57, 30, 0.05);
+        }
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 24px;
+        }
+        .admin-badge {
+            display: inline-block;
+            background: #fff0ef;
+            color: #d32f2f;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.1em;
+        }
+        .logout-btn-danger {
+            background: #fff0ef;
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .logout-btn-danger:hover {
+            background: #dc3545;
+            color: white;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+            <span class="brand-mark">F</span>
+            <span>
+                <strong>FreshFruit</strong>
+                <small>HỆ THỐNG QUẢN TRỊ</small>
+            </span>
+        </a>
+
+        <div class="header-actions">
+            <a class="secondary-btn" th:href="@{/}" style="min-height: 38px; padding: 0 16px;">Về trang bán hàng</a>
+            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                <button type="submit" class="logout-btn-danger">
+                    <span>🚪</span> Đăng xuất
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="admin-main">
+    <div class="admin-card">
+        <div class="admin-header">
+            <div>
+                <span class="admin-badge">QUẢN TRỊ VIÊN (ADMIN)</span>
+                <h1 style="font-size: 26px; margin: 10px 0 4px;">Bảng điều khiển Quản trị viên</h1>
+                <p style="color: var(--muted); margin: 0; font-size: 14px;">Quản lý hệ thống, kiểm duyệt cửa hàng và tài khoản người dùng.</p>
+            </div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="logout-btn-danger">
+                    <span>🚪</span> Đăng xuất
+                </button>
+            </form>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 24px;">
+            <a th:href="@{/admin/users}" style="text-decoration: none; color: inherit;">
+                <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa; cursor: pointer;">
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">👥 Quản lý người dùng</h3>
+                    <p style="color: var(--muted); font-size: 13px; margin: 0;">Xem danh sách, chi tiết & thêm mới</p>
+                </div>
+            </a>
+            <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
+                <h3 style="margin: 0 0 8px; font-size: 16px;">👤 Tài khoản</h3>
+                <p style="color: var(--muted); font-size: 13px; margin: 0;" th:text="${session.fullName ?: 'Admin'}">Admin</p>
+            </div>
+            <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
+                <h3 style="margin: 0 0 8px; font-size: 16px;">🛡️ Vai trò</h3>
+                <p style="color: var(--muted); font-size: 13px; margin: 0;">ADMINISTRATOR</p>
+            </div>
+            <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
+                <h3 style="margin: 0 0 8px; font-size: 16px;">⚡ Phiên làm việc</h3>
+                <p style="color: var(--green-dark); font-size: 13px; font-weight: 600; margin: 0;">Đang hoạt động</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

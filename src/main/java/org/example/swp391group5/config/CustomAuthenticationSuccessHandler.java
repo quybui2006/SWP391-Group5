@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import service.CustomerDetailsService;
+import service.login.CustomerDetailsService;
 
 import java.io.IOException;
 
@@ -29,7 +29,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                 if (isValidRedirect(continueTo)) {
                     response.sendRedirect(continueTo);
                 } else {
-                    response.sendRedirect("/customer/account");
+                    response.sendRedirect("/");
                 }
                 return;
             }
@@ -38,10 +38,10 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                 case "ADMIN" -> response.sendRedirect("/admin");
                 case "OPERATIONS_MANAGER" -> response.sendRedirect("/operations/shops");
                 case "SHOP_OWNER" -> response.sendRedirect("/shopowner/home");
-                default -> response.sendRedirect("/customer/account");
+                default -> response.sendRedirect("/");
             }
         } else {
-            response.sendRedirect("/customer/account");
+            response.sendRedirect("/");
         }
     }
 
