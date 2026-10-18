@@ -61,6 +61,16 @@
         return `${yearText}-${monthText}-${dayText}T${hourText}:${minuteText}`;
     }
 
+    function vietnamTodayParts() {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        const values = Object.fromEntries(parts.filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+        return { year: values.year, month: values.month, day: values.day,
+            iso: `${values.year}-${values.month}-${values.day}`,
+            pickerDate: new Date(Number(values.year), Number(values.month) - 1, Number(values.day)) };
+    }
+
     function clearDateError() {
         [startDisplay, endDisplay].forEach(field => field.setCustomValidity(''));
     }
@@ -73,6 +83,12 @@
         const endIso = toIso(endDisplay.value);
         if (!startIso) {
             startDisplay.setCustomValidity('Nhập thời gian bắt đầu theo định dạng dd/MM/yyyy HH:mm, ví dụ 19/10/2026 14:30.');
+            if (showNativeMessage) startDisplay.reportValidity();
+            return false;
+        }
+        const todayIso = vietnamTodayParts().iso;
+        if (startIso.slice(0, 10) < todayIso) {
+            startDisplay.setCustomValidity('Ngày bắt đầu không được trước ngày hôm nay theo giờ Việt Nam. Bạn có thể chọn hôm nay hoặc một ngày trong tương lai.');
             if (showNativeMessage) startDisplay.reportValidity();
             return false;
         }
@@ -99,7 +115,8 @@
 
     // Calendar selection is localized to Vietnamese and displays DD/MM/YYYY HH:mm.
     const vietnameseLocale = (window.flatpickr && flatpickr.l10ns && flatpickr.l10ns.vn) || 'default';
-    [startDisplay, endDisplay].forEach(input => flatpickr(input, {
+    const vietnamToday = vietnamTodayParts();
+    flatpickr(startDisplay, {
         enableTime: true,
         time_24hr: true,
         dateFormat: 'd/m/Y H:i',
@@ -107,23 +124,44 @@
         allowInput: true,
         disableMobile: true,
         minuteIncrement: 1,
-        onChange: () => input.dispatchEvent(new Event('input', { bubbles: true }))
-    }));
+        minDate: vietnamToday.pickerDate,
+        onChange: () => startDisplay.dispatchEvent(new Event('input', { bubbles: true }))
+    });
+    flatpickr(endDisplay, {
+        enableTime: true,
+        time_24hr: true,
+        dateFormat: 'd/m/Y H:i',
+        locale: vietnameseLocale,
+        allowInput: true,
+        disableMobile: true,
+        minuteIncrement: 1,
+        minDate: vietnamToday.pickerDate,
+        onChange: () => endDisplay.dispatchEvent(new Event('input', { bubbles: true }))
+    });
     form.addEventListener('submit', event => {
         updateDiscountFields();
         if (!validateDates(true)) event.preventDefault();
     });
-    code.addEventListener('input', () => {
-        const before = code.value;
-        const selection = code.selectionStart;
-        const normalized = before.toUpperCase().normalize('NFD')
+    function normalizeVoucherCode(text) {
+        return text.toUpperCase().normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[đĐ]/g, 'D')
             .replace(/[^A-Z0-9_-]/g, '');
-        code.value = normalized;
-        if (selection !== null) {
-            const newPosition = Math.min(normalized.length, selection - (before.length - before.replace(/[^\u0300-\u036f]/g, '').length));
-            code.setSelectionRange(Math.max(0, newPosition), Math.max(0, newPosition));
+    }
+
+    code.addEventListener('input', () => {
+        const before = code.value;
+        const caret = code.selectionStart;
+        const normalized = normalizeVoucherCode(before);
+        if (normalized !== before) {
+            // Map the caret by normalizing only the text before it. The old formula
+            // could send the caret to the start of the field on every keystroke.
+            const normalizedPrefix = caret === null
+                ? normalized
+                : normalizeVoucherCode(before.slice(0, caret));
+            code.value = normalized;
+            const position = Math.min(normalized.length, normalizedPrefix.length);
+            code.setSelectionRange(position, position);
         }
         code.setCustomValidity('');
     });

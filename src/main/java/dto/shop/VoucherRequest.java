@@ -3,6 +3,8 @@ package dto.shop;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 public class VoucherRequest {
     @NotBlank(message="Vui lòng nhập mã voucher.")
@@ -22,6 +24,12 @@ public class VoucherRequest {
     @AssertTrue(message="Ngày kết thúc phải sau ngày bắt đầu.")
     public boolean isDateRangeValid() {
         return startsAt == null || endsAt == null || endsAt.isAfter(startsAt);
+    }
+
+    @AssertTrue(message="Ngày bắt đầu không được trước ngày hôm nay theo giờ Việt Nam.")
+    public boolean isStartDateNotBeforeToday() {
+        return startsAt == null || !startsAt.toLocalDate().isBefore(
+                LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
     }
 
     @AssertTrue(message="Giảm theo phần trăm phải từ 1 đến 100.")
