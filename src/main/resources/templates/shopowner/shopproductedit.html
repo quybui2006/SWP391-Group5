@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${'Chỉnh sửa ' + form.name + ' | FreshFruit'}">Chỉnh sửa sản phẩm | FreshFruit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
     <link rel="stylesheet" th:href="@{/css/shopproductedit.css}">
@@ -69,15 +70,17 @@
 
                     <label class="field">
                         <span>Ngày nhập <b>*</b></span>
-                        <input type="date" th:field="*{receivedDate}" required
-                               th:classappend="${errors.containsKey('receivedDate')} ? ' is-invalid' : ''">
+                        <input id="receivedDateDisplay" type="text" class="date-picker-vn" th:value="${form.receivedDate == null ? '' : #temporals.format(form.receivedDate, 'dd/MM/yyyy')}" placeholder="dd/MM/yyyy" autocomplete="off" required aria-describedby="receivedDateEditHelp" th:classappend="${errors.containsKey('receivedDate')} ? ' is-invalid' : ''">
+<input id="receivedDate" type="hidden" th:field="*{receivedDate}">
+                        <small id="receivedDateEditHelp">Chọn ngày theo định dạng ngày/tháng/năm. Ngày nhập không được ở tương lai.</small>
                         <em th:if="${errors.containsKey('receivedDate')}" th:text="${errors.get('receivedDate')}"></em>
                     </label>
 
                     <label class="field">
                         <span>Ngày hết hạn <b>*</b></span>
-                        <input type="date" th:field="*{expiryDate}" required
-                               th:classappend="${errors.containsKey('expiryDate')} ? ' is-invalid' : ''">
+                        <input id="expiryDateDisplay" type="text" class="date-picker-vn" th:value="${form.expiryDate == null ? '' : #temporals.format(form.expiryDate, 'dd/MM/yyyy')}" placeholder="dd/MM/yyyy" autocomplete="off" required aria-describedby="expiryDateEditHelp" th:classappend="${errors.containsKey('expiryDate')} ? ' is-invalid' : ''">
+<input id="expiryDate" type="hidden" th:field="*{expiryDate}">
+                        <small id="expiryDateEditHelp">Ngày hết hạn phải sau ngày nhập kho.</small>
                         <em th:if="${errors.containsKey('expiryDate')}" th:text="${errors.get('expiryDate')}"></em>
                     </label>
                 </div>
@@ -129,5 +132,56 @@
         </form>
     </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
+<script>
+(() => {
+    const form = document.querySelector("form.edit-product-form");
+    const receivedDisplay = document.getElementById("receivedDateDisplay");
+    const expiryDisplay = document.getElementById("expiryDateDisplay");
+    const received = document.getElementById("receivedDate");
+    const expiry = document.getElementById("expiryDate");
+    if (!form || !receivedDisplay || !expiryDisplay || !received || !expiry || !window.flatpickr) return;
+    const locale = (flatpickr.l10ns && flatpickr.l10ns.vn) || "default";
+    function parseDate(text) {
+        const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((text || "").trim());
+        if (!match) return null;
+        const day = Number(match[1]), month = Number(match[2]), year = Number(match[3]);
+        const date = new Date(year, month - 1, day);
+        if (year < 1900 || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+        return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+    function vietnamToday() {
+        const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Ho_Chi_Minh", year:"numeric", month:"2-digit", day:"2-digit"}).formatToParts(new Date());
+        const v = Object.fromEntries(parts.map(p => [p.type, p.value]));
+        return `${v.year}-${v.month}-${v.day}`;
+    }
+    function nextDate(iso) {
+        if (!iso) return "";
+        const [year, month, day] = iso.split("-").map(Number);
+        const d = new Date(Date.UTC(year, month - 1, day + 1));
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+    }
+    function syncAndValidate(showError) {
+        received.value = parseDate(receivedDisplay.value) || "";
+        expiry.value = parseDate(expiryDisplay.value) || "";
+        receivedDisplay.setCustomValidity(""); expiryDisplay.setCustomValidity("");
+        if (!received.value) receivedDisplay.setCustomValidity("Chọn ngày nhập theo định dạng ngày/tháng/năm.");
+        else if (received.value > vietnamToday()) receivedDisplay.setCustomValidity("Ngày nhập không được ở tương lai theo giờ Việt Nam.");
+        else if (!expiry.value) expiryDisplay.setCustomValidity("Chọn ngày hết hạn theo định dạng ngày/tháng/năm.");
+        else if (expiry.value <= received.value) expiryDisplay.setCustomValidity("Ngày hết hạn phải sau ngày nhập kho.");
+        const valid = receivedDisplay.checkValidity() && expiryDisplay.checkValidity();
+        if (!valid && showError) (receivedDisplay.validationMessage ? receivedDisplay : expiryDisplay).reportValidity();
+        return valid;
+    }
+    let expiryPicker;
+    const receivedPicker = flatpickr(receivedDisplay, {dateFormat:"d/m/Y", locale, allowInput:true, disableMobile:true, maxDate:vietnamToday(), onChange:()=>{syncAndValidate(false); if (expiryPicker) expiryPicker.set("minDate", received.value ? nextDate(received.value) : null);}});
+    expiryPicker = flatpickr(expiryDisplay, {dateFormat:"d/m/Y", locale, allowInput:true, disableMobile:true, minDate:received.value ? nextDate(received.value) : null, onChange:()=>syncAndValidate(false)});
+    receivedDisplay.addEventListener("input", () => { syncAndValidate(false); expiryPicker.set("minDate", received.value ? nextDate(received.value) : null); });
+    expiryDisplay.addEventListener("input", () => syncAndValidate(false));
+    form.addEventListener("submit", event => { if (!syncAndValidate(true)) event.preventDefault(); });
+    syncAndValidate(false);
+})();
+</script>
 </body>
 </html>

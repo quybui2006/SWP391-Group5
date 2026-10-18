@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title th:text="${voucherId == null} ? 'Tạo Voucher' : 'Sửa Voucher'">Voucher | FreshFruit</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/voucher-management.css}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title th:text="${voucherId == null} ? 'Tạo Voucher' : 'Sửa Voucher'">Voucher | FreshFruit</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/voucher-management.css}"></head>
 <body>
 <div class="app-shell">
 <aside th:replace="~{shopowner/fragments :: sidebar('vouchers')}"></aside>
@@ -9,14 +9,128 @@
 <div class="row g-4"><section class="col-lg-6"><h2 class="h5 mb-3">Thông tin voucher</h2><div class="mb-3"><label class="form-label" for="code">Mã voucher <span class="text-danger">*</span></label><input id="code" class="form-control text-uppercase" th:field="*{code}" maxlength="50" placeholder="VD: FRESH20" required><div class="form-text">Chỉ dùng chữ in hoa không dấu, số, dấu - hoặc _.</div><div class="text-danger small" th:errors="*{code}"></div></div>
 <div class="mb-3"><label class="form-label" for="name">Tên voucher <span class="text-danger">*</span></label><input id="name" class="form-control" th:field="*{name}" maxlength="150" required placeholder="Ưu đãi khách hàng thân thiết"><div class="text-danger small" th:errors="*{name}"></div></div>
 <div class="mb-3"><label class="form-label d-block">Loại giảm giá <span class="text-danger">*</span></label><div class="form-check form-check-inline"><input class="form-check-input discount-type" type="radio" th:field="*{discountType}" id="typePercent" value="PERCENTAGE"><label class="form-check-label" for="typePercent">Giảm theo %</label></div><div class="form-check form-check-inline"><input class="form-check-input discount-type" type="radio" th:field="*{discountType}" id="typeFixed" value="FIXED_AMOUNT"><label class="form-check-label" for="typeFixed">Giảm số tiền</label></div><div class="text-danger small" th:errors="*{discountType}"></div></div>
-<div class="mb-3"><label class="form-label" for="discountValue">Giá trị giảm <span class="text-danger">*</span></label><div class="input-group"><input id="discountValue" class="form-control" type="number" th:field="*{discountValue}" min="1" step="1" required><span class="input-group-text" id="discountUnit">%</span></div><div class="form-text" id="discountHint">Phần trăm giảm từ 1 đến 100.</div><div class="text-danger small" th:errors="*{discountValue}"></div></div>
-<div class="mb-3" id="maxDiscountWrapper"><label class="form-label" for="maxDiscountAmount">Giảm tối đa (₫)</label><input id="maxDiscountAmount" class="form-control" type="number" th:field="*{maxDiscountAmount}" min="1" step="1" placeholder="Ví dụ: 50000"><div class="form-text">Chỉ dùng khi giảm theo phần trăm; để trống nếu không giới hạn.</div><div class="text-danger small" th:errors="*{maxDiscountAmount}"></div></div>
-<div class="mb-3"><label class="form-label" for="minOrderValue">Giá trị đơn hàng tối thiểu (₫)</label><input id="minOrderValue" class="form-control" type="number" th:field="*{minOrderValue}" min="0" step="1" required><div class="text-danger small" th:errors="*{minOrderValue}"></div></div></section>
-<section class="col-lg-6"><h2 class="h5 mb-3">Điều kiện và thời gian</h2><div class="mb-3"><label class="form-label" for="maxUsages">Tổng lượt sử dụng tối đa <span class="text-danger">*</span></label><input id="maxUsages" class="form-control" type="number" th:field="*{maxUsages}" min="1" step="1" required><div class="form-text">Số lượt đã dùng được hệ thống quản lý; không thể đặt giới hạn thấp hơn số đã dùng.</div><div class="text-danger small" th:errors="*{maxUsages}"></div></div>
-<div class="mb-3"><label class="form-label" for="startsAt">Thời gian bắt đầu <span class="text-danger">*</span></label><input id="startsAt" class="form-control" type="datetime-local" th:field="*{startsAt}" required><div class="text-danger small" th:errors="*{startsAt}"></div></div><div class="mb-3"><label class="form-label" for="endsAt">Thời gian kết thúc <span class="text-danger">*</span></label><input id="endsAt" class="form-control" type="datetime-local" th:field="*{endsAt}" required><div class="text-danger small" th:errors="*{endsAt}"></div><div class="text-danger small" th:errors="*{dateRangeValid}"></div></div>
+<div class="mb-3"><label class="form-label" for="discountValue">Giá trị giảm <span class="text-danger">*</span></label><div class="input-group"><input id="discountValue" class="form-control" type="number" th:field="*{discountValue}" min="1" max="100" step="1" inputmode="numeric" required><span class="input-group-text" id="discountUnit">%</span></div><div class="form-text" id="discountHint">Phần trăm giảm từ 1 đến 100.</div><div class="text-danger small" th:errors="*{discountValue}"></div></div>
+<div class="mb-3" id="maxDiscountWrapper"><label class="form-label" for="maxDiscountAmount">Giảm tối đa (₫)</label><input id="maxDiscountAmount" class="form-control" type="number" th:field="*{maxDiscountAmount}" min="1" step="1" inputmode="numeric" placeholder="Ví dụ: 50000"><div class="form-text">Chỉ dùng khi giảm theo phần trăm; để trống nếu không giới hạn.</div><div class="text-danger small" th:errors="*{maxDiscountAmount}"></div></div>
+<div class="mb-3"><label class="form-label" for="minOrderValue">Giá trị đơn hàng tối thiểu (₫)</label><input id="minOrderValue" class="form-control" type="number" th:field="*{minOrderValue}" min="0" step="1" inputmode="numeric" required><div class="text-danger small" th:errors="*{minOrderValue}"></div></div></section>
+<section class="col-lg-6"><h2 class="h5 mb-3">Điều kiện và thời gian</h2><div class="mb-3"><label class="form-label" for="maxUsages">Tổng lượt sử dụng tối đa <span class="text-danger">*</span></label><input id="maxUsages" class="form-control" type="number" th:field="*{maxUsages}" min="1" step="1" inputmode="numeric" required><div class="form-text">Số lượt đã dùng được hệ thống quản lý; không thể đặt giới hạn thấp hơn số đã dùng.</div><div class="text-danger small" th:errors="*{maxUsages}"></div></div>
+<div class="mb-3"><label class="form-label" for="startsAtDisplay">Bắt đầu (giờ Việt Nam) <span class="text-danger">*</span></label><input id="startsAtDisplay" class="form-control" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/MM/yyyy HH:mm" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4} ([01][0-9]|2[0-3]):[0-5][0-9]" th:value="${voucherRequest.startsAt == null ? '' : #temporals.format(voucherRequest.startsAt, 'dd/MM/yyyy HH:mm')}" required><input id="startsAt" type="hidden" th:field="*{startsAt}"><div class="form-text">Nhập theo giờ Việt Nam, ví dụ 19/10/2026 14:30.</div><div class="text-danger small" th:errors="*{startsAt}"></div></div><div class="mb-3"><label class="form-label" for="endsAtDisplay">Kết thúc (giờ Việt Nam) <span class="text-danger">*</span></label><input id="endsAtDisplay" class="form-control" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/MM/yyyy HH:mm" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4} ([01][0-9]|2[0-3]):[0-5][0-9]" th:value="${voucherRequest.endsAt == null ? '' : #temporals.format(voucherRequest.endsAt, 'dd/MM/yyyy HH:mm')}" required><input id="endsAt" type="hidden" th:field="*{endsAt}"><div class="form-text">Ngày kết thúc phải sau ngày bắt đầu.</div><div class="text-danger small" th:errors="*{endsAt}"></div><div class="text-danger small" th:errors="*{dateRangeValid}"></div></div>
 <div class="form-check form-switch border rounded p-3 ps-5 mb-3"><input class="form-check-input" type="checkbox" role="switch" th:field="*{isPublic}" id="isPublic"><label class="form-check-label fw-semibold" for="isPublic">Công khai mã giảm giá trên gian hàng</label><div class="form-text">Bỏ chọn nếu khách hàng phải tự nhập mã.</div></div><div class="alert alert-info small">Voucher được tạo ở trạng thái bật nếu còn hiệu lực. Voucher hết hạn sẽ không thể bật lại. Việc sử dụng voucher cần được ghi nhận cùng giao dịch đặt hàng.</div></section></div></div>
 <div class="card-footer bg-white d-flex justify-content-end gap-2 p-3"><a class="btn btn-outline-secondary" th:href="@{/shop/vouchers}">Hủy</a><button class="btn btn-success" type="submit" th:text="${voucherId == null} ? 'Tạo voucher' : 'Lưu thay đổi'">Lưu</button></div></form></div>
-<script>(()=>{const radios=document.querySelectorAll('.discount-type');const wrapper=document.getElementById('maxDiscountWrapper');const max=document.getElementById('maxDiscountAmount');const unit=document.getElementById('discountUnit');const hint=document.getElementById('discountHint');const value=document.getElementById('discountValue');function update(){const percent=document.getElementById('typePercent').checked;wrapper.hidden=!percent;max.disabled=!percent;if(!percent)max.value='';unit.textContent=percent?'%':'₫';hint.textContent=percent?'Phần trăm giảm từ 1 đến 100.':'Số tiền được trừ trực tiếp khỏi giá trị đơn hàng.';value.max=percent?'100':'';}radios.forEach(r=>r.addEventListener('change',update));document.getElementById('voucherForm').addEventListener('submit',e=>{const start=document.getElementById('startsAt').value;const end=document.getElementById('endsAt').value;if(start&&end&&end<=start){e.preventDefault();alert('Ngày kết thúc phải sau ngày bắt đầu.');}});const code=document.getElementById('code');code.addEventListener('input',()=>{const a=code.selectionStart,b=code.selectionEnd;code.value=code.value.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'D').replace(/[^A-Z0-9_-]/g,'');code.setSelectionRange(a,b);});update();})();</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
+<script>
+(() => {
+    const form = document.getElementById('voucherForm');
+    const radios = document.querySelectorAll('.discount-type');
+    const wrapper = document.getElementById('maxDiscountWrapper');
+    const max = document.getElementById('maxDiscountAmount');
+    const unit = document.getElementById('discountUnit');
+    const hint = document.getElementById('discountHint');
+    const value = document.getElementById('discountValue');
+    const code = document.getElementById('code');
+    const startDisplay = document.getElementById('startsAtDisplay');
+    const endDisplay = document.getElementById('endsAtDisplay');
+    const start = document.getElementById('startsAt');
+    const end = document.getElementById('endsAt');
+    if (!form || !wrapper || !max || !unit || !hint || !value || !code || !startDisplay || !endDisplay || !start || !end) return;
+
+    function updateDiscountFields() {
+        const percent = document.getElementById('typePercent').checked;
+        wrapper.hidden = !percent;
+        max.disabled = !percent;
+        if (!percent) max.value = '';
+        unit.textContent = percent ? '%' : '₫';
+        hint.textContent = percent
+            ? 'Phần trăm giảm phải từ 1 đến 100.'
+            : 'Số tiền giảm phải là số nguyên VNĐ lớn hơn 0.';
+        value.max = percent ? '100' : '';
+        value.min = '1';
+        value.step = '1';
+    }
+
+    // Strictly parse Vietnamese date/time and submit a LocalDateTime-compatible ISO value.
+    function toIso(input) {
+        const text = input.trim();
+        const match = /^(\d{2})\/(\d{2})\/(\d{4}) ([01]\d|2[0-3]):([0-5]\d)$/.exec(text);
+        if (!match) return null;
+        const [, dayText, monthText, yearText, hourText, minuteText] = match;
+        const day = Number(dayText), month = Number(monthText), year = Number(yearText);
+        if (year < 1900 || month < 1 || month > 12) return null;
+        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        if (day < 1 || day > daysInMonth) return null;
+        return `${yearText}-${monthText}-${dayText}T${hourText}:${minuteText}`;
+    }
+
+    function clearDateError() {
+        [startDisplay, endDisplay].forEach(field => field.setCustomValidity(''));
+    }
+
+    function validateDates(showNativeMessage) {
+        clearDateError();
+        start.value = '';
+        end.value = '';
+        const startIso = toIso(startDisplay.value);
+        const endIso = toIso(endDisplay.value);
+        if (!startIso) {
+            startDisplay.setCustomValidity('Nhập thời gian bắt đầu theo định dạng dd/MM/yyyy HH:mm, ví dụ 19/10/2026 14:30.');
+            if (showNativeMessage) startDisplay.reportValidity();
+            return false;
+        }
+        if (!endIso) {
+            endDisplay.setCustomValidity('Nhập thời gian kết thúc theo định dạng dd/MM/yyyy HH:mm, ví dụ 20/10/2026 18:00.');
+            if (showNativeMessage) endDisplay.reportValidity();
+            return false;
+        }
+        if (endIso <= startIso) {
+            endDisplay.setCustomValidity('Thời gian kết thúc phải sau thời gian bắt đầu.');
+            if (showNativeMessage) endDisplay.reportValidity();
+            return false;
+        }
+        start.value = startIso;
+        end.value = endIso;
+        return true;
+    }
+
+    radios.forEach(radio => radio.addEventListener('change', updateDiscountFields));
+    [startDisplay, endDisplay].forEach(input => input.addEventListener('input', () => {
+        input.setCustomValidity('');
+        validateDates(false);
+    }));
+
+    // Calendar selection is localized to Vietnamese and displays DD/MM/YYYY HH:mm.
+    const vietnameseLocale = (window.flatpickr && flatpickr.l10ns && flatpickr.l10ns.vn) || 'default';
+    [startDisplay, endDisplay].forEach(input => flatpickr(input, {
+        enableTime: true,
+        time_24hr: true,
+        dateFormat: 'd/m/Y H:i',
+        locale: vietnameseLocale,
+        allowInput: true,
+        disableMobile: true,
+        minuteIncrement: 1,
+        onChange: () => input.dispatchEvent(new Event('input', { bubbles: true }))
+    }));
+    form.addEventListener('submit', event => {
+        updateDiscountFields();
+        if (!validateDates(true)) event.preventDefault();
+    });
+    code.addEventListener('input', () => {
+        const before = code.value;
+        const selection = code.selectionStart;
+        const normalized = before.toUpperCase().normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[đĐ]/g, 'D')
+            .replace(/[^A-Z0-9_-]/g, '');
+        code.value = normalized;
+        if (selection !== null) {
+            const newPosition = Math.min(normalized.length, selection - (before.length - before.replace(/[^\u0300-\u036f]/g, '').length));
+            code.setSelectionRange(Math.max(0, newPosition), Math.max(0, newPosition));
+        }
+        code.setCustomValidity('');
+    });
+    code.addEventListener('blur', () => { code.value = code.value.trim().toUpperCase(); });
+    updateDiscountFields();
+})();
+</script>
 </main>
 </div>
 </body></html>

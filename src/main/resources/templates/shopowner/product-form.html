@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm sản phẩm | FreshFruit</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
 </head>
@@ -71,13 +72,15 @@
                     </label>
                     <label class="field">
                         <span>Ngày nhập <b>*</b></span>
-                        <input id="receivedDate" type="date" th:field="*{receivedDate}" required aria-describedby="receivedDateHelp">
+                        <input id="receivedDateDisplay" type="text" class="date-picker-vn" th:value="${productCreateRequest.receivedDate == null ? '' : #temporals.format(productCreateRequest.receivedDate, 'dd/MM/yyyy')}" placeholder="dd/MM/yyyy" autocomplete="off" required aria-describedby="receivedDateHelp">
+<input id="receivedDate" type="hidden" th:field="*{receivedDate}">
                         <small id="receivedDateHelp">Chọn ngày nhập kho (không được ở tương lai).</small>
                         <em th:errors="*{receivedDate}"></em>
                     </label>
                     <label class="field">
                         <span>Ngày hết hạn <b>*</b></span>
-                        <input id="expiryDate" type="date" th:field="*{expiryDate}" required aria-describedby="expiryDateHelp">
+                        <input id="expiryDateDisplay" type="text" class="date-picker-vn" th:value="${productCreateRequest.expiryDate == null ? '' : #temporals.format(productCreateRequest.expiryDate, 'dd/MM/yyyy')}" placeholder="dd/MM/yyyy" autocomplete="off" required aria-describedby="expiryDateHelp">
+<input id="expiryDate" type="hidden" th:field="*{expiryDate}">
                         <small id="expiryDateHelp">Ngày hết hạn phải sau ngày nhập kho.</small>
                         <em th:errors="*{expiryDate}"></em>
                     </label>
@@ -94,25 +97,80 @@
                 <button class="button button-primary" type="submit">Lưu sản phẩm</button>
             </div>
         </form>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
         <script th:src="@{/js/upload-validation.js?v=20261017}"></script>
         <script>
             (() => {
+                const form = document.querySelector("form.product-form");
+                const receivedDisplay = document.getElementById("receivedDateDisplay");
+                const expiryDisplay = document.getElementById("expiryDateDisplay");
                 const received = document.getElementById("receivedDate");
                 const expiry = document.getElementById("expiryDate");
-                if (!received || !expiry) return;
-                function nextDate(value) {
-                    const date = new Date(value + "T00:00:00");
-                    date.setDate(date.getDate() + 1);
-                    return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+                if (!form || !receivedDisplay || !expiryDisplay || !received || !expiry || !window.flatpickr) return;
+
+                const locale = (flatpickr.l10ns && flatpickr.l10ns.vn) || "default";
+                function parseDate(text) {
+                    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((text || "").trim());
+                    if (!match) return null;
+                    const day = Number(match[1]), month = Number(match[2]), year = Number(match[3]);
+                    const date = new Date(year, month - 1, day);
+                    if (year < 1900 || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+                    return `${match[3]}-${match[2]}-${match[1]}`;
                 }
-                function validateExpiry() {
-                    expiry.min = received.value ? nextDate(received.value) : "";
-                    expiry.setCustomValidity(received.value && expiry.value && expiry.value <= received.value
-                        ? "Ngày hết hạn phải sau ngày nhập kho." : "");
+                function vietnamToday() {
+                    const parts = new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit"
+                    }).formatToParts(new Date());
+                    const v = Object.fromEntries(parts.map(p => [p.type, p.value]));
+                    return `${v.year}-${v.month}-${v.day}`;
                 }
-                received.addEventListener("change", validateExpiry);
-                expiry.addEventListener("change", validateExpiry);
-                validateExpiry();
+                function nextDate(iso) {
+                    if (!iso) return "";
+                    const [year, month, day] = iso.split("-").map(Number);
+                    const date = new Date(Date.UTC(year, month - 1, day + 1));
+                    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+                }
+                function syncAndValidate(showError) {
+                    received.value = parseDate(receivedDisplay.value) || "";
+                    expiry.value = parseDate(expiryDisplay.value) || "";
+                    receivedDisplay.setCustomValidity("");
+                    expiryDisplay.setCustomValidity("");
+                    if (!received.value) {
+                        receivedDisplay.setCustomValidity("Chọn ngày nhập theo định dạng ngày/tháng/năm.");
+                    } else if (received.value > vietnamToday()) {
+                        receivedDisplay.setCustomValidity("Ngày nhập không được ở tương lai theo giờ Việt Nam.");
+                    } else if (!expiry.value) {
+                        expiryDisplay.setCustomValidity("Chọn ngày hết hạn theo định dạng ngày/tháng/năm.");
+                    } else if (expiry.value <= received.value) {
+                        expiryDisplay.setCustomValidity("Ngày hết hạn phải sau ngày nhập kho.");
+                    }
+                    const valid = receivedDisplay.checkValidity() && expiryDisplay.checkValidity();
+                    if (!valid && showError) (receivedDisplay.validationMessage ? receivedDisplay : expiryDisplay).reportValidity();
+                    return valid;
+                }
+                let expiryPicker;
+                const receivedPicker = flatpickr(receivedDisplay, {
+                    dateFormat: "d/m/Y", locale, allowInput: true, disableMobile: true, maxDate: vietnamToday(),
+                    onChange: () => {
+                        syncAndValidate(false);
+                        if (expiryPicker) expiryPicker.set("minDate", received.value ? nextDate(received.value) : null);
+                    }
+                });
+                expiryPicker = flatpickr(expiryDisplay, {
+                    dateFormat: "d/m/Y", locale, allowInput: true, disableMobile: true,
+                    minDate: received.value ? nextDate(received.value) : null,
+                    onChange: () => syncAndValidate(false)
+                });
+                receivedDisplay.addEventListener("input", () => {
+                    syncAndValidate(false);
+                    expiryPicker.set("minDate", received.value ? nextDate(received.value) : null);
+                });
+                expiryDisplay.addEventListener("input", () => syncAndValidate(false));
+                form.addEventListener("submit", event => {
+                    if (!syncAndValidate(true)) event.preventDefault();
+                });
+                syncAndValidate(false);
             })();
         </script>
     </main>

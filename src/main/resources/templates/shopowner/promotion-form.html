@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${promotionId == null} ? 'Tạo khuyến mãi | FreshFruit' : 'Chỉnh sửa khuyến mãi | FreshFruit'">Tạo khuyến mãi | FreshFruit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
 </head>
@@ -65,6 +66,8 @@
         </section>
     </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
 <script>
 (() => {
     const form = document.getElementById('promotionForm');
@@ -106,6 +109,19 @@
         end.value = endIso;
         return true;
     };
+    // Use a calendar picker while keeping the visible format day/month/year (Vietnamese convention).
+    const vietnameseLocale = (window.flatpickr && flatpickr.l10ns && flatpickr.l10ns.vn) || 'default';
+    [startDisplay, endDisplay].forEach(input => flatpickr(input, {
+        enableTime: true,
+        time_24hr: true,
+        dateFormat: 'd/m/Y H:i',
+        locale: vietnameseLocale,
+        allowInput: true,
+        disableMobile: true,
+        minuteIncrement: 1,
+        onChange: () => input.dispatchEvent(new Event('change', { bubbles: true }))
+    }));
+
     startDisplay.addEventListener('change', validate);
     endDisplay.addEventListener('change', validate);
     form.addEventListener('submit', event => { if (!validate()) event.preventDefault(); });
