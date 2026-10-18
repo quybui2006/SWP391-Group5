@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${shop != null ? shop.name + ' - Cửa hàng FreshFruit' : 'Cửa hàng FreshFruit'}">FreshFruit - Cửa hàng</title>
+
+    <!-- Google Fonts & Base CSS -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS Modules đồng bộ 100% với màn Home -->
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/customershop.css}">
+</head>
+
+<body>
+
+<!-- =========================================================
+     1. HEADER (ĐỒNG BỘ 100% VỚI MÀN HOME & PRODUCT DETAIL)
+========================================================= -->
+<header class="site-header">
+    <div class="container header-inner">
+
+        <!-- Logo Brand -->
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+            <span class="brand-mark">F</span>
+            <span>
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+        </a>
+
+        <!-- Main Nav -->
+        <nav class="main-nav" aria-label="Điều hướng chính">
+            <a th:href="@{/}">Trang chủ</a>
+            <a class="active" th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
+        </nav>
+
+        <!-- Actions -->
+        <div class="header-actions">
+            <!-- Search -->
+            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
+
+            <!-- Bell Notifications -->
+            <div class="notif-wrapper" id="notifWrapper">
+                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true"></div>
+            </div>
+
+            <!-- Cart -->
+            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng" aria-label="Giỏ hàng">
+                🛒
+                <span id="cartCount">0</span>
+            </a>
+
+            <!-- User Avatar & Dropdown -->
+            <th:block th:if="${session.role != null}">
+                <div class="user-menu-container">
+                    <div class="user-avatar" th:title="${session.fullName}">
+                        <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
+                    </div>
+                    <div class="user-dropdown">
+                        <div class="user-dropdown-header">
+                            <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
+                            <p class="user-dropdown-email">
+                                <span th:if="${session.role == 'CUSTOMER'}">Khách hàng</span>
+                                <span th:if="${session.role == 'SHOP_OWNER'}">Chủ cửa hàng</span>
+                                <span th:if="${session.role == 'ADMIN'}">Quản trị viên</span>
+                            </p>
+                        </div>
+                        <div class="user-dropdown-links">
+                            <th:block th:if="${session.role == 'CUSTOMER'}">
+                                <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
+                                <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
+                                <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
+                                <a th:href="@{/customer/account/favorites}">❤️ Sản phẩm yêu thích</a>
+                                <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
+                            </th:block>
+                            <th:block th:if="${session.role == 'SHOP_OWNER'}">
+                                <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
+                                <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
+                                <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
+                                <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
+                            </th:block>
+                            <th:block th:if="${session.role == 'ADMIN'}">
+                                <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
+                            </th:block>
+                        </div>
+                        <div class="user-dropdown-logout">
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit">🚪 Đăng xuất</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+
+            <th:block th:if="${session.role == null}">
+                <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+            </th:block>
+        </div>
+
+    </div>
+</header>
+
+<main class="shop-main-layout">
+
+    <!-- =========================================================
+         2. BREADCRUMB
+    ========================================================= -->
+    <div class="container shop-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a>
+        <span class="sep">/</span>
+        <a th:href="@{/search}">Cửa hàng</a>
+        <span class="sep">/</span>
+        <strong th:text="${shop != null ? shop.name : 'FreshFruit Nông Trại Xanh'}">Tên Cửa Hàng</strong>
+    </div>
+
+    <!-- =========================================================
+         3. SHOP PROFILE HEADER BANNER (BỐ CỤC SHOPEE - TONE HOME)
+    ========================================================= -->
+    <section class="container shop-header-section">
+        <div class="fresh-shop-profile-card">
+
+            <!-- Left: Avatar, Tên shop & Action buttons -->
+            <div class="shop-card-left">
+                <div class="shop-avatar-box">
+                    <div class="shop-avatar-circle"
+                         th:text="${shop != null && shop.name != null && !shop.name.isEmpty() ? #strings.substring(shop.name, 0, 1).toUpperCase() : '🏪'}">
+                        🏪
+                    </div>
+                    <span class="shop-mall-badge">Mall</span>
+                </div>
+
+                <div class="shop-card-details">
+                    <div class="shop-title-wrap">
+                        <h1 class="shop-profile-name" th:text="${shop != null ? shop.name : 'FreshFruit Nông Trại Xanh'}">
+                            FreshFruit Nông Trại Xanh
+                        </h1>
+                    </div>
+
+                    <div class="shop-status-line">
+                        <span class="status-dot"></span>
+                        <span th:text="${shop != null and shop.operatingStatus == 'OPEN' ? 'Đang mở cửa' : 'Online 5 phút trước'}">
+                            Đang mở cửa
+                        </span>
+                    </div>
+
+                    <div class="shop-cta-row">
+                        <button type="button" class="btn-follow-shop" id="followShopBtn" onclick="toggleFollowShop(this)">
+                            <span class="follow-icon">+</span>
+                            <span class="follow-text">Theo Dõi</span>
+                        </button>
+
+                        <button type="button" class="btn-chat-shop" onclick="openShopChat()">
+                            <span>💬</span>
+                            <span>Chat Ngay</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vertical Divider -->
+            <div class="shop-divider"></div>
+
+            <!-- Right: 6 Metrics Grid (Chuẩn Shopee) -->
+            <div class="shop-metrics-grid">
+                <div class="metric-cell">
+                    <span class="metric-icon">📦</span>
+                    <div class="metric-info">
+                        <span class="metric-lbl">Sản Phẩm:</span>
+                        <strong class="metric-num green" th:text="${resultCount != null ? resultCount : 86}">86</strong>
+                    </div>
+                </div>
+
+                <div class="metric-cell">
+                    <span class="metric-icon">👥</span>
+                    <div class="metric-info">
+                        <span class="metric-lbl">Người Theo Dõi:</span>
+                        <strong class="metric-num green">12.8k</strong>
+                    </div>
+                </div>
+
+                <div class="metric-cell">
+                    <span class="metric-icon">💬</span>
+                    <div class="metric-info">
+                        <span class="metric-lbl">Tỉ Lệ Phản Hồi:</span>
+                        <strong class="metric-num green">100%</strong>
+                        <small class="metric-sub">(Trong vài phút)</small>
+                    </div>
+                </div>
+
+                <div class="metric-cell">
+                    <span class="metric-icon">⭐</span>
+                    <div class="metric-info">
+                        <span class="metric-lbl">Đánh Giá:</span>
+                        <strong class="metric-num green">4.9</strong>
+                        <small class="metric-sub">(4.9k Đánh Giá)</small>
+                    </div>
+                </div>
+
+                <div class="metric-cell">
+                    <span class="metric-icon">🕒</span>
+                    <div class="metric-info">
+                        <span class="metric-lbl">Tham Gia:</span>
+                        <strong class="metric-num green">2 năm trước</strong>
+                    </div>
+                </div>
+
+                <div class="metric-cell">
+                    <span class="metric-icon">📍</span>
+                    <div class="metric-info">
+                        <span class="metric-lbl">Khu Vực:</span>
+                        <strong class="metric-num green" th:text="${shopProvinceName}">Hà Nội</strong>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- =========================================================
+         4. SHOP NAVIGATION TABS (DANH MỤC CỦA SHOP + TÌM TRONG SHOP)
+    ========================================================= -->
+    <section class="container shop-nav-section">
+        <div class="shop-nav-bar">
+
+            <!-- Horizontal Category Tabs -->
+            <nav class="shop-category-tabs" aria-label="Danh mục của shop">
+                <!-- Tab Tất cả sản phẩm / Dạo -->
+                <a th:href="@{/shops/{id}(id=${shop.id})}"
+                   class="shop-tab"
+                   th:classappend="${selectedCategoryId == null and (keyword == null or keyword.isEmpty()) ? 'active' : ''}">
+                    <span>🍃</span>
+                    <span>Dạo Shop</span>
+                </a>
+
+                <a th:href="@{/shops/{id}(id=${shop.id})}"
+                   class="shop-tab"
+                   th:classappend="${selectedCategoryId == null and (keyword != null and !keyword.isEmpty()) ? 'active' : ''}">
+                    <span>🛒</span>
+                    <span>Tất Cả Sản Phẩm</span>
+                </a>
+
+                <!-- Dynamic Categories from Database -->
+                <a th:each="cat : ${categories}"
+                   th:href="@{/shops/{id}(id=${shop.id}, categoryId=${cat.id})}"
+                   class="shop-tab"
+                   th:classappend="${selectedCategoryId == cat.id ? 'active' : ''}">
+                    <span th:text="${cat.name.contains('Táo') ? '🍎' : (cat.name.contains('Nho') ? '🍇' : (cat.name.contains('Cam') ? '🍊' : (cat.name.contains('Xanh') ? '🥝' : '🍒')))}">🍓</span>
+                    <span th:text="${cat.name}">Danh Mục</span>
+                </a>
+            </nav>
+
+            <!-- Search In Shop -->
+            <form th:action="@{/shops/{id}(id=${shop.id})}" method="get" class="shop-search-box">
+                <input type="hidden" name="categoryId" th:if="${selectedCategoryId != null}" th:value="${selectedCategoryId}">
+                <span class="search-icon">⌕</span>
+                <input type="search"
+                       name="keyword"
+                       th:value="${keyword}"
+                       placeholder="Tìm trong Shop này..."
+                       aria-label="Tìm kiếm trong cửa hàng">
+                <button type="submit" class="shop-search-submit">Tìm</button>
+            </form>
+
+        </div>
+    </section>
+
+
+    <!-- =========================================================
+         5. MÃ GIẢM GIÁ CỦA SHOP (SHOP VOUCHERS - CHỈ GIỮ VOUCHER SHOP)
+    ========================================================= -->
+    <section class="container shop-vouchers-section" th:if="${shopVouchers != null and !shopVouchers.empty}">
+        <div class="vouchers-header">
+            <div class="vouchers-title-box">
+                <span class="voucher-kicker">ƯU ĐÃI ĐỘC QUYỀN</span>
+                <h3>MÃ GIẢM GIÁ CỦA SHOP</h3>
+            </div>
+            <span class="voucher-sub-text">Thu thập mã giảm giá để nhận ưu đãi tốt nhất khi mua sắm</span>
+        </div>
+
+        <div class="shop-vouchers-grid">
+            <div class="shop-voucher-ticket" th:each="v : ${shopVouchers}">
+                <div class="voucher-ticket-left">
+                    <span class="voucher-badge-tag" th:text="${v.tag}">Toàn Shop</span>
+                    <strong class="voucher-amount" th:text="${v.title}">Giảm 15k</strong>
+                    <span class="voucher-code" th:text="${v.code}">FFSHOP15K</span>
+                </div>
+
+                <div class="voucher-ticket-divider"></div>
+
+                <div class="voucher-ticket-right">
+                    <div class="voucher-terms">
+                        <span class="term-condition" th:text="${v.condition}">Đơn Tối Thiểu 150k</span>
+                        <span class="term-expiry" th:text="${v.expiry}">HSD: 31.12.2026</span>
+                    </div>
+                    <button type="button" class="btn-save-voucher" th:attr="data-code=${v.code}" onclick="saveVoucher(this)">
+                        Lưu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- =========================================================
+         6. SẮP XẾP & BỘ LỌC SẢN PHẨM (FILTER BAR SHOPEE)
+    ========================================================= -->
+    <section class="container shop-sort-section">
+        <div class="shop-sort-bar">
+            <span class="sort-title">Sắp xếp theo:</span>
+
+            <div class="sort-buttons-wrap">
+                <a th:href="@{/shops/{id}(id=${shop.id}, categoryId=${selectedCategoryId}, keyword=${keyword}, sort='all')}"
+                   class="sort-btn" th:classappend="${sort == null or sort == 'all' ? 'active' : ''}">
+                    Phổ Biến
+                </a>
+
+                <a th:href="@{/shops/{id}(id=${shop.id}, categoryId=${selectedCategoryId}, keyword=${keyword}, sort='newest')}"
+                   class="sort-btn" th:classappend="${sort == 'newest' ? 'active' : ''}">
+                    Mới Nhất
+                </a>
+
+                <a th:href="@{/shops/{id}(id=${shop.id}, categoryId=${selectedCategoryId}, keyword=${keyword}, sort='sales')}"
+                   class="sort-btn" th:classappend="${sort == 'sales' ? 'active' : ''}">
+                    Bán Chạy
+                </a>
+
+                <div class="sort-price-dropdown">
+                    <select onchange="window.location.href=this.value" aria-label="Sắp xếp theo giá">
+                        <option th:value="@{/shops/{id}(id=${shop.id}, categoryId=${selectedCategoryId}, keyword=${keyword}, sort='all')}"
+                                th:selected="${sort != 'price_asc' and sort != 'price_desc'}">
+                            Giá: Mặc định
+                        </option>
+                        <option th:value="@{/shops/{id}(id=${shop.id}, categoryId=${selectedCategoryId}, keyword=${keyword}, sort='price_asc')}"
+                                th:selected="${sort == 'price_asc'}">
+                            Giá: Thấp đến Cao
+                        </option>
+                        <option th:value="@{/shops/{id}(id=${shop.id}, categoryId=${selectedCategoryId}, keyword=${keyword}, sort='price_desc')}"
+                                th:selected="${sort == 'price_desc'}">
+                            Giá: Cao đến Thấp
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sort-total-count">
+                <span th:text="${resultCount}">0</span> sản phẩm
+            </div>
+        </div>
+    </section>
+
+
+    <!-- =========================================================
+         7. DANH SÁCH SẢN PHẨM CỦA SHOP (CHUẨN 100% STYLE MÀN HOME)
+    ========================================================= -->
+    <section class="container shop-products-section">
+
+        <!-- Grid Sản phẩm -->
+        <div class="product-grid" th:if="${products != null and !products.empty}">
+
+            <article class="product-card"
+                     th:each="variant, iter : ${products}"
+                     th:attr="data-name=${variant.name + ' ' + (variant.product != null ? variant.product.name : '')}"
+                     th:onclick="|window.location.href='/product/' + ${variant.id}|"
+                     role="link"
+                     tabindex="0"
+                     th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
+
+                <!-- Product image -->
+                <div class="product-image"
+                     th:classappend="${iter.index % 4 == 0 ? 'bg-pastel-red' : (iter.index % 4 == 1 ? 'bg-pastel-yellow' : (iter.index % 4 == 2 ? 'bg-pastel-purple' : 'bg-pastel-green'))}">
+
+                    <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                         th:src="${variant.imageUrl}"
+                         th:alt="${variant.name}"
+                         onerror="this.style.display='none'">
+
+                    <div class="image-placeholder"
+                         th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">
+                        🍎
+                    </div>
+
+                    <span class="fresh-tag">Đang bán</span>
+
+                    <button class="heart-btn"
+                            type="button"
+                            title="Yêu thích"
+                            aria-label="Thêm vào yêu thích"
+                            th:attr="data-favorite-id=${variant.id}"
+                            onclick="event.stopPropagation(); toggleFavorite(event, this)">
+                        ♡
+                    </button>
+                </div>
+
+                <!-- Product info -->
+                <div class="product-info">
+                    <span class="product-category"
+                          th:text="${variant.product != null ? variant.product.name : 'Trái cây'}">
+                        Trái cây
+                    </span>
+
+                    <h3 th:text="${variant.name}">
+                        Tên sản phẩm
+                    </h3>
+
+                    <div class="product-bottom">
+                        <strong class="price"
+                                th:if="${variant.price != null}"
+                                th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                            0 ₫
+                        </strong>
+
+                        <strong class="price" th:unless="${variant.price != null}">
+                            Liên hệ
+                        </strong>
+
+                        <!-- Add to cart -->
+                        <form th:action="@{/cart/items}"
+                              method="post"
+                              class="add-cart-form"
+                              onclick="event.stopPropagation()"
+                              onsubmit="addToCart(event, this)">
+
+                            <input type="hidden" name="variantId" th:value="${variant.id}">
+                            <input type="hidden" name="quantity" value="1">
+
+                            <button class="add-btn"
+                                    type="submit"
+                                    aria-label="Thêm sản phẩm vào giỏ hàng">
+                                +
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+
+        <!-- Trạng thái trống (Empty State) -->
+        <div class="shop-empty-state" th:if="${products == null or products.empty}">
+            <div class="empty-icon">🍃</div>
+            <h3>Không tìm thấy sản phẩm nào trong cửa hàng</h3>
+            <p>Hãy thử tìm kiếm với từ khóa khác hoặc bấm xem tất cả sản phẩm của Shop.</p>
+            <a th:href="@{/shops/{id}(id=${shop.id})}" class="btn-reset-filter">
+                Xem tất cả sản phẩm của Shop
+            </a>
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- =========================================================
+     8. FOOTER (ĐỒNG BỘ 100% VỚI MÀN HOME)
+========================================================= -->
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div>
+            <a class="brand footer-brand" th:href="@{/}">
+                <span class="brand-mark">F</span>
+                <span>
+                    <strong>FreshFruit</strong>
+                    <small>Tươi ngon mỗi ngày</small>
+                </span>
+            </a>
+            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
+        </div>
+
+        <div class="footer-links">
+            <a th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
+        </div>
+
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+    </div>
+</footer>
+
+<!-- Toast notification element -->
+<div id="shopToast" class="fresh-toast" style="display: none;"></div>
+
+<!-- =========================================================
+     9. JAVASCRIPT
+========================================================= -->
+<script th:src="@{/js/cart-integration.js(v='20261008-1')}"></script>
+<script th:src="@{/js/favorites-integration.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
+<script th:src="@{/js/customershop.js}"></script>
+
+</body>
+</html>

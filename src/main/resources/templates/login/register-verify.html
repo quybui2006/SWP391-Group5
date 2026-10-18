@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác minh email - FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+            <span class="brand-mark">F</span>
+            <span>
+                <strong>FreshFruit</strong>
+                <small>Tươi ngon mỗi ngày</small>
+            </span>
+        </a>
+        <a th:href="@{/login}" class="secondary-btn" style="min-height: 38px; padding: 0 16px;">Về đăng nhập</a>
+    </div>
+</header>
+
+<main class="login-main">
+    <section class="login-card">
+        <span class="login-eyebrow">XÁC THỰC BẢO MẬT</span>
+        <h1>Xác minh email</h1>
+        <p>Nhập mã OTP 6 chữ số đã được gửi tới email <strong th:if="${email != null}" th:text="${email}">email@example.com</strong> (mã có hiệu lực trong 5 phút).</p>
+
+        <p class="login-notice" th:if="${message}" th:text="${message}" style="padding: 12px 14px; color: var(--green-dark); background: var(--green-light); border-radius: 10px; font-weight: 600; margin-bottom: 14px; font-size: 13.5px; line-height: 1.5; border: 1px solid rgba(47, 143, 70, 0.2);"></p>
+        <p class="login-error" th:if="${error}" th:text="${error}" role="alert"></p>
+
+        <form th:action="@{/register/verify}" method="post">
+            <label for="code">Mã OTP (6 chữ số)</label>
+            <input id="code" name="code" inputmode="numeric"
+                   pattern="[0-9]{6}" maxlength="6" placeholder="123456" autofocus required>
+            <button type="submit">Xác minh & Kích hoạt</button>
+        </form>
+
+        <div style="margin-top: 22px; padding: 14px 16px; background: #f8faf8; border-radius: 12px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span style="font-size: 13px; color: var(--muted);">Chưa nhận được mã OTP?</span>
+            <form th:action="@{/register/resend-otp}" method="post" style="margin: 0;">
+                <button type="submit" id="btnResendOtp" style="background: var(--white); border: 1px solid var(--green); color: var(--green-dark); font-weight: 700; cursor: pointer; font-size: 13px; padding: 6px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='var(--green-light)'" onmouseout="this.style.background='var(--white)'">
+                    🔄 Gửi lại mã
+                </button>
+            </form>
+        </div>
+
+        <p style="margin-top: 16px; font-size: 13px; text-align: center; color: var(--muted);">
+            Sai địa chỉ email? <a th:href="@{/register}" style="color: var(--green-dark); font-weight: 600;">Đăng ký lại</a>
+        </p>
+    </section>
+</main>
+</body>
+</html>

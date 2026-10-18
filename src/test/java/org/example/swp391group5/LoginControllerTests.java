@@ -1,11 +1,11 @@
 package org.example.swp391group5;
 
-import controller.LoginController;
+import controller.login.LoginController;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.ui.Model;
-import service.LoginService;
+import service.login.LoginService;
 
 import java.util.Optional;
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${promotionId == null} ? 'Tạo khuyến mãi | FreshFruit' : 'Chỉnh sửa khuyến mãi | FreshFruit'">Tạo khuyến mãi | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('promotions')}"></aside>
+    <main class="main-content product-management">
+        <header class="topbar">
+            <div><p class="breadcrumb">Shop Owner / Khuyến mãi / <span th:text="${promotionId == null} ? 'Tạo mới' : 'Chỉnh sửa'">Tạo mới</span></p>
+                <h1 th:text="${promotionId == null} ? 'Tạo khuyến mãi' : 'Chỉnh sửa khuyến mãi'">Tạo khuyến mãi</h1>
+                <p class="muted">Giá ưu đãi áp dụng cho một biến thể sản phẩm trong khoảng thời gian đã chọn.</p></div>
+        </header>
+        <p class="alert alert-error" th:if="${serviceError}" th:text="${serviceError}">Không thể lưu dữ liệu.</p>
+        <section class="form-layout">
+            <form class="panel form-panel" id="promotionForm" method="post"
+                  th:object="${promotionForm}"
+                  th:action="${promotionId == null} ? @{/shop/promotions/add} : @{/shop/promotions/{id}/edit(id=${promotionId})}">
+                <div class="form-heading"><div><h2>Thông tin khuyến mãi</h2><p class="muted">Các trường có dấu * là bắt buộc.</p></div><span class="required-note">* Bắt buộc</span></div>
+                <div class="form-grid">
+                    <label class="field full"><span>Biến thể sản phẩm <b>*</b></span>
+                        <select th:field="*{variantId}" required>
+                            <option value="">-- Chọn biến thể --</option>
+                            <option th:each="option : ${variantOptions}" th:value="${option.id}" th:text="${option.label + ' — Giá gốc: ' + #numbers.formatDecimal(option.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">Cam loại 1</option>
+                        </select>
+                        <small th:if="${#fields.hasErrors('variantId')}" th:errors="*{variantId}">Lỗi biến thể</small>
+                        <small>Chỉ hiển thị biến thể đang bán thuộc cửa hàng của bạn.</small>
+                    </label>
+                    <label class="field full"><span>Giá khuyến mãi (₫) <b>*</b></span>
+                        <input type="number" th:field="*{promotionalPrice}" min="1" step="1" required placeholder="Ví dụ: 45000">
+                        <small th:if="${#fields.hasErrors('promotionalPrice')}" th:errors="*{promotionalPrice}">Lỗi giá</small>
+                        <small>Giá khuyến mãi phải thấp hơn giá bán hiện tại của biến thể.</small>
+                    </label>
+                    <label class="field"><span>Bắt đầu <b>*</b></span>
+                        <input id="startsAt" type="datetime-local" th:field="*{startsAt}" required>
+                        <small th:if="${#fields.hasErrors('startsAt')}" th:errors="*{startsAt}">Lỗi thời gian bắt đầu</small>
+                    </label>
+                    <label class="field"><span>Kết thúc <b>*</b></span>
+                        <input id="endsAt" type="datetime-local" th:field="*{endsAt}" required>
+                        <small th:if="${#fields.hasErrors('endsAt')}" th:errors="*{endsAt}">Lỗi thời gian kết thúc</small>
+                    </label>
+                    <label class="field full"><span>Trạng thái</span>
+                        <select th:field="*{enabled}"><option value="true">Bật khuyến mãi</option><option value="false">Lưu ở trạng thái tắt</option></select>
+                    </label>
+                </div>
+                <p class="alert alert-error" id="clientError" hidden></p>
+                <div class="form-actions">
+                    <a class="cancel-btn" th:href="@{/shop/promotions}">Hủy</a>
+                    <button class="primary-action" type="submit" th:text="${promotionId == null} ? 'Tạo khuyến mãi' : 'Lưu thay đổi'">Lưu</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</div>
+<script>
+(() => {
+    const form = document.getElementById('promotionForm');
+    const start = document.getElementById('startsAt');
+    const end = document.getElementById('endsAt');
+    const error = document.getElementById('clientError');
+    if (!form || !start || !end || !error) return;
+
+    // Build current wall-clock time in Asia/Ho_Chi_Minh, matching the server's business zone.
+    const vietnamNow = () => {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        }).formatToParts(new Date());
+        const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+        return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}`;
+    };
+    const validate = () => {
+        error.hidden = true;
+        error.textContent = '';
+        if (start.value && start.value < vietnamNow()) {
+            error.textContent = 'Thời điểm bắt đầu phải từ thời điểm hiện tại trở đi (giờ Việt Nam).';
+            error.hidden = false; return false;
+        }
+        if (start.value && end.value && end.value <= start.value) {
+            error.textContent = 'Thời điểm kết thúc phải sau thời điểm bắt đầu.';
+            error.hidden = false; return false;
+        }
+        return true;
+    };
+    start.addEventListener('change', validate);
+    end.addEventListener('change', validate);
+    form.addEventListener('submit', event => { if (!validate()) event.preventDefault(); });
+})();
+</script>
+</body>
+</html>

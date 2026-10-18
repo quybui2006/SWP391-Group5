@@ -14,24 +14,33 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     boolean existsByShopIdAndSku(Long shopId, String sku);
 
+    /** Chỉ trả biến thể đang bán thuộc sản phẩm được duyệt để tạo khuyến mãi. */
+    @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p " +
+            "WHERE pv.shopId = :shopId AND pv.status = 'ACTIVE' " +
+            "AND p.approvalStatus = 'APPROVED' " +
+            "ORDER BY pv.name ASC")
+    List<ProductVariant> findPromotionEligibleVariants(@Param("shopId") Long shopId);
+
     // Tìm các biến thể sản phẩm đang ACTIVE
     // và thuộc về Product cũng đang ACTIVE
-    List<ProductVariant> findByStatusAndProduct_SellingStatus(
+    List<ProductVariant> findByStatusAndProduct_SellingStatusAndProduct_ApprovalStatus(
             String variantStatus,
-            String productStatus
+            String productStatus,
+            String approvalStatus
     );
 
     // Tìm kiếm sản phẩm theo tên (chứa từ khóa) và trạng thái ACTIVE
-    List findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatus(
+    List findByNameContainingIgnoreCaseAndStatusAndProduct_SellingStatusAndProduct_ApprovalStatus(
             String keyword,
             String variantStatus,
-            String productStatus
+            String productStatus,
+            String approvalStatus
     );
 
     // Câu Query kết hợp Tìm kiếm (keyword) + Lọc giá (min/max) + Lọc Danh mục
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p LEFT JOIN p.categories c " +
-            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' " +
+            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
             "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
@@ -42,4 +51,16 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("filterByCategory") boolean filterByCategory,
             @Param("categoryIds") List categoryIds);
+
+    // Lấy danh sách sản phẩm theo shop, có lọc theo category và keyword
+    @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
+            "JOIN pv.product p LEFT JOIN p.categories c " +
+            "WHERE (pv.shopId = :shopId OR p.shopId = :shopId) " +
+            "AND pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' " +
+            "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+            "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<ProductVariant> findByShopAndCategoryAndKeyword(
+            @Param("shopId") Long shopId,
+            @Param("categoryId") Long categoryId,
+            @Param("keyword") String keyword);
 }
