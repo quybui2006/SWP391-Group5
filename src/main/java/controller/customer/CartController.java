@@ -7,6 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.customer.CartService;
+import java.util.List;
 
 @Controller
 public class CartController {
@@ -33,7 +34,8 @@ public class CartController {
         return "customer/cart";
     }
 
-    // Gom các sản phẩm trong giỏ theo từng shop (giữ nguyên thứ tự)
+    // Gom các sản phẩm trong giỏ theo từng shop.
+    // Mỗi nhóm shop sẽ tự sắp xếp item mua được lên trên, item hết hàng/ngừng bán xuống cuối.
     private java.util.List<java.util.Map<String, Object>> groupByShop(java.util.List<java.util.Map<String, Object>> items) {
         java.util.Map<Object, java.util.Map<String, Object>> shops = new java.util.LinkedHashMap<>();
         for (var item : items) {
@@ -47,7 +49,42 @@ public class CartController {
             });
             ((java.util.List<java.util.Map<String, Object>>) group.get("items")).add(item);
         }
-        return new java.util.ArrayList<>(shops.values());
+        List<java.util.Map<String, Object>> result = new java.util.ArrayList<>(shops.values());
+        for (var shop : result) {
+            @SuppressWarnings("unchecked")
+            java.util.List<java.util.Map<String, Object>> shopItems =
+                    (java.util.List<java.util.Map<String, Object>>) shop.get("items");
+            shopItems.sort((a, b) -> {
+                int sa = sortOrder(a);
+                int sb = sortOrder(b);
+                if (sa != sb) return Integer.compare(sa, sb);
+                int ca = idOrder(a);
+                int cb = idOrder(b);
+                return Integer.compare(ca, cb);
+            });
+            boolean allUnavailable = shopItems.stream()
+                    .allMatch(i -> sortOrder(i) == 2);
+            shop.put("all_unavailable", allUnavailable);
+        }
+        result.sort((a, b) -> {
+            boolean ua = Boolean.TRUE.equals(a.get("all_unavailable"));
+            boolean ub = Boolean.TRUE.equals(b.get("all_unavailable"));
+            if (ua != ub) return Boolean.compare(ua, ub);
+            int sa = idOrder(a);
+            int sb = idOrder(b);
+            return Integer.compare(sa, sb);
+        });
+        return result;
+    }
+
+    private int sortOrder(java.util.Map<String, Object> item) {
+        Object value = item.get("availability_sort");
+        return value instanceof Number n ? n.intValue() : 1;
+    }
+
+    private int idOrder(java.util.Map<String, Object> item) {
+        Object value = item.get("id");
+        return value instanceof Number n ? n.intValue() : Integer.MAX_VALUE;
     }
 
     // Đếm số lượng sản phẩm trong giỏ
@@ -70,11 +107,13 @@ public class CartController {
         Long userId = customerId(session);
 
         try {
-            if (userId != null) cart.add(userId, variantId, quantity);
-            else {
-                cart.validateVariant(variantId, quantity);
+            if (userId != null) {
+                cart.add(userId, variantId, quantity);
+            } else {
                 var guest = guestCart(session);
-                guest.put(variantId, Math.min(99, guest.getOrDefault(variantId, 0) + quantity));
+                int totalQuantity = Math.min(99, guest.getOrDefault(variantId, 0) + quantity);
+                cart.validateVariant(variantId, totalQuantity);
+                guest.put(variantId, totalQuantity);
                 session.setAttribute("guestCart", guest);
             }
             return ResponseEntity.ok(userId == null ? guestCart(session).values().stream().mapToInt(Integer::intValue).sum() : cart.itemCount(userId));
@@ -94,11 +133,13 @@ public class CartController {
         Long userId = customerId(session);
 
         try {
-            if (userId != null) cart.add(userId, variantId, quantity);
-            else {
-                cart.validateVariant(variantId, quantity);
+            if (userId != null) {
+                cart.add(userId, variantId, quantity);
+            } else {
                 var guest = guestCart(session);
-                guest.put(variantId, Math.min(99, guest.getOrDefault(variantId, 0) + quantity));
+                int totalQuantity = Math.min(99, guest.getOrDefault(variantId, 0) + quantity);
+                cart.validateVariant(variantId, totalQuantity);
+                guest.put(variantId, totalQuantity);
                 session.setAttribute("guestCart", guest);
             }
         } catch (IllegalArgumentException ex) {

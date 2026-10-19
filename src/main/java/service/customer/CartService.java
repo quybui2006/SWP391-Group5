@@ -21,8 +21,83 @@ public class CartService {
     public void validateVariant(Long variantId, int quantity) {
         if (variantId == null) throw new IllegalArgumentException("Sản phẩm không hợp lệ.");
         if (quantity < 1 || quantity > 99) throw new IllegalArgumentException("Số lượng phải từ 1 đến 99.");
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM product_variants pv JOIN products p ON p.id=pv.product_id WHERE pv.id=? AND pv.status='ACTIVE' AND p.selling_status='ACTIVE'", Integer.class, variantId);
-        if (count == null || count == 0) throw new IllegalArgumentException("Sản phẩm hiện không còn mở bán.");
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT pv.min_order_quantity, COALESCE(vi.available_quantity, 0) AS available_quantity " +
+                        "FROM product_variants pv " +
+                        "JOIN products p ON p.id = pv.product_id " +
+                        "LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id " +
+                        "WHERE pv.id = ? AND pv.status = 'ACTIVE' AND p.selling_status = 'ACTIVE'",
+                variantId);
+        if (rows.isEmpty()) throw new IllegalArgumentException("Sản phẩm hiện không còn mở bán.");
+        validateStock(rows.get(0), quantity);
+    }
+
+    /**
+     * Kiểm tra số lượng đặt so với mức đặt tối thiểu và tồn kho khả dụng.
+     * Truyền tổng số lượng trong giỏ (bao gồm cả số lượng đang có) để kiểm tra chính xác.
+     */
+    private void validateStock(Map<String, Object> stockInfo, int totalQuantity) {
+        int minOrder = intValue(stockInfo.get("min_order_quantity"), 1);
+        if (totalQuantity < minOrder) {
+            throw new IllegalArgumentException("Sản phẩm này yêu cầu đặt tối thiểu " + minOrder + " sản phẩm.");
+        }
+        int available = intValue(stockInfo.get("available_quantity"), 0);
+        if (available <= 0) {
+            throw new IllegalArgumentException("Sản phẩm đã hết hàng.");
+        }
+        if (totalQuantity > available) {
+            throw new IllegalArgumentException("Chỉ còn " + available + " sản phẩm trong kho.");
+        }
+    }
+
+    private int intValue(Object value, int defaultValue) {
+        return value instanceof Number n ? n.intValue() : defaultValue;
+    }
+
+    /**
+     * Trạng thái hiển thị của item trong giỏ.
+     * ORDER = 1 là mua được, 2 = không mua được và sẽ bị đẩy xuống cuối giống Shopee.
+     */
+    private void annotateAvailability(Map<String, Object> row) {
+        int available = intValue(row.get("available_quantity"), 0);
+        int quantity = intValue(row.get("quantity"), 0);
+        int minOrder = intValue(row.get("min_order_quantity"), 1);
+        boolean shopOpen = "APPROVED".equals(String.valueOf(row.get("shop_approval_status")))
+                && "OPEN".equals(String.valueOf(row.get("shop_operating_status")));
+        boolean productActive = "ACTIVE".equals(String.valueOf(row.get("product_selling_status")));
+        boolean variantActive = "ACTIVE".equals(String.valueOf(row.get("variant_status")));
+        boolean hasInventory = available > 0;
+        boolean enoughStock = hasInventory && quantity <= available;
+
+        String reason = null;
+        int sortOrder = 1;
+        boolean selectable = true;
+
+        if (!shopOpen) {
+            reason = "Shop tạm ngừng bán";
+            sortOrder = 2;
+            selectable = false;
+        } else if (!productActive || !variantActive) {
+            reason = "Ngừng bán";
+            sortOrder = 2;
+            selectable = false;
+        } else if (!hasInventory) {
+            reason = "Hết hàng";
+            sortOrder = 2;
+            selectable = false;
+        } else if (!enoughStock) {
+            reason = "Chỉ còn " + available + " sản phẩm";
+            sortOrder = 2;
+            selectable = false;
+        } else if (quantity < minOrder) {
+            reason = "Tối thiểu " + minOrder + " sản phẩm";
+            sortOrder = 2;
+            selectable = false;
+        }
+
+        row.put("availability_reason", reason);
+        row.put("availability_sort", sortOrder);
+        row.put("is_selectable", selectable);
     }
 
     /**
@@ -42,24 +117,32 @@ public class CartService {
             );
         }
 
-        Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) " +
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT pv.min_order_quantity, COALESCE(vi.available_quantity, 0) AS available_quantity " +
                         "FROM product_variants pv " +
                         "JOIN products p ON p.id = pv.product_id " +
-                        "WHERE pv.id = ? " +
-                        "AND pv.status = 'ACTIVE' " +
-                        "AND p.selling_status = 'ACTIVE'",
-                Integer.class,
+                        "LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id " +
+                        "WHERE pv.id = ? AND pv.status = 'ACTIVE' AND p.selling_status = 'ACTIVE'",
                 variantId
         );
 
-        if (count == null || count == 0) {
+        if (rows.isEmpty()) {
             throw new IllegalArgumentException(
                     "Sản phẩm hiện không còn mở bán."
             );
         }
 
+        // Tính tổng số lượng sau khi cộng dồn vào giỏ để kiểm tra với tồn kho
         Long cartId = getOrCreateCartId(userId);
+        List<Integer> qtys = jdbc.queryForList(
+                "SELECT quantity FROM cart_items WHERE cart_id = ? AND variant_id = ?",
+                Integer.class,
+                cartId,
+                variantId
+        );
+        int currentQty = qtys.isEmpty() ? 0 : qtys.get(0);
+        int totalAfterAdd = Math.min(99, currentQty + quantity);
+        validateStock(rows.get(0), totalAfterAdd);
 
         jdbc.update(
                 "INSERT INTO cart_items (cart_id, variant_id, quantity) " +
@@ -87,7 +170,7 @@ public class CartService {
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        return jdbc.queryForList(
+        List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT ci.id, " +
                         "ci.variant_id, " +
                         "ci.quantity, " +
@@ -96,19 +179,27 @@ public class CartService {
                         "pv.image_url, pv.price AS original_price, " +
                         "s.id AS shop_id, " +
                         "s.name AS shop_name, " +
+                        "pv.status AS variant_status, " +
+                        "p.selling_status AS product_selling_status, " +
+                        "p.approval_status AS product_approval_status, " +
+                        "s.approval_status AS shop_approval_status, " +
+                        "s.operating_status AS shop_operating_status, " +
+                        "COALESCE(pv.min_order_quantity, 1) AS min_order_quantity, " +
                         "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp " +
                         "WHERE pp.variant_id = pv.id AND pp.is_enabled = 1 AND pp.starts_at <= ? AND pp.ends_at > ? " +
                         "ORDER BY pp.starts_at DESC, pp.id DESC LIMIT 1), pv.price) AS price, " +
-                        "vi.available_quantity " +
+                        "COALESCE(vi.available_quantity, 0) AS available_quantity " +
                         "FROM cart_items ci " +
                         "JOIN product_variants pv ON pv.id = ci.variant_id " +
                         "JOIN products p ON p.id = pv.product_id " +
                         "JOIN shops s ON s.id = pv.shop_id " +
-                        "JOIN variant_inventory vi ON vi.variant_id = pv.id " +
+                        "LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id " +
                         "WHERE ci.cart_id = ? " +
                         "ORDER BY s.id, ci.id",
                 now, now, cartId
         );
+        rows.forEach(this::annotateAvailability);
+        return rows;
     }
 
     /** Read catalog data for items held in a guest's HTTP session. */
@@ -121,13 +212,20 @@ public class CartService {
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT pv.id AS variant_id,pv.name AS variant_name,p.name AS product_name,pv.image_url,pv.price AS original_price, " +
                         "s.id AS shop_id,s.name AS shop_name, " +
+                        "pv.status AS variant_status,p.selling_status AS product_selling_status,p.approval_status AS product_approval_status, " +
+                        "s.approval_status AS shop_approval_status,s.operating_status AS shop_operating_status, " +
+                        "COALESCE(pv.min_order_quantity, 1) AS min_order_quantity, " +
                         "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 " +
-                        "AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price,vi.available_quantity " +
+                        "AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
+                        "COALESCE(vi.available_quantity, 0) AS available_quantity " +
                         "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id " +
-                        "JOIN variant_inventory vi ON vi.variant_id=pv.id " +
-                        "WHERE pv.id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE' " +
+                        "LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id " +
+                        "WHERE pv.id IN (" + marks + ") " +
                         "ORDER BY s.id, pv.id", args.toArray());
-        for (Map<String, Object> row : rows) row.put("quantity", quantities.get(((Number) row.get("variant_id")).longValue()));
+        for (Map<String, Object> row : rows) {
+            row.put("quantity", quantities.get(((Number) row.get("variant_id")).longValue()));
+            annotateAvailability(row);
+        }
         return rows;
     }
 
@@ -175,6 +273,24 @@ public class CartService {
                     "Giỏ hàng không tồn tại."
             );
         }
+
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT ci.variant_id, pv.min_order_quantity, COALESCE(vi.available_quantity, 0) AS available_quantity " +
+                        "FROM cart_items ci " +
+                        "JOIN product_variants pv ON pv.id = ci.variant_id " +
+                        "LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id " +
+                        "WHERE ci.id = ? AND ci.cart_id = ?",
+                itemId,
+                cartId
+        );
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Sản phẩm trong giỏ không tồn tại."
+            );
+        }
+
+        validateStock(rows.get(0), quantity);
 
         int updatedRows = jdbc.update(
                 "UPDATE cart_items " +
