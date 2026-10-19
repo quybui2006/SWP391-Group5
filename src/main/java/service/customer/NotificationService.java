@@ -165,4 +165,52 @@ public class NotificationService {
         n4.setRead(true);
         notificationRepository.save(n4);
     }
+
+    @Transactional
+    public void notifyShopRegistrationSubmitted(Long userId, Long shopId, String shopName) {
+        createNotification(
+                userId,
+                "SHOP",
+                "Hồ sơ mở Shop đã gửi thành công!",
+                "Hồ sơ mở cửa hàng '" + shopName + "' của bạn đã được tiếp nhận và đang được Ban vận hành FreshFruit xét duyệt.",
+                "SHOP",
+                shopId
+        );
+    }
+
+    @Transactional
+    public void notifyShopApproved(Long userId, Long shopId, String shopName) {
+        createNotification(
+                userId,
+                "SHOP",
+                "Chúc mừng! Shop '" + shopName + "' đã được phê duyệt 🎉",
+                "Cửa hàng của bạn đã được kiểm duyệt và kích hoạt thành công trên hệ thống. Bây giờ bạn có thể truy cập Kênh người bán để bắt đầu đăng sản phẩm!",
+                "SHOP",
+                shopId
+        );
+    }
+
+    @Transactional
+    public void notifyShopRejected(Long userId, Long shopId, String shopName, String reason) {
+        createNotification(
+                userId,
+                "SHOP",
+                "Yêu cầu mở Shop '" + shopName + "' chưa được phê duyệt",
+                "Ban vận hành thông báo hồ sơ mở shop của bạn chưa đạt yêu cầu. Lý do: " + (reason != null ? reason : "Thông tin chưa đầy đủ.") + ". Bạn có thể chỉnh sửa và nộp lại hồ sơ.",
+                "SHOP",
+                shopId
+        );
+    }
+
+    @Transactional
+    public void notifyOrderStatusChanged(Long userId, Long orderId, String orderCode, String statusText) {
+        createNotification(
+                userId,
+                "ORDER",
+                "Cập nhật trạng thái đơn hàng " + orderCode,
+                "Đơn hàng " + orderCode + " của bạn hiện đang ở trạng thái: " + statusText + ".",
+                "ORDER",
+                orderId
+        );
+    }
 }

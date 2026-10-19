@@ -60,6 +60,33 @@ public class Shop {
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
+    @Column(name = "id_card_number", length = 50)
+    private String idCardNumber;
+
+    @Column(name = "id_card_name", length = 150)
+    private String idCardName;
+
+    @Column(name = "id_card_date")
+    private java.time.LocalDate idCardDate;
+
+    @Column(name = "id_card_place", length = 150)
+    private String idCardPlace;
+
+    @Column(name = "business_type", length = 50)
+    private String businessType = "INDIVIDUAL";
+
+    @Column(name = "tax_code", length = 50)
+    private String taxCode;
+
+    @Column(name = "tax_name", length = 150)
+    private String taxName;
+
+    @Column(name = "tax_email", length = 254)
+    private String taxEmail;
+
+    @Column(name = "shipping_methods", length = 255)
+    private String shippingMethods;
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -90,6 +117,24 @@ public class Shop {
     public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+    public String getIdCardNumber() { return idCardNumber; }
+    public void setIdCardNumber(String idCardNumber) { this.idCardNumber = idCardNumber; }
+    public String getIdCardName() { return idCardName; }
+    public void setIdCardName(String idCardName) { this.idCardName = idCardName; }
+    public java.time.LocalDate getIdCardDate() { return idCardDate; }
+    public void setIdCardDate(java.time.LocalDate idCardDate) { this.idCardDate = idCardDate; }
+    public String getIdCardPlace() { return idCardPlace; }
+    public void setIdCardPlace(String idCardPlace) { this.idCardPlace = idCardPlace; }
+    public String getBusinessType() { return businessType; }
+    public void setBusinessType(String businessType) { this.businessType = businessType; }
+    public String getTaxCode() { return taxCode; }
+    public void setTaxCode(String taxCode) { this.taxCode = taxCode; }
+    public String getTaxName() { return taxName; }
+    public void setTaxName(String taxName) { this.taxName = taxName; }
+    public String getTaxEmail() { return taxEmail; }
+    public void setTaxEmail(String taxEmail) { this.taxEmail = taxEmail; }
+    public String getShippingMethods() { return shippingMethods; }
+    public void setShippingMethods(String shippingMethods) { this.shippingMethods = shippingMethods; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
