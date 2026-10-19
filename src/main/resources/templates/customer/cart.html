@@ -192,6 +192,42 @@
             border-bottom: none;
         }
 
+        /* Item hết hàng / không khả dụng */
+        .cart-item.unavailable {
+            background: #fafafa;
+        }
+
+        .cart-item.unavailable .product img,
+        .cart-item.unavailable .product-info,
+        .cart-item.unavailable .unit-price-wrap,
+        .cart-item.unavailable .row-total-price {
+            opacity: 0.45;
+        }
+
+        .cart-item.unavailable .qty-input,
+        .cart-item.unavailable .qty-btn {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .availability-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fff1f0;
+            color: #cf1322;
+            border: 1px solid #ffa39e;
+            margin-top: 4px;
+        }
+
+        .availability-badge.min-order {
+            background: #fffbe6;
+            color: #d48806;
+            border-color: #ffe58f;
+        }
+
         .select-all {
             display: flex;
             align-items: center;
@@ -342,6 +378,7 @@
         </div>
 
         <div th:each="item : ${shop['items']}"
+             th:classappend="${item['is_selectable'] == false} ? ' unavailable' : ''"
              class="cart-row cart-item">
 
         <!-- Checkbox chọn sản phẩm thanh toán -->
@@ -351,6 +388,7 @@
                    name="selectedVariantIds"
                    th:value="${item['variant_id']}"
                    th:attr="data-price=${item['price']}"
+                   th:disabled="${item['is_selectable'] == false}"
                    form="checkoutForm"
                    aria-label="Chọn sản phẩm">
         </div>
@@ -377,6 +415,13 @@
                     sản phẩm
                 </small>
 
+                <span class="availability-badge"
+                      th:if="${item['availability_reason'] != null}"
+                      th:classappend="${item['availability_reason'] != null && #strings.startsWith(item['availability_reason'], 'Tối thiểu')} ? ' min-order' : ''"
+                      th:text="${item['availability_reason']}">
+                    Hết hàng
+                </span>
+
             </div>
 
         </div>
@@ -396,6 +441,7 @@
 
             <button type="button"
                     class="qty-btn"
+                    th:disabled="${item['is_selectable'] == false}"
                     onclick="changeQuantity(this, -1)"
                     aria-label="Giảm số lượng">
                 −
@@ -408,11 +454,13 @@
                    min="1"
                    th:attr="data-available=${item['available_quantity']}"
                    th:value="${item['quantity']}"
+                   th:disabled="${item['is_selectable'] == false}"
                    onchange="normalizeQuantity(this)"
                    required>
 
             <button type="button"
                     class="qty-btn"
+                    th:disabled="${item['is_selectable'] == false}"
                     onclick="changeQuantity(this, 1)"
                     aria-label="Tăng số lượng">
                 +

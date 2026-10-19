@@ -30,8 +30,40 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     // Câu Query kết hợp Tìm kiếm (keyword) + Lọc giá (min/max) + Lọc Danh mục
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p LEFT JOIN p.categories c " +
+
             "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' " +
             "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+
+            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
+            "AND (:keyword = '' OR (" +
+            "   LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   (p.origin IS NOT NULL AND LOWER(p.origin) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+            "   (p.description IS NOT NULL AND LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+            "   LOWER(pv.sku) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(p.batchCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   (pv.specification IS NOT NULL AND LOWER(pv.specification) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
+            ")) " +
+            "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
+            "AND (:filterByCategory = false OR c.id IN :categoryIds) " +
+            "AND (:filterByOrigin = false OR p.origin IN :origins)")
+    List<ProductVariant> advancedSearchAndFilter(
+            @Param("keyword") String keyword,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("filterByCategory") boolean filterByCategory,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("filterByOrigin") boolean filterByOrigin,
+            @Param("origins") List<String> origins,
+            org.springframework.data.domain.Sort sort);
+
+    // Backward-compatible searchAndFilter method
+    @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
+            "JOIN pv.product p LEFT JOIN p.categories c " +
+            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
+            "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
             "AND (:filterByCategory = false OR c.id IN :categoryIds)")
