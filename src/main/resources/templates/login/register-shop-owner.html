@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký tài khoản Người Bán | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .seller-reg-container {
+            min-height: 100vh;
+            display: flex;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            font-family: 'DM Sans', sans-serif;
+        }
+        .seller-hero-side {
+            flex: 1;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .seller-hero-side::after {
+            content: '';
+            position: absolute;
+            right: -100px;
+            bottom: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(74, 222, 128, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .hero-brand {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hero-brand span { color: #86efac; }
+        .hero-heading {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 38px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 20px;
+        }
+        .hero-heading mark {
+            background: none;
+            color: #86efac;
+        }
+        .hero-desc {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #d1fae5;
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .feature-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .seller-form-side {
+            width: 540px;
+            max-width: 100%;
+            background: #fff;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+        }
+        .form-card-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 8px;
+        }
+        .form-card-sub {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0 0 28px;
+        }
+        .input-box {
+            margin-bottom: 18px;
+        }
+        .input-box label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .input-box input, .input-box select {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+        .input-box input:focus, .input-box select:focus {
+            outline: none;
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 13px;
+            background: #16a34a;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+        .submit-btn:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+        }
+        .existing-account-hint {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .existing-account-hint a {
+            color: #16a34a;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .existing-account-hint a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 992px) {
+            .seller-hero-side { display: none; }
+            .seller-form-side { width: 100%; padding: 40px 24px; }
+        }
+    </style>
+</head>
+<body>
+<div class="seller-reg-container">
+    <div class="seller-hero-side">
+        <a th:href="@{/}" class="hero-brand">
+            Fresh<span>Fruit</span> Partner
+        </a>
+        <h1 class="hero-heading">
+            Khởi đầu kinh doanh nông sản cùng <mark>FreshFruit</mark>
+        </h1>
+        <p class="hero-desc">
+            Kết nối nhà vườn và cửa hàng trái cây chuẩn VietGAP đến hàng ngàn gia đình yêu thích hoa quả tươi ngon mỗi ngày.
+        </p>
+
+        <ul class="features-list">
+            <li class="feature-item">
+                <span class="feature-icon">✨</span>
+                <span>Miễn phí mở gian hàng trực tuyến 100%</span>
+            </li>
+            <li class="feature-item">
+                <span class="feature-icon">🚚</span>
+                <span>Mạng lưới giao hàng nhanh trong ngày đảm bảo độ tươi ngon</span>
+            </li>
+            <li class="feature-item">
+                <span class="feature-icon">📊</span>
+                <span>Dashboard quản lý doanh thu, tồn kho & khách hàng chuyên nghiệp</span>
+            </li>
+            <li class="feature-item">
+                <span class="feature-icon">💳</span>
+                <span>Thanh toán minh bạch, đối soát tự động, bảo vệ quyền lợi người bán</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="seller-form-side">
+        <h2 class="form-card-title">Đăng ký tài khoản Người Bán</h2>
+        <p class="form-card-sub">Nếu bạn đã có tài khoản khách hàng, hãy đăng nhập để gửi yêu cầu mở shop ngay.</p>
+
+        <!-- If user has customer account already -->
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:10px;margin-bottom:24px;">
+            <p style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600;">
+                ✦ Bạn đã là thành viên FreshFruit?
+            </p>
+            <a th:href="@{/customer/shop-registration}" style="display:inline-block;padding:9px 18px;background:#16a34a;color:#fff;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px;">
+                Nộp hồ sơ mở Shop ngay ➔
+            </a>
+        </div>
+
+        <!-- Or register fresh account -->
+        <form th:action="@{/register}" method="post">
+            <input type="hidden" name="role" value="CUSTOMER">
+            <div class="input-box">
+                <label for="fullName">Họ và tên chủ cửa hàng</label>
+                <input type="text" id="fullName" name="fullName" placeholder="Ví dụ: Nguyễn Văn An" required>
+            </div>
+
+            <div class="input-box">
+                <label for="email">Email đăng ký</label>
+                <input type="email" id="email" name="email" placeholder="email@cuahang.com" required>
+            </div>
+
+            <div class="input-box">
+                <label for="phone">Số điện thoại liên hệ</label>
+                <input type="tel" id="phone" name="phone" placeholder="0912345678" required>
+            </div>
+
+            <div class="input-box">
+                <label for="password">Mật khẩu</label>
+                <input type="password" id="password" name="password" placeholder="Tối thiểu 6 ký tự" required>
+            </div>
+
+            <div class="input-box">
+                <label for="confirmPassword">Xác nhận mật khẩu</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" required>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Tạo tài khoản & Tiếp tục mở Shop ➔
+            </button>
+        </form>
+
+        <div class="existing-account-hint">
+            Đã có tài khoản? <a th:href="@{/login(continueTo='/customer/shop-registration')}">Đăng nhập tại đây</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

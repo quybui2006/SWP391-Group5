@@ -11,7 +11,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255),
     phone VARCHAR(20),
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    email_verified_at TIMESTAMP
+    email_verified_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE roles (
@@ -58,6 +59,22 @@ CREATE TABLE shops (
     operating_status VARCHAR(20) NOT NULL DEFAULT 'CLOSED',
     reviewed_at TIMESTAMP,
     rejection_reason VARCHAR(1000),
+    id_card_number VARCHAR(50),
+    id_card_name VARCHAR(150),
+    id_card_date DATE,
+    id_card_place VARCHAR(150),
+    business_type VARCHAR(50) DEFAULT 'INDIVIDUAL',
+    tax_code VARCHAR(50),
+    tax_name VARCHAR(150),
+    tax_email VARCHAR(254),
+    shipping_methods VARCHAR(255),
+    bank_name VARCHAR(100),
+    bank_account_number VARCHAR(50),
+    bank_account_name VARCHAR(150),
+    bank_branch VARCHAR(150),
+    payment_approval_status VARCHAR(50) NOT NULL DEFAULT 'UNCONFIGURED',
+    bank_rejection_reason VARCHAR(1000),
+    payment_reviewed_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

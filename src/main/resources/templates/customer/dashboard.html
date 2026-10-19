@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tổng quan chi tiêu & Mua sắm | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-profile-layout.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .tier-hero-card {
+            background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+            border-radius: 16px;
+            padding: 28px 32px;
+            color: #fff;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(27, 67, 50, 0.15);
+        }
+        .tier-hero-card::after {
+            content: '👑';
+            position: absolute;
+            right: 20px;
+            bottom: -15px;
+            font-size: 110px;
+            opacity: 0.12;
+            pointer-events: none;
+        }
+        .tier-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fef08a;
+            border: 1px solid rgba(254, 240, 138, 0.3);
+            margin-bottom: 12px;
+        }
+        .tier-progress-track {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 12px 0 8px;
+        }
+        .tier-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #facc15 0%, #4ade80 100%);
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+        .stats-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .metric-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: transform 0.15s;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        .metric-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metric-val {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 8px 0 4px;
+        }
+        .chart-box {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+        .behavior-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .behavior-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .card-header-clean {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .card-header-clean h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+        .item-row:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+<div class="customer-shell">
+    <aside th:replace="~{customer/account-fragments :: sidebar('dashboard')}"></aside>
+
+    <main class="customer-main">
+        <header th:replace="~{customer/account-fragments :: topbar('Tổng quan chi tiêu')}"></header>
+
+        <!-- Tier & Loyalty Hero -->
+        <div class="tier-hero-card">
+            <div class="tier-badge">
+                <span>✦ Hạng thành viên:</span>
+                <span th:text="${user.tier_name ?: 'Đồng (BRONZE)'}">Đồng (BRONZE)</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1 style="font-size: 28px; font-weight: 800; margin: 0 0 6px;">
+                        <span th:text="${#numbers.formatInteger(totalSpent, 1, 'COMMA') + ' ₫'}">0 ₫</span>
+                    </h1>
+                    <p style="margin: 0; color: #d1fae5; font-size: 14px;">
+                        Tổng tiền đã chi tiêu tích lũy qua các đơn hàng hoàn tất
+                    </p>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.15); padding: 12px 20px; border-radius: 12px; backdrop-filter: blur(8px);">
+                    <div style="font-size: 11px; color: #a7f3d0; font-weight: 700; text-transform: uppercase;">Điểm thưởng hiện có</div>
+                    <div style="font-size: 22px; font-weight: 800; color: #fef08a;">
+                        <span th:text="${user.points_balance}">0</span> <small style="font-size: 13px; font-weight: 600; color: #fff;">điểm</small>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${hasNextTier}" style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #d1fae5;">
+                    <span>Tiến trình nâng hạng lên <strong style="color: #fef08a;" th:text="${nextTierName}">Bạc</strong></span>
+                    <span th:text="${tierProgress + '%'}">0%</span>
+                </div>
+                <div class="tier-progress-track">
+                    <div class="tier-progress-bar" th:style="'width:' + ${tierProgress} + '%;'"></div>
+                </div>
+                <small style="color: #a7f3d0; font-size: 12px;">
+                    Cần chi tiêu thêm <strong th:text="${#numbers.formatInteger(spendingNeeded, 1, 'COMMA') + ' ₫'}">0 ₫</strong> để đạt mốc <span th:text="${#numbers.formatInteger(nextTierMinSpend, 1, 'COMMA') + ' ₫'}">0 ₫</span>.
+                </small>
+            </div>
+
+            <div th:unless="${hasNextTier}" style="margin-top: 14px; font-size: 13px; color: #fef08a; font-weight: 600;">
+                🎉 Bạn đã đạt hạng cao nhất của FreshFruit! Hưởng trọn vẹn đặc quyền và ưu đãi điểm thưởng tối đa.
+            </div>
+        </div>
+
+        <!-- 3 Quick Metric Cards -->
+        <div class="stats-grid-3">
+            <div class="metric-card">
+                <div class="metric-label">Tổng đơn hàng đã đặt</div>
+                <div class="metric-val" style="color: #2563eb;" th:text="${totalOrders}">0</div>
+                <div style="font-size: 12px; color: #64748b;">
+                    Đã thanh toán & giao qua hệ thống
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Đơn hàng hoàn tất</div>
+                <div class="metric-val" style="color: #16a34a;" th:text="${completedOrders}">0</div>
+                <div style="font-size: 12px; color: #166534; font-weight: 600;">
+                    Giao hàng thành công 100%
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Đơn hàng hủy / Thất bại</div>
+                <div class="metric-val" style="color: #dc2626;" th:text="${cancelledOrders}">0</div>
+                <div style="font-size: 12px; color: #64748b;">
+                    Phương thức ưu chuộng: <strong style="color: #0f172a;" th:text="${preferredPayment}">COD</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Spending Chart -->
+        <div class="chart-box">
+            <div class="card-header-clean">
+                <h3><span>📈</span> Chi tiêu theo tháng gần đây</h3>
+                <span style="font-size: 12px; color: #64748b;">Dữ liệu 6 tháng qua</span>
+            </div>
+
+            <div style="display: flex; align-items: flex-end; gap: 20px; height: 160px; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                <th:block th:each="m : ${monthlySpending}">
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end;">
+                        <span style="font-size: 11px; font-weight: 700; color: #16a34a;" th:text="${#numbers.formatInteger(m.total_amount, 1, 'COMMA') + ' ₫'}">0 ₫</span>
+                        <div style="width: 100%; max-width: 44px; background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); border-radius: 6px 6px 0 0; min-height: 8px;"
+                             th:styleappend="${m.total_amount > 0 ? 'height:' + (m.total_amount > 1000000 ? 110 : 60) + 'px;' : 'height:8px;background:#e2e8f0;'}"></div>
+                        <span style="font-size: 12px; color: #64748b; font-weight: 600;" th:text="${m.month_label}">01/2026</span>
+                    </div>
+                </th:block>
+
+                <div th:if="${#lists.isEmpty(monthlySpending)}" style="width: 100%; text-align: center; color: #94a3b8; font-size: 14px; padding-top: 60px;">
+                    Chưa có đơn hàng hoàn tất trong 6 tháng gần nhất.
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Shopping Behavior Insights -->
+        <div class="behavior-grid-2">
+            <!-- Top Categories -->
+            <div class="behavior-card">
+                <div class="card-header-clean">
+                    <h3><span>🍎</span> Danh mục trái cây mua nhiều nhất</h3>
+                </div>
+
+                <div th:each="cat : ${topCategories}" class="item-row">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            🍇
+                        </div>
+                        <div>
+                            <strong style="color: #0f172a; font-size: 14px;" th:text="${cat.category_name}">Tên danh mục</strong>
+                            <div style="font-size: 12px; color: #64748b;" th:text="${cat.purchase_count + ' lượt mua'}">0 lượt mua</div>
+                        </div>
+                    </div>
+                    <div style="font-weight: 700; color: #16a34a; font-size: 14px;" th:text="${#numbers.formatInteger(cat.total_amount, 1, 'COMMA') + ' ₫'}">
+                        0 ₫
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(topCategories)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
+                    Chưa có lịch sử mua theo danh mục.
+                </div>
+            </div>
+
+            <!-- Favorite Fruits / Products -->
+            <div class="behavior-card">
+                <div class="card-header-clean">
+                    <h3><span>🍊</span> Sản phẩm yêu thích thường mua</h3>
+                </div>
+
+                <div th:each="p : ${topVariants}" class="item-row">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img th:if="${p.image_url != null}" th:src="${p.image_url}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover;">
+                        <div th:if="${p.image_url == null}" style="width: 36px; height: 36px; border-radius: 8px; background: #e0f2fe; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            🍊
+                        </div>
+                        <div>
+                            <strong style="color: #0f172a; font-size: 13px;" th:text="${p.product_name}">Tên quả</strong>
+                            <div style="font-size: 12px; color: #64748b;" th:text="${p.variant_name}">Biến thể</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 700; color: #16a34a; font-size: 13px;" th:text="${#numbers.formatInteger(p.total_spent, 1, 'COMMA') + ' ₫'}">0 ₫</div>
+                        <small style="color: #64748b; font-size: 11px;" th:text="${p.buy_count + ' lần đặt'}">0 lần</small>
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(topVariants)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
+                    Chưa có sản phẩm yêu thích.
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorite Shops & Recent Orders -->
+        <div class="behavior-grid-2">
+            <!-- Favorite Shops -->
+            <div class="behavior-card">
+                <div class="card-header-clean">
+                    <h3><span>🏪</span> Cửa hàng yêu thích</h3>
+                </div>
+
+                <div th:each="s : ${favoriteShops}" class="item-row">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 34px; height: 34px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            🏪
+                        </div>
+                        <div>
+                            <a th:href="@{/shops/{id}(id=${s.shop_id})}" style="color: #0f172a; font-size: 14px; font-weight: 700; text-decoration: none;" th:text="${s.shop_name}">Tên Shop</a>
+                            <div style="font-size: 12px; color: #64748b;" th:text="${s.order_count + ' đơn đã đặt'}">0 đơn</div>
+                        </div>
+                    </div>
+                    <div style="font-weight: 700; color: #16a34a; font-size: 14px;" th:text="${#numbers.formatInteger(s.total_spent, 1, 'COMMA') + ' ₫'}">
+                        0 ₫
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(favoriteShops)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
+                    Chưa có cửa hàng thường xuyên mua.
+                </div>
+            </div>
+
+            <!-- Recent Orders with Buy Again -->
+            <div class="behavior-card">
+                <div class="card-header-clean">
+                    <h3><span>📦</span> Đơn hàng gần đây</h3>
+                    <a th:href="@{/customer/account/orders}" style="font-size: 12px; color: #2e7d32; font-weight: 600; text-decoration: none;">Xem tất cả →</a>
+                </div>
+
+                <div th:each="o : ${recentOrders}" class="item-row">
+                    <div>
+                        <strong style="color: #0f172a; font-size: 13px;" th:text="${o.order_code}">FF-123456</strong>
+                        <div style="font-size: 12px; color: #64748b;">
+                            <span th:text="${o.shop_name}">Shop</span> • <span th:text="${o.item_count + ' món'}">0 món</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 700; color: #0f172a; font-size: 13px;" th:text="${#numbers.formatInteger(o.total_amount, 1, 'COMMA') + ' ₫'}">0 ₫</div>
+                        <a th:href="@{/search}" style="display: inline-block; margin-top: 3px; font-size: 11px; color: #16a34a; font-weight: 700; text-decoration: none; background: #ecfdf5; padding: 2px 8px; border-radius: 4px;">
+                            Mua lại ↻
+                        </a>
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(recentOrders)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
+                    Bạn chưa có đơn hàng nào gần đây.
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

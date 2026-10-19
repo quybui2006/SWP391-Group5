@@ -6,7 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 public class SecurityConfig {
 
@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/data/**", "/favicon.ico").permitAll()
 
                         // Các trang công khai cho khách xem sản phẩm, cửa hàng và giỏ hàng
-                        .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}").permitAll()
+                        .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}", "/notifications", "/api/notifications/**").permitAll()
 
                         // Luồng xác thực tài khoản: Đăng nhập, Đăng ký, OTP, Quên & Đặt lại mật khẩu
                         .requestMatchers("/login", "/register/**", "/forgot-password/**", "/reset-password/**").permitAll()

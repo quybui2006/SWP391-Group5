@@ -43,6 +43,11 @@
 
         <!-- Actions -->
         <div class="header-actions">
+            <!-- Kênh Bán hàng -->
+            <a class="seller-channel-btn" th:href="@{/seller/channel}" title="Kênh Bán hàng">
+                🏪 Kênh Bán hàng
+            </a>
+
             <!-- Search -->
             <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
 
@@ -78,6 +83,7 @@
                         </div>
                         <div class="user-dropdown-links">
                             <th:block th:if="${session.role == 'CUSTOMER'}">
+                                <a th:href="@{/seller/channel}">🏪 Kênh Bán hàng</a>
                                 <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
                                 <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
                                 <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>

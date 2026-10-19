@@ -25,7 +25,7 @@ class CustomerShopIntegrationTests {
         // 1. Truy cập /shops/1
         mvc.perform(get("/shops/1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("customershop"))
+                .andExpect(view().name("customer/customershop"))
                 .andExpect(model().attributeExists("shop"))
                 .andExpect(model().attributeExists("categories"))
                 .andExpect(model().attributeExists("products"))
@@ -34,12 +34,12 @@ class CustomerShopIntegrationTests {
         // 2. Truy cập /shop/1
         mvc.perform(get("/shop/1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("customershop"));
+                .andExpect(view().name("customer/customershop"));
 
         // 3. Lọc theo categoryId và keyword
         mvc.perform(get("/shops/1").param("keyword", "Táo").param("sort", "price_asc"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("customershop"))
+                .andExpect(view().name("customer/customershop"))
                 .andExpect(model().attribute("keyword", "Táo"))
                 .andExpect(model().attribute("sort", "price_asc"));
     }

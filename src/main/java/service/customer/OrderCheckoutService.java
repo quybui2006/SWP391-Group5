@@ -148,6 +148,20 @@ public class OrderCheckoutService {
         }, keys);
 
 
+        if (!keys.getKeyList().isEmpty()) {
+            java.util.Map<String, Object> firstRow = keys.getKeyList().get(0);
+            for (java.util.Map.Entry<String, Object> entry : firstRow.entrySet()) {
+                if ("id".equalsIgnoreCase(entry.getKey()) && entry.getValue() instanceof Number n) {
+                    return n.longValue();
+                }
+            }
+            for (Object val : firstRow.values()) {
+                if (val instanceof Number n) {
+                    return n.longValue();
+                }
+            }
+        }
+
         Number key = keys.getKey();
         if (key == null) {
             throw new IllegalStateException("Không lấy được mã bản ghi vừa tạo.");
