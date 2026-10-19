@@ -237,6 +237,8 @@ img {
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
+    padding: 0;
+    font-family: inherit;
     transition: transform 0.2s ease;
 }
 
@@ -276,8 +278,10 @@ img {
     background: transparent;
 }
 
+/* Hỗ trợ mở dropdown bằng cả Hover (Desktop) và Click/JS (Class .open / .show) */
 .user-menu-container:hover .user-dropdown,
-.user-dropdown.show {
+.user-dropdown.show,
+.user-menu-container.open .user-dropdown {
     display: block !important;
 }
 
@@ -301,6 +305,7 @@ img {
     color: #ffffff;
     box-shadow: 0 3px 10px rgba(46, 125, 50, 0.25);
 }
+
 
 .user-dropdown-header {
     padding: 14px 16px;
@@ -865,6 +870,11 @@ img {
     cursor: pointer;
     transition: all 0.2s;
     font-weight: 500;
+    /* Cho phép dùng <a> thay <button> mà vẫn giữ nguyên giao diện chip */
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-family: inherit;
 }
 
 .variant-spec-chip:hover {

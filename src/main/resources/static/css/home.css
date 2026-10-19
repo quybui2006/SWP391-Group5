@@ -327,6 +327,8 @@ input {
     font-weight: 700;
     cursor: pointer;
     user-select: none;
+    padding: 0;
+    font-family: inherit;
     transition: transform 0.2s ease;
 }
 
@@ -360,8 +362,10 @@ input {
     background: transparent;
 }
 
+/* Gộp chung sự kiện hover, class .show và class .open để hiện dropdown */
 .user-menu-container:hover .user-dropdown,
-.user-dropdown.show {
+.user-dropdown.show,
+.user-menu-container.open .user-dropdown {
     display: block !important;
 }
 
@@ -385,7 +389,6 @@ input {
     color: #ffffff;
     box-shadow: 0 3px 10px rgba(46, 125, 50, 0.25);
 }
-
 .user-dropdown-header {
     padding: 14px 16px;
     background: var(--bg);

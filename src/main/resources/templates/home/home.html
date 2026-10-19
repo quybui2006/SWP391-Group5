@@ -69,9 +69,9 @@
             <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
             <th:block th:if="${session.role != null}">
                 <div class="user-menu-container">
-                    <div class="user-avatar" th:title="${session.fullName}">
+                    <button type="button" class="user-avatar" th:title="${session.fullName}" aria-label="Menu tài khoản" aria-haspopup="true">
                         <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
-                    </div>
+                    </button>
                     <div class="user-dropdown">
                         <div class="user-dropdown-header">
                             <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
@@ -566,6 +566,7 @@
 </script>
 
 <script th:src="@{/js/cart-integration.js}"></script>
+<script th:src="@{/js/user-menu.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
 
 </body>

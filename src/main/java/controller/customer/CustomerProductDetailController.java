@@ -107,6 +107,15 @@ public class CustomerProductDetailController {
                 .toList();
         model.addAttribute("relatedProducts", relatedProducts);
 
+        // 5. Các biến thể khác của CÙNG sản phẩm (chips "phân loại hàng" kiểu Shopee)
+        //    Chỉ hiển thị khi sản phẩm có từ 2 biến thể ACTIVE trở lên.
+        List<ProductVariant> siblingVariants = allActiveVariants.stream()
+                .filter(v -> v.getProduct() != null
+                        && variant.getProduct() != null
+                        && v.getProduct().getId().equals(variant.getProduct().getId()))
+                .toList();
+        model.addAttribute("siblingVariants", siblingVariants);
+
         return "customer/customerproductdetail";
     }
 
