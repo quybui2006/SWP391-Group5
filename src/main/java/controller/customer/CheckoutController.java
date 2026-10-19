@@ -89,15 +89,10 @@ public class CheckoutController {
                 return "redirect:" + vnpayUrl;
             }
 
-            // Nếu chọn COD -> Hiển thị trang Đặt hàng thành công ngay
-            model.addAttribute("isSuccess", true);
-            model.addAttribute("paymentMethod", "COD");
-            model.addAttribute("paymentMethodLabel", "Thanh toán khi nhận hàng (COD)");
-            model.addAttribute("totalAmount", result.totalAmount());
-            model.addAttribute("checkoutCode", result.checkoutCode());
-            model.addAttribute("orderCodes", String.join(", ", result.orderCodes()));
-            model.addAttribute("suggestedProducts", loadSuggestedProducts());
-            return "customer/payment-result";
+            // Nếu chọn COD -> Chuyển về giỏ hàng kèm thông báo đặt hàng thành công
+            redirectAttributes.addFlashAttribute("message", "Đặt hàng thành công. Mã đơn: " + String.join(", ", result.orderCodes()));
+            redirectAttributes.addFlashAttribute("checkoutResult", result);
+            return "redirect:/cart";
 
         } catch (Exception e) {
             e.printStackTrace();
