@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký mở Shop | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-profile-layout.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .reg-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            padding: 24px 32px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            flex: 1;
+        }
+        .step-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 16px;
+            left: calc(36px + 12px + 100px);
+            top: 50%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+        .step-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            background: #f1f5f9;
+            color: #64748b;
+            flex-shrink: 0;
+            z-index: 2;
+        }
+        .step-item.active .step-circle {
+            background: #2e7d32;
+            color: #fff;
+            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.2);
+        }
+        .step-item.completed .step-circle {
+            background: #16a34a;
+            color: #fff;
+        }
+        .step-text h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .step-text p {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .form-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .form-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .form-group label span.req {
+            color: #e53935;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 9px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            color: #1e293b;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #2e7d32;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+        }
+        .field-error {
+            color: #e53935;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+        .field-tip {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+        .terms-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin: 24px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .terms-box input[type="checkbox"] {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: #2e7d32;
+            cursor: pointer;
+        }
+        .terms-box label {
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 14px;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .btn-submit-reg {
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-submit-reg:hover {
+            background: #256628;
+            transform: translateY(-1px);
+        }
+        .btn-cancel-reg {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-cancel-reg:hover {
+            background: #e2e8f0;
+        }
+        .resubmit-alert {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 14px;
+            color: #991b1b;
+        }
+        .resubmit-alert .icon {
+            font-size: 22px;
+        }
+        .resubmit-alert h4 {
+            margin: 0 0 4px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .resubmit-alert p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+<div class="customer-shell">
+    <aside th:replace="~{customer/account-fragments :: sidebar('shopRegistration')}"></aside>
+
+    <main class="customer-main">
+        <header th:replace="~{customer/account-fragments :: topbar('Đăng ký mở Shop')}"></header>
+
+        <!-- Stepper -->
+        <div class="reg-stepper">
+            <div class="step-item active">
+                <div class="step-circle">1</div>
+                <div class="step-text">
+                    <h4>Thông tin cửa hàng</h4>
+                    <p>Điền thông tin kinh doanh</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">2</div>
+                <div class="step-text">
+                    <h4>Ban vận hành duyệt</h4>
+                    <p>Xét duyệt trong 24h</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">3</div>
+                <div class="step-text">
+                    <h4>Bắt đầu bán hàng</h4>
+                    <p>Mở bán sản phẩm</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert if resubmitting -->
+        <div class="resubmit-alert" th:if="${isResubmit}">
+            <div class="icon">⚠️</div>
+            <div>
+                <h4>Hồ sơ của bạn đã bị từ chối trước đó</h4>
+                <p>Lý do từ chối: <strong th:text="${existingShop.rejectionReason}">Thông tin chưa đạt yêu cầu.</strong></p>
+                <p style="margin-top: 6px;">Vui lòng kiểm tra, hoàn thiện lại các mục bên dưới và bấm "Gửi lại hồ sơ" để Ban quản trị thẩm định lại.</p>
+            </div>
+        </div>
+
+        <!-- Error notification -->
+        <div class="resubmit-alert" th:if="${errorMessage}">
+            <div class="icon">❌</div>
+            <div>
+                <h4>Có lỗi xảy ra</h4>
+                <p th:text="${errorMessage}">Vui lòng kiểm tra lại thông tin đã điền.</p>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div style="margin-bottom: 24px;">
+                <h2 style="font-size: 20px; font-weight: 800; color: #1e293b; margin: 0 0 6px;">
+                    <span th:text="${isResubmit ? 'Chỉnh sửa & Nộp lại hồ sơ mở Shop' : 'Đăng ký mở cửa hàng trên FreshFruit'}">Đăng ký mở cửa hàng</span>
+                </h2>
+                <p style="margin: 0; color: #64748b; font-size: 14px;">
+                    Hợp tác cùng FreshFruit để đưa nông sản và hoa quả tươi ngon chuẩn VietGAP tới hàng triệu khách hàng toàn quốc.
+                </p>
+            </div>
+
+            <form th:action="@{/customer/shop-registration}" th:object="${form}" method="post">
+                <div class="form-section-title">
+                    <span>🏪</span> Thông tin cơ bản của Shop
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="name">Tên cửa hàng / Shop <span class="req">*</span></label>
+                        <input type="text" id="name" th:field="*{name}" class="form-control" placeholder="Ví dụ: Nông Trại Hoa Quả Sạch Đà Lạt" required>
+                        <span class="field-tip">Tên hiển thị công khai trên sàn, từ 3 đến 160 ký tự.</span>
+                        <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Lỗi tên shop</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Số điện thoại hotline Shop <span class="req">*</span></label>
+                        <input type="tel" id="phone" th:field="*{phone}" class="form-control" placeholder="Ví dụ: 0912345678" required>
+                        <span class="field-tip">Dùng để khách hàng liên hệ và nhân viên vận hành hỗ trợ.</span>
+                        <span class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">Lỗi số điện thoại</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Giới thiệu & Tiêu chuẩn nông sản</label>
+                    <textarea id="description" th:field="*{description}" class="form-control" rows="3" placeholder="Mô tả nguồn gốc hoa quả, chứng chỉ chất lượng (VietGAP, GlobalGAP, Organic...), cam kết với khách hàng..."></textarea>
+                    <span class="field-tip">Tối đa 2000 ký tự.</span>
+                    <span class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Lỗi mô tả</span>
+                </div>
+
+                <div class="form-section-title" style="margin-top: 28px;">
+                    <span>📍</span> Địa chỉ hoạt động / Kho lấy hàng
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="provinceCode">Tỉnh / Thành phố <span class="req">*</span></label>
+                        <select id="provinceCode" th:field="*{provinceCode}" class="form-control" required>
+                            <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                            <option th:each="p : ${provinces}" th:value="${p.code}" th:text="${p.name}">Hà Nội</option>
+                        </select>
+                        <span class="field-error" th:if="${#fields.hasErrors('provinceCode')}" th:errors="*{provinceCode}">Lỗi tỉnh thành</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wardName">Phường / Xã / Thị trấn <span class="req">*</span></label>
+                        <input type="text" id="wardName" th:field="*{wardName}" class="form-control" placeholder="Ví dụ: Phường Dịch Vọng Hậu" required>
+                        <span class="field-error" th:if="${#fields.hasErrors('wardName')}" th:errors="*{wardName}">Lỗi phường xã</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="addressDetail">Địa chỉ chi tiết (Số nhà, Tên đường, Tòa nhà) <span class="req">*</span></label>
+                    <input type="text" id="addressDetail" th:field="*{addressDetail}" class="form-control" placeholder="Ví dụ: Số 45 ngõ 123 đường Cầu Giấy" required>
+                    <span class="field-tip">Shipper sẽ đến địa chỉ này để nhận kiện hàng hoa quả đóng gói.</span>
+                    <span class="field-error" th:if="${#fields.hasErrors('addressDetail')}" th:errors="*{addressDetail}">Lỗi địa chỉ chi tiết</span>
+                </div>
+
+                <div class="terms-box">
+                    <input type="checkbox" id="agreeTerms" th:field="*{agreeTerms}" required>
+                    <label for="agreeTerms">
+                        Tôi cam kết cung cấp hoa quả tươi sạch, nguồn gốc rõ ràng, đảm bảo an toàn vệ sinh thực phẩm và tuân thủ đầy đủ <strong>Quy chế hoạt động sàn Thương mại Điện tử FreshFruit</strong>.
+                    </label>
+                </div>
+                <span class="field-error" th:if="${#fields.hasErrors('agreeTerms')}" th:errors="*{agreeTerms}">Bạn cần đồng ý với điều khoản</span>
+
+                <div class="form-actions">
+                    <a th:href="@{/customer/account}" class="btn-cancel-reg">Hủy bỏ</a>
+                    <button type="submit" class="btn-submit-reg">
+                        <span th:text="${isResubmit ? 'Gửi lại hồ sơ xét duyệt' : 'Nộp hồ sơ đăng ký mở Shop ➔'}">Nộp hồ sơ đăng ký mở Shop</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>
