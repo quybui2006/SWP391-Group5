@@ -75,9 +75,14 @@
         }
         .stepper-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
             margin-bottom: 32px;
+        }
+        @media (max-width: 900px) {
+            .stepper-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
         .step-box {
             background: #f8fafc;
@@ -205,15 +210,60 @@
                 </div>
             </div>
 
-            <!-- APPROVED BANNER -->
-            <div class="status-banner approved" th:if="${status == 'APPROVED'}">
-                <div class="banner-icon">🎉</div>
-                <div class="banner-content">
-                    <h3>Chúc mừng! Cửa hàng đã được phê duyệt hoạt động (APPROVED)</h3>
-                    <p>Yêu cầu mở Shop <strong>"<span th:text="${shop.name}">Tên Shop</span>"</strong> đã được xét duyệt thành công. Bạn đã chính thức trở thành Đối tác Người Bán của FreshFruit!</p>
-                    <a th:href="@{/shopowner/home}" class="btn-portal">
-                        Truy cập Kênh Người Bán & Quản lý Shop ➔
-                    </a>
+            <!-- APPROVED BANNER: Depends on payment status -->
+            <div th:if="${status == 'APPROVED'}">
+                <!-- If payment is approved -->
+                <div class="status-banner approved" th:if="${paymentApprovalStatus == 'APPROVED'}">
+                    <div class="banner-icon">🎉</div>
+                    <div class="banner-content">
+                        <h3>Chúc mừng! Cửa hàng đã được phê duyệt & Mở bán chính thức (APPROVED)</h3>
+                        <p>Hồ sơ và thông tin tài khoản ngân hàng của Shop <strong>"<span th:text="${shop.name}">Tên Shop</span>"</strong> đã được Ban vận hành phê duyệt. Bạn có thể đăng sản phẩm và bán hàng ngay bây giờ!</p>
+                        <a th:href="@{/shopowner/home}" class="btn-portal">
+                            Truy cập Kênh Người Bán & Quản lý Shop ➔
+                        </a>
+                    </div>
+                </div>
+
+                <!-- If payment is PENDING -->
+                <div class="status-banner pending" th:if="${paymentApprovalStatus == 'PENDING'}">
+                    <div class="banner-icon">💳</div>
+                    <div class="banner-content">
+                        <h3>Bước 2/2: Đang đối chiếu thông tin thanh toán với CCCD</h3>
+                        <p>Hồ sơ mở Shop đã đạt tiêu chuẩn! Ban vận hành đang đối chiếu Tên chủ tài khoản ngân hàng với Họ tên trên CCCD (<strong><span th:text="${shop.idCardName}">Họ tên CCCD</span></strong>). Vui lòng đợi trong vòng 24 giờ làm việc.</p>
+                        <a th:href="@{/customer/shop-registration/payment}" class="btn-portal" style="background:#0284c7;">
+                            Xem / Cập nhật thông tin thanh toán ➔
+                        </a>
+                    </div>
+                </div>
+
+                <!-- If payment is REJECTED -->
+                <div class="status-banner rejected" th:if="${paymentApprovalStatus == 'REJECTED'}">
+                    <div class="banner-icon">⚠️</div>
+                    <div class="banner-content" style="width: 100%;">
+                        <h3>Thông tin thanh toán bị từ chối phê duyệt</h3>
+                        <p>Hồ sơ mở shop đã được thông qua, nhưng thông tin tài khoản ngân hàng chưa được duyệt đối chiếu.</p>
+                        <div class="reason-box">
+                            <strong>Lý do từ chối:</strong>
+                            <div style="margin-top: 4px; color: #1e293b;" th:text="${shop.bankRejectionReason ?: 'Tên chủ tài khoản không khớp với họ tên trên CCCD.'}">Lý do từ chối cụ thể...</div>
+                        </div>
+                        <div style="margin-top: 16px;">
+                            <a th:href="@{/customer/shop-registration/payment}" class="btn-resubmit">
+                                ✏ Cập nhật lại thông tin tài khoản ngân hàng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- If payment is UNCONFIGURED -->
+                <div class="status-banner pending" th:if="${paymentApprovalStatus == 'UNCONFIGURED' || paymentApprovalStatus == null}">
+                    <div class="banner-icon">💳</div>
+                    <div class="banner-content">
+                        <h3>Hồ sơ Shop đã duyệt! Cần thiết lập thông tin thanh toán</h3>
+                        <p>Chúc mừng! Hồ sơ thông tin Shop đã được duyệt bước 1. Để cửa hàng được kích hoạt mở bán, bạn cần nhập thông tin tài khoản ngân hàng trùng khớp với CCCD đã đăng ký.</p>
+                        <a th:href="@{/customer/shop-registration/payment}" class="btn-portal" style="background:#2563eb;">
+                            Nhập thông tin thanh toán ngay ➔
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -235,7 +285,7 @@
                 </div>
             </div>
 
-            <!-- 3-Step Visual Progress Stepper -->
+            <!-- 4-Step Visual Progress Stepper -->
             <div class="stepper-row">
                 <div class="step-box active">
                     <span class="step-badge done">✓ ĐÃ HOÀN TẤT</span>
@@ -246,14 +296,21 @@
                     <span class="step-badge" th:classappend="${status == 'PENDING'} ? ' wait' : (${status == 'REJECTED'} ? ' fail' : ' done')">
                         <span th:text="${status == 'PENDING' ? '⏳ ĐANG XỬ LÝ' : (status == 'REJECTED' ? '❌ TỪ CHỐI' : '✓ ĐÃ DUYỆT')}">ĐANG XỬ LÝ</span>
                     </span>
-                    <h4>2. Thẩm định vận hành</h4>
+                    <h4>2. Thẩm định Shop</h4>
                     <p th:text="${reviewedAtFormatted != null ? 'Xử lý: ' + reviewedAtFormatted : 'Đang chờ Ban kiểm duyệt'}">Đang thẩm định</p>
                 </div>
-                <div class="step-box" th:classappend="${status == 'APPROVED'} ? ' active' : ''">
-                    <span class="step-badge" th:classappend="${status == 'APPROVED'} ? ' done' : ' wait'">
-                        <span th:text="${status == 'APPROVED' ? '✓ ĐÃ KÍCH HOẠT' : 'CHỜ HOÀN TẤT'}">CHỜ HOÀN TẤT</span>
+                <div class="step-box" th:classappend="${status == 'APPROVED' && (paymentApprovalStatus == 'PENDING' || paymentApprovalStatus == 'UNCONFIGURED')} ? ' active' : (${paymentApprovalStatus == 'REJECTED'} ? ' danger' : (${paymentApprovalStatus == 'APPROVED'} ? ' active' : ''))">
+                    <span class="step-badge" th:classappend="${paymentApprovalStatus == 'APPROVED'} ? ' done' : (${paymentApprovalStatus == 'REJECTED'} ? ' fail' : (${status == 'APPROVED'} ? ' wait' : ''))">
+                        <span th:text="${paymentApprovalStatus == 'APPROVED' ? '✓ ĐÃ DUYỆT' : (paymentApprovalStatus == 'REJECTED' ? '❌ TỪ CHỐI' : (paymentApprovalStatus == 'PENDING' ? '⏳ ĐỐI CHIẾU CCCD' : (status == 'APPROVED' ? 'CHỜ THIẾT LẬP' : 'CHỜ BƯỚC 1')))}">CHỜ THIẾT LẬP</span>
                     </span>
-                    <h4>3. Mở bán sản phẩm</h4>
+                    <h4>3. Duyệt thanh toán</h4>
+                    <p>Đối chiếu NH với CCCD</p>
+                </div>
+                <div class="step-box" th:classappend="${status == 'APPROVED' && paymentApprovalStatus == 'APPROVED'} ? ' active' : ''">
+                    <span class="step-badge" th:classappend="${status == 'APPROVED' && paymentApprovalStatus == 'APPROVED'} ? ' done' : ' wait'">
+                        <span th:text="${status == 'APPROVED' && paymentApprovalStatus == 'APPROVED' ? '✓ MỞ BÁN' : 'CHỜ HOÀN TẤT'}">CHỜ HOÀN TẤT</span>
+                    </span>
+                    <h4>4. Mở bán sản phẩm</h4>
                     <p>Đăng biến thể & bán hoa quả</p>
                 </div>
             </div>
@@ -291,12 +348,37 @@
                     </div>
                 </div>
                 <div class="detail-item">
+                    <label>Họ tên trên CCCD</label>
+                    <div class="value" th:text="${shop.idCardName ?: '—'}">—</div>
+                </div>
+                <div class="detail-item">
+                    <label>Số CCCD / Định danh</label>
+                    <div class="value" th:text="${shop.idCardNumber ?: '—'}">—</div>
+                </div>
+                <div class="detail-item">
+                    <label>Tài khoản ngân hàng</label>
+                    <div class="value" th:text="${shop.bankAccountNumber != null ? (shop.bankName + ' - ' + shop.bankAccountNumber) : 'Chưa cấu hình'}">—</div>
+                </div>
+                <div class="detail-item">
+                    <label>Chủ tài khoản (Đối chiếu CCCD)</label>
+                    <div class="value" th:text="${shop.bankAccountName ?: 'Chưa cấu hình'}">—</div>
+                </div>
+                <div class="detail-item">
+                    <label>Trạng thái duyệt thanh toán</label>
+                    <div class="value">
+                        <span th:if="${paymentApprovalStatus == 'APPROVED'}" style="color:#16a34a;font-weight:700;">🟢 Đã duyệt khớp CCCD</span>
+                        <span th:if="${paymentApprovalStatus == 'PENDING'}" style="color:#d97706;font-weight:700;">⏳ Đang đối chiếu CCCD</span>
+                        <span th:if="${paymentApprovalStatus == 'REJECTED'}" style="color:#dc2626;font-weight:700;">🔴 Bị từ chối đối chiếu</span>
+                        <span th:if="${paymentApprovalStatus == 'UNCONFIGURED' || paymentApprovalStatus == null}" style="color:#64748b;font-weight:700;">⚪ Chưa thiết lập</span>
+                    </div>
+                </div>
+                <div class="detail-item">
                     <label>Trạng thái hoạt động</label>
                     <div class="value">
                         <span th:text="${shop.operatingStatus == 'OPEN' ? '🟢 Đang mở cửa bán' : (shop.operatingStatus == 'SUSPENDED' ? '🔴 Đang tạm dừng' : '⚪ Đang đóng cửa')}">Đang đóng cửa</span>
                     </div>
                 </div>
-                <div class="detail-item">
+                <div class="detail-item" style="grid-column: span 2;">
                     <label>Thời gian đăng ký</label>
                     <div class="value" th:text="${createdAtFormatted ?: '—'}">—</div>
                 </div>
@@ -306,8 +388,11 @@
                 <a th:href="@{/customer/account}" class="btn-cancel-reg" style="background:#f1f5f9;color:#475569;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
                     ← Về trang tài khoản
                 </a>
-                <a th:if="${status == 'APPROVED'}" th:href="@{/shopowner/home}" class="btn-portal">
+                <a th:if="${status == 'APPROVED' && paymentApprovalStatus == 'APPROVED'}" th:href="@{/shopowner/home}" class="btn-portal">
                     Vào trang quản lý Shop ➔
+                </a>
+                <a th:if="${status == 'APPROVED' && paymentApprovalStatus != 'APPROVED'}" th:href="@{/customer/shop-registration/payment}" class="btn-portal" style="background:#2563eb;">
+                    Duyệt thông tin thanh toán ➔
                 </a>
             </div>
         </div>

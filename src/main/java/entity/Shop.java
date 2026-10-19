@@ -87,6 +87,28 @@ public class Shop {
     @Column(name = "shipping_methods", length = 255)
     private String shippingMethods;
 
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
+    @Column(name = "bank_account_name", length = 150)
+    private String bankAccountName;
+
+    @Column(name = "bank_branch", length = 150)
+    private String bankBranch;
+
+    /** UNCONFIGURED / PENDING / APPROVED / REJECTED */
+    @Column(name = "payment_approval_status", length = 50, nullable = false)
+    private String paymentApprovalStatus = "UNCONFIGURED";
+
+    @Column(name = "bank_rejection_reason", length = 1000)
+    private String bankRejectionReason;
+
+    @Column(name = "payment_reviewed_at")
+    private LocalDateTime paymentReviewedAt;
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -135,6 +157,28 @@ public class Shop {
     public void setTaxEmail(String taxEmail) { this.taxEmail = taxEmail; }
     public String getShippingMethods() { return shippingMethods; }
     public void setShippingMethods(String shippingMethods) { this.shippingMethods = shippingMethods; }
+
+    public String getBankName() { return bankName; }
+    public void setBankName(String bankName) { this.bankName = bankName; }
+
+    public String getBankAccountNumber() { return bankAccountNumber; }
+    public void setBankAccountNumber(String bankAccountNumber) { this.bankAccountNumber = bankAccountNumber; }
+
+    public String getBankAccountName() { return bankAccountName; }
+    public void setBankAccountName(String bankAccountName) { this.bankAccountName = bankAccountName; }
+
+    public String getBankBranch() { return bankBranch; }
+    public void setBankBranch(String bankBranch) { this.bankBranch = bankBranch; }
+
+    public String getPaymentApprovalStatus() { return paymentApprovalStatus; }
+    public void setPaymentApprovalStatus(String paymentApprovalStatus) { this.paymentApprovalStatus = paymentApprovalStatus; }
+
+    public String getBankRejectionReason() { return bankRejectionReason; }
+    public void setBankRejectionReason(String bankRejectionReason) { this.bankRejectionReason = bankRejectionReason; }
+
+    public LocalDateTime getPaymentReviewedAt() { return paymentReviewedAt; }
+    public void setPaymentReviewedAt(LocalDateTime paymentReviewedAt) { this.paymentReviewedAt = paymentReviewedAt; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

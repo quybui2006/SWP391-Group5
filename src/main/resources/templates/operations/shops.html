@@ -111,9 +111,17 @@
                             </td>
                             <td class="date-cell" th:text="${shop.createdAt != null ? #temporals.format(shop.createdAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
                             <td>
-                                <span th:if="${shop.approvalStatus == 'PENDING'}" style="background:#ffedd5;color:#c2410c;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">CHỜ DUYỆT</span>
-                                <span th:if="${shop.approvalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">ĐÃ DUYỆT</span>
-                                <span th:if="${shop.approvalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;" th:title="${shop.rejectionReason}">TỪ CHỐI</span>
+                                <div>
+                                    <span th:if="${shop.approvalStatus == 'PENDING'}" style="background:#ffedd5;color:#c2410c;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">HỒ SƠ: CHỜ DUYỆT</span>
+                                    <span th:if="${shop.approvalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">HỒ SƠ: ĐÃ DUYỆT</span>
+                                    <span th:if="${shop.approvalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;" th:title="${shop.rejectionReason}">HỒ SƠ: TỪ CHỐI</span>
+                                </div>
+                                <div th:if="${shop.approvalStatus == 'APPROVED'}" style="margin-top:4px;">
+                                    <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: CHỜ ĐỐI CHIẾU</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: ĐÃ DUYỆT</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: TỪ CHỐI</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' || shop.paymentApprovalStatus == null}" style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: CHƯA CẤU HÌNH</span>
+                                </div>
                             </td>
                             <td class="row-actions" style="display:flex;align-items:center;gap:6px;">
                                 <a th:href="@{/operations/shops/{id}(id=${shop.id})}" class="button" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:6px 12px;font-size:12px;border-radius:6px;text-decoration:none;font-weight:600;">

@@ -1,5 +1,6 @@
 package controller.customer;
 
+import dto.customer.ShopPaymentSetupDto;
 import dto.customer.ShopRegistrationDto;
 import entity.Shop;
 import jakarta.servlet.http.HttpSession;
@@ -47,19 +48,22 @@ public class CustomerShopRegistrationController {
             return "redirect:/login?continueTo=/seller/channel";
         }
 
-        Object role = session.getAttribute("role");
-        if ("SHOP_OWNER".equals(role)) {
-            return "redirect:/shopowner/home";
-        }
-
         Optional<Shop> existingShopOpt = shopRegistrationService.getShopByOwnerId(userId);
         if (existingShopOpt.isPresent()) {
             Shop shop = existingShopOpt.get();
             if ("APPROVED".equals(shop.getApprovalStatus())) {
+                if (!"APPROVED".equals(shop.getPaymentApprovalStatus())) {
+                    return "redirect:/customer/shop-registration/payment";
+                }
                 session.setAttribute("role", "SHOP_OWNER");
                 return "redirect:/shopowner/home";
             }
             return "redirect:/customer/shop-registration/status";
+        }
+
+        Object role = session.getAttribute("role");
+        if ("SHOP_OWNER".equals(role)) {
+            return "redirect:/shopowner/home";
         }
 
         return "redirect:/customer/shop-registration";
@@ -195,6 +199,95 @@ public class CustomerShopRegistrationController {
 
         model.addAttribute("activePage", "shopRegistrationStatus");
         return "customer/shop-registration-status";
+    }
+
+    @GetMapping("/customer/shop-registration/payment")
+    public String showPaymentSetupForm(Model model, HttpSession session) {
+        Long userId = getUserIdFromSession(session);
+        if (userId == null) {
+            return "redirect:/login?continueTo=/customer/shop-registration/payment";
+        }
+
+        Optional<Shop> shopOpt = shopRegistrationService.getShopByOwnerId(userId);
+        if (shopOpt.isEmpty()) {
+            return "redirect:/customer/shop-registration";
+        }
+
+        Shop shop = shopOpt.get();
+        if (!"APPROVED".equals(shop.getApprovalStatus())) {
+            return "redirect:/customer/shop-registration/status";
+        }
+
+        if (!model.containsAttribute("form")) {
+            ShopPaymentSetupDto form = new ShopPaymentSetupDto();
+            if (shop.getBankName() != null && !shop.getBankName().isBlank()) {
+                form.setBankName(shop.getBankName());
+                form.setBankAccountNumber(shop.getBankAccountNumber());
+                form.setBankAccountName(shop.getBankAccountName());
+                form.setBankBranch(shop.getBankBranch());
+            } else {
+                form.setBankAccountName(shop.getIdCardName());
+            }
+            model.addAttribute("form", form);
+        }
+
+        model.addAttribute("shop", shop);
+        model.addAttribute("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
+        model.addAttribute("bankRejectionReason", shop.getBankRejectionReason());
+        try {
+            model.addAttribute("profile", customerAccountService.profile(userId));
+        } catch (Exception ignored) {}
+        model.addAttribute("activePage", "shopPaymentSetup");
+        return "customer/shop-payment-setup";
+    }
+
+    @PostMapping("/customer/shop-registration/payment")
+    public String submitPaymentSetup(
+            @Valid @ModelAttribute("form") ShopPaymentSetupDto form,
+            BindingResult errors,
+            HttpSession session,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        Long userId = getUserIdFromSession(session);
+        if (userId == null) {
+            return "redirect:/login?continueTo=/customer/shop-registration/payment";
+        }
+
+        Optional<Shop> shopOpt = shopRegistrationService.getShopByOwnerId(userId);
+        if (shopOpt.isEmpty() || !"APPROVED".equals(shopOpt.get().getApprovalStatus())) {
+            return "redirect:/customer/shop-registration/status";
+        }
+
+        Shop shop = shopOpt.get();
+
+        if (errors.hasErrors()) {
+            model.addAttribute("shop", shop);
+            model.addAttribute("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
+            model.addAttribute("bankRejectionReason", shop.getBankRejectionReason());
+            try {
+                model.addAttribute("profile", customerAccountService.profile(userId));
+            } catch (Exception ignored) {}
+            model.addAttribute("activePage", "shopPaymentSetup");
+            return "customer/shop-payment-setup";
+        }
+
+        try {
+            shopRegistrationService.submitPaymentInfo(userId, form);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã lưu thông tin thanh toán thành công! Ban vận hành sẽ đối chiếu tên chủ tài khoản với CCCD (" + (shop.getIdCardName() != null ? shop.getIdCardName() : "") + ") và phê duyệt.");
+            return "redirect:/customer/shop-registration/payment";
+        } catch (Exception ex) {
+            model.addAttribute("shop", shop);
+            model.addAttribute("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
+            model.addAttribute("bankRejectionReason", shop.getBankRejectionReason());
+            model.addAttribute("errorMessage", ex.getMessage());
+            try {
+                model.addAttribute("profile", customerAccountService.profile(userId));
+            } catch (Exception ignored) {}
+            model.addAttribute("activePage", "shopPaymentSetup");
+            return "customer/shop-payment-setup";
+        }
     }
 
     @GetMapping("/register/shop-owner")

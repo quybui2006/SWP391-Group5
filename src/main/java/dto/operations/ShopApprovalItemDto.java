@@ -17,12 +17,22 @@ public class ShopApprovalItemDto {
     private final LocalDateTime createdAt;
     private final LocalDateTime reviewedAt;
     private final String rejectionReason;
+    private final String paymentApprovalStatus;
 
     public ShopApprovalItemDto(
             Long id, String name, String description, String ownerName, String ownerEmail,
             String phone, String provinceCode, String wardName, String addressDetail,
             String approvalStatus, String operatingStatus, LocalDateTime createdAt,
             LocalDateTime reviewedAt, String rejectionReason) {
+        this(id, name, description, ownerName, ownerEmail, phone, provinceCode, wardName, addressDetail,
+                approvalStatus, operatingStatus, createdAt, reviewedAt, rejectionReason, "UNCONFIGURED");
+    }
+
+    public ShopApprovalItemDto(
+            Long id, String name, String description, String ownerName, String ownerEmail,
+            String phone, String provinceCode, String wardName, String addressDetail,
+            String approvalStatus, String operatingStatus, LocalDateTime createdAt,
+            LocalDateTime reviewedAt, String rejectionReason, String paymentApprovalStatus) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -37,6 +47,7 @@ public class ShopApprovalItemDto {
         this.createdAt = createdAt;
         this.reviewedAt = reviewedAt;
         this.rejectionReason = rejectionReason;
+        this.paymentApprovalStatus = paymentApprovalStatus != null ? paymentApprovalStatus : "UNCONFIGURED";
     }
 
     public Long getId() { return id; }
@@ -53,4 +64,5 @@ public class ShopApprovalItemDto {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
     public String getRejectionReason() { return rejectionReason; }
+    public String getPaymentApprovalStatus() { return paymentApprovalStatus; }
 }

@@ -89,6 +89,31 @@ public class OperationsShopApprovalController {
         return "redirect:/operations/shops/" + id;
     }
 
+    @PostMapping("/operations/shops/{id:[0-9]+}/payment/approve")
+    public String approvePaymentForm(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            approvals.approvePayment(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã phê duyệt thông tin tài khoản ngân hàng thành công! Cửa hàng đã được mở bán (OPEN).");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/operations/shops/" + id;
+    }
+
+    @PostMapping("/operations/shops/{id:[0-9]+}/payment/reject")
+    public String rejectPaymentForm(
+            @PathVariable Long id,
+            @RequestParam("reason") String reason,
+            RedirectAttributes redirectAttributes) {
+        try {
+            approvals.rejectPayment(id, reason);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã từ chối thông tin thanh toán và gửi thông báo yêu cầu người bán điều chỉnh.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/operations/shops/" + id;
+    }
+
     // JSON API for existing AJAX callers
     @PostMapping("/operations/api/shops/{shopId}/approve")
     @ResponseBody

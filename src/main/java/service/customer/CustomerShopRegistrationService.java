@@ -200,16 +200,35 @@ public class CustomerShopRegistrationService {
                 result.put("stepIndex", 2);
             }
             case "APPROVED" -> {
-                result.put("statusTitle", "Đã được phê duyệt");
-                result.put("statusDescription", "Chúc mừng! Cửa hàng của bạn đã chính thức được kích hoạt trên FreshFruit.");
-                result.put("statusBadgeClass", "badge-approved");
-                result.put("stepIndex", 3);
+                String paymentStatus = shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED";
+                result.put("paymentApprovalStatus", paymentStatus);
+                if ("APPROVED".equals(paymentStatus)) {
+                    result.put("statusTitle", "Đã hoàn tất duyệt hồ sơ & thanh toán");
+                    result.put("statusDescription", "Chúc mừng! Cửa hàng của bạn đã chính thức được kích hoạt và mở bán trên FreshFruit.");
+                    result.put("statusBadgeClass", "badge-approved");
+                    result.put("stepIndex", 4);
+                } else if ("PENDING".equals(paymentStatus)) {
+                    result.put("statusTitle", "Đang đối chiếu thông tin thanh toán");
+                    result.put("statusDescription", "Hồ sơ mở Shop đã duyệt. Ban vận hành đang đối chiếu thông tin tài khoản ngân hàng với CCCD của bạn.");
+                    result.put("statusBadgeClass", "badge-pending");
+                    result.put("stepIndex", 3);
+                } else if ("REJECTED".equals(paymentStatus)) {
+                    result.put("statusTitle", "Thông tin thanh toán bị từ chối");
+                    result.put("statusDescription", "Thông tin tài khoản ngân hàng chưa khớp với CCCD hoặc không hợp lệ. Vui lòng cập nhật lại.");
+                    result.put("statusBadgeClass", "badge-rejected");
+                    result.put("stepIndex", 3);
+                } else {
+                    result.put("statusTitle", "Yêu cầu nhập thông tin thanh toán");
+                    result.put("statusDescription", "Hồ sơ mở Shop đã duyệt bước 1. Vui lòng thiết lập tài khoản ngân hàng để hệ thống đối chiếu và mở bán.");
+                    result.put("statusBadgeClass", "badge-pending");
+                    result.put("stepIndex", 3);
+                }
             }
             case "REJECTED" -> {
                 result.put("statusTitle", "Yêu cầu bị từ chối");
                 result.put("statusDescription", "Hồ sơ mở Shop chưa đạt tiêu chuẩn. Vui lòng kiểm tra lý do và gửi lại thông tin cập nhật.");
                 result.put("statusBadgeClass", "badge-rejected");
-                result.put("stepIndex", 3);
+                result.put("stepIndex", 2);
             }
             default -> {
                 result.put("statusTitle", status);
@@ -220,6 +239,42 @@ public class CustomerShopRegistrationService {
         }
 
         return result;
+    }
+
+    @Transactional
+    public void submitPaymentInfo(Long userId, dto.customer.ShopPaymentSetupDto dto) {
+        if (userId == null) {
+            throw new IllegalArgumentException("Vui lòng đăng nhập.");
+        }
+        Shop shop = shopRepository.findByOwnerId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin cửa hàng."));
+
+        if (!"APPROVED".equals(shop.getApprovalStatus())) {
+            throw new IllegalStateException("Hồ sơ cửa hàng chưa được phê duyệt bước 1.");
+        }
+
+        int updated = shopRepository.submitPaymentInfo(
+                shop.getId(),
+                dto.getBankName().trim(),
+                dto.getBankAccountNumber().trim(),
+                dto.getBankAccountName().trim().toUpperCase(),
+                dto.getBankBranch() != null ? dto.getBankBranch().trim() : ""
+        );
+
+        if (updated == 0) {
+            throw new IllegalStateException("Không thể cập nhật thông tin tài khoản ngân hàng.");
+        }
+
+        try {
+            notificationService.createNotification(
+                    userId,
+                    "SHOP",
+                    "Đã gửi thông tin thanh toán để duyệt 💳",
+                    "Thông tin tài khoản ngân hàng của cửa hàng '" + shop.getName() + "' đã được gửi tới Ban vận hành để đối chiếu với CCCD (" + (shop.getIdCardName() != null ? shop.getIdCardName() : "") + ").",
+                    "SHOP",
+                    shop.getId()
+            );
+        } catch (Exception ignored) {}
     }
 
     private void validateProvince(String provinceCode) {

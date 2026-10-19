@@ -113,6 +113,22 @@ public class OperationsShopApprovalService {
         dto.setTaxName(shop.getTaxName());
         dto.setTaxEmail(shop.getTaxEmail());
         dto.setShippingMethods(shop.getShippingMethods());
+        dto.setBankName(shop.getBankName());
+        dto.setBankAccountNumber(shop.getBankAccountNumber());
+        dto.setBankAccountName(shop.getBankAccountName());
+        dto.setBankBranch(shop.getBankBranch());
+        dto.setPaymentApprovalStatus(shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
+        dto.setBankRejectionReason(shop.getBankRejectionReason());
+        dto.setPaymentReviewedAt(shop.getPaymentReviewedAt());
+
+        // Đối chiếu Tên chủ tài khoản ngân hàng với Họ tên trên CCCD
+        boolean matches = false;
+        if (shop.getIdCardName() != null && shop.getBankAccountName() != null) {
+            String cccdClean = removeAccents(shop.getIdCardName().trim().toLowerCase());
+            String bankClean = removeAccents(shop.getBankAccountName().trim().toLowerCase());
+            matches = cccdClean.equals(bankClean);
+        }
+        dto.setBankAccountMatchesIdCard(matches);
 
         String provinceName = provinces.findById(shop.getProvinceCode())
                 .map(Province::getName)
@@ -225,6 +241,51 @@ public class OperationsShopApprovalService {
         }
     }
 
+    @Transactional
+    public void approvePayment(Long shopId) {
+        Shop shop = shops.findById(shopId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Shop."));
+
+        if (!"APPROVED".equals(shop.getApprovalStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Shop chưa được phê duyệt mở shop.");
+        }
+
+        if (!"PENDING".equals(shop.getPaymentApprovalStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Thông tin thanh toán không ở trạng thái chờ duyệt.");
+        }
+
+        int updated = shops.approvePaymentInfo(shopId);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể phê duyệt thông tin thanh toán.");
+        }
+
+        // Notify owner
+        try {
+            notifications.notifyPaymentApproved(shop.getOwnerId(), shop.getId(), shop.getName());
+        } catch (Exception ignored) {}
+    }
+
+    @Transactional
+    public void rejectPayment(Long shopId, String reason) {
+        Shop shop = shops.findById(shopId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Shop."));
+
+        if (!"PENDING".equals(shop.getPaymentApprovalStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Thông tin thanh toán không ở trạng thái chờ duyệt.");
+        }
+
+        String validReason = normalizeReason(reason);
+        int updated = shops.rejectPaymentInfo(shopId, validReason);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể từ chối thông tin thanh toán.");
+        }
+
+        // Notify owner
+        try {
+            notifications.notifyPaymentRejected(shop.getOwnerId(), shop.getId(), shop.getName(), validReason);
+        } catch (Exception ignored) {}
+    }
+
     private String normalizeReason(String reason) {
         if (reason == null || reason.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng nhập lý do từ chối.");
@@ -235,5 +296,13 @@ public class OperationsShopApprovalService {
                     "Lý do từ chối không được vượt quá 1000 ký tự.");
         }
         return trimmed;
+    }
+
+    private String removeAccents(String str) {
+        if (str == null) return "";
+        String normalized = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{M}", "")
+                .replace("đ", "d").replace("Đ", "D")
+                .trim().toLowerCase();
     }
 }

@@ -68,6 +68,13 @@ CREATE TABLE shops (
     tax_name VARCHAR(150),
     tax_email VARCHAR(254),
     shipping_methods VARCHAR(255),
+    bank_name VARCHAR(100),
+    bank_account_number VARCHAR(50),
+    bank_account_name VARCHAR(150),
+    bank_branch VARCHAR(150),
+    payment_approval_status VARCHAR(50) NOT NULL DEFAULT 'UNCONFIGURED',
+    bank_rejection_reason VARCHAR(1000),
+    payment_reviewed_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

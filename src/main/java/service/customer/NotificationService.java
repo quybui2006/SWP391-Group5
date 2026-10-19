@@ -203,6 +203,30 @@ public class NotificationService {
     }
 
     @Transactional
+    public void notifyPaymentApproved(Long userId, Long shopId, String shopName) {
+        createNotification(
+                userId,
+                "SHOP",
+                "Thông tin thanh toán đã được duyệt thành công! 🎉",
+                "Tài khoản ngân hàng của cửa hàng '" + shopName + "' đã được Ban vận hành đối chiếu khớp với CCCD và phê duyệt. Cửa hàng của bạn hiện đã MỞ BÁN chính thức!",
+                "SHOP",
+                shopId
+        );
+    }
+
+    @Transactional
+    public void notifyPaymentRejected(Long userId, Long shopId, String shopName, String reason) {
+        createNotification(
+                userId,
+                "SHOP",
+                "Thông tin thanh toán cần chỉnh sửa lại ⚠️",
+                "Thông tin tài khoản ngân hàng của cửa hàng '" + shopName + "' chưa được phê duyệt. Lý do: " + (reason != null ? reason : "Tên chủ tài khoản không khớp với CCCD.") + ". Vui lòng kiểm tra và cập nhật lại.",
+                "SHOP",
+                shopId
+        );
+    }
+
+    @Transactional
     public void notifyOrderStatusChanged(Long userId, Long orderId, String orderCode, String statusText) {
         createNotification(
                 userId,
