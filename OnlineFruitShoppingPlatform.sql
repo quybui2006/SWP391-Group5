@@ -152,7 +152,7 @@ CREATE TABLE products (
     CHECK (approval_status <> 'PENDING' OR submitted_at IS NOT NULL),
     CHECK (approval_status NOT IN ('APPROVED','REJECTED') OR reviewed_at IS NOT NULL),
     CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0)),
-    CHECK (selling_status <> 'ACTIVE' OR approval_status = 'APPROVED')
+    CONSTRAINT chk_products_active_approved CHECK (selling_status <> 'ACTIVE' OR approval_status = 'APPROVED')
 );
 
 CREATE TABLE product_images (
@@ -286,7 +286,7 @@ CREATE TABLE checkouts (
     request_key VARCHAR(100) NOT NULL UNIQUE,
     user_id BIGINT NULL,
     contact_email VARCHAR(254) NOT NULL,
-    payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('COD','MOCK_ONLINE')),
+    payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('COD','MOCK_ONLINE','VNPAY')),
     total_amount DECIMAL(19,0) NOT NULL CHECK (total_amount >= 0),
     points_used BIGINT NOT NULL DEFAULT 0 CHECK (points_used >= 0),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
@@ -325,7 +325,7 @@ CREATE TABLE orders (
     shipping_fee DECIMAL(19,0) NOT NULL DEFAULT 20000 CHECK (shipping_fee = 20000),
     total_amount DECIMAL(19,0) NOT NULL CHECK (total_amount >= 0),
     shop_revenue_amount DECIMAL(19,0) NOT NULL CHECK (shop_revenue_amount >= 0),
-    payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('COD','MOCK_ONLINE')),
+    payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('COD','MOCK_ONLINE','VNPAY')),
     payment_expires_at DATETIME(3) NULL,
     status VARCHAR(25) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING','CONFIRMED','PREPARING','SHIPPING','DELIVERED','COMPLETED','CANCELLED')),
@@ -361,8 +361,8 @@ CREATE TABLE orders (
     CHECK (total_amount = subtotal - points_discount + shipping_fee),
     CHECK (shop_revenue_amount = subtotal),
     CHECK (shop_revenue_amount = total_amount - shipping_fee + points_subsidy_amount),
-    CHECK ((payment_method = 'MOCK_ONLINE' AND payment_expires_at IS NOT NULL
-            AND payment_expires_at = DATE_ADD(created_at, INTERVAL 15 MINUTE))
+    CHECK ((payment_method IN ('MOCK_ONLINE', 'VNPAY') AND payment_expires_at IS NOT NULL
+        AND payment_expires_at = DATE_ADD(created_at, INTERVAL 15 MINUTE))
         OR (payment_method = 'COD' AND payment_expires_at IS NULL)),
     CHECK ((payment_status = 'UNPAID' AND paid_at IS NULL) OR (payment_status = 'PAID' AND paid_at IS NOT NULL)),
     CHECK (status <> 'COMPLETED' OR (completed_at IS NOT NULL AND payment_status = 'PAID' AND delivery_status = 'DELIVERED')),
@@ -435,7 +435,7 @@ CREATE TABLE payments (
     payment_code VARCHAR(40) NOT NULL UNIQUE,
     order_id BIGINT NOT NULL,
     request_key VARCHAR(100) NOT NULL UNIQUE,
-    method VARCHAR(20) NOT NULL CHECK (method IN ('COD','MOCK_ONLINE')),
+    method VARCHAR(20) NOT NULL CHECK (method IN ('COD','MOCK_ONLINE','VNPAY')),
     amount DECIMAL(19,0) NOT NULL CHECK (amount >= 0),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING','SUCCEEDED','FAILED','EXPIRED','CANCELLED')),

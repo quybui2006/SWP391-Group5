@@ -35,7 +35,7 @@ public class OperationsProductApprovalController {
     @ResponseBody
     public ResponseEntity<ApprovalActionResponse> approveProduct(@PathVariable Long productId) {
         approvals.approveProduct(productId);
-        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã duyệt yêu cầu đăng sản phẩm."));
+        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã hoàn tất hậu kiểm và duyệt sản phẩm."));
     }
 
     @PostMapping("/operations/api/products/{productId}/reject")
@@ -43,7 +43,7 @@ public class OperationsProductApprovalController {
     public ResponseEntity<ApprovalActionResponse> rejectProduct(
             @PathVariable Long productId,
             @Valid @RequestBody RejectApprovalRequest request) {
-        approvals.rejectProduct(productId, request.getRejectionReason());
-        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã từ chối yêu cầu đăng sản phẩm."));
+        approvals.rejectProduct(productId, request);
+        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã từ chối sản phẩm ở bước hậu kiểm và gỡ khỏi sàn."));
     }
 }

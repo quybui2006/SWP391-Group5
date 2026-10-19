@@ -9,6 +9,7 @@ import repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class ReviewService {
@@ -28,39 +30,64 @@ public class ReviewService {
     @Autowired
     private UserRepository userRepository;
 
-    @Transactional
-    public void ensureSampleReviewsIfEmpty(Long variantId) {
-        long count = reviewRepository.countByVariantId(variantId);
-        if (count > 0) {
-            return;
-        }
+    @Autowired
+    private JdbcTemplate jdbc;
 
-        List<User> users = userRepository.findAll();
-        if (users.isEmpty()) {
-            return;
-        }
+    @Transactional(readOnly = true)
+    public Optional<Long> findPurchasableOrderItem(Long variantId, Long userId) {
+        List<Long> ids = jdbc.query("""
+                SELECT oi.id FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE oi.variant_id = ? AND o.checkout_id IN (SELECT id FROM checkouts WHERE user_id = ?)
+                  AND o.status IN ('DELIVERED', 'COMPLETED')
+                  AND oi.reviewed_at IS NULL AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.order_item_id = oi.id)
+                ORDER BY o.completed_at DESC, oi.id DESC LIMIT 1
+                """, (rs, row) -> rs.getLong(1), variantId, userId);
+        return ids.stream().findFirst();
+    }
 
-        Long u1 = users.get(0).getId();
-        Long u2 = users.size() > 1 ? users.get(1).getId() : u1;
-        Long u3 = users.size() > 3 ? users.get(3).getId() : u1;
-
-        Review r1 = new Review(variantId, u2, 5, "Trái cây rất tươi và giòn ngọt! Quả to đều, mọng nước và không bị dập hay xước. Shop đóng gói rất kỹ càng, giao hàng nhanh chóng. Sẽ ủng hộ shop dài lâu!");
-        r1.setCreatedAt(LocalDateTime.now().minusHours(5));
-        reviewRepository.save(r1);
-
-        Review r2 = new Review(variantId, u1, 5, "Sản phẩm chất lượng cao, tươi ngon chuẩn như mô tả. Gia đình mình ăn ai cũng khen nức nở. 10/10 điểm cho sự chu đáo của shop.");
-        r2.setCreatedAt(LocalDateTime.now().minusDays(1).minusHours(3));
-        reviewRepository.save(r2);
-
-        Review r3 = new Review(variantId, u3, 4, "Giao hàng đúng hẹn, hoa quả giữ được độ tươi mát. Hương vị thơm ngon tự nhiên. Lần sau có mã giảm giá sẽ mua thêm.");
-        r3.setCreatedAt(LocalDateTime.now().minusDays(3).minusHours(2));
-        reviewRepository.save(r3);
+    @Transactional(readOnly = true)
+    public boolean canReview(Long variantId, Long userId) {
+        return findPurchasableOrderItem(variantId, userId).isPresent();
     }
 
     @Transactional
-    public List<ReviewDto> getReviewsForVariant(Long variantId) {
-        ensureSampleReviewsIfEmpty(variantId);
+    public Review addReview(Long variantId, Long userId, Long orderItemId, Integer rating, String content) {
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Số sao phải từ 1 đến 5.");
+        }
+        String safeContent = content == null ? "" : content.trim();
+        if (safeContent.isEmpty()) throw new IllegalArgumentException("Nội dung đánh giá không được để trống.");
+        if (safeContent.length() > 2000) throw new IllegalArgumentException("Nội dung đánh giá tối đa 2000 ký tự.");
+        if (reviewRepository.existsByOrderItemId(orderItemId)) throw new IllegalArgumentException("Sản phẩm trong đơn này đã được đánh giá.");
+        Review review = new Review(variantId, userId, rating, safeContent);
+        review.setOrderItemId(orderItemId);
+        Review saved = reviewRepository.save(review);
+        jdbc.update("UPDATE order_items SET reviewed_at = CURRENT_TIMESTAMP(3) WHERE id=? AND variant_id=?", orderItemId, variantId);
+        return saved;
+    }
 
+    @Transactional
+    public Review updateReview(Long reviewId, Long variantId, Long userId, Integer rating, String content) {
+        Review review = reviewRepository.findByIdAndVariantIdAndUserId(reviewId, variantId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Bạn không có quyền sửa đánh giá này."));
+        if (rating == null || rating < 1 || rating > 5) throw new IllegalArgumentException("Số sao phải từ 1 đến 5.");
+        String safeContent = content == null ? "" : content.trim();
+        if (safeContent.isEmpty() || safeContent.length() > 2000) throw new IllegalArgumentException("Nội dung đánh giá phải từ 1 đến 2000 ký tự.");
+        review.setRating(rating); review.setContent(safeContent);
+        return reviewRepository.save(review);
+    }
+
+    @Transactional
+    public void deleteReview(Long reviewId, Long variantId, Long userId) {
+        Review review = reviewRepository.findByIdAndVariantIdAndUserId(reviewId, variantId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Bạn không có quyền xóa đánh giá này."));
+        reviewRepository.delete(review);
+        if (review.getOrderItemId() != null) jdbc.update("UPDATE order_items SET reviewed_at = NULL WHERE id=?", review.getOrderItemId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDto> getReviewsForVariant(Long variantId) {
         List<Review> reviews = reviewRepository.findByVariantIdOrderByCreatedAtDesc(variantId);
         List<ReviewDto> dtos = new ArrayList<>();
 
@@ -107,8 +134,6 @@ public class ReviewService {
     }
 
     public ReviewStatsDto getReviewStats(Long variantId) {
-        ensureSampleReviewsIfEmpty(variantId);
-
         ReviewStatsDto stats = new ReviewStatsDto();
         long total = reviewRepository.countByVariantId(variantId);
         stats.setTotalReviews(total);
@@ -130,21 +155,6 @@ public class ReviewService {
         }
 
         return stats;
-    }
-
-    @Transactional
-    public Review addReview(Long variantId, Long userId, Integer rating, String content) {
-        if (rating == null || rating < 1) rating = 5;
-        if (rating > 5) rating = 5;
-
-        String safeContent = content != null ? content.trim() : "";
-        if (safeContent.length() > 2000) {
-            safeContent = safeContent.substring(0, 2000);
-        }
-
-        Review review = new Review(variantId, userId, rating, safeContent);
-        review.setCreatedAt(LocalDateTime.now());
-        return reviewRepository.save(review);
     }
 
     private String formatTimeAgo(LocalDateTime time) {

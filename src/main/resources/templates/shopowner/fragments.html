@@ -51,13 +51,20 @@
             <span>％</span> Khuyến mãi
         </a>
 
+        <a th:classappend="${activePage == 'vouchers'} ? ' active' : ''"
+           th:href="@{/shop/vouchers}"
+           aria-label="Quản lý Voucher">
+            <span aria-hidden="true">▣</span> Voucher
+        </a>
+
         <a th:classappend="${activePage == 'orders'} ? ' active' : ''"
            th:href="@{/shopowner/orders}">
             <span>◌</span> Đơn hàng
         </a>
 
-        <a href="#" data-pending>
-            <span>♧</span> Kho hàng
+        <a th:classappend="${activePage == 'inventory'} ? ' active' : ''"
+           th:href="@{/shop/inventory}">
+            <span>♧</span> Tồn kho
         </a>
 
         <span class="nav-label">KHÁC</span>

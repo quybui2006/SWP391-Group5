@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý Voucher | FreshFruit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/voucher-management.css}">
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('vouchers')}"></aside>
+    <main class="main-content product-management voucher-page">
+        <div class="voucher-page-inner">
+            <header class="voucher-header">
+                <div>
+                    <div class="voucher-breadcrumb"><span>Shop Owner</span><span>/</span><span>Marketing</span></div>
+                    <div class="voucher-title-line"><div><span class="voucher-kicker">MARKETING CỬA HÀNG</span><h1>Quản lý Voucher</h1><p>Tạo mã giảm giá, quản lý thời hạn và theo dõi lượt sử dụng của khách hàng.</p></div></div>
+                </div>
+                <a class="voucher-primary-button" th:href="@{/shop/vouchers/create}"><span aria-hidden="true">＋</span> Tạo voucher</a>
+            </header>
+
+            <div class="voucher-alert voucher-alert-success" th:if="${success}" role="status"><span class="alert-icon">✓</span><span th:text="${success}">Thao tác thành công.</span></div>
+            <div class="voucher-alert voucher-alert-error" th:if="${error}" role="alert"><span class="alert-icon">!</span><span th:text="${error}">Có lỗi xảy ra.</span></div>
+            <div class="voucher-alert voucher-alert-error" th:if="${serviceError}" role="alert"><span class="alert-icon">!</span><span th:text="${serviceError}">Không thể tải voucher.</span></div>
+
+            <section class="voucher-stats" aria-label="Tổng quan voucher">
+                <article class="voucher-stat"><div class="voucher-stat-icon icon-total">▣</div><div><span>Tổng voucher trong kết quả</span><strong th:text="${totalCount}">0</strong></div></article>
+                <article class="voucher-stat"><div class="voucher-stat-icon icon-active">✓</div><div><span>Đang bật</span><strong th:text="${activeCount}">0</strong></div></article>
+                <article class="voucher-stat"><div class="voucher-stat-icon icon-paused">Ⅱ</div><div><span>Đang tắt</span><strong th:text="${pausedCount}">0</strong></div></article>
+                <article class="voucher-stat"><div class="voucher-stat-icon icon-expired">◷</div><div><span>Hết hạn</span><strong th:text="${expiredCount}">0</strong></div></article>
+            </section>
+
+            <section class="voucher-filter-card">
+                <div class="filter-heading"><div><h2>Tìm kiếm voucher</h2><p>Lọc theo mã, tên hoặc trạng thái voucher.</p></div><span class="filter-caption">BỘ LỌC</span></div>
+                <form method="get" th:action="@{/shop/vouchers}" class="voucher-filter-form">
+                    <div class="filter-field filter-keyword"><label for="keyword">Mã hoặc tên voucher</label><div class="field-with-icon"><span aria-hidden="true">⌕</span><input id="keyword" name="keyword" type="search" th:value="${keyword}" placeholder="Ví dụ: WELCOME10" autocomplete="off"></div></div>
+                    <div class="filter-field"><label for="status">Trạng thái</label><select id="status" name="status"><option value="" th:selected="${selectedStatus == null or selectedStatus == ''}">Tất cả trạng thái</option><option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">Đang bật</option><option value="PAUSED" th:selected="${selectedStatus == 'PAUSED'}">Đang tắt</option><option value="EXPIRED" th:selected="${selectedStatus == 'EXPIRED'}">Hết hạn</option></select></div>
+                    <div class="filter-actions"><button type="submit" class="voucher-search-button">Tìm kiếm</button><a class="voucher-reset-button" th:href="@{/shop/vouchers}">Xóa lọc</a></div>
+                </form>
+            </section>
+
+            <section class="voucher-table-card">
+                <div class="table-card-header"><div><h2>Danh sách voucher</h2><p>Các voucher thuộc cửa hàng của bạn.</p></div><span class="result-count"><strong th:text="${totalCount}">0</strong> kết quả</span></div>
+                <div class="voucher-table-scroll">
+                    <table class="voucher-table">
+                        <thead><tr><th>VOUCHER</th><th>ƯU ĐÃI</th><th>ĐƠN TỐI THIỂU</th><th>SỬ DỤNG</th><th>THỜI GIAN ÁP DỤNG</th><th>TRẠNG THÁI</th><th class="actions-heading">THAO TÁC</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(vouchers)}"><td colspan="7"><div class="voucher-empty"><div class="empty-graphic">▣</div><strong>Chưa có voucher phù hợp</strong><p>Thử đổi từ khóa hoặc tạo voucher mới để bắt đầu chương trình ưu đãi.</p><a th:href="@{/shop/vouchers/create}" class="voucher-primary-button">＋ Tạo voucher đầu tiên</a></div></td></tr>
+                        <tr th:each="v : ${vouchers}">
+                            <td class="voucher-identity"><div class="voucher-code-row"><span class="voucher-code" th:text="${v.code}">WELCOME10</span><button type="button" class="icon-copy-button" th:attr="data-code=${v.code}" onclick="copyVoucher(this)" aria-label="Sao chép mã voucher" title="Sao chép mã">▢</button></div><div class="voucher-name" th:text="${v.name}">Ưu đãi khách hàng</div><span class="visibility-pill public-pill" th:if="${v.isPublic}">● Công khai</span><span class="visibility-pill private-pill" th:unless="${v.isPublic}">◉ Mã ẩn</span></td>
+                            <td><div class="discount-primary" th:if="${v.discountType == 'PERCENTAGE'}" th:text="${#numbers.formatDecimal(v.discountValue,1,0) + '%'}">10%</div><div class="discount-primary" th:if="${v.discountType == 'FIXED_AMOUNT'}" th:text="${#numbers.formatDecimal(v.discountValue,1,'COMMA',0,'POINT') + ' ₫'}">20.000 ₫</div><div class="table-subtext" th:if="${v.discountType == 'PERCENTAGE' and v.maxDiscountAmount != null}" th:text="${'Tối đa ' + #numbers.formatDecimal(v.maxDiscountAmount,1,'COMMA',0,'POINT') + ' ₫'}">Tối đa</div><div class="table-subtext" th:if="${v.discountType == 'PERCENTAGE' and v.maxDiscountAmount == null}">Không giới hạn mức giảm</div></td>
+                            <td><span class="money-value" th:text="${#numbers.formatDecimal(v.minOrderValue,1,'COMMA',0,'POINT') + ' ₫'}">100.000 ₫</span></td>
+                            <td class="usage-cell"><div class="usage-meta"><strong th:text="${v.usedCount} + ' / ' + ${v.maxUsages}">0 / 100</strong><span th:text="${(v.maxUsages > 0 ? #numbers.formatDecimal(v.usedCount * 100.0 / v.maxUsages,1,0) : '0') + '%'}">0%</span></div><div class="usage-track"><span th:style="'width:' + ${v.maxUsages > 0 ? (v.usedCount * 100.0 / v.maxUsages) : 0} + '%'" aria-hidden="true"></span></div></td>
+                            <td class="date-cell"><strong th:text="${#temporals.format(v.startsAt,'dd/MM/yyyy HH:mm')}">18/10/2026 00:00</strong><span th:text="${'đến ' + #temporals.format(v.endsAt,'dd/MM/yyyy HH:mm')}">đến 19/10/2026 00:00</span></td>
+                            <td><span class="status-pill status-active" th:if="${v.status == 'ACTIVE'}"><i></i> Đang bật</span><span class="status-pill status-paused" th:if="${v.status == 'PAUSED'}"><i></i> Đang tắt</span><span class="status-pill status-expired" th:if="${v.status == 'EXPIRED'}"><i></i> Hết hạn</span></td>
+                            <td class="voucher-row-actions"><div class="row-action-group"><a class="action-button action-edit" th:href="@{/shop/vouchers/{id}/edit(id=${v.id})}" title="Chỉnh sửa voucher">Sửa</a><form th:if="${v.status != 'EXPIRED'}" method="post" th:action="@{/shop/vouchers/{id}/toggle(id=${v.id})}"><input type="hidden" name="keyword" th:value="${keyword}"><input type="hidden" name="status" th:value="${selectedStatus}"><button class="action-button" th:classappend="${v.status == 'ACTIVE'} ? ' action-pause' : ' action-enable'" th:text="${v.status == 'ACTIVE'} ? 'Tắt' : 'Bật'" type="submit"></button></form><form method="post" th:action="@{/shop/vouchers/{id}/delete(id=${v.id})}" th:attr="data-used=${v.usedCount}" onsubmit="return confirmDeleteVoucher(this);"><input type="hidden" name="keyword" th:value="${keyword}"><input type="hidden" name="status" th:value="${selectedStatus}"><button class="action-button action-delete" type="submit" th:disabled="${v.usedCount != null and v.usedCount > 0}" th:title="${v.usedCount != null and v.usedCount > 0} ? 'Voucher đã dùng không thể xóa để bảo toàn lịch sử' : 'Xóa voucher chưa sử dụng'">Xóa</button></form></div><div class="delete-hint" th:if="${v.usedCount != null and v.usedCount > 0}">Đã phát sinh lượt dùng — chỉ có thể tắt</div></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="voucher-table-footer"><span>Voucher đã sử dụng không thể xóa nhằm bảo toàn lịch sử giao dịch.</span><span>FreshFruit · Quản lý ưu đãi</span></div>
+            </section>
+        </div>
+        <div id="copyToast" class="voucher-toast" hidden role="status">✓ Đã sao chép mã voucher</div>
+    </main>
+</div>
+<script>
+async function copyVoucher(button) {
+    const code = button.dataset.code;
+    try { await navigator.clipboard.writeText(code); }
+    catch (e) { const input = document.createElement('textarea'); input.value = code; document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove(); }
+    const toast = document.getElementById('copyToast'); toast.hidden = false; window.clearTimeout(window.__voucherToastTimer); window.__voucherToastTimer = window.setTimeout(() => toast.hidden = true, 1800);
+}
+function confirmDeleteVoucher(form) {
+    const used = Number(form.dataset.used || 0);
+    if (used > 0) { alert('Voucher đã được sử dụng nên không thể xóa. Hãy tắt voucher để ngừng áp dụng.'); return false; }
+    return confirm('Bạn chắc chắn muốn xóa voucher này? Thao tác này không thể hoàn tác.');
+}
+</script>
+</body></html>

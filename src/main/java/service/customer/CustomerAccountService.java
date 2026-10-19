@@ -31,7 +31,7 @@ public class CustomerAccountService {
         return jdbc.queryForMap("SELECT u.id,u.full_name,u.email,u.phone,u.status,p.gender,p.birth_date,(p.avatar IS NOT NULL) AS has_avatar FROM users u LEFT JOIN customer_profiles p ON p.user_id=u.id WHERE u.id=? AND u.status='ACTIVE'", userId);
     }
     public List<Map<String,Object>> orders(Long userId) {
-        return jdbc.query("""
+        List<Map<String,Object>> orders = jdbc.query("""
             SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_status,o.delivery_status,o.created_at,
                    s.name AS shop_name
             FROM orders o JOIN checkouts c ON c.id=o.checkout_id
@@ -46,6 +46,14 @@ public class CustomerAccountService {
                     .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 return order;
             }, userId);
+        for (Map<String,Object> order : orders) {
+            order.put("items", jdbc.queryForList("""
+                SELECT oi.id AS order_item_id, oi.variant_id, oi.variant_name, oi.sku,
+                       oi.quantity, oi.reviewed_at
+                FROM order_items oi WHERE oi.order_id=? ORDER BY oi.id
+                """, order.get("id")));
+        }
+        return orders;
     }
     public List<Map<String,Object>> favorites(Long userId) {
         return jdbc.queryForList("""

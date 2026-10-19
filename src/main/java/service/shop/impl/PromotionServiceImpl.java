@@ -89,8 +89,8 @@ public class PromotionServiceImpl {
                 throw new PromotionValidationException("variantId", "Bạn chỉ có thể tạo khuyến mãi cho sản phẩm thuộc cửa hàng của mình.");
             }
             if (!"ACTIVE".equals(variant.getStatus()) || variant.getProduct() == null
-                    || !"APPROVED".equals(variant.getProduct().getApprovalStatus())) {
-                throw new PromotionValidationException("variantId", "Chỉ có thể tạo khuyến mãi cho biến thể ACTIVE thuộc sản phẩm đã được duyệt.");
+                    || !"ACTIVE".equals(variant.getProduct().getSellingStatus())) {
+                throw new PromotionValidationException("variantId", "Chỉ có thể tạo khuyến mãi cho biến thể ACTIVE thuộc sản phẩm đang mở bán.");
             }
             if (form.getPromotionalPrice() == null || form.getPromotionalPrice().compareTo(variant.getPrice()) >= 0) {
                 throw new PromotionValidationException("promotionalPrice", "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán hiện tại (" + variant.getPrice().toPlainString() + ").");
@@ -138,8 +138,8 @@ public class PromotionServiceImpl {
         boolean enable = !Boolean.TRUE.equals(promotion.getEnabled());
         if (enable) {
             LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-            if (promotion.getStartsAt().isBefore(now)) {
-                throw new PromotionValidationException("serviceError", "Không thể bật khuyến mãi vì thời điểm bắt đầu đã qua. Hãy chỉnh sửa thời gian trước.");
+            if (!promotion.getEndsAt().isAfter(now)) {
+                throw new PromotionValidationException("serviceError", "Không thể bật khuyến mãi đã hết hạn. Hãy chỉnh sửa thời gian kết thúc trước.");
             }
             Integer overlap = jdbc.queryForObject("""
                     SELECT COUNT(*) FROM promotional_prices

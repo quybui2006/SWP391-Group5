@@ -2022,3 +2022,12 @@ img {
 
 /* Current promotional price */
 .price-promotion { color: #d62828 !important; }
+
+.review-owner-actions { margin-left: auto; display: inline-flex; gap: 8px; }
+.review-owner-button { border: 0; background: transparent; color: #16804b; cursor: pointer; font-size: 12px; font-weight: 700; }
+.review-owner-button:hover { text-decoration: underline; }
+.review-delete-button { color: #b42318; }
+.review-edit-form { margin-top: 12px; padding: 14px; border: 1px solid #e5eee7; border-radius: 10px; background: #f8fcf8; }
+.review-edit-form textarea { width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #dbe7de; border-radius: 8px; resize: vertical; font: inherit; }
+.edit-rating-row { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
+.edit-rating-row select { padding: 6px 8px; border: 1px solid #dbe7de; border-radius: 7px; }

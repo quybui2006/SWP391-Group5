@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import repository.ActivePromotionPrice;
 
 @Service
 public class ProductService {
@@ -42,14 +45,27 @@ public class ProductService {
 
         String safeKeyword = (keyword == null) ? "" : keyword.trim();
 
-        return productVariantRepository.searchAndFilter(safeKeyword, minPrice, maxPrice, filterByCategory, safeCategoryIds);
+        List<ProductVariant> variants = productVariantRepository.searchAndFilter(
+                safeKeyword, minPrice, maxPrice, filterByCategory, safeCategoryIds);
+        applyActivePromotionPrices(variants);
+        return variants;
+    }
+
+    private void applyActivePromotionPrices(List<ProductVariant> variants) {
+        if (variants == null || variants.isEmpty()) return;
+        List<Long> ids = variants.stream().map(ProductVariant::getId).toList();
+        Map<Long, BigDecimal> prices = promotionalPriceRepository
+                .findActivePricesByVariantIds(ids, java.time.LocalDateTime.now(BUSINESS_ZONE)).stream()
+                .collect(Collectors.toMap(ActivePromotionPrice::getVariantId,
+                        ActivePromotionPrice::getPromotionalPrice));
+        variants.forEach(variant -> variant.setPromotionalPrice(prices.get(variant.getId())));
     }
 
     public ProductVariant getProductVariantById(Long id) {
         ProductVariant variant = productVariantRepository.findById(id)
+                // Hậu kiểm: khách hàng chỉ cần sản phẩm đang ACTIVE; approval_status không chặn catalog.
                 .filter(v -> "ACTIVE".equals(v.getStatus())
-                        && "ACTIVE".equals(v.getProduct().getSellingStatus())
-                        && "APPROVED".equals(v.getProduct().getApprovalStatus()))
+                        && "ACTIVE".equals(v.getProduct().getSellingStatus()))
                 .orElse(null);
         if (variant != null) {
             variant.setPromotionalPrice(promotionalPriceRepository

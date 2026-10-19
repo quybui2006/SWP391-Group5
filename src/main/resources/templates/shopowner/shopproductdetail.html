@@ -3,147 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết sản phẩm | FreshFruit</title>
+    <title th:text="${product.name + ' | Chi tiết sản phẩm | FreshFruit'}">Chi tiết sản phẩm | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <style>
+        .detail-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:24px}
+        .detail-hero .eyebrow{margin:0 0 8px;color:#238653;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+        .detail-hero h1{margin:0;font-size:clamp(28px,3vw,38px);letter-spacing:-.04em}
+        .detail-hero .muted{margin:8px 0 0;max-width:620px}
+        .detail-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+        .button-danger{background:#fff5f5;color:#b42318;border:1px solid #f3c5c2}
+        .button-danger:hover{background:#feeceb}
+        .detail-notice{padding:13px 16px;border-radius:12px;margin:0 0 18px;font-size:13px;font-weight:600}
+        .detail-notice.success{background:#effaf2;color:#176b30;border:1px solid #ccebd3}
+        .detail-notice.error{background:#fff1f0;color:#a52822;border:1px solid #ffd4d0}
+        .detail-grid{align-items:stretch}
+        .product-overview{display:grid;grid-template-columns:170px minmax(0,1fr);gap:24px}
+        .product-cover{width:170px;height:170px;object-fit:cover;border-radius:16px;background:#f1f7f2;border:1px solid var(--line)}
+        .product-cover-placeholder{display:grid;place-items:center;font-size:54px;color:#25864f}
+        .detail-list{margin-top:2px}
+        .status-label{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:#eef8f0;color:#176b30;font-size:11px;font-weight:800}
+        .status-label:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+        .status-label.draft{background:#fff5d9;color:#8a5a00}.status-label.pending{background:#eef4ff;color:#285bb5}.status-label.archived{background:#f1f2f4;color:#5e6570}.status-label.rejected{background:#fff0ef;color:#b42318}
+        .status-panel{margin:0 0 16px}
+        .status-meta{display:grid;gap:11px;margin:18px 0 0;padding-top:16px;border-top:1px solid var(--line)}
+        .status-meta div{display:flex;justify-content:space-between;gap:14px;font-size:12px}.status-meta span{color:var(--muted)}.status-meta strong{text-align:right}
+        .description-block p{overflow-wrap:anywhere}
+        .variants-card{margin-top:18px}
+        .table-wrap table{min-width:720px}
+        .variant-actions{white-space:nowrap}
+        .variant-actions a{color:var(--green-dark);font-size:12px;font-weight:800}
+        .variant-actions a:hover{text-decoration:underline}
+        .danger-note{margin:14px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
+        @media(max-width:760px){.detail-hero{flex-direction:column}.detail-actions{justify-content:flex-start}.product-overview{grid-template-columns:1fr}.product-cover{width:100%;height:210px}.detail-grid{grid-template-columns:1fr}}
+    </style>
 </head>
 <body>
 <div class="app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
     <main class="main-content product-management">
-        <header class="topbar">
+        <header class="detail-hero">
             <div>
-                <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chi tiết</span></p>
-                <h1 th:text="${product.name}">Chi tiết sản phẩm</h1>
-                <p class="muted">Thông tin lô hàng, trạng thái bán và các biến thể của sản phẩm.</p>
+                <p class="eyebrow">Quản lý sản phẩm / Chi tiết</p>
+                <h1 th:text="${product.name}">Tên sản phẩm</h1>
+                <p class="muted">Xem thông tin lô hàng, trạng thái kiểm duyệt và quản lý biến thể của sản phẩm.</p>
             </div>
-            <div class="topbar-actions">
+            <div class="detail-actions">
                 <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách</a>
-                <a class="button button-primary" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa</a>
+                <a class="button button-primary" th:href="@{/shop/product/{id}/edit(id=${product.id})}">✎ Chỉnh sửa</a>
+                <form th:action="@{/shop/product/{id}/archive(id=${product.id})}" method="post"
+                      onsubmit="return confirm('Lưu trữ sản phẩm này? Sản phẩm sẽ bị gỡ khỏi gian hàng nhưng dữ liệu và lịch sử vẫn được giữ.');">
+                    <button class="button button-danger" type="submit">Lưu trữ sản phẩm</button>
+                </form>
+                <form th:action="@{/shop/product/{id}/delete(id=${product.id})}" method="post"
+                      onsubmit="return confirm('Bạn chắc chắn muốn xóa sản phẩm? Chỉ sản phẩm chưa có đơn hàng, đánh giá hoặc lịch sử giao dịch kho mới được xóa.');">
+                    <button class="button button-danger" type="submit">Xóa sản phẩm</button>
+                </form>
             </div>
         </header>
 
-<header class="site-header">
+        <p class="detail-notice success" th:if="${success}" th:text="${success}"></p>
+        <p class="detail-notice error" th:if="${error}" th:text="${error}"></p>
 
-    <div class="container header-inner">
-
-        <a class="brand" th:href="@{/shopowner/home}">
-            <span class="brand-mark">F</span>
-            <span class="brand-text">
-                <strong>FreshFruit</strong>
-                <small>Tươi ngon mỗi ngày</small>
-            </span>
-        </a>
-
-        <nav class="main-nav">
-            <a th:href="@{/shopowner/home}">Dashboard</a>
-            <a class="active" th:href="@{/shop/products}">Sản phẩm</a>
-            <a th:href="@{/shop/products/add}">Thêm sản phẩm</a>
-        </nav>
-
-        <div class="header-actions">
-            <a class="icon-btn"
-               th:href="@{/search}"
-               title="Tìm kiếm"
-               aria-label="Tìm kiếm">⌕</a>
-            <!-- Tan PTH integration: take shop owners to their existing dashboard. -->
-            <a class="login-btn" th:href="@{/shopowner/home}">Quản lý cửa hàng</a>
-            <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
-                <button type="submit" style="display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 11px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'" title="Đăng xuất">
-                    🚪 Đăng xuất
-                </button>
-            </form>
-        </div>
-
-    </div>
-
-</header>
-
-<main>
-
-    <!-- =====================================================
-         BREADCRUMB
-    ====================================================== -->
-    <section class="breadcrumb-section">
-        <div class="container">
-            <nav class="breadcrumb" aria-label="breadcrumb">
-                <a th:href="@{/shopowner/home}">Dashboard</a>
-                <span class="sep">/</span>
-                <a th:href="@{/shop/products}">Sản phẩm</a>
-                <span class="sep">/</span>
-                <a th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa</a>
-                <span class="sep">/</span>
-                <span th:text="${product.name}">Tên sản phẩm</span>
-            </nav>
-        </div>
-    </section>
-
-    <!-- =====================================================
-         THANH QUẢN LÝ: nút Edit
-    ====================================================== -->
-    <section class="shop-actionbar">
-        <div class="container shop-actionbar-inner">
-
-            <!-- Thông báo lưu thành công, hiện 1 lần rồi tự xóa -->
-            <div class="shop-alert" th:if="${success}" th:text="${success}"></div>
-
-            <div class="shop-actionbar-info">
-                <span class="shop-label">Đang xem sản phẩm của</span>
-                <strong th:text="${product.shopName}">FreshFruit Store</strong>
         <section class="detail-grid">
-            <div class="form-card">
+            <article class="form-card">
                 <h2>Thông tin sản phẩm</h2>
-                <div class="detail-list">
-                    <div><span>Tên sản phẩm</span><strong th:text="${product.name}">-</strong></div>
-                    <div><span>Danh mục</span><strong th:text="${product.categoryName ?: '-'}">-</strong></div>
-                    <div><span>Mã lô</span><strong th:text="${product.batchCode}">-</strong></div>
-                    <div><span>Xuất xứ</span><strong th:text="${product.origin ?: '-'}">-</strong></div>
-                    <div><span>Cửa hàng</span><strong th:text="${product.shopName}">-</strong></div>
-                    <div><span>Ngày nhập</span><strong th:text="${product.receivedDate}">-</strong></div>
-                    <div><span>Ngày hết hạn</span><strong th:text="${product.expiryDate}">-</strong></div>
-                    <div><span>Trạng thái bán</span><strong th:text="${product.sellingStatus}">-</strong></div>
-                </div>
-                <div class="description-block">
-                    <h3>Mô tả</h3>
-                    <p th:text="${product.description ?: 'Chưa có mô tả.'}">Chưa có mô tả.</p>
-                </div>
-<<<<<<< HEAD:src/main/resources/templates/shopproductdetail.html
->>>>>>> develop
-=======
->>>>>>> develop:src/main/resources/templates/shopowner/shopproductdetail.html
-            </div>
-
-            <aside class="form-card">
-                <h2>Trạng thái</h2>
-                <div class="status-panel">
-                    <span class="status-dot"></span>
-                    <div>
-                        <strong th:text="${product.sellingStatus}">ACTIVE</strong>
-                        <p>Sản phẩm được hậu kiểm sau khi đăng bán.</p>
+                <div class="product-overview">
+                    <img class="product-cover" th:if="${product.imageUrls != null and !product.imageUrls.isEmpty()}"
+                         th:src="${product.imageUrls[0]}" th:alt="${product.name}">
+                    <div class="product-cover product-cover-placeholder" th:unless="${product.imageUrls != null and !product.imageUrls.isEmpty()}">🍃</div>
+                    <div class="detail-list">
+                        <div><span>Tên sản phẩm</span><strong th:text="${product.name}">-</strong></div>
+                        <div><span>Danh mục</span><strong th:text="${product.categoryName ?: '-'}">-</strong></div>
+                        <div><span>Mã lô</span><strong th:text="${product.batchCode}">-</strong></div>
+                        <div><span>Xuất xứ</span><strong th:text="${product.origin ?: 'Chưa cập nhật'}">-</strong></div>
+                        <div><span>Cửa hàng</span><strong th:text="${product.shopName}">-</strong></div>
+                        <div><span>Ngày nhập</span><strong th:text="${product.receivedDate != null ? #temporals.format(product.receivedDate, 'dd/MM/yyyy') : '-'}">-</strong></div>
+                        <div><span>Ngày hết hạn</span><strong th:text="${product.expiryDate != null ? #temporals.format(product.expiryDate, 'dd/MM/yyyy') : '-'}">-</strong></div>
                     </div>
                 </div>
-                <a class="button button-primary button-block" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa thông tin</a>
+                <div class="description-block">
+                    <h3>Mô tả sản phẩm</h3>
+                    <p th:text="${product.description ?: 'Chưa có mô tả cho sản phẩm này.'}">Mô tả sản phẩm</p>
+                </div>
+            </article>
+
+            <aside class="form-card">
+                <h2>Trạng thái &amp; thao tác</h2>
+                <div class="status-panel">
+                    <span class="status-label"
+                          th:classappend="${product.sellingStatus == 'DRAFT'} ? ' draft' : (${product.sellingStatus == 'ARCHIVED'} ? ' archived' : (${product.approvalStatus == 'PENDING'} ? ' pending' : (${product.approvalStatus == 'REJECTED'} ? ' rejected' : '')) )"
+                          th:text="${product.sellingStatus == 'ACTIVE' ? 'Đang bán' : (product.sellingStatus == 'PAUSED' ? 'Tạm ngừng' : (product.sellingStatus == 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'))}">Bản nháp</span>
+                    <p class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.6"
+                       th:text="${product.approvalStatus == 'PENDING' ? 'Sản phẩm đang được mở bán và chờ Quản lý vận hành hậu kiểm.' : (product.approvalStatus == 'APPROVED' ? 'Sản phẩm đã được duyệt.' : (product.approvalStatus == 'REJECTED' ? 'Sản phẩm bị từ chối; hãy xem lý do và chỉnh sửa.' : 'Sản phẩm chưa gửi yêu cầu duyệt.'))}">Trạng thái duyệt</p>
+                </div>
+                <div class="status-meta">
+                    <div><span>Trạng thái duyệt</span><strong th:text="${product.approvalStatus}">DRAFT</strong></div>
+                    <div><span>Biến thể</span><strong th:text="${#lists.size(product.variants)} + ' biến thể'">0 biến thể</strong></div>
+                    <div th:if="${product.expiringSoon}"><span>Hạn sử dụng</span><strong style="color:#b42318">Sắp hết hạn</strong></div>
+                </div>
+                <a class="button button-primary button-block" style="margin-top:18px" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa thông tin</a>
+                <a class="button button-ghost button-block" style="margin-top:9px" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể</a>
+                <p class="danger-note">Lưu trữ sẽ gỡ sản phẩm khỏi gian hàng ngay lập tức. Hệ thống không xóa cứng để bảo toàn biến thể, khóa ngoại và lịch sử đơn hàng; thao tác này áp dụng cả khi sản phẩm đang chờ hậu kiểm.</p>
             </aside>
         </section>
 
         <section class="form-card variants-card">
             <div class="section-heading">
-                <div><h2>Biến thể và tồn kho</h2><p class="muted">Giá bán, SKU và số lượng được quản lý ở mục Biến thể sản phẩm.</p></div>
-                <a class="button button-primary" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">+ Thêm biến thể</a>
+                <div><h2>Biến thể sản phẩm</h2><p class="muted">Quản lý SKU, giá bán và số lượng tồn kho của từng biến thể.</p></div>
+                <a class="button button-primary" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể</a>
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>SKU</th><th>Tên biến thể</th><th>Giá</th><th>Tồn kho</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                    <thead><tr><th>SKU</th><th>Tên biến thể</th><th>Quy cách</th><th>Giá bán</th><th>Tồn kho</th><th>Có thể bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="variant : ${product.variants}">
-                        <td th:text="${variant.sku}">-</td>
-                        <td th:text="${variant.name}">-</td>
-                        <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">-</td>
+                        <td><strong th:text="${variant.sku}">SKU</strong></td>
+                        <td th:text="${variant.name}">Tên biến thể</td>
+                        <td th:text="${variant.specification ?: '-'}">-</td>
+                        <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</td>
+                        <td th:text="${variant.quantityOnHand}">0</td>
                         <td th:text="${variant.availableQuantity}">0</td>
-                        <td th:text="${variant.status}">ACTIVE</td>
-                        <td><a class="product-action-link" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a></td>
+                        <td><span class="badge" th:classappend="${variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.status}">DRAFT</span></td>
+                        <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a> · <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a></td>
                     </tr>
-                    <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="6" class="empty-cell">Chưa có biến thể nào.</td></tr>
+                    <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="8" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>
                     </tbody>
                 </table>
             </div>

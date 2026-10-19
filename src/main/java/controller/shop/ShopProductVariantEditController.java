@@ -44,8 +44,8 @@ public class ShopProductVariantEditController {
                     id, currentUser.requireUserId(request));
             form.setUnits(savedState.getUnits());
             form.setProductName(savedState.getProductName());
-            form.setProductApproved(savedState.isProductApproved());
-            if (!savedState.isProductApproved() && !"DRAFT".equalsIgnoreCase(form.getStatus())) {
+            form.setProductCanSell(savedState.isProductCanSell());
+            if (!savedState.isProductCanSell() && !"DRAFT".equalsIgnoreCase(form.getStatus())) {
                 form.setStatus("DRAFT");
             }
             model.addAttribute("errors", ex.getFieldErrors());
