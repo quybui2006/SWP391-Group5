@@ -94,6 +94,8 @@ public class CartService {
                         "pv.name AS variant_name, " +
                         "p.name AS product_name, " +
                         "pv.image_url, pv.price AS original_price, " +
+                        "s.id AS shop_id, " +
+                        "s.name AS shop_name, " +
                         "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp " +
                         "WHERE pp.variant_id = pv.id AND pp.is_enabled = 1 AND pp.starts_at <= ? AND pp.ends_at > ? " +
                         "ORDER BY pp.starts_at DESC, pp.id DESC LIMIT 1), pv.price) AS price, " +
@@ -101,9 +103,10 @@ public class CartService {
                         "FROM cart_items ci " +
                         "JOIN product_variants pv ON pv.id = ci.variant_id " +
                         "JOIN products p ON p.id = pv.product_id " +
+                        "JOIN shops s ON s.id = pv.shop_id " +
                         "JOIN variant_inventory vi ON vi.variant_id = pv.id " +
                         "WHERE ci.cart_id = ? " +
-                        "ORDER BY ci.id",
+                        "ORDER BY s.id, ci.id",
                 now, now, cartId
         );
     }
@@ -117,10 +120,13 @@ public class CartService {
         args.add(now); args.add(now); args.addAll(quantities.keySet());
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT pv.id AS variant_id,pv.name AS variant_name,p.name AS product_name,pv.image_url,pv.price AS original_price, " +
+                        "s.id AS shop_id,s.name AS shop_name, " +
                         "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 " +
                         "AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price,vi.available_quantity " +
-                        "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
-                        "WHERE pv.id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE'", args.toArray());
+                        "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id " +
+                        "JOIN variant_inventory vi ON vi.variant_id=pv.id " +
+                        "WHERE pv.id IN (" + marks + ") AND pv.status='ACTIVE' AND p.selling_status='ACTIVE' " +
+                        "ORDER BY s.id, pv.id", args.toArray());
         for (Map<String, Object> row : rows) row.put("quantity", quantities.get(((Number) row.get("variant_id")).longValue()));
         return rows;
     }

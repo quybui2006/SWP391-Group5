@@ -157,6 +157,42 @@
             border: 0;
         }
 
+        /* Nhóm shop kiểu Shopee */
+        .shop-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            overflow: hidden;
+        }
+
+        .shop-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: #f6faf7;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .shop-header .shop-name {
+            font-weight: 700;
+            color: #205c32;
+            font-size: 15px;
+        }
+
+        .shop-header .shop-icon {
+            color: #16803c;
+        }
+
+        .shop-group .cart-row {
+            margin: 0 18px;
+        }
+
+        .shop-group .cart-row.cart-item:last-child {
+            border-bottom: none;
+        }
+
         .select-all {
             display: flex;
             align-items: center;
@@ -289,9 +325,25 @@
 
     </div>
 
-    <!-- Danh sách sản phẩm -->
-    <div th:each="item : ${cartItems}"
-         class="cart-row cart-item">
+    <!-- Danh sách sản phẩm gom theo shop (giống Shopee) -->
+    <div th:each="shop : ${cartShops}"
+         class="shop-group">
+
+        <!-- Header của shop: checkbox chọn cả shop + tên shop -->
+        <div class="shop-header">
+            <input type="checkbox"
+                   class="shop-check"
+                   aria-label="Chọn tất cả sản phẩm của shop">
+            <span class="shop-icon">🏪</span>
+            <a class="shop-name"
+               th:href="@{/shop/{id}(id=${shop['shop_id']})}"
+               th:text="${shop['shop_name']}">
+                Tên shop
+            </a>
+        </div>
+
+        <div th:each="item : ${shop['items']}"
+             class="cart-row cart-item">
 
         <!-- Checkbox chọn sản phẩm thanh toán -->
         <div>
@@ -387,6 +439,7 @@
 
         </form>
 
+    </div>
     </div>
 
     <!-- Thanh thanh toán -->
@@ -556,15 +609,38 @@
         if (selectAll) {
             selectAll.checked = itemChecks.length > 0 && selectedCount === itemChecks.length;
         }
+
+        // Đồng bộ checkbox từng shop
+        document.querySelectorAll('.shop-group').forEach(function (group) {
+            const shopCheck = group.querySelector('.shop-check');
+            const checks = group.querySelectorAll('.item-check');
+            if (!shopCheck) return;
+            let checked = 0;
+            checks.forEach(c => { if (c.checked) checked++; });
+            shopCheck.checked = checks.length > 0 && checked === checks.length;
+            shopCheck.indeterminate = checked > 0 && checked < checks.length;
+        });
     }
 
     // Khởi tạo sự kiện khi tải trang
     document.addEventListener('DOMContentLoaded', function () {
         const itemChecks = document.querySelectorAll('.item-check');
         const selectAll = document.getElementById('selectAllBottom');
+        const shopChecks = document.querySelectorAll('.shop-check');
 
         itemChecks.forEach(function (checkbox) {
             checkbox.addEventListener('change', updateCheckoutState);
+        });
+
+        // Checkbox tên shop: chọn/bỏ chọn toàn bộ sản phẩm của shop đó
+        shopChecks.forEach(function (shopCheck) {
+            shopCheck.addEventListener('change', function () {
+                const group = shopCheck.closest('.shop-group');
+                group.querySelectorAll('.item-check').forEach(function (checkbox) {
+                    checkbox.checked = shopCheck.checked;
+                });
+                updateCheckoutState();
+            });
         });
 
         if (selectAll) {

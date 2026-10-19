@@ -21,14 +21,33 @@ public class CartController {
     @GetMapping("/cart")
     public String viewCart(HttpSession session, Model model) {
         Long userId = customerId(session);
-        if (userId != null) model.addAttribute("cartItems", cart.items(userId));
+        java.util.List<java.util.Map<String, Object>> items;
+        if (userId != null) items = cart.items(userId);
         else {
             var quantities = guestCart(session);
-            var items = cart.guestItems(quantities);
+            items = cart.guestItems(quantities);
             items.forEach(item -> item.put("id", item.get("variant_id")));
-            model.addAttribute("cartItems", items);
         }
+        model.addAttribute("cartItems", items);
+        model.addAttribute("cartShops", groupByShop(items));
         return "customer/cart";
+    }
+
+    // Gom các sản phẩm trong giỏ theo từng shop (giữ nguyên thứ tự)
+    private java.util.List<java.util.Map<String, Object>> groupByShop(java.util.List<java.util.Map<String, Object>> items) {
+        java.util.Map<Object, java.util.Map<String, Object>> shops = new java.util.LinkedHashMap<>();
+        for (var item : items) {
+            Object key = item.get("shop_id");
+            var group = shops.computeIfAbsent(key, k -> {
+                var g = new java.util.LinkedHashMap<String, Object>();
+                g.put("shop_id", item.get("shop_id"));
+                g.put("shop_name", item.get("shop_name"));
+                g.put("items", new java.util.ArrayList<java.util.Map<String, Object>>());
+                return g;
+            });
+            ((java.util.List<java.util.Map<String, Object>>) group.get("items")).add(item);
+        }
+        return new java.util.ArrayList<>(shops.values());
     }
 
     // Đếm số lượng sản phẩm trong giỏ
