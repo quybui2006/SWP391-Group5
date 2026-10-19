@@ -57,6 +57,9 @@ public class ShopOwnerController {
         model.addAttribute("stats", products.shopDashboardStats(ownerId));
         model.addAttribute("recentVariants", products.recentShopVariants(ownerId));
         model.addAttribute("orderSummary", orders.summary(ownerId));
+        model.addAttribute("frequentCustomers", orders.frequentCustomers(ownerId));
+        model.addAttribute("inventoryList", orders.inventoryStatusList(ownerId));
+        model.addAttribute("revenueAnalytics", orders.revenueAnalytics(ownerId));
 
         return "shopowner/home";
     }
