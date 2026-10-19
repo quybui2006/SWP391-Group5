@@ -31,7 +31,7 @@ public class LoginController {
                         Model model){
         var result = loginService.login(email, password);
         if(result.isEmpty()){
-            model.addAttribute("error", "Emmail invalid.");
+            model.addAttribute("error", "Email hoặc mật khẩu không chính xác.");
             model.addAttribute("continueTo", safeContinueTo(continueTo));
             return "login/login";
         }
@@ -58,7 +58,9 @@ public class LoginController {
 
         return switch (account.role()){
             case "ADMIN" -> "redirect:/admin";
+            case "OPERATIONS_MANAGER" -> "redirect:/operations/shops";
             case "SHOP_OWNER" -> "redirect:/shopowner/home";
+            case "CS_STAFF" -> "redirect:/cs/dashboard";
             default -> "redirect:/";
         };
 

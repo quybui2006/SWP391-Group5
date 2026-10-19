@@ -24,34 +24,44 @@ public class SecurityConfig {
 
                 // 2. Phân quyền truy cập các đường dẫn
                 .authorizeHttpRequests(auth -> auth
-                        // Tài nguyên tĩnh công khai (CSS, JS, Ảnh, Data JSON)
+                        // Tài nguyên tĩnh công khai (CSS, JS, Ảnh, Data JSON, Favicon)
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/data/**", "/favicon.ico").permitAll()
 
-                        // Các trang công khai cho khách xem sản phẩm, cửa hàng và giỏ hàng
+                        // Các trang công khai cho khách xem sản phẩm, cửa hàng, thông báo
                         .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}", "/notifications", "/api/notifications/**").permitAll()
+
+                        // Trang lỗi công khai
+                        .requestMatchers("/403", "/error", "/error/**").permitAll()
 
                         // Luồng xác thực tài khoản: Đăng nhập, Đăng ký, OTP, Quên & Đặt lại mật khẩu
                         .requestMatchers("/login", "/register/**", "/forgot-password/**", "/reset-password/**").permitAll()
 
-                        // Phân quyền cho từng khu vực
-//                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // Phân quyền chi tiết cho từng khu vực:
+                        // Khu vực Admin: Chỉ ADMIN
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // ---> SỬA DÒNG NÀY: Đổi từ .hasRole("OPERATIONS_MANAGER") thành .permitAll() để bypass
-                        .requestMatchers("/operations/**").permitAll()
+                        // Khu vực Quản lý vận hành (Duyệt shop, duyệt sản phẩm): OPERATIONS_MANAGER và ADMIN
+                        .requestMatchers("/operations/**").hasAnyRole("OPERATIONS_MANAGER", "ADMIN")
 
-                        .requestMatchers("/shopowner/**", "/shop-owner/**").hasAnyRole("SHOP_OWNER", "ADMIN")
+                        // Khu vực Chăm sóc khách hàng (CSKH): CS_STAFF và ADMIN
+                        .requestMatchers("/cs/**", "/cs-staff/**").hasAnyRole("CS_STAFF", "ADMIN")
+
+                        // Khu vực Chủ cửa hàng: SHOP_OWNER và ADMIN
+                        .requestMatchers("/shopowner/**", "/shop/**").hasAnyRole("SHOP_OWNER", "ADMIN")
+
+                        // Khu vực Khách hàng: CUSTOMER và ADMIN
                         .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
-                        /////////////////////////////////////////////////////////////////////////////////////
 
-                        .requestMatchers("/operations/**").hasRole("OPERATIONS_MANAGER")
-                        .requestMatchers("/shop/**", "/shopowner/**", "/shop-owner/**").hasAnyRole("SHOP_OWNER", "ADMIN")
-                        .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
-
-                        // Các request còn lại
-                        .anyRequest().permitAll()
+                        // Tất cả các request còn lại yêu cầu phải đăng nhập
+                        .anyRequest().authenticated()
                 )
 
-                // 3. Cấu hình Form Login
+                // 3. Cấu hình xử lý khi bị từ chối quyền (403 Access Denied)
+                .exceptionHandling(ex -> ex
+                        .accessDeniedPage("/403")
+                )
+
+                // 4. Cấu hình Form Login
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login") // Spring Security tự động xử lý POST /login
@@ -62,7 +72,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
 
-                // 4. Cấu hình Logout
+                // 5. Cấu hình Logout
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout=true")

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{cs/layout :: head('Tra cứu khách hàng')}"></head>
+<body>
+
+<aside th:replace="~{cs/layout :: sidebar('customers')}"></aside>
+
+<div class="cs-main-wrapper">
+    <header class="cs-topbar">
+        <div>
+            <h1>Tra cứu thông tin khách hàng</h1>
+            <p class="cs-topbar-subtitle">Hỗ trợ tra cứu nhanh lịch sử mua sắm và thông tin liên hệ khi khách gọi hỗ trợ.</p>
+        </div>
+    </header>
+
+    <main class="cs-content">
+        <div class="cs-card">
+            <form method="get" th:action="@{/cs/customers}" style="display: flex; gap: 12px; margin-bottom: 24px;">
+                <input type="text" name="keyword" th:value="${keyword}" placeholder="Nhập tên, số điện thoại hoặc email khách hàng..."
+                       style="flex: 1; padding: 11px 16px; border: 1px solid var(--cs-border); border-radius: 10px; font-size: 14px;">
+                <button type="submit" class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; padding: 0 20px;">Tìm kiếm</button>
+                <a th:if="${keyword}" th:href="@{/cs/customers}" class="btn-cs-sm">Đặt lại</a>
+            </form>
+
+            <div style="overflow-x: auto;">
+                <table class="cs-table">
+                    <thead>
+                    <tr>
+                        <th>Mã KH</th>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Số đơn đã mua</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${customers}">
+                        <td style="color: var(--cs-text-sub);" th:text="${'#' + c['id']}">#1</td>
+                        <td>
+                            <strong th:text="${c['full_name']}">Nguyễn Văn A</strong>
+                        </td>
+                        <td th:text="${c['email']}">user@gmail.com</td>
+                        <td th:text="${c['phone'] ?: 'Chưa cập nhật'}">0901234567</td>
+                        <td>
+                            <span class="badge-status badge-info" th:text="${c['order_count'] + ' đơn hàng'}">2 đơn hàng</span>
+                        </td>
+                        <td>
+                            <span th:if="${c['status'] == 'ACTIVE'}" class="badge-status badge-success">Hoạt động</span>
+                            <span th:unless="${c['status'] == 'ACTIVE'}" class="badge-status badge-danger">Đã khóa</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(customers)}">
+                        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 40px;">
+                            Không tìm thấy khách hàng nào khớp với từ khóa tìm kiếm.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
