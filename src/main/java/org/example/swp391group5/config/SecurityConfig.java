@@ -27,8 +27,8 @@ public class SecurityConfig {
                         // Tài nguyên tĩnh công khai (CSS, JS, Ảnh, Data JSON, Favicon)
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/data/**", "/favicon.ico").permitAll()
 
-                        // Các trang công khai cho khách xem sản phẩm, cửa hàng, thông báo
-                        .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}", "/notifications", "/api/notifications/**").permitAll()
+                        // Các trang công khai cho khách xem sản phẩm, cửa hàng, thông báo, kênh người bán
+                        .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}", "/notifications", "/api/notifications/**", "/seller", "/seller/**", "/customer/shop-registration/**").permitAll()
 
                         // Trang lỗi công khai
                         .requestMatchers("/403", "/error", "/error/**").permitAll()
@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/cs/**", "/cs-staff/**").hasAnyRole("CS_STAFF", "ADMIN")
 
                         // Khu vực Chủ cửa hàng: SHOP_OWNER và ADMIN
-                        .requestMatchers("/shopowner/**", "/shop/**").hasAnyRole("SHOP_OWNER", "ADMIN")
+                        .requestMatchers("/shopowner/**", "/shop-owner/**", "/shop/**").hasAnyRole("SHOP_OWNER", "ADMIN")
 
                         // Khu vực Khách hàng: CUSTOMER và ADMIN
                         .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
