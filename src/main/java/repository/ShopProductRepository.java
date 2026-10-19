@@ -53,4 +53,10 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE products SET approval_status = 'REJECTED', reviewed_at = NOW(), rejection_reason = :reason WHERE id = :productId AND approval_status = 'PENDING'", nativeQuery = true)
     int rejectPending(@Param("productId") Long productId, @Param("reason") String reason);
+
+    @Query("SELECT DISTINCT p.origin FROM Product p " +
+           "WHERE p.origin IS NOT NULL AND TRIM(p.origin) <> '' " +
+           "AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
+           "ORDER BY p.origin ASC")
+    List<String> findDistinctActiveOrigins();
 }

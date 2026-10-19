@@ -268,15 +268,14 @@
 
 
                 <div class="filter-header">
-
                     <div>
+                        <span class="filter-kicker">FILTER</span>
+                        <h2>Bộ lọc</h2>
+                    </div>
+                    <a class="clear-filter" th:href="@{/search}">Xóa lọc</a>
+                </div>
 
-                        <span class="filter-kicker">
-                            FILTER
-                        </span>
-
-                        <h2>
-                              <!-- FILTER FORM -->
+                <!-- FILTER FORM -->
                 <form
                         id="filterForm"
                         th:action="@{/search}"
@@ -462,18 +461,6 @@
 
                     <!-- Reset all -->
                     <a th:href="@{/search}" style="font-size: 12px; color: #dc2626; text-decoration: underline; font-weight: 700; margin-left: 6px;">Xóa tất cả lọc</a>
-                </div>      class="active-filter"
-                            th:if="${keyword != null and !keyword.isEmpty()}">
-
-                        Từ khóa:
-
-                        <strong
-                                th:text="${keyword}">
-                            keyword
-                        </strong>
-
-                    </div>
-
                 </div>
 
 
@@ -521,8 +508,11 @@
                             </div>
 
 
-                            <!-- STATUS -->
-                            <span class="fresh-tag">
+                            <!-- STATUS & PROMO -->
+                            <span class="discount-badge" th:if="${variant.promotionalPrice != null}">
+                                🔥 GIẢM GIÁ
+                            </span>
+                            <span class="fresh-tag" th:if="${variant.promotionalPrice == null}">
                                 Đang bán
                             </span>
 
@@ -547,14 +537,11 @@
                         <div class="product-info">
 
 
-                            <!-- CATEGORY -->
-                            <span
-                                    class="product-category"
-                                    th:text="${variant.product.name}">
-
-                                Trái cây
-
-                            </span>
+                            <!-- CATEGORY & ORIGIN -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+                                <span class="product-category" th:text="${variant.product.name}">Trái cây</span>
+                                <span class="origin-tag" th:if="${variant.product.origin != null and !#strings.isEmpty(variant.product.origin)}" th:text="'📍 ' + ${variant.product.origin}">📍 Đà Lạt</span>
+                            </div>
 
 
                             <!-- VARIANT -->
@@ -570,9 +557,14 @@
 
 
                                 <!-- PRICE -->
+                                <div style="display: flex; flex-direction: column;" th:if="${variant.promotionalPrice != null}">
+                                    <strong class="price" style="color: #dc2626;" th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                                    <span style="font-size: 11.5px; text-decoration: line-through; color: #94a3b8;" th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                                </div>
+
                                 <strong
                                         class="price"
-                                        th:if="${variant.price != null}"
+                                        th:if="${variant.promotionalPrice == null and variant.price != null}"
                                         th:text="${#numbers.formatDecimal(
                                             variant.price,
                                             0,
@@ -588,7 +580,7 @@
 
                                 <strong
                                         class="price"
-                                        th:unless="${variant.price != null}">
+                                        th:if="${variant.promotionalPrice == null and variant.price == null}">
 
                                     Liên hệ
 
@@ -752,6 +744,13 @@
 <!-- Tan PTH integration: connect product cards to the database-backed cart. -->
 <script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
 <script th:src="@{/js/notifications.js}"></script>
+<script>
+    function applySort(val) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', val);
+        window.location.href = url.toString();
+    }
+</script>
 
 </body>
 
