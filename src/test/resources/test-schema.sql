@@ -75,6 +75,9 @@ CREATE TABLE shops (
     payment_approval_status VARCHAR(50) NOT NULL DEFAULT 'UNCONFIGURED',
     bank_rejection_reason VARCHAR(1000),
     payment_reviewed_at TIMESTAMP,
+    seller_approval_status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    seller_rejection_reason VARCHAR(1000),
+    seller_reviewed_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

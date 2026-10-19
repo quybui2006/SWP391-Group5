@@ -34,14 +34,22 @@ public class NotificationDto {
         dto.setRead(n.isRead());
 
         // Target URL
-        if ("PRODUCT".equalsIgnoreCase(n.getTargetType()) && n.getTargetId() != null) {
+        if ("POST_AUDIT".equalsIgnoreCase(n.getTargetType()) || "POST_AUDIT".equalsIgnoreCase(n.getType())) {
+            dto.setTargetUrl("/operations/post-audit");
+        } else if ("SHOP_APPROVAL".equalsIgnoreCase(n.getTargetType()) || "SHOP_APPROVAL".equalsIgnoreCase(n.getType())) {
+            dto.setTargetUrl(n.getTargetId() != null ? "/operations/shops/" + n.getTargetId() : "/operations/shops");
+        } else if ("PRODUCT".equalsIgnoreCase(n.getTargetType()) && n.getTargetId() != null) {
             dto.setTargetUrl("/product/" + n.getTargetId());
         } else if ("ORDER".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account/orders");
         } else if ("ACCOUNT".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account");
         } else if ("SHOP".equalsIgnoreCase(n.getTargetType())) {
-            dto.setTargetUrl("/seller/status");
+            if ("SHOP_APPROVAL".equalsIgnoreCase(n.getType())) {
+                dto.setTargetUrl(n.getTargetId() != null ? "/operations/shops/" + n.getTargetId() : "/operations/shops");
+            } else {
+                dto.setTargetUrl("/seller/status");
+            }
         } else {
             dto.setTargetUrl("/customer/account/notifications");
         }
@@ -54,6 +62,14 @@ public class NotificationDto {
         // Icon & badge class by type
         String typeUpper = n.getType() != null ? n.getType().toUpperCase() : "SYSTEM";
         switch (typeUpper) {
+            case "POST_AUDIT":
+                dto.setIcon("🔍");
+                dto.setBadgeClass("notif-badge-account");
+                break;
+            case "SHOP_APPROVAL":
+                dto.setIcon("🏪");
+                dto.setBadgeClass("notif-badge-shop");
+                break;
             case "PROMOTION":
             case "PROMO":
                 dto.setIcon("🎁");

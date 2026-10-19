@@ -58,7 +58,7 @@ public class LoginController {
 
         return switch (account.role()){
             case "ADMIN" -> "redirect:/admin";
-            case "OPERATIONS_MANAGER" -> "redirect:/operations/shops";
+            case "OPERATIONS_MANAGER" -> "redirect:/operations/dashboard";
             case "SHOP_OWNER" -> "redirect:/shopowner/home";
             case "CS_STAFF" -> "redirect:/cs/dashboard";
             default -> "redirect:/";

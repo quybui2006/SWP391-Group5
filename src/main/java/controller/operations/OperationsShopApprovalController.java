@@ -23,6 +23,71 @@ public class OperationsShopApprovalController {
         this.approvals = approvals;
     }
 
+    @GetMapping("/operations/sellers")
+    public String sellerApprovalList(
+            @RequestParam(value = "status", required = false, defaultValue = "PENDING") String status,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            Model model) {
+
+        List<ShopApprovalItemDto> sellers = approvals.findSellers(status, keyword);
+        Map<String, Long> stats = approvals.getSellerApprovalStats();
+
+        model.addAttribute("sellers", sellers);
+        model.addAttribute("stats", stats);
+        model.addAttribute("currentStatus", status != null ? status.toUpperCase() : "PENDING");
+        model.addAttribute("keyword", keyword != null ? keyword : "");
+        model.addAttribute("activeNav", "sellers");
+
+        return "operations/sellers";
+    }
+
+    @PostMapping("/operations/shops/{id:[0-9]+}/seller/approve")
+    public String approveSellerForm(
+            @PathVariable Long id,
+            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            approvals.approveSellerAccount(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã phê duyệt tài khoản bán hàng thành công! Hồ sơ định danh & thuế đã được xác thực.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return redirectUrl != null && !redirectUrl.isBlank() ? "redirect:" + redirectUrl : "redirect:/operations/shops/" + id;
+    }
+
+    @PostMapping("/operations/shops/{id:[0-9]+}/seller/reject")
+    public String rejectSellerForm(
+            @PathVariable Long id,
+            @RequestParam("rejectionReason") String rejectionReason,
+            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            approvals.rejectSellerAccount(id, rejectionReason);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã từ chối tài khoản bán hàng và gửi phản hồi đến người dùng.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return redirectUrl != null && !redirectUrl.isBlank() ? "redirect:" + redirectUrl : "redirect:/operations/shops/" + id;
+    }
+
+    @GetMapping("/operations/payments")
+    public String paymentApprovalList(
+            @RequestParam(value = "status", required = false, defaultValue = "PENDING") String status,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            Model model) {
+
+        List<ShopApprovalItemDto> payments = approvals.findPayments(status, keyword);
+        Map<String, Long> stats = approvals.getPaymentApprovalStats();
+
+        model.addAttribute("payments", payments);
+        model.addAttribute("stats", stats);
+        model.addAttribute("currentStatus", status != null ? status.toUpperCase() : "PENDING");
+        model.addAttribute("keyword", keyword != null ? keyword : "");
+        model.addAttribute("activeNav", "payments");
+
+        return "operations/payments";
+    }
+
     @GetMapping("/operations/shops")
     public String shopApprovalList(
             @RequestParam(value = "status", required = false, defaultValue = "PENDING") String status,

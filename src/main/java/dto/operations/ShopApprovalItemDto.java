@@ -18,6 +18,7 @@ public class ShopApprovalItemDto {
     private final LocalDateTime reviewedAt;
     private final String rejectionReason;
     private final String paymentApprovalStatus;
+    private final String sellerApprovalStatus;
 
     public ShopApprovalItemDto(
             Long id, String name, String description, String ownerName, String ownerEmail,
@@ -25,7 +26,7 @@ public class ShopApprovalItemDto {
             String approvalStatus, String operatingStatus, LocalDateTime createdAt,
             LocalDateTime reviewedAt, String rejectionReason) {
         this(id, name, description, ownerName, ownerEmail, phone, provinceCode, wardName, addressDetail,
-                approvalStatus, operatingStatus, createdAt, reviewedAt, rejectionReason, "UNCONFIGURED");
+                approvalStatus, operatingStatus, createdAt, reviewedAt, rejectionReason, "UNCONFIGURED", "PENDING");
     }
 
     public ShopApprovalItemDto(
@@ -33,6 +34,16 @@ public class ShopApprovalItemDto {
             String phone, String provinceCode, String wardName, String addressDetail,
             String approvalStatus, String operatingStatus, LocalDateTime createdAt,
             LocalDateTime reviewedAt, String rejectionReason, String paymentApprovalStatus) {
+        this(id, name, description, ownerName, ownerEmail, phone, provinceCode, wardName, addressDetail,
+                approvalStatus, operatingStatus, createdAt, reviewedAt, rejectionReason, paymentApprovalStatus, "PENDING");
+    }
+
+    public ShopApprovalItemDto(
+            Long id, String name, String description, String ownerName, String ownerEmail,
+            String phone, String provinceCode, String wardName, String addressDetail,
+            String approvalStatus, String operatingStatus, LocalDateTime createdAt,
+            LocalDateTime reviewedAt, String rejectionReason, String paymentApprovalStatus,
+            String sellerApprovalStatus) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -48,6 +59,7 @@ public class ShopApprovalItemDto {
         this.reviewedAt = reviewedAt;
         this.rejectionReason = rejectionReason;
         this.paymentApprovalStatus = paymentApprovalStatus != null ? paymentApprovalStatus : "UNCONFIGURED";
+        this.sellerApprovalStatus = sellerApprovalStatus != null ? sellerApprovalStatus : "PENDING";
     }
 
     public Long getId() { return id; }
@@ -65,4 +77,5 @@ public class ShopApprovalItemDto {
     public LocalDateTime getReviewedAt() { return reviewedAt; }
     public String getRejectionReason() { return rejectionReason; }
     public String getPaymentApprovalStatus() { return paymentApprovalStatus; }
+    public String getSellerApprovalStatus() { return sellerApprovalStatus; }
 }

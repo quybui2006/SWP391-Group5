@@ -42,6 +42,97 @@ public class OperationsShopApprovalService {
         this.jdbc = jdbc;
     }
 
+    @jakarta.annotation.PostConstruct
+    public void initDb() {
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN seller_approval_status VARCHAR(50) NOT NULL DEFAULT 'PENDING'");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN seller_rejection_reason VARCHAR(1000) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN seller_reviewed_at DATETIME NULL");
+        } catch (Exception ignored) {}
+    }
+
+    @Transactional(readOnly = true)
+    public List<ShopApprovalItemDto> findSellers(String status, String keyword) {
+        List<ShopApprovalItemDto> list;
+        if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
+            list = shops.findAllWithOwners();
+        } else {
+            list = shops.findBySellerApprovalStatusWithOwners(status.toUpperCase().trim());
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            String kw = keyword.toLowerCase().trim();
+            list = list.stream().filter(s ->
+                    (s.getName() != null && s.getName().toLowerCase().contains(kw)) ||
+                    (s.getOwnerName() != null && s.getOwnerName().toLowerCase().contains(kw)) ||
+                    (s.getOwnerEmail() != null && s.getOwnerEmail().toLowerCase().contains(kw)) ||
+                    (s.getPhone() != null && s.getPhone().contains(kw))
+            ).collect(Collectors.toList());
+        }
+
+        return list;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> getSellerApprovalStats() {
+        Map<String, Long> stats = new HashMap<>();
+        long pending = shops.countBySellerApprovalStatus("PENDING");
+        long approved = shops.countBySellerApprovalStatus("APPROVED");
+        long rejected = shops.countBySellerApprovalStatus("REJECTED");
+        long total = pending + approved + rejected;
+
+        stats.put("total", total);
+        stats.put("pending", pending);
+        stats.put("approved", approved);
+        stats.put("rejected", rejected);
+        return stats;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ShopApprovalItemDto> findPayments(String status, String keyword) {
+        List<ShopApprovalItemDto> list;
+        if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
+            list = shops.findAllWithOwners().stream()
+                    .filter(s -> !"UNCONFIGURED".equalsIgnoreCase(s.getPaymentApprovalStatus()))
+                    .collect(Collectors.toList());
+        } else {
+            list = shops.findByPaymentApprovalStatusWithOwners(status.toUpperCase().trim());
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            String kw = keyword.toLowerCase().trim();
+            list = list.stream().filter(s ->
+                    (s.getName() != null && s.getName().toLowerCase().contains(kw)) ||
+                    (s.getOwnerName() != null && s.getOwnerName().toLowerCase().contains(kw)) ||
+                    (s.getOwnerEmail() != null && s.getOwnerEmail().toLowerCase().contains(kw)) ||
+                    (s.getPhone() != null && s.getPhone().contains(kw))
+            ).collect(Collectors.toList());
+        }
+
+        return list;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> getPaymentApprovalStats() {
+        Map<String, Long> stats = new HashMap<>();
+        long pending = shops.countByPaymentApprovalStatus("PENDING");
+        long approved = shops.countByPaymentApprovalStatus("APPROVED");
+        long rejected = shops.countByPaymentApprovalStatus("REJECTED");
+        long unconfigured = shops.countByPaymentApprovalStatus("UNCONFIGURED");
+        long total = pending + approved + rejected;
+
+        stats.put("total", total);
+        stats.put("pending", pending);
+        stats.put("approved", approved);
+        stats.put("rejected", rejected);
+        stats.put("unconfigured", unconfigured);
+        return stats;
+    }
+
     @Transactional(readOnly = true)
     public List<PendingShopApprovalDto> findPendingShops() {
         return shops.findPendingApprovals();
@@ -120,6 +211,9 @@ public class OperationsShopApprovalService {
         dto.setPaymentApprovalStatus(shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
         dto.setBankRejectionReason(shop.getBankRejectionReason());
         dto.setPaymentReviewedAt(shop.getPaymentReviewedAt());
+        dto.setSellerApprovalStatus(shop.getSellerApprovalStatus() != null ? shop.getSellerApprovalStatus() : "PENDING");
+        dto.setSellerRejectionReason(shop.getSellerRejectionReason());
+        dto.setSellerReviewedAt(shop.getSellerReviewedAt());
 
         // Đối chiếu Tên chủ tài khoản ngân hàng với Họ tên trên CCCD
         boolean matches = false;
@@ -164,6 +258,47 @@ public class OperationsShopApprovalService {
     }
 
     @Transactional
+    public void approveSellerAccount(Long shopId) {
+        Shop shop = shops.findById(shopId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy hồ sơ người bán."));
+        int updated = shops.approveSellerAccount(shopId);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể phê duyệt tài khoản bán hàng.");
+        }
+        try {
+            notifications.createNotification(
+                    shop.getOwnerId(),
+                    "SHOP",
+                    "Tài khoản bán hàng đã được phê duyệt",
+                    "Hồ sơ định danh và thông tin thuế của bạn đã được phê duyệt thành công. Ban quản lý đang tiến hành duyệt mở shop.",
+                    "SELLER_ACCOUNT",
+                    shop.getId()
+            );
+        } catch (Exception ignored) {}
+    }
+
+    @Transactional
+    public void rejectSellerAccount(Long shopId, String rejectionReason) {
+        String reason = normalizeReason(rejectionReason);
+        Shop shop = shops.findById(shopId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy hồ sơ người bán."));
+        int updated = shops.rejectSellerAccount(shopId, reason);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể từ chối tài khoản bán hàng.");
+        }
+        try {
+            notifications.createNotification(
+                    shop.getOwnerId(),
+                    "SHOP",
+                    "Yêu cầu xác thực tài khoản bán hàng bị từ chối",
+                    "Hồ sơ người bán của bạn chưa đạt yêu cầu. Lý do: " + reason,
+                    "SELLER_ACCOUNT",
+                    shop.getId()
+            );
+        } catch (Exception ignored) {}
+    }
+
+    @Transactional
     public void approveShop(Long shopId) {
         Shop shop = shops.findById(shopId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu mở Shop."));
@@ -172,6 +307,11 @@ public class OperationsShopApprovalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Yêu cầu mở Shop không còn ở trạng thái chờ duyệt.");
         }
+
+        // Tự động đồng bộ trạng thái tài khoản nếu có cột seller_approval_status
+        try {
+            jdbc.update("UPDATE shops SET seller_approval_status = 'APPROVED' WHERE id = ?", shopId);
+        } catch (Exception ignored) {}
 
         // Assign SHOP_OWNER role in user_roles
         try {

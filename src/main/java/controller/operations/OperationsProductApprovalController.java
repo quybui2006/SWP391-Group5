@@ -24,11 +24,15 @@ public class OperationsProductApprovalController {
         this.approvals = approvals;
     }
 
+    @GetMapping("/operations/post-audit")
+    public String postAuditPage(Model model) {
+        model.addAttribute("activeNav", "post-audit");
+        return "operations/post-audit";
+    }
+
     @GetMapping("/operations/products")
     public String pendingProducts(Model model) {
-        List<PendingProductApprovalDto> products = approvals.findPendingProducts();
-        model.addAttribute("products", products);
-        return "operations/products";
+        return "redirect:/operations/post-audit";
     }
 
     @PostMapping("/operations/api/products/{productId}/approve")
