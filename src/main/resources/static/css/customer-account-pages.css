@@ -11,3 +11,6 @@
 @media(max-width:1150px){.profile-layout{grid-template-columns:minmax(0,1fr) 190px;gap:24px}.profile-row{grid-template-columns:110px minmax(0,1fr);gap:12px}.gender-options label{min-width:auto}.avatar-panel{padding-left:15px;padding-right:15px}}
 @media(max-width:800px){.account-panel{padding:22px 18px}.profile-layout{display:flex;flex-direction:column-reverse;gap:26px}.avatar-panel{width:100%;padding:22px}.profile-row{grid-template-columns:1fr;gap:7px}.profile-row>label,.field-caption{text-align:left}.save-row>span{display:none}.account-heading h1{font-size:20px}}
 @media(max-width:460px){.account-panel{padding:20px 15px}.gender-options{gap:8px}.gender-options label{padding:9px}.save-row .primary-button{width:100%}}
+
+.table-card td a { color: var(--green-dark, #16804b); font-weight: 600; }
+.table-card td a:hover { text-decoration: underline; }

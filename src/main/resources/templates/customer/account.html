@@ -27,14 +27,19 @@
                 <div class="avatar-panel">
                     <div class="avatar-preview"><img id="avatarPreview" th:src="${profile.has_avatar} ? @{/customer/account/avatar} : @{/images/customer-avatar.svg}" alt="Ảnh đại diện của bạn"></div>
                     <label class="avatar-picker" for="avatar">Chọn ảnh</label>
-                    <input class="visually-hidden" id="avatar" name="avatar" type="file" accept="image/jpeg,image/png">
-                    <p>Dung lượng tối đa 1 MB<br>Định dạng: JPEG, PNG</p>
-                    <span id="avatarError" class="avatar-error" role="alert"></span>
+                    <input class="visually-hidden" id="avatar" name="avatar" type="file" accept="image/jpeg,image/png"
+                           aria-describedby="avatarHelp avatarError"
+                           data-upload-max-bytes="1048576" data-upload-allowed-types="image/jpeg,image/png"
+                           data-upload-label="Ảnh đại diện" data-upload-error-id="avatarError"
+                           data-upload-preview-id="avatarPreview">
+                    <p id="avatarHelp">Dung lượng tối đa 1 MB<br>Định dạng: JPEG, PNG</p>
+                    <span id="avatarError" class="avatar-error upload-validation-error" role="alert" aria-live="polite" hidden></span>
                 </div>
             </form>
         </section>
     </main>
 </div>
 <script th:src="@{/js/customer-account-pages.js}"></script>
+<script th:src="@{/js/upload-validation.js?v=20261017}"></script>
 </body>
 </html>

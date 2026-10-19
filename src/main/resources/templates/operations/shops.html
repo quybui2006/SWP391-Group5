@@ -5,23 +5,79 @@
 <div class="operations-shell">
     <aside th:replace="~{operations/layout :: sidebar('shops')}"></aside>
     <main class="operations-main">
-        <header th:replace="~{operations/layout :: pageHeader('Duyệt yêu cầu mở Shop', 'Kiểm tra thông tin cửa hàng trước khi cho phép hoạt động trên sàn.')}"></header>
+        <header th:replace="~{operations/layout :: pageHeader('Duyệt yêu cầu mở Shop', 'Kiểm tra, thẩm định hồ sơ cửa hàng trước khi cấp phép hoạt động trên sàn.')}"></header>
 
         <section class="approval-page" aria-labelledby="shop-list-heading">
-            <div class="section-heading">
-                <div>
-                    <h2 id="shop-list-heading">Yêu cầu đang chờ</h2>
-                    <p>Chỉ hiển thị các cửa hàng có trạng thái PENDING.</p>
-                </div>
-                <span class="pending-count"><span class="count-dot"></span><span id="recordCount" th:text="${#lists.size(shops) + ' yêu cầu'}">0 yêu cầu</span></span>
+            <!-- KPI Summary Cards -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <a th:href="@{/operations/shops(status='PENDING')}" style="text-decoration:none;">
+                    <div style="background:#fff;border-radius:12px;border:1px solid #fed7aa;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                        <div style="width:44px;height:44px;border-radius:10px;background:#ffedd5;color:#c2410c;display:flex;align-items:center;justify-content:center;font-size:20px;">⏳</div>
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#9a3412;text-transform:uppercase;">Chờ duyệt</div>
+                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.pending}">0</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a th:href="@{/operations/shops(status='APPROVED')}" style="text-decoration:none;">
+                    <div style="background:#fff;border-radius:12px;border:1px solid #bbf7d0;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                        <div style="width:44px;height:44px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:20px;">✓</div>
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#166534;text-transform:uppercase;">Đã duyệt</div>
+                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.approved}">0</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a th:href="@{/operations/shops(status='REJECTED')}" style="text-decoration:none;">
+                    <div style="background:#fff;border-radius:12px;border:1px solid #fecaca;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                        <div style="width:44px;height:44px;border-radius:10px;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:20px;">✕</div>
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;">Từ chối</div>
+                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.rejected}">0</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a th:href="@{/operations/shops(status='ALL')}" style="text-decoration:none;">
+                    <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                        <div style="width:44px;height:44px;border-radius:10px;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:20px;">🏪</div>
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;">Tổng hồ sơ</div>
+                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.total}">0</div>
+                        </div>
+                    </div>
+                </a>
             </div>
 
-            <div class="table-toolbar">
-                <label class="search-field">
-                    <span aria-hidden="true">⌕</span>
-                    <input type="search" id="tableSearch" placeholder="Tìm tên shop, chủ shop hoặc email..." autocomplete="off">
-                </label>
-                <span class="table-hint">Sắp xếp theo thời điểm gửi yêu cầu</span>
+            <!-- Filter Tabs -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+                <div style="display:inline-flex;background:#e2e8f0;padding:4px;border-radius:10px;gap:4px;">
+                    <a th:href="@{/operations/shops(status='PENDING')}" 
+                       th:style="${currentStatus == 'PENDING'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                        Đang chờ duyệt (<span th:text="${stats.pending}">0</span>)
+                    </a>
+                    <a th:href="@{/operations/shops(status='APPROVED')}" 
+                       th:style="${currentStatus == 'APPROVED'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                        Đã duyệt (<span th:text="${stats.approved}">0</span>)
+                    </a>
+                    <a th:href="@{/operations/shops(status='REJECTED')}" 
+                       th:style="${currentStatus == 'REJECTED'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                        Từ chối (<span th:text="${stats.rejected}">0</span>)
+                    </a>
+                    <a th:href="@{/operations/shops(status='ALL')}" 
+                       th:style="${currentStatus == 'ALL'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                        Tất cả (<span th:text="${stats.total}">0</span>)
+                    </a>
+                </div>
+
+                <form th:action="@{/operations/shops}" method="get" style="display:flex;align-items:center;gap:8px;margin:0;">
+                    <input type="hidden" name="status" th:value="${currentStatus}">
+                    <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, email..." style="padding:8px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;min-width:240px;">
+                    <button type="submit" style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Tìm kiếm</button>
+                    <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/shops(status=${currentStatus})}" style="font-size:13px;color:#dc2626;text-decoration:none;">Xóa tìm</a>
+                </form>
             </div>
 
             <div class="table-card">
@@ -33,15 +89,17 @@
                             <th>CHỦ CỬA HÀNG</th>
                             <th>LIÊN HỆ / ĐỊA CHỈ</th>
                             <th>NGÀY GỬI</th>
+                            <th>TRẠNG THÁI</th>
                             <th class="action-column">THAO TÁC</th>
                         </tr>
                         </thead>
                         <tbody id="approvalRows">
                         <tr th:each="shop : ${shops}" data-approval-row th:attr="data-record-id=${shop.id}">
                             <td>
-                                <div class="primary-cell" th:text="${shop.name}">Tên cửa hàng</div>
+                                <a th:href="@{/operations/shops/{id}(id=${shop.id})}" style="text-decoration:none;color:inherit;">
+                                    <div class="primary-cell" style="color:#2e7d32;font-weight:700;" th:text="${shop.name}">Tên cửa hàng</div>
+                                </a>
                                 <div class="secondary-cell" th:text="${shop.description != null and !#strings.isEmpty(shop.description.trim()) ? shop.description : 'Chưa có mô tả'}">Mô tả cửa hàng</div>
-                                <span class="status-pill">PENDING</span>
                             </td>
                             <td>
                                 <div class="primary-cell" th:text="${shop.ownerName}">Chủ cửa hàng</div>
@@ -52,36 +110,52 @@
                                 <div class="secondary-cell" th:text="${shop.addressDetail + ', ' + shop.wardName + ', ' + shop.provinceCode}">Địa chỉ</div>
                             </td>
                             <td class="date-cell" th:text="${shop.createdAt != null ? #temporals.format(shop.createdAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
-                            <td class="row-actions">
-                                <button type="button" class="button button-approve" data-approval-action="approve">Duyệt</button>
-                                <button type="button" class="button button-reject" data-approval-action="reject">Từ chối</button>
+                            <td>
+                                <div>
+                                    <span th:if="${shop.approvalStatus == 'PENDING'}" style="background:#ffedd5;color:#c2410c;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">HỒ SƠ: CHỜ DUYỆT</span>
+                                    <span th:if="${shop.approvalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">HỒ SƠ: ĐÃ DUYỆT</span>
+                                    <span th:if="${shop.approvalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;" th:title="${shop.rejectionReason}">HỒ SƠ: TỪ CHỐI</span>
+                                </div>
+                                <div th:if="${shop.approvalStatus == 'APPROVED'}" style="margin-top:4px;">
+                                    <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: CHỜ ĐỐI CHIẾU</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: ĐÃ DUYỆT</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: TỪ CHỐI</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' || shop.paymentApprovalStatus == null}" style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: CHƯA CẤU HÌNH</span>
+                                </div>
+                            </td>
+                            <td class="row-actions" style="display:flex;align-items:center;gap:6px;">
+                                <a th:href="@{/operations/shops/{id}(id=${shop.id})}" class="button" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:6px 12px;font-size:12px;border-radius:6px;text-decoration:none;font-weight:600;">
+                                    🔍 Chi tiết
+                                </a>
+                                <th:block th:if="${shop.approvalStatus == 'PENDING'}">
+                                    <button type="button" class="button button-approve" data-approval-action="approve" style="padding:6px 10px;font-size:12px;">Duyệt</button>
+                                    <button type="button" class="button button-reject" data-approval-action="reject" style="padding:6px 10px;font-size:12px;">Từ chối</button>
+                                </th:block>
                             </td>
                         </tr>
-                        <tr class="empty-row" th:if="${#lists.isEmpty(shops)}"><td colspan="5">Hiện không có yêu cầu mở Shop nào đang chờ duyệt.</td></tr>
+                        <tr class="empty-row" th:if="${#lists.isEmpty(shops)}">
+                            <td colspan="6" style="text-align:center;padding:40px 20px;color:#64748b;">
+                                Không có yêu cầu mở Shop nào phù hợp với điều kiện tìm kiếm.
+                            </td>
+                        </tr>
                         </tbody>
                     </table>
-                </div>
-                <div class="table-footer">
-                    <span id="pageInfo">0 yêu cầu</span>
-                    <div class="pagination-controls">
-                        <button type="button" id="previousPage" class="page-button" disabled>Trước</button>
-                        <button type="button" id="nextPage" class="page-button" disabled>Tiếp</button>
-                    </div>
                 </div>
             </div>
         </section>
     </main>
 </div>
 
+<!-- Rejection Modal Dialog -->
 <dialog id="rejectionDialog" class="rejection-dialog" aria-labelledby="rejectionTitle">
     <form id="rejectForm" novalidate>
         <div class="dialog-heading">
             <div><p class="eyebrow">THAO TÁC DUYỆT</p><h2 id="rejectionTitle">Từ chối yêu cầu mở Shop</h2></div>
             <button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">×</button>
         </div>
-        <p class="dialog-description">Lý do sẽ được lưu lại để người gửi biết nội dung cần khắc phục.</p>
+        <p class="dialog-description">Lý do sẽ được gửi thông báo in-web đến người đăng ký để hoàn thiện lại hồ sơ.</p>
         <label for="rejectionReason">Lý do từ chối <span aria-hidden="true">*</span></label>
-        <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể..."></textarea>
+        <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể (vd: Giấy tờ chưa rõ ràng, địa chỉ không có thật...)..."></textarea>
         <p class="field-note">Tối đa 1000 ký tự.</p>
         <div class="dialog-actions">
             <button type="button" class="button button-secondary" id="cancelDialog">Hủy</button>
@@ -89,6 +163,7 @@
         </div>
     </form>
 </dialog>
+
 <div th:replace="~{operations/layout :: toastHost}"></div>
 <script th:src="@{/js/operations-approval.js}" defer></script>
 </body>

@@ -18,6 +18,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     long countByVariantIdAndRating(Long variantId, Integer rating);
 
+    java.util.Optional<Review> findByIdAndVariantIdAndUserId(Long id, Long variantId, Long userId);
+
+    boolean existsByOrderItemId(Long orderItemId);
+
     @Query("SELECT AVG(CAST(r.rating as double)) FROM Review r WHERE r.variantId = :variantId")
     Double getAverageRatingByVariantId(@Param("variantId") Long variantId);
 }

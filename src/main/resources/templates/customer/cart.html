@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Giỏ hàng | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/cart.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
 
     <style>
@@ -156,6 +157,78 @@
             border: 0;
         }
 
+        /* Nhóm shop kiểu Shopee */
+        .shop-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            overflow: hidden;
+        }
+
+        .shop-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: #f6faf7;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .shop-header .shop-name {
+            font-weight: 700;
+            color: #205c32;
+            font-size: 15px;
+        }
+
+        .shop-header .shop-icon {
+            color: #16803c;
+        }
+
+        .shop-group .cart-row {
+            margin: 0 18px;
+        }
+
+        .shop-group .cart-row.cart-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Item hết hàng / không khả dụng */
+        .cart-item.unavailable {
+            background: #fafafa;
+        }
+
+        .cart-item.unavailable .product img,
+        .cart-item.unavailable .product-info,
+        .cart-item.unavailable .unit-price-wrap,
+        .cart-item.unavailable .row-total-price {
+            opacity: 0.45;
+        }
+
+        .cart-item.unavailable .qty-input,
+        .cart-item.unavailable .qty-btn {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .availability-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fff1f0;
+            color: #cf1322;
+            border: 1px solid #ffa39e;
+            margin-top: 4px;
+        }
+
+        .availability-badge.min-order {
+            background: #fffbe6;
+            color: #d48806;
+            border-color: #ffe58f;
+        }
+
         .select-all {
             display: flex;
             align-items: center;
@@ -278,7 +351,7 @@
     <div class="empty"
          th:if="${#lists.isEmpty(cartItems)}">
 
-        <h2>Giỏ hàng đang trống</h2>
+        <h2>Giỏ hàng của bạn đang trống</h2>
 
         <p>Hãy chọn những sản phẩm tươi ngon mà bạn yêu thích.</p>
 
@@ -288,9 +361,26 @@
 
     </div>
 
-    <!-- Danh sách sản phẩm -->
-    <div th:each="item : ${cartItems}"
-         class="cart-row cart-item">
+    <!-- Danh sách sản phẩm gom theo shop (giống Shopee) -->
+    <div th:each="shop : ${cartShops}"
+         class="shop-group">
+
+        <!-- Header của shop: checkbox chọn cả shop + tên shop -->
+        <div class="shop-header">
+            <input type="checkbox"
+                   class="shop-check"
+                   aria-label="Chọn tất cả sản phẩm của shop">
+            <span class="shop-icon">🏪</span>
+            <a class="shop-name"
+               th:href="@{/shop/{id}(id=${shop['shop_id']})}"
+               th:text="${shop['shop_name']}">
+                Tên shop
+            </a>
+        </div>
+
+        <div th:each="item : ${shop['items']}"
+             th:classappend="${item['is_selectable'] == false} ? ' unavailable' : ''"
+             class="cart-row cart-item">
 
         <!-- Checkbox chọn sản phẩm thanh toán -->
         <div>
@@ -299,6 +389,7 @@
                    name="selectedVariantIds"
                    th:value="${item['variant_id']}"
                    th:attr="data-price=${item['price']}"
+                   th:disabled="${item['is_selectable'] == false}"
                    form="checkoutForm"
                    aria-label="Chọn sản phẩm">
         </div>
@@ -325,6 +416,13 @@
                     sản phẩm
                 </small>
 
+                <span class="availability-badge"
+                      th:if="${item['availability_reason'] != null}"
+                      th:classappend="${item['availability_reason'] != null && #strings.startsWith(item['availability_reason'], 'Tối thiểu')} ? ' min-order' : ''"
+                      th:text="${item['availability_reason']}">
+                    Hết hàng
+                </span>
+
             </div>
 
         </div>
@@ -344,6 +442,7 @@
 
             <button type="button"
                     class="qty-btn"
+                    th:disabled="${item['is_selectable'] == false}"
                     onclick="changeQuantity(this, -1)"
                     aria-label="Giảm số lượng">
                 −
@@ -356,11 +455,13 @@
                    min="1"
                    th:attr="data-available=${item['available_quantity']}"
                    th:value="${item['quantity']}"
+                   th:disabled="${item['is_selectable'] == false}"
                    onchange="normalizeQuantity(this)"
                    required>
 
             <button type="button"
                     class="qty-btn"
+                    th:disabled="${item['is_selectable'] == false}"
                     onclick="changeQuantity(this, 1)"
                     aria-label="Tăng số lượng">
                 +
@@ -386,6 +487,7 @@
 
         </form>
 
+    </div>
     </div>
 
     <!-- Thanh thanh toán -->
@@ -555,15 +657,38 @@
         if (selectAll) {
             selectAll.checked = itemChecks.length > 0 && selectedCount === itemChecks.length;
         }
+
+        // Đồng bộ checkbox từng shop
+        document.querySelectorAll('.shop-group').forEach(function (group) {
+            const shopCheck = group.querySelector('.shop-check');
+            const checks = group.querySelectorAll('.item-check');
+            if (!shopCheck) return;
+            let checked = 0;
+            checks.forEach(c => { if (c.checked) checked++; });
+            shopCheck.checked = checks.length > 0 && checked === checks.length;
+            shopCheck.indeterminate = checked > 0 && checked < checks.length;
+        });
     }
 
     // Khởi tạo sự kiện khi tải trang
     document.addEventListener('DOMContentLoaded', function () {
         const itemChecks = document.querySelectorAll('.item-check');
         const selectAll = document.getElementById('selectAllBottom');
+        const shopChecks = document.querySelectorAll('.shop-check');
 
         itemChecks.forEach(function (checkbox) {
             checkbox.addEventListener('change', updateCheckoutState);
+        });
+
+        // Checkbox tên shop: chọn/bỏ chọn toàn bộ sản phẩm của shop đó
+        shopChecks.forEach(function (shopCheck) {
+            shopCheck.addEventListener('change', function () {
+                const group = shopCheck.closest('.shop-group');
+                group.querySelectorAll('.item-check').forEach(function (checkbox) {
+                    checkbox.checked = shopCheck.checked;
+                });
+                updateCheckoutState();
+            });
         });
 
         if (selectAll) {

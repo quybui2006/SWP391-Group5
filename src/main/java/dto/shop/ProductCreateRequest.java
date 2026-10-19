@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /** Dữ liệu tạo sản phẩm, bao gồm ảnh chính bắt buộc. */
 public class ProductCreateRequest {
@@ -17,6 +18,7 @@ public class ProductCreateRequest {
     @NotNull @PastOrPresent private LocalDate receivedDate;
     @NotNull private LocalDate expiryDate;
     private MultipartFile imageFile;
+    private List<Long> categoryIds;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -32,4 +34,6 @@ public class ProductCreateRequest {
     public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
     public MultipartFile getImageFile() { return imageFile; }
     public void setImageFile(MultipartFile imageFile) { this.imageFile = imageFile; }
+    public List<Long> getCategoryIds() { return categoryIds; }
+    public void setCategoryIds(List<Long> categoryIds) { this.categoryIds = categoryIds; }
 }

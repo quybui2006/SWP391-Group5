@@ -40,6 +40,8 @@ public class NotificationDto {
             dto.setTargetUrl("/customer/account/orders");
         } else if ("ACCOUNT".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account");
+        } else if ("SHOP".equalsIgnoreCase(n.getTargetType())) {
+            dto.setTargetUrl("/seller/status");
         } else {
             dto.setTargetUrl("/customer/account/notifications");
         }
@@ -68,6 +70,11 @@ public class NotificationDto {
             case "PRODUCT":
                 dto.setIcon("🍊");
                 dto.setBadgeClass("notif-badge-product");
+                break;
+            case "SHOP":
+            case "APPROVAL":
+                dto.setIcon("🏪");
+                dto.setBadgeClass("notif-badge-shop");
                 break;
             default:
                 dto.setIcon("🔔");

@@ -152,7 +152,7 @@ CREATE TABLE products (
     CHECK (approval_status <> 'PENDING' OR submitted_at IS NOT NULL),
     CHECK (approval_status NOT IN ('APPROVED','REJECTED') OR reviewed_at IS NOT NULL),
     CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0)),
-    CHECK (selling_status <> 'ACTIVE' OR approval_status = 'APPROVED')
+    CONSTRAINT chk_products_active_approved CHECK (selling_status <> 'ACTIVE' OR approval_status = 'APPROVED')
 );
 
 CREATE TABLE product_images (

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{cs/layout :: head('Yêu cầu & Khiếu nại')}"></head>
+<body>
+
+<aside th:replace="~{cs/layout :: sidebar('tickets')}"></aside>
+
+<div class="cs-main-wrapper">
+    <header class="cs-topbar">
+        <div>
+            <h1>Yêu cầu hỗ trợ & Khiếu nại</h1>
+            <p class="cs-topbar-subtitle">Khu vực tiếp nhận và xử lý các phản ánh, khiếu nại hoàn tiền từ người mua.</p>
+        </div>
+        <button class="btn-cs-sm" style="background: var(--cs-primary); color: #fff;">
+            + Tạo yêu cầu hỗ trợ mới
+        </button>
+    </header>
+
+    <main class="cs-content">
+        <div class="cs-card" style="text-align: center; padding: 60px 20px;">
+            <div style="font-size: 54px; margin-bottom: 16px;">🎫</div>
+            <h2 style="font-size: 20px; font-weight: 700; color: var(--cs-text-main); margin-bottom: 8px;">
+                Mô đun Tiếp nhận Khiếu nại (Ticket System)
+            </h2>
+            <p style="font-size: 15px; color: var(--cs-text-sub); max-width: 520px; margin: 0 auto 24px; line-height: 1.6;">
+                Hệ thống đã sẵn sàng khung giao diện cho đợt cập nhật tính năng Chăm sóc khách hàng:
+                tiếp nhận yêu cầu đổi trả trái cây hỏng, hoàn tiền đơn hàng và trò chuyện hỗ trợ trực tiếp.
+            </p>
+            <div style="display: inline-flex; gap: 12px;">
+                <a th:href="@{/cs/dashboard}" class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; padding: 10px 20px;">
+                    Về Dashboard tổng quan
+                </a>
+                <a th:href="@{/cs/reviews}" class="btn-cs-sm" style="padding: 10px 20px;">
+                    Kiểm tra phản ánh từ đánh giá
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

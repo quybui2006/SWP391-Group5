@@ -8,6 +8,8 @@
     <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
     <link rel="stylesheet" th:href="@{/css/customer-profile-layout.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
 </head>
 <body>
@@ -25,6 +27,7 @@
     </div>
     <nav class="customer-nav">
         <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
+        <a th:classappend="${active == 'dashboard'} ? 'active'" th:href="@{/customer/account/dashboard}">📊 Tổng quan chi tiêu</a>
         <a th:classappend="${active == 'profile'} ? 'active'" th:href="@{/customer/account}">Thông tin cá nhân</a>
         <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
         <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
@@ -46,12 +49,33 @@
     <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
 </header>
 <div class="topbar-actions" th:fragment="topbarActions">
+    <a th:href="@{/seller/channel}" style="text-decoration:none;font-size:12.5px;padding:6px 12px;border-radius:20px;background:#e8f5e9;color:#1b5e20;border:1px solid #c8e6c9;font-weight:700;display:inline-flex;align-items:center;gap:4px;" title="Kênh Bán hàng">
+        🏪 Kênh Bán hàng
+    </a>
     <a class="top-icon" th:href="@{/search}" aria-label="Tìm kiếm sản phẩm" title="Tìm kiếm">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
     </a>
-    <a class="top-icon notif-top-icon" th:href="@{/customer/account/notifications}" aria-label="Thông báo" title="Thông báo" style="font-size: 16px; display: inline-grid; place-items: center; text-decoration: none;">
-        🔔
-    </a>
+    
+    <!-- In-web notification center dropdown -->
+    <div class="notif-dropdown-wrapper">
+        <button type="button" class="top-icon notif-bell-btn" id="globalNotifBellBtn" title="Thông báo" aria-label="Thông báo" style="font-size: 16px; cursor: pointer; border: 1px solid rgba(0,0,0,0.08); background: #fff;">
+            🔔
+            <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
+        </button>
+        <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
+            <div class="notif-dropdown-header">
+                <h4><span>🔔</span> Thông báo</h4>
+                <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
+            </div>
+            <div class="notif-dropdown-body" id="globalNotifList">
+                <div class="notif-empty-box">Đang tải...</div>
+            </div>
+            <div class="notif-dropdown-footer">
+                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
+            </div>
+        </div>
+    </div>
+
     <a class="cart-link" th:href="@{/cart}" aria-label="Giỏ hàng">🛒 Giỏ hàng</a>
     <form th:action="@{/logout}" method="post" style="display: inline-flex; margin: 0 0 0 6px;">
         <button type="submit" class="top-icon logout-top-icon" title="Đăng xuất" aria-label="Đăng xuất" style="cursor: pointer; color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.25); background: #fff5f5; border-radius: 9px; font-size: 14px; width: 34px; height: 34px; display: inline-grid; place-items: center;">

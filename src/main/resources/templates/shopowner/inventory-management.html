@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý tồn kho | FreshFruit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory-management.css}">
+</head>
+<body>
+<div class="app-shell inventory-app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('inventory')}"></aside>
+
+    <main class="main-content inventory-page">
+        <header class="topbar inventory-topbar">
+            <div>
+                <p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho</span></p>
+                <h1>Quản lý tồn kho</h1>
+                <p class="muted">Quản lý số lượng trái cây shop khai báo có thể bán trên sàn và theo dõi lịch sử thay đổi.</p>
+            </div>
+            <span class="inventory-ledger-badge"><span aria-hidden="true">●</span> Có lưu lịch sử thay đổi</span>
+        </header>
+
+        <div class="alert alert-success inventory-alert" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger inventory-alert" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <section class="inventory-intro-card">
+            <div class="inventory-intro-icon" aria-hidden="true">▦</div>
+            <div>
+                <h2>Số lượng bán trên FreshFruit</h2>
+                <p>FreshFruit chỉ ghi nhận số lượng shop khai báo có thể bán và số lượng đang được giữ cho đơn hàng. Shop tự quản lý nguồn hàng và bảo quản thực tế tại cửa hàng; hãy cập nhật số lượng trên sàn khi có thay đổi.</p>
+            </div>
+        </section>
+
+        <ul class="nav nav-tabs inventory-tabs" id="inventoryTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock-pane"
+                        type="button" role="tab" aria-controls="stock-pane" aria-selected="true">
+                    Danh sách tồn kho <span class="inventory-tab-count" th:text="${#lists.size(inventoryRows)}">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane"
+                        type="button" role="tab" aria-controls="history-pane" aria-selected="false">
+                    Lịch sử thay đổi <span class="inventory-tab-count" th:text="${#lists.size(transactionRows)}">0</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content inventory-tab-content" id="inventoryTabContent">
+            <!-- TAB 1: Tồn kho hiện tại -->
+            <section class="tab-pane fade show active" id="stock-pane" role="tabpanel" aria-labelledby="stock-tab" tabindex="0">
+                <div class="inventory-panel-heading">
+                    <div>
+                        <h2>Danh sách tồn kho</h2>
+                        <p>Số lượng có thể bán = số lượng shop đã cập nhật − số lượng đang được giữ cho đơn hàng.</p>
+                    </div>
+                    <span class="inventory-unit-note">Đơn vị theo từng phân loại</span>
+                </div>
+
+                <div class="table-responsive inventory-table-wrap" th:if="${!#lists.isEmpty(inventoryRows)}">
+                    <table class="table align-middle inventory-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Sản phẩm</th>
+                            <th scope="col">Tên phân loại</th>
+                            <th scope="col">Mã lô</th>
+                            <th scope="col">Hạn sử dụng</th>
+                            <th scope="col" class="text-end">Số lượng đã cập nhật</th>
+                            <th scope="col" class="text-end">Đang giữ cho đơn</th>
+                            <th scope="col" class="text-end">Có thể bán</th>
+                            <th scope="col" class="text-end inventory-action-col">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${inventoryRows}">
+                            <td>
+                                <div class="inventory-product-name" th:text="${item.productName}">Tên sản phẩm</div>
+                                <div class="inventory-subtext" th:text="${'SKU: ' + item.sku}">SKU: CAM-500G</div>
+                            </td>
+                            <td th:text="${item.variantName}">Túi 500g</td>
+                            <td><span class="inventory-batch-code" th:text="${item.batchCode}">LO-CAM-01</span></td>
+                            <td>
+                                <span th:if="${item.expiryDate != null}" th:text="${#temporals.format(item.expiryDate, 'dd/MM/yyyy')}">17/10/2026</span>
+                                <span th:if="${item.expiryDate == null}" class="text-secondary">Chưa có</span>
+                            </td>
+                            <td class="text-end inventory-number" th:text="${item.quantityOnHand}">100</td>
+                            <td class="text-end inventory-number reserved-number" th:text="${item.reservedQuantity}">5</td>
+                            <td class="text-end">
+                                <span class="available-quantity" th:classappend="${item.availableQuantity <= 0} ? ' is-empty' : ''"
+                                      th:text="${item.availableQuantity}">95</span>
+                            </td>
+                            <td class="text-end inventory-actions">
+                                <button class="btn btn-sm btn-success restock-trigger" type="button"
+                                        data-bs-toggle="modal" data-bs-target="#restockModal"
+                                        th:attr="data-variant-id=${item.variantId},data-variant-label=${item.productName + ' — ' + item.variantName + ' (' + item.sku + ')'}">
+                                    <span aria-hidden="true">＋</span> Cập nhật tồn kho
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger adjust-trigger" type="button"
+                                        data-bs-toggle="modal" data-bs-target="#adjustModal"
+                                        th:attr="data-variant-id=${item.variantId},data-variant-label=${item.productName + ' — ' + item.variantName + ' (' + item.sku + ')'},data-available=${item.availableQuantity}">
+                                    <span aria-hidden="true">✎</span> Báo hỏng
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="inventory-empty-state" th:if="${#lists.isEmpty(inventoryRows)}">
+                    <div class="inventory-empty-icon" aria-hidden="true">▤</div>
+                    <h3>Chưa có dữ liệu tồn kho</h3>
+                    <p>Khi cửa hàng có biến thể đã khởi tạo tồn kho, thông tin sẽ xuất hiện tại đây.</p>
+                    <a class="btn btn-outline-success" th:href="@{/shopowner/product-variants}">Xem biến thể sản phẩm</a>
+                </div>
+            </section>
+
+            <!-- TAB 2: Lịch sử sổ cái -->
+            <section class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
+                <div class="inventory-panel-heading">
+                    <div>
+                        <h2>Lịch sử cập nhật tồn kho</h2>
+                        <p>Mỗi lần tăng, giảm hoặc thay đổi số lượng đều được lưu để shop tra cứu khi cần.</p>
+                    </div>
+                    <span class="ledger-status"><span aria-hidden="true">●</span> Lịch sử cập nhật</span>
+                </div>
+
+                <div class="table-responsive inventory-table-wrap" th:if="${!#lists.isEmpty(transactionRows)}">
+                    <table class="table align-middle inventory-table inventory-history-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Thời gian</th>
+                            <th scope="col">Sản phẩm / Phân loại</th>
+                            <th scope="col">Mã lô</th>
+                            <th scope="col">Loại cập nhật</th>
+                            <th scope="col" class="text-end">Thay đổi số lượng</th>
+                            <th scope="col" class="text-end">Số lượng sau cập nhật</th>
+                            <th scope="col">Lý do / Ghi chú</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="tx : ${transactionRows}">
+                            <td class="inventory-date-cell">
+                                <span th:if="${tx.createdAt != null}" th:text="${#temporals.format(tx.createdAt, 'dd/MM/yyyy')}">17/10/2026</span>
+                                <small th:if="${tx.createdAt != null}" th:text="${#temporals.format(tx.createdAt, 'HH:mm:ss')}">10:20:30</small>
+                                <span th:if="${tx.createdAt == null}" class="text-secondary">Đang ghi nhận</span>
+                            </td>
+                            <td>
+                                <div class="inventory-product-name" th:text="${tx.productName}">Tên sản phẩm</div>
+                                <div class="inventory-subtext" th:text="${tx.variantName + ' · SKU ' + tx.sku}">Phân loại · SKU</div>
+                            </td>
+                            <td><span class="inventory-batch-code" th:text="${tx.batchCode}">LO-001</span></td>
+                            <td>
+                                <span class="transaction-type-badge"
+                                      th:classappend="${tx.type == 'RECEIVE'} ? ' type-receive' : (${tx.type == 'DISCARD'} ? ' type-discard' : (${tx.type == 'ADJUST'} ? ' type-adjust' : ' type-order'))"
+                                      th:text="${tx.type == 'RECEIVE'} ? 'Tăng tồn kho' : (${tx.type == 'SALE'} ? 'Bán hàng' : (${tx.type == 'DISCARD'} ? 'Báo hỏng' : (${tx.type == 'ADJUST'} ? 'Điều chỉnh tồn' : (${tx.type == 'RESERVE'} ? 'Giữ hàng cho đơn' : (${tx.type == 'RELEASE'} ? 'Trả lại số lượng giữ' : tx.type)))))">Tăng tồn kho</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="delta-value" th:classappend="${tx.onHandDelta > 0} ? ' delta-positive' : (${tx.onHandDelta < 0} ? ' delta-negative' : '')"
+                                      th:text="${tx.onHandDelta > 0 ? '+' + tx.onHandDelta : tx.onHandDelta}">+10</span>
+                            </td>
+                            <td class="text-end inventory-number" th:text="${tx.onHandAfter}">110</td>
+                            <td class="inventory-reason" th:text="${tx.reason != null and tx.reason != '' ? tx.reason : '—'}">Cập nhật tăng số lượng</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="inventory-empty-state" th:if="${#lists.isEmpty(transactionRows)}">
+                    <div class="inventory-empty-icon" aria-hidden="true">↺</div>
+                    <h3>Chưa có giao dịch nào</h3>
+                    <p>Các lần tăng/giảm số lượng, báo hỏng hoặc biến động do đơn hàng sẽ được lưu tại đây.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Modal cập nhật tăng số lượng bán trên sàn -->
+<div class="modal fade" id="restockModal" tabindex="-1" aria-labelledby="restockModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content inventory-modal">
+            <form method="post" th:action="@{/shop/inventory/action}" id="restockForm">
+                <div class="modal-header">
+                    <div>
+                        <span class="modal-eyebrow receive-eyebrow">GHI TĂNG SỐ LƯỢNG BÁN</span>
+                        <h2 class="modal-title" id="restockModalTitle">Cập nhật tồn kho</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-variant-label" id="restockVariantLabel">Biến thể sản phẩm</p>
+                    <input type="hidden" name="variantId" id="restockVariantId">
+                    <input type="hidden" name="actionType" value="RECEIVE">
+                    <div class="mb-3">
+                        <label for="restockQuantity" class="form-label">Số lượng tăng thêm <span class="text-danger">*</span></label>
+                        <input class="form-control" type="number" id="restockQuantity" name="quantity"
+                               min="1" max="2147483647" step="1" inputmode="numeric" required placeholder="Ví dụ: 50">
+                        <div class="form-text">Nhập số nguyên dương. Số lượng này sẽ được cộng vào số lượng shop đã khai báo trên sàn.</div>
+                    </div>
+                    <div>
+                        <label for="restockReason" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="restockReason" name="reason" rows="3" maxlength="1000"
+                                  placeholder="Ví dụ: Bổ sung thêm 50 kg chuối có sẵn tại cửa hàng (không bắt buộc)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success"><span aria-hidden="true">＋</span> Xác nhận cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal báo hỏng / điều chỉnh số lượng -->
+<div class="modal fade" id="adjustModal" tabindex="-1" aria-labelledby="adjustModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content inventory-modal">
+            <form method="post" th:action="@{/shop/inventory/action}" id="adjustForm">
+                <div class="modal-header">
+                    <div>
+                        <span class="modal-eyebrow adjust-eyebrow">GHI NHẬN BIẾN ĐỘNG</span>
+                        <h2 class="modal-title" id="adjustModalTitle">Báo hỏng / Điều chỉnh tồn kho</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-variant-label" id="adjustVariantLabel">Biến thể sản phẩm</p>
+                    <p class="available-hint">Số lượng hiện có thể bán trên sàn: <strong id="adjustAvailableLabel">—</strong></p>
+                    <input type="hidden" name="variantId" id="adjustVariantId">
+                    <div class="mb-3">
+                        <label for="adjustActionType" class="form-label">Loại hành động <span class="text-danger">*</span></label>
+                        <select class="form-select" name="actionType" id="adjustActionType" required>
+                            <option value="DISCARD">Báo hỏng (giảm số lượng)</option>
+                            <option value="ADJUST">Điều chỉnh số lượng đã khai báo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="adjustDirectionGroup" hidden>
+                        <label for="adjustmentDirection" class="form-label">Hướng thay đổi <span class="text-danger">*</span></label>
+                        <select class="form-select" name="adjustmentDirection" id="adjustmentDirection">
+                            <option value="DECREASE" selected>Giảm số lượng trên sàn</option>
+                            <option value="INCREASE">Tăng số lượng trên sàn</option>
+                        </select>
+                        <div class="form-text">Nhập số lượng chênh lệch. Hệ thống tự cộng hoặc trừ theo hướng đã chọn.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="adjustQuantity" class="form-label">Số lượng <span class="text-danger">*</span></label>
+                        <input class="form-control" type="number" id="adjustQuantity" name="quantity"
+                               min="1" max="2147483647" step="1" inputmode="numeric" required placeholder="Ví dụ: 3">
+                        <div class="form-text" id="adjustQuantityHelp">Số lượng hàng hỏng sẽ được trừ khỏi số lượng shop đã khai báo.</div>
+                    </div>
+                    <div>
+                        <label for="adjustReason" class="form-label">Lý do <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="adjustReason" name="reason" rows="3" maxlength="1000"
+                                  required placeholder="Ví dụ: trái cây bị dập, hỏng hoặc số lượng thực tế khác số đã khai báo"></textarea>
+                    </div>
+                    <div class="inventory-warning-note" role="note">
+                        <strong>Lưu ý:</strong> Không thể giảm số lượng đã khai báo thấp hơn lượng đang được giữ cho đơn hàng. Mọi thao tác đều được lưu vào lịch sử.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger" id="adjustSubmitButton">Xác nhận giao dịch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(() => {
+    const restockVariantId = document.getElementById('restockVariantId');
+    const restockVariantLabel = document.getElementById('restockVariantLabel');
+    const adjustVariantId = document.getElementById('adjustVariantId');
+    const adjustVariantLabel = document.getElementById('adjustVariantLabel');
+    const adjustAvailableLabel = document.getElementById('adjustAvailableLabel');
+    const actionType = document.getElementById('adjustActionType');
+    const directionGroup = document.getElementById('adjustDirectionGroup');
+    const quantityHelp = document.getElementById('adjustQuantityHelp');
+    const submitButton = document.getElementById('adjustSubmitButton');
+
+    document.querySelectorAll('.restock-trigger').forEach(button => {
+        button.addEventListener('click', () => {
+            restockVariantId.value = button.dataset.variantId || '';
+            restockVariantLabel.textContent = button.dataset.variantLabel || 'Biến thể sản phẩm';
+            document.getElementById('restockQuantity').value = '';
+            document.getElementById('restockReason').value = '';
+        });
+    });
+
+    document.querySelectorAll('.adjust-trigger').forEach(button => {
+        button.addEventListener('click', () => {
+            adjustVariantId.value = button.dataset.variantId || '';
+            adjustVariantLabel.textContent = button.dataset.variantLabel || 'Biến thể sản phẩm';
+            adjustAvailableLabel.textContent = button.dataset.available || '0';
+            document.getElementById('adjustQuantity').value = '';
+            document.getElementById('adjustReason').value = '';
+            actionType.value = 'DISCARD';
+            updateAdjustmentControls();
+        });
+    });
+
+    function updateAdjustmentControls() {
+        const isAdjust = actionType.value === 'ADJUST';
+        directionGroup.hidden = !isAdjust;
+        quantityHelp.textContent = isAdjust
+            ? 'Nhập số lượng chênh lệch; hướng thay đổi quyết định cộng hoặc trừ số lượng trên sàn.'
+            : 'Số lượng hàng hỏng sẽ được trừ khỏi số lượng shop đã khai báo.';
+        submitButton.textContent = isAdjust ? 'Xác nhận điều chỉnh' : 'Xác nhận báo hỏng';
+    }
+    actionType.addEventListener('change', updateAdjustmentControls);
+
+    const activeTab = new URLSearchParams(window.location.search).get('tab');
+    if (activeTab === 'history') {
+        const historyTab = document.getElementById('history-tab');
+        if (historyTab && window.bootstrap) bootstrap.Tab.getOrCreateInstance(historyTab).show();
+    }
+})();
+</script>
+</body>
+</html>

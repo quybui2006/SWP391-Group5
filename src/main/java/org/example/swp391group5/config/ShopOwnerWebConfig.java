@@ -3,6 +3,8 @@ package org.example.swp391group5.config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -13,7 +15,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class ShopOwnerWebConfig implements WebMvcConfigurer {
     private final ShopRepository shops;
     private final JdbcTemplate jdbc;
-    public ShopOwnerWebConfig(ShopRepository shops, JdbcTemplate jdbc) { this.shops = shops; this.jdbc = jdbc; }
+
+    public ShopOwnerWebConfig(ShopRepository shops, JdbcTemplate jdbc) { 
+        this.shops = shops; 
+        this.jdbc = jdbc; 
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -25,6 +31,7 @@ public class ShopOwnerWebConfig implements WebMvcConfigurer {
                     view.addObject("shopName", request.getAttribute("shopName"));
                 }
             }
+
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
                 var session = request.getSession(false);
@@ -32,14 +39,22 @@ public class ShopOwnerWebConfig implements WebMvcConfigurer {
                     response.sendRedirect(request.getContextPath() + "/login");
                     return false;
                 }
-                long id = ((Number) session.getAttribute("userId")).longValue();
-                if (!"SHOP_OWNER".equals(session.getAttribute("role"))) {
-                    response.sendError(403, "Tài khoản không có quyền Shop Owner.");
+
+                // Kiểm tra quyền từ Spring Security Authentication (hỗ trợ cả tài khoản có nhiều role)
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                boolean isShopOwnerOrAdmin = auth != null && auth.getAuthorities().stream()
+                        .anyMatch(a -> "ROLE_SHOP_OWNER".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()));
+
+                if (!isShopOwnerOrAdmin) {
+                    response.sendRedirect(request.getContextPath() + "/403");
                     return false;
                 }
+
+                long id = ((Number) session.getAttribute("userId")).longValue();
                 var shop = shops.findByOwnerId(id);
                 request.setAttribute("ownerName", jdbc.queryForObject("SELECT full_name FROM users WHERE id=?", String.class, id));
                 request.setAttribute("shopName", shop.map(s -> s.getName()).orElse("Chưa đăng ký cửa hàng"));
+
                 if (shop.isEmpty() && !request.getRequestURI().equals(request.getContextPath() + "/shopowner/home")) {
                     response.sendRedirect(request.getContextPath() + "/shopowner/home");
                     return false;

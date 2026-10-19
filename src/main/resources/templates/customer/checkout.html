@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thanh toán | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/checkout.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -44,7 +45,9 @@
 
 <main class="checkout-page">
     <div class="container">
+
         <h1 style="margin: 0 0 24px; font-size: 26px;">📦 Xác nhận đặt hàng</h1>
+
 
         <form th:action="@{/order/submit}" method="post" id="checkoutForm">
             <!-- Danh sách sản phẩm đã chọn -->
@@ -78,13 +81,20 @@
 
                             <label class="address-option">
                                 <input type="radio" name="addressId" value="" id="newAddressRadio" onchange="toggleAddressFields()">
-                                <div><strong>+ Sử dụng địa chỉ giao hàng mới</strong></div>
+
+                                <div><strong>+ Nhập địa chỉ giao hàng mới</strong></div>
+
                             </label>
                         </div>
 
                         <!-- Khung nhập địa chỉ mới -->
                         <div id="newAddressContainer" class="new-address-fields"
                              th:style="${addresses != null and !addresses.isEmpty()} ? 'display:none;' : 'display:grid;'">
+
+                            <div class="full-width" style="font-size: 14px; font-weight: 700; color: #16803c;">
+                                Nhập địa chỉ giao hàng
+                            </div>
+
                             <div>
                                 <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Họ và tên người nhận *</label>
                                 <input type="text" name="recipientName" class="form-control new-addr-input" placeholder="Nhập họ tên">
@@ -177,7 +187,9 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="submit-order-btn">Đặt hàng ngay</button>
+
+                        <button type="submit" id="btnPlaceOrder" class="submit-order-btn">Đặt hàng ngay</button>
+
                     </div>
                 </div>
             </div>

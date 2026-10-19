@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{cs/layout :: head('Tổng quan hỗ trợ')}"></head>
+<body>
+
+<aside th:replace="~{cs/layout :: sidebar('dashboard')}"></aside>
+
+<div class="cs-main-wrapper">
+    <header class="cs-topbar">
+        <div>
+            <h1>Trung tâm hỗ trợ khách hàng</h1>
+            <p class="cs-topbar-subtitle">Theo dõi trạng thái hỗ trợ, khiếu nại đơn hàng và phản hồi của người mua.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a th:href="@{/cs/reviews?rating=1}" class="btn-cs-sm" style="color: #dc2626; border-color: #fecaca; background: #fef2f2;">
+                ⚠️ Đánh giá xấu cần xử lý
+            </a>
+            <a th:href="@{/cs/customers}" class="btn-cs-sm">
+                🔍 Tra cứu người mua
+            </a>
+        </div>
+    </header>
+
+    <main class="cs-content">
+        <!-- KPI METRICS -->
+        <div class="cs-stat-grid">
+            <div class="cs-stat-card">
+                <div class="cs-stat-header">
+                    <span class="cs-stat-title">Khách hàng hệ thống</span>
+                    <span class="cs-stat-icon" style="background: #e0f2fe; color: #0284c7;">👥</span>
+                </div>
+                <div class="cs-stat-value" th:text="${totalCustomers}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Tài khoản người mua</small>
+            </div>
+
+            <div class="cs-stat-card">
+                <div class="cs-stat-header">
+                    <span class="cs-stat-title">Tổng đơn hàng sàn</span>
+                    <span class="cs-stat-icon" style="background: #f0fdf4; color: #16a34a;">📦</span>
+                </div>
+                <div class="cs-stat-value" th:text="${totalOrders}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Đơn phát sinh toàn sàn</small>
+            </div>
+
+            <div class="cs-stat-card">
+                <div class="cs-stat-header">
+                    <span class="cs-stat-title">Đơn hủy / Thất bại</span>
+                    <span class="cs-stat-icon" style="background: #fef2f2; color: #dc2626;">🚨</span>
+                </div>
+                <div class="cs-stat-value" style="color: #dc2626;" th:text="${cancelledOrders}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Cần hỗ trợ chăm sóc lại</small>
+            </div>
+
+            <div class="cs-stat-card">
+                <div class="cs-stat-header">
+                    <span class="cs-stat-title">Đánh giá kém (≤ 2 sao)</span>
+                    <span class="cs-stat-icon" style="background: #fffbeb; color: #d97706;">⭐</span>
+                </div>
+                <div class="cs-stat-value" style="color: #d97706;" th:text="${lowRatingReviews}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Nguy cơ mất khách hàng</small>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start;">
+            <!-- CỘT 1: ĐƠN HÀNG HỦY / KHIẾU NẠI CẦN CSKH CAN THIỆP -->
+            <div class="cs-card">
+                <div class="cs-card-header">
+                    <h2 class="cs-card-title">
+                        <span>📦</span> Đơn hàng gặp sự cố gần đây
+                    </h2>
+                    <span style="font-size: 12px; color: var(--cs-text-sub);">Hủy đơn & Giao thất bại</span>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="cs-table">
+                        <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Cửa hàng</th>
+                            <th>Lý do hủy / ghi chú</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="order : ${disputeOrders}">
+                            <td>
+                                <strong style="color: #0284c7;" th:text="${order['order_code']}">FF-123</strong>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;" th:text="${order['recipient_name']}">Nguyễn Văn A</div>
+                                <small style="color: var(--cs-text-sub);" th:text="${order['recipient_phone']}">0901234567</small>
+                            </td>
+                            <td th:text="${order['shop_name']}">Nông sản Đà Lạt</td>
+                            <td>
+                                <span style="font-size: 13px; color: #64748b;" th:text="${order['cancellation_reason'] ?: 'Không có ghi chú'}">Lý do</span>
+                            </td>
+                            <td>
+                                <span th:if="${order['status'] == 'CANCELLED'}" class="badge-status badge-danger">Đã hủy</span>
+                                <span th:unless="${order['status'] == 'CANCELLED'}" class="badge-status badge-warning">Cần xử lý</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(disputeOrders)}">
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
+                                ✨ Không có đơn hàng nào gặp sự cố.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CỘT 2: ĐÁNH GIÁ KÉM CẦN HỖ TRỢ / BỒI HOÀN -->
+            <div class="cs-card">
+                <div class="cs-card-header">
+                    <h2 class="cs-card-title">
+                        <span>⭐</span> Phản ánh chất lượng sản phẩm
+                    </h2>
+                    <a th:href="@{/cs/reviews}" style="font-size: 13px; color: #0284c7; text-decoration: none; font-weight: 600;">Xem tất cả →</a>
+                </div>
+
+                <div th:each="rev : ${recentLowReviews}" style="padding: 14px 0; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div>
+                            <strong th:text="${rev['customer_name']}">Khách hàng</strong>
+                            <small style="color: #64748b; margin-left: 6px;" th:text="${rev['customer_phone'] ?: ''}">0901234567</small>
+                        </div>
+                        <span style="color: #eab308; font-weight: 700; font-size: 14px;" th:text="${'★ ' + rev['rating'] + '/5'}">★ 2/5</span>
+                    </div>
+                    <div style="font-size: 12.5px; color: #0284c7; margin-bottom: 4px;" th:text="${rev['product_name'] + ' - ' + rev['variant_name']}">Cam Sành</div>
+                    <p style="margin: 0; font-size: 13.5px; color: #334155; line-height: 1.4;" th:text="${rev['content'] ?: 'Khách hàng không để lại nhận xét'}">Trái cây bị dập nát khi nhận hàng...</p>
+                </div>
+
+                <div th:if="${#lists.isEmpty(recentLowReviews)}" style="text-align: center; color: #94a3b8; padding: 30px;">
+                    🎉 Chưa có phản ánh tiêu cực nào từ khách hàng!
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

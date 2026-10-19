@@ -16,13 +16,17 @@
     <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
             rel="stylesheet">
+    <style>
+        .price-display { display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+        .price-old { color:#858585; font-size:.86em; text-decoration:line-through; }
+        .price-promotion { color:#d62828; }
+    </style>
 </head>
 
 <body>
 
 <!-- =========================================================
      HEADER
-========================================================= -->
 
 <header class="site-header">
 
@@ -75,6 +79,11 @@
         <!-- HEADER ACTIONS -->
         <div class="header-actions">
 
+            <!-- Kênh Bán hàng -->
+            <a class="seller-channel-btn" th:href="@{/seller/channel}" title="Kênh Bán hàng">
+                🏪 Kênh Bán hàng
+            </a>
+
             <!-- SEARCH -->
             <a
                     class="icon-btn active-icon"
@@ -116,9 +125,9 @@
             <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
             <th:block th:if="${session.role != null}">
                 <div class="user-menu-container">
-                    <div class="user-avatar" th:title="${session.fullName}">
+                    <button type="button" class="user-avatar" th:title="${session.fullName}" aria-label="Menu tài khoản" aria-haspopup="true">
                         <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
-                    </div>
+                    </button>
                     <div class="user-dropdown">
                         <div class="user-dropdown-header">
                             <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
@@ -131,6 +140,7 @@
                         <div class="user-dropdown-links">
                             <!-- Customer links -->
                             <th:block th:if="${session.role == 'CUSTOMER'}">
+                                <a th:href="@{/seller/channel}">🏪 Kênh Bán hàng</a>
                                 <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
                                 <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
                                 <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
@@ -171,7 +181,6 @@
 
 <!-- =========================================================
      MAIN
-========================================================= -->
 
 <main>
 
@@ -195,8 +204,7 @@
 
 
             <p>
-                Khám phá trái cây tươi ngon theo tên,
-                danh mục và khoảng giá.
+                Tìm kiếm hoa quả theo tên, giống loại, xuất xứ, tiêu chuẩn chất lượng VietGAP, mã lô hoặc SKU.
             </p>
 
 
@@ -216,7 +224,7 @@
                         name="keyword"
                         type="search"
                         th:value="${keyword}"
-                        placeholder="Bạn đang tìm trái cây gì?"
+                        placeholder="Tìm theo tên trái cây, xuất xứ (Đà Lạt, Tiền Giang...), mã lô, SKU..."
                         autocomplete="off"
                         aria-label="Tìm kiếm sản phẩm">
 
@@ -229,6 +237,17 @@
                 </button>
 
             </form>
+
+            <!-- Quick search suggestion chips -->
+            <div class="quick-tags">
+                <span class="quick-tag-label">Gợi ý tìm kiếm:</span>
+                <a th:href="@{/search(keyword='Đà Lạt')}" class="quick-tag">🍓 Dâu tây Đà Lạt</a>
+                <a th:href="@{/search(keyword='Xoài')}" class="quick-tag">🥭 Xoài Cát Chu</a>
+                <a th:href="@{/search(keyword='Táo')}" class="quick-tag">🍎 Táo Envy</a>
+                <a th:href="@{/search(keyword='Cam')}" class="quick-tag">🍊 Cam sành</a>
+                <a th:href="@{/search(keyword='VietGAP')}" class="quick-tag">🛡️ Chuẩn VietGAP</a>
+                <a th:href="@{/search(keyword='Organic')}" class="quick-tag">🌿 Hữu cơ Organic</a>
+            </div>
 
         </div>
 
@@ -252,30 +271,12 @@
 
 
                 <div class="filter-header">
-
                     <div>
-
-                        <span class="filter-kicker">
-                            FILTER
-                        </span>
-
-                        <h2>
-                            Bộ lọc
-                        </h2>
-
+                        <span class="filter-kicker">FILTER</span>
+                        <h2>Bộ lọc</h2>
                     </div>
-
-
-                    <a
-                            class="clear-filter"
-                            th:href="@{/search}">
-
-                        Xóa lọc
-
-                    </a>
-
+                    <a class="clear-filter" th:href="@{/search}">Xóa lọc</a>
                 </div>
-
 
                 <!-- FILTER FORM -->
                 <form
@@ -283,169 +284,114 @@
                         th:action="@{/search}"
                         method="get">
 
-
-                    <!-- =================================================
-                         KEYWORD
-                    ================================================== -->
-
-                    <input
-                            type="hidden"
-                            name="keyword"
-                            th:value="${keyword}">
-
+                    <!-- Hidden fields to preserve state -->
+                    <input type="hidden" name="keyword" th:value="${keyword}">
+                    <input type="hidden" name="sort" th:value="${sort}">
 
                     <!-- =================================================
                          CATEGORY
                     ================================================== -->
-
                     <div class="filter-group">
-
-                        <h3>
-                            Danh mục
-                        </h3>
-
-
-                        <!-- CÓ CATEGORY -->
-                        <div
-                                class="category-list"
-                                th:if="${categories != null and !categories.isEmpty()}">
-
-
-                            <label
-                                    class="check-row"
-                                    th:each="category : ${categories}">
-
-
-                                <input
-                                        type="checkbox"
-                                        name="categoryId"
-                                        th:value="${category.id}"
-                                        th:checked="${selectedCategories != null and selectedCategories.contains(category.id)}">
-
-
+                        <h3>Danh mục</h3>
+                        <div class="category-list" th:if="${categories != null and !categories.isEmpty()}">
+                            <label class="check-row" th:each="category : ${categories}">
+                                <input type="checkbox"
+                                       name="categoryId"
+                                       th:value="${category.id}"
+                                       th:checked="${selectedCategories != null and selectedCategories.contains(category.id)}">
                                 <span class="custom-check"></span>
-
-
-                                <span
-                                        class="check-label"
-                                        th:text="${category.name}">
-
-                                    Danh mục
-
-                                </span>
-
+                                <span class="check-label" th:text="${category.name}">Danh mục</span>
                             </label>
-
                         </div>
-
-
-                        <!-- KHÔNG CÓ CATEGORY -->
-                        <div
-                                class="filter-empty"
-                                th:if="${categories == null or categories.isEmpty()}">
-
+                        <div class="filter-empty" th:if="${categories == null or categories.isEmpty()}">
                             Chưa có danh mục.
-
                         </div>
-
                     </div>
-
 
                     <div class="filter-divider"></div>
 
-
                     <!-- =================================================
-                         PRICE
+                         PRICE RANGE
                     ================================================== -->
-
                     <div class="filter-group">
-
-                        <h3>
-                            Khoảng giá
-                        </h3>
-
-
+                        <h3>Khoảng giá</h3>
                         <label class="radio-row">
-
-                            <input
-                                    type="radio"
-                                    name="priceRange"
-                                    value="all"
-                                    th:checked="${priceRange == null or priceRange == 'all'}">
-
+                            <input type="radio" name="priceRange" value="all" th:checked="${priceRange == null or priceRange == 'all'}">
                             <span class="custom-radio"></span>
-
-                            <span>
-                                Tất cả mức giá
-                            </span>
-
+                            <span>Tất cả mức giá</span>
+                        </label>
+                        <label class="radio-row">
+                            <input type="radio" name="priceRange" value="under50" th:checked="${priceRange == 'under50'}">
+                            <span class="custom-radio"></span>
+                            <span>Dưới 50.000 ₫</span>
+                        </label>
+                        <label class="radio-row">
+                            <input type="radio" name="priceRange" value="50to100" th:checked="${priceRange == '50to100'}">
+                            <span class="custom-radio"></span>
+                            <span>50.000 – 100.000 ₫</span>
+                        </label>
+                        <label class="radio-row">
+                            <input type="radio" name="priceRange" value="100to200" th:checked="${priceRange == '100to200'}">
+                            <span class="custom-radio"></span>
+                            <span>100.000 – 200.000 ₫</span>
+                        </label>
+                        <label class="radio-row">
+                            <input type="radio" name="priceRange" value="over200" th:checked="${priceRange == 'over200'}">
+                            <span class="custom-radio"></span>
+                            <span>Trên 200.000 ₫</span>
                         </label>
 
-
-                        <label class="radio-row">
-
-                            <input
-                                    type="radio"
-                                    name="priceRange"
-                                    value="under50"
-                                    th:checked="${priceRange == 'under50'}">
-
-                            <span class="custom-radio"></span>
-
-                            <span>
-                                Dưới 50.000 ₫
-                            </span>
-
-                        </label>
-
-
-                        <label class="radio-row">
-
-                            <input
-                                    type="radio"
-                                    name="priceRange"
-                                    value="50to100"
-                                    th:checked="${priceRange == '50to100'}">
-
-                            <span class="custom-radio"></span>
-
-                            <span>
-                                50.000 – 100.000 ₫
-                            </span>
-
-                        </label>
-
-
-                        <label class="radio-row">
-
-                            <input
-                                    type="radio"
-                                    name="priceRange"
-                                    value="over100"
-                                    th:checked="${priceRange == 'over100'}">
-
-                            <span class="custom-radio"></span>
-
-                            <span>
-                                Trên 100.000 ₫
-                            </span>
-
-                        </label>
-
+                        <!-- Custom Price Range -->
+                        <div class="custom-price-box">
+                            <label style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Tự nhập khoảng giá (₫):</label>
+                            <div class="custom-price-inputs">
+                                <input type="number" name="minPrice" th:value="${minPrice}" placeholder="Từ ₫" class="custom-price-input" min="0" step="1000">
+                                <span style="color: #94a3b8;">-</span>
+                                <input type="number" name="maxPrice" th:value="${maxPrice}" placeholder="Đến ₫" class="custom-price-input" min="0" step="1000">
+                            </div>
+                        </div>
                     </div>
 
+                    <div class="filter-divider"></div>
+
+                    <!-- =================================================
+                         ORIGIN / XUẤT XỨ & VÙNG MIỀN
+                    ================================================== -->
+                    <div class="filter-group">
+                        <h3>Xuất xứ / Vùng miền</h3>
+                        <div class="category-list" th:if="${origins != null and !origins.isEmpty()}">
+                            <label class="check-row" th:each="orig : ${origins}">
+                                <input type="checkbox"
+                                       name="origin"
+                                       th:value="${orig}"
+                                       th:checked="${selectedOrigins != null and selectedOrigins.contains(orig)}">
+                                <span class="custom-check"></span>
+                                <span class="check-label" th:text="${orig}">Đà Lạt</span>
+                            </label>
+                        </div>
+                        <div class="filter-empty" th:if="${origins == null or origins.isEmpty()}">
+                            Đang cập nhật...
+                        </div>
+                    </div>
+
+                    <div class="filter-divider"></div>
+
+                    <!-- =================================================
+                         IN STOCK ONLY
+                    ================================================== -->
+                    <div class="filter-group">
+                        <h3>Tình trạng hàng</h3>
+                        <label class="check-row">
+                            <input type="checkbox" name="inStockOnly" value="true" th:checked="${inStockOnly}">
+                            <span class="custom-check"></span>
+                            <span class="check-label" style="font-weight: 600; color: #166534;">🟢 Chỉ hiện Còn hàng</span>
+                        </label>
+                    </div>
 
                     <!-- APPLY -->
-                    <button
-                            class="apply-btn"
-                            type="submit">
-
+                    <button class="apply-btn" type="submit" style="margin-top: 18px;">
                         Áp dụng bộ lọc
-
-                        <span>
-                            →
-                        </span>
-
+                        <span>→</span>
                     </button>
 
                 </form>
@@ -464,42 +410,60 @@
                 <div class="results-toolbar">
 
                     <div>
-
-                        <span class="section-kicker">
-                            PRODUCTS
-                        </span>
-
-
+                        <span class="section-kicker">PRODUCTS</span>
                         <h2>
-
                             Kết quả tìm kiếm
-
-                            <span
-                                    th:text="'(' + resultCount + ')'">
-
-                                (0)
-
-                            </span>
-
+                            <span th:text="'(' + ${resultCount} + ')'">(0)</span>
                         </h2>
-
                     </div>
 
-
-                    <!-- ACTIVE KEYWORD -->
-                    <div
-                            class="active-filter"
-                            th:if="${keyword != null and !keyword.isEmpty()}">
-
-                        Từ khóa:
-
-                        <strong
-                                th:text="${keyword}">
-                            keyword
-                        </strong>
-
+                    <!-- Sort options -->
+                    <div class="results-toolbar-right">
+                        <label for="sortSelector" class="sort-select-label">Sắp xếp:</label>
+                        <select id="sortSelector" class="sort-select" onchange="applySort(this.value)">
+                            <option value="popular" th:selected="${sort == 'popular' || sort == null}">⚡ Phổ biến nhất</option>
+                            <option value="newest" th:selected="${sort == 'newest'}">🆕 Mới nhất</option>
+                            <option value="priceAsc" th:selected="${sort == 'priceAsc'}">💰 Giá: Thấp đến Cao</option>
+                            <option value="priceDesc" th:selected="${sort == 'priceDesc'}">💎 Giá: Cao đến Thấp</option>
+                            <option value="nameAsc" th:selected="${sort == 'nameAsc'}">🔤 Tên: A - Z</option>
+                        </select>
                     </div>
 
+                </div>
+
+                <!-- ACTIVE FILTER CHIPS -->
+                <div class="active-filters-bar" th:if="${(keyword != null and !keyword.isEmpty()) or (selectedCategories != null and !selectedCategories.isEmpty()) or (priceRange != null and priceRange != 'all') or (minPrice != null or maxPrice != null) or (selectedOrigins != null and !selectedOrigins.isEmpty()) or inStockOnly}">
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">Đang lọc:</span>
+
+                    <!-- Keyword chip -->
+                    <span class="filter-chip" th:if="${keyword != null and !keyword.isEmpty()}">
+                        Từ khóa: "<span th:text="${keyword}"></span>"
+                        <a th:href="@{/search(categoryId=${selectedCategories}, priceRange=${priceRange}, minPrice=${minPrice}, maxPrice=${maxPrice}, origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc từ khóa">✕</a>
+                    </span>
+
+                    <!-- Price range chip -->
+                    <span class="filter-chip" th:if="${minPrice != null or maxPrice != null}">
+                        Giá: <span th:text="${(minPrice != null ? #numbers.formatDecimal(minPrice, 0, 'COMMA', 0, 'POINT') : '0') + ' - ' + (maxPrice != null ? #numbers.formatDecimal(maxPrice, 0, 'COMMA', 0, 'POINT') + ' ₫' : '∞')}"></span>
+                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange='all', origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc giá">✕</a>
+                    </span>
+                    <span class="filter-chip" th:if="${(minPrice == null and maxPrice == null) and priceRange != null and priceRange != 'all'}">
+                        Mức giá:
+                        <span th:if="${priceRange == 'under50'}">Dưới 50k</span>
+                        <span th:if="${priceRange == '50to100'}">50k - 100k</span>
+                        <span th:if="${priceRange == '100to200'}">100k - 200k</span>
+                        <span th:if="${priceRange == 'over200'}">Trên 200k</span>
+                        <span th:if="${priceRange == 'over100'}">Trên 100k</span>
+                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange='all', origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc giá">✕</a>
+                    </span>
+
+                    <!-- In stock chip -->
+                    <span class="filter-chip" th:if="${inStockOnly}">
+                        🟢 Còn hàng
+                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange=${priceRange}, minPrice=${minPrice}, maxPrice=${maxPrice}, origin=${selectedOrigins}, inStockOnly=false, sort=${sort})}" title="Bỏ lọc tồn kho">✕</a>
+                    </span>
+
+                    <!-- Reset all -->
+                    <a th:href="@{/search}" style="font-size: 12px; color: #dc2626; text-decoration: underline; font-weight: 700; margin-left: 6px;">Xóa tất cả lọc</a>
                 </div>
 
 
@@ -547,8 +511,11 @@
                             </div>
 
 
-                            <!-- STATUS -->
-                            <span class="fresh-tag">
+                            <!-- STATUS & PROMO -->
+                            <span class="discount-badge" th:if="${variant.promotionalPrice != null}">
+                                🔥 GIẢM GIÁ
+                            </span>
+                            <span class="fresh-tag" th:if="${variant.promotionalPrice == null}">
                                 Đang bán
                             </span>
 
@@ -573,14 +540,11 @@
                         <div class="product-info">
 
 
-                            <!-- CATEGORY -->
-                            <span
-                                    class="product-category"
-                                    th:text="${variant.product.name}">
-
-                                Trái cây
-
-                            </span>
+                            <!-- CATEGORY & ORIGIN -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+                                <span class="product-category" th:text="${variant.product.name}">Trái cây</span>
+                                <span class="origin-tag" th:if="${variant.product.origin != null and !#strings.isEmpty(variant.product.origin)}" th:text="'📍 ' + ${variant.product.origin}">📍 Đà Lạt</span>
+                            </div>
 
 
                             <!-- VARIANT -->
@@ -596,9 +560,14 @@
 
 
                                 <!-- PRICE -->
+                                <div style="display: flex; flex-direction: column;" th:if="${variant.promotionalPrice != null}">
+                                    <strong class="price" style="color: #dc2626;" th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                                    <span style="font-size: 11.5px; text-decoration: line-through; color: #94a3b8;" th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                                </div>
+
                                 <strong
                                         class="price"
-                                        th:if="${variant.price != null}"
+                                        th:if="${variant.promotionalPrice == null and variant.price != null}"
                                         th:text="${#numbers.formatDecimal(
                                             variant.price,
                                             0,
@@ -614,7 +583,7 @@
 
                                 <strong
                                         class="price"
-                                        th:unless="${variant.price != null}">
+                                        th:if="${variant.promotionalPrice == null and variant.price == null}">
 
                                     Liên hệ
 
@@ -702,7 +671,6 @@
 
 <!-- =========================================================
      FOOTER
-========================================================= -->
 
 <footer class="site-footer">
 
@@ -771,13 +739,20 @@
 
 <!-- =========================================================
      JAVASCRIPT
-========================================================= -->
 
 <script th:src="@{/js/search.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
 <!-- Tan PTH integration: connect product cards to the database-backed cart. -->
 <script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
+<script th:src="@{/js/user-menu.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
+<script>
+    function applySort(val) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', val);
+        window.location.href = url.toString();
+    }
+</script>
 
 </body>
 

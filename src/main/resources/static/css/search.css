@@ -224,6 +224,8 @@ input {
     font-weight: 700;
     cursor: pointer;
     user-select: none;
+    padding: 0;
+    font-family: inherit;
     transition: transform 0.2s ease;
 }
 
@@ -241,19 +243,55 @@ input {
     position: absolute;
     right: 0;
     top: 100%;
-    margin-top: 12px;
+    margin-top: 8px;
     width: 220px;
     background: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
     border: 1px solid var(--line);
     z-index: 999;
-    overflow: hidden;
+    overflow: visible;
 }
 
-.user-menu-container:hover .user-dropdown {
-    display: block;
+/* Invisible bridge so mouse hover doesn't break over gap */
+.user-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -16px;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: transparent;
 }
+
+/* Gộp chung: Hiện dropdown khi hover HOẶC khi có class .show / .open */
+.user-menu-container:hover .user-dropdown,
+.user-dropdown.show,
+.user-menu-container.open .user-dropdown {
+    display: block !important;
+}
+
+.seller-channel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8f5e9;
+    color: #1b5e20;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 99px;
+    text-decoration: none;
+    border: 1px solid #c8e6c9;
+    transition: all 0.2s ease;
+}
+
+.seller-channel-btn:hover {
+    background: #2e7d32;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(46, 125, 50, 0.25);
+}
+
 
 .user-dropdown-header {
     padding: 14px 16px;
@@ -1016,4 +1054,186 @@ input {
     display: grid;
     place-items: center;
     font-weight: 800;
+}
+
+/* Multi-field search quick tags */
+.quick-tags {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.quick-tag-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.quick-tag {
+    font-size: 12px;
+    background: #ffffff;
+    color: #334155;
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid #cbd5e1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.quick-tag:hover {
+    background: #e8f5e9;
+    border-color: #2e7d32;
+    color: #1b5e20;
+}
+
+/* Custom price range inputs */
+.custom-price-box {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.custom-price-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.custom-price-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #1e293b;
+    box-sizing: border-box;
+}
+
+.custom-price-input:focus {
+    outline: none;
+    border-color: #2e7d32;
+}
+
+.btn-apply-price {
+    width: 100%;
+    padding: 6px 10px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-apply-price:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* Active Filter Chips */
+.active-filters-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.filter-chip a {
+    color: #991b1b;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    margin-left: 2px;
+}
+
+.filter-chip a:hover {
+    color: #dc2626;
+}
+
+/* Sort dropdown */
+.results-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.results-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sort-select-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.sort-select {
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    outline: none;
+}
+
+.sort-select:focus {
+    border-color: #2e7d32;
+}
+
+/* Discount & Origin badges */
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 4px;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.origin-tag {
+    font-size: 11px;
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
 }

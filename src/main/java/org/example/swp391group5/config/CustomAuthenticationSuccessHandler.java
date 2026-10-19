@@ -38,6 +38,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                 case "ADMIN" -> response.sendRedirect("/admin");
                 case "OPERATIONS_MANAGER" -> response.sendRedirect("/operations/shops");
                 case "SHOP_OWNER" -> response.sendRedirect("/shopowner/home");
+                case "CS_STAFF" -> response.sendRedirect("/cs/dashboard");
                 default -> response.sendRedirect("/");
             }
         } else {

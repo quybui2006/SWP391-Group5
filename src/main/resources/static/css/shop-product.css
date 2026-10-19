@@ -213,3 +213,39 @@ tbody tr:hover { background: #fbfdfb; }
     .product-management .detail-grid, .product-management .detail-list { grid-template-columns: 1fr; }
     .product-management .section-heading { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* Category selector for Shop Owner Add Product form. */
+.product-management .category-card { padding-bottom: 24px; }
+.product-management .category-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.product-management .category-heading h2 { margin: 0 0 6px; }
+.product-management .category-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; font-weight: 400; }
+.product-management .category-count { flex: 0 0 auto; padding: 6px 10px; border: 1px solid #dceee1; border-radius: 999px; background: #f3fbf5; color: var(--green-dark); font-size: 11px; font-weight: 700; }
+.product-management .category-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+.product-management .category-option { position: relative; display: flex; align-items: center; gap: 11px; min-width: 0; min-height: 72px; padding: 13px 38px 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; transition: border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.product-management .category-option:hover { border-color: #acd8b8; background: #fbfefb; }
+.product-management .category-option:has(input:checked) { border-color: #65b981; background: #f1fbf4; box-shadow: 0 0 0 2px rgba(47, 143, 70, .07); }
+.product-management .category-option input[type="checkbox"] { width: 17px; height: 17px; flex: 0 0 17px; margin: 0; accent-color: var(--green); cursor: pointer; }
+.product-management .category-option-text { display: grid; gap: 4px; min-width: 0; }
+.product-management .category-option-text strong { overflow-wrap: anywhere; color: var(--ink); font-size: 12px; font-weight: 750; }
+.product-management .category-option-text small { color: var(--muted); font-size: 10px; font-weight: 400; }
+.product-management .category-check { position: absolute; top: 10px; right: 10px; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: #d8efdf; color: var(--green-dark); font-size: 11px; font-weight: 800; opacity: 0; transform: scale(.85); transition: opacity .18s ease, transform .18s ease; }
+.product-management .category-option:has(input:checked) .category-check { opacity: 1; transform: scale(1); }
+.product-management .category-empty { padding: 15px 16px; border: 1px dashed #d8e6db; border-radius: 10px; background: #f8fcf9; color: var(--muted); font-size: 12px; }
+.product-management .category-card .field-error { margin: 12px 0 0; }
+@media (max-width: 1050px) { .product-management .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .product-management .category-grid { grid-template-columns: 1fr; } .product-management .category-heading { flex-direction: column; } }
+
+
+/* Inline upload validation: keep errors beside the file input without a page-level failure. */
+.upload-validation-error {
+    display: block;
+    margin-top: 6px;
+    color: #b42318;
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+.upload-validation-error[hidden] { display: none !important; }
+
+.product-management .upload-validation-row { align-items: stretch; flex-direction: column; gap: 8px; }
+.product-management .upload-validation-row .upload-validation-error { width: 100%; }

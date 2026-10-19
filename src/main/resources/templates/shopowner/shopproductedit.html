@@ -3,178 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chỉnh sửa sản phẩm | FreshFruit</title>
+    <title th:text="${'Chỉnh sửa ' + form.name + ' | FreshFruit'}">Chỉnh sửa sản phẩm | FreshFruit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shopproductedit.css}">
 </head>
 <body>
 <div class="app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
-    <main class="main-content product-management">
-        <header class="topbar">
+
+    <main class="main-content product-management edit-product-page">
+        <header class="topbar edit-hero">
             <div>
-                <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chỉnh sửa</span></p>
+                <p class="breadcrumb"><a th:href="@{/shopowner/home}">Tổng quan</a> / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chỉnh sửa</span></p>
+                <p class="edit-eyebrow">QUẢN LÝ SẢN PHẨM</p>
                 <h1>Chỉnh sửa sản phẩm</h1>
-                <p class="muted">Cập nhật thông tin sản phẩm. Sản phẩm được hậu kiểm sau khi đăng bán.</p>
+                <p class="muted">Cập nhật thông tin cho <strong th:text="${form.name}">sản phẩm</strong>. Các thay đổi sẽ được kiểm tra theo quy trình duyệt của hệ thống.</p>
             </div>
             <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">← Xem chi tiết</a>
         </header>
 
-        <p class="alert alert-error" th:if="${!errors.isEmpty()}">Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.</p>
-
-    <div class="container header-inner">
-
-        <a class="brand"
-           th:href="@{/shopowner/home}">
-
-            <span class="brand-mark">F</span>
-
-            <span class="brand-text">
-                <strong>FreshFruit</strong>
-                <small>Tươi ngon mỗi ngày</small>
-            </span>
-
-        </a>
-
-        <nav class="main-nav">
-
-            <a th:href="@{/shopowner/home}">Dashboard</a>
-
-            <a th:href="@{/shop/products}">Sản phẩm</a>
-
-            <a th:href="@{/#categories}">Danh mục</a>
-
-            <a th:href="@{/#about}">Về chúng tôi</a>
-
-        </nav>
-
-        <div class="header-actions">
-
-            <a class="icon-btn"
-               th:href="@{/search}"
-               title="Tìm kiếm"
-               aria-label="Tìm kiếm">⌕</a>
-
-            <!-- Tan PTH integration: take shop owners to their existing dashboard. -->
-            <a class="login-btn"
-               th:href="@{/shopowner/home}">Quản lý cửa hàng</a>
-
-            <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
-                <button type="submit" style="display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 11px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'" title="Đăng xuất">
-                    🚪 Đăng xuất
-                </button>
-            </form>
-
+        <div class="edit-alert edit-alert-error" th:if="${!errors.isEmpty()}">
+            <span class="edit-alert-icon">!</span>
+            <div><strong>Chưa thể lưu thay đổi</strong><p>Vui lòng kiểm tra lại các trường được đánh dấu bên dưới.</p></div>
         </div>
 
-    </div>
+        <form class="product-form edit-product-form" method="post"
+              th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
+            <section class="form-card edit-section">
+                <div class="edit-section-heading">
+                    <div class="edit-section-icon">✎</div>
+                    <div><h2>Thông tin cơ bản</h2><p>Những thông tin giúp khách hàng nhận biết sản phẩm.</p></div>
+                    <span class="edit-required-note"><b>*</b> Bắt buộc</span>
+                </div>
 
-</header>
 
-<main>
+                <div class="form-grid edit-fields-grid">
 
-    <!-- =====================================================
-         BREADCRUMB
-    ====================================================== -->
-    <section class="breadcrumb-section">
-        <div class="container">
-
-            <nav class="breadcrumb"
-                 aria-label="breadcrumb">
-
-            <a th:href="@{/shopowner/home}">Dashboard</a>
-                <span class="sep">/</span>
-
-                <a th:href="@{/shop/products}">Sản phẩm</a>
-                <span class="sep">/</span>
-
-                <span th:text="${form.name}">Tên sản phẩm</span>
-
-            </nav>
-
-        </div>
-    </section>
-
-    <!-- =====================================================
-         PAGE TITLE
-    ====================================================== -->
-    <section class="container page-title">
-        <h1>Chỉnh sửa sản phẩm</h1>
-        <p>Cập nhật thông tin sản phẩm của cửa hàng
-            <strong th:text="${form.shopName}">Tên cửa hàng</strong>.</p>
-    </section>
-
-    <!-- =====================================================
-         FORM
-    ====================================================== -->
-    <section class="container edit-layout">
-
-        <!-- Cột chính: form -->
-        <div class="card">
-
-            <div class="card-head">
-        <form class="product-form" method="post" th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
-            <section class="form-card">
-                <h2>Thông tin sản phẩm</h2>
-                <div class="form-grid">
                     <label class="field field-wide">
                         <span>Tên sản phẩm <b>*</b></span>
-                        <input type="text" th:field="*{name}" maxlength="200" required>
+                        <input type="text" th:field="*{name}" maxlength="200" placeholder="Nhập tên sản phẩm" required
+                               th:classappend="${errors.containsKey('name')} ? ' is-invalid' : ''">
                         <em th:if="${errors.containsKey('name')}" th:text="${errors.get('name')}"></em>
                     </label>
+
                     <label class="field">
                         <span>Mã lô</span>
                         <input type="text" th:field="*{batchCode}" readonly>
-                        <small>Mã lô không thể thay đổi sau khi tạo.</small>
+                        <small><span class="edit-info-dot">i</span> Mã lô được cố định sau khi tạo sản phẩm.</small>
                     </label>
+
                     <label class="field">
                         <span>Xuất xứ</span>
-                        <input type="text" th:field="*{origin}" maxlength="150">
+                        <input type="text" th:field="*{origin}" maxlength="150" placeholder="Ví dụ: Đà Lạt, Việt Nam"
+                               th:classappend="${errors.containsKey('origin')} ? ' is-invalid' : ''">
                         <em th:if="${errors.containsKey('origin')}" th:text="${errors.get('origin')}"></em>
                     </label>
+
                     <label class="field">
                         <span>Danh mục</span>
-                        <select th:field="*{categoryId}">
+                        <select th:field="*{categoryId}" th:classappend="${errors.containsKey('categoryId')} ? ' is-invalid' : ''">
                             <option value="">Chọn danh mục</option>
                             <option th:each="category : ${form.categories}" th:value="${category.id}" th:text="${category.name}"></option>
                         </select>
                         <em th:if="${errors.containsKey('categoryId')}" th:text="${errors.get('categoryId')}"></em>
                     </label>
+
                     <label class="field">
                         <span>Ngày nhập <b>*</b></span>
-                        <input type="date" th:field="*{receivedDate}" required>
+                        <input id="receivedDateDisplay" type="text" class="date-picker-vn" th:value="${form.receivedDate == null ? '' : #temporals.format(form.receivedDate, 'dd/MM/yyyy')}" placeholder="dd/MM/yyyy" autocomplete="off" required aria-describedby="receivedDateEditHelp" th:classappend="${errors.containsKey('receivedDate')} ? ' is-invalid' : ''">
+<input id="receivedDate" type="hidden" th:field="*{receivedDate}">
+                        <small id="receivedDateEditHelp">Chọn ngày theo định dạng ngày/tháng/năm. Ngày nhập không được ở tương lai.</small>
                         <em th:if="${errors.containsKey('receivedDate')}" th:text="${errors.get('receivedDate')}"></em>
                     </label>
+
                     <label class="field">
                         <span>Ngày hết hạn <b>*</b></span>
-                        <input type="date" th:field="*{expiryDate}" required>
+                        <input id="expiryDateDisplay" type="text" class="date-picker-vn" th:value="${form.expiryDate == null ? '' : #temporals.format(form.expiryDate, 'dd/MM/yyyy')}" placeholder="dd/MM/yyyy" autocomplete="off" required aria-describedby="expiryDateEditHelp" th:classappend="${errors.containsKey('expiryDate')} ? ' is-invalid' : ''">
+<input id="expiryDate" type="hidden" th:field="*{expiryDate}">
+                        <small id="expiryDateEditHelp">Ngày hết hạn phải sau ngày nhập kho.</small>
                         <em th:if="${errors.containsKey('expiryDate')}" th:text="${errors.get('expiryDate')}"></em>
                     </label>
+                </div>
+            </section>
+
+            <section class="form-card edit-section">
+                <div class="edit-section-heading">
+                    <div class="edit-section-icon edit-status-icon">↗</div>
+                    <div><h2>Trạng thái &amp; mô tả</h2><p>Điều chỉnh khả năng hiển thị và nội dung giới thiệu sản phẩm.</p></div>
+                </div>
+
+                <div class="form-grid edit-fields-grid">
                     <label class="field">
                         <span>Trạng thái bán <b>*</b></span>
-                        <select th:field="*{sellingStatus}">
+                        <select th:field="*{sellingStatus}" th:classappend="${errors.containsKey('sellingStatus')} ? ' is-invalid' : ''">
                             <option value="DRAFT">Bản nháp</option>
                             <option value="ACTIVE" th:disabled="${form.approvalStatus != 'APPROVED'}">Đang bán</option>
                             <option value="PAUSED">Tạm ngừng</option>
                             <option value="ARCHIVED">Đã ẩn</option>
                         </select>
-                        <small th:if="${form.approvalStatus != 'APPROVED'}">Sản phẩm cần được Quản lý vận hành duyệt trước khi chuyển sang Đang bán.</small>
+                        <small th:if="${form.approvalStatus == 'PENDING'}"><span class="edit-info-dot">i</span> Sản phẩm đã mở bán trong thời gian hậu kiểm; không thể lưu thay đổi cho đến khi Operations Manager hoàn tất kiểm tra.</small>
+                        <small th:if="${form.approvalStatus == 'DRAFT' or form.approvalStatus == 'REJECTED'}"><span class="edit-info-dot">i</span> Sản phẩm cần được gửi lại vào hàng đợi hậu kiểm trước khi mở bán.</small>
                         <small th:if="${form.approvalStatus == 'APPROVED'}">Sản phẩm đã được duyệt; bạn có thể bật hoặc tạm ngừng bán.</small>
                         <em th:if="${errors.containsKey('sellingStatus')}" th:text="${errors.get('sellingStatus')}"></em>
                     </label>
+
+                    <div class="edit-approval-summary">
+                        <span class="edit-summary-label">Trạng thái kiểm duyệt</span>
+                        <strong th:text="${form.approvalStatus == 'APPROVED' ? 'Đã duyệt' : (form.approvalStatus == 'PENDING' ? 'Chờ duyệt' : (form.approvalStatus == 'REJECTED' ? 'Bị từ chối' : 'Bản nháp'))}">Bản nháp</strong>
+                        <small>Trạng thái kiểm duyệt do hệ thống quản lý.</small>
+                    </div>
+
                     <label class="field field-wide">
-                        <span>Mô tả</span>
-                        <textarea th:field="*{description}" rows="5" maxlength="2000"></textarea>
-                        <em th:if="${errors.containsKey('description')}" th:text="${errors.get('description')}"></em>
+                        <span>Mô tả sản phẩm</span>
+                        <textarea th:field="*{description}" rows="5" maxlength="2000" placeholder="Mô tả đặc điểm, hương vị, cách bảo quản..."
+                                  th:classappend="${errors.containsKey('description')} ? ' is-invalid' : ''"></textarea>
+                        <div class="edit-field-footer"><small>Nội dung tối đa 2.000 ký tự.</small><em th:if="${errors.containsKey('description')}" th:text="${errors.get('description')}"></em></div>
                     </label>
                 </div>
             </section>
-            <div class="form-actions">
-                <a class="button button-ghost" th:href="@{/shop/products}">Hủy</a>
-                <button class="button button-primary" type="submit">Lưu thay đổi</button>
+
+            <div class="edit-form-footer">
+                <div class="edit-footer-copy"><strong>Kiểm tra thông tin trước khi lưu</strong><span>Bạn có thể xem lại toàn bộ thông tin tại trang chi tiết sản phẩm.</span></div>
+                <div class="form-actions">
+                    <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">Hủy</a>
+                    <button class="button button-primary edit-save-button" type="submit"><span>✓</span> Lưu thay đổi</button>
+                </div>
             </div>
         </form>
     </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
+<script>
+(() => {
+    const form = document.querySelector("form.edit-product-form");
+    const receivedDisplay = document.getElementById("receivedDateDisplay");
+    const expiryDisplay = document.getElementById("expiryDateDisplay");
+    const received = document.getElementById("receivedDate");
+    const expiry = document.getElementById("expiryDate");
+    if (!form || !receivedDisplay || !expiryDisplay || !received || !expiry || !window.flatpickr) return;
+    const locale = (flatpickr.l10ns && flatpickr.l10ns.vn) || "default";
+    function parseDate(text) {
+        const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((text || "").trim());
+        if (!match) return null;
+        const day = Number(match[1]), month = Number(match[2]), year = Number(match[3]);
+        const date = new Date(year, month - 1, day);
+        if (year < 1900 || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+        return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+    function vietnamToday() {
+        const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Ho_Chi_Minh", year:"numeric", month:"2-digit", day:"2-digit"}).formatToParts(new Date());
+        const v = Object.fromEntries(parts.map(p => [p.type, p.value]));
+        return `${v.year}-${v.month}-${v.day}`;
+    }
+    function nextDate(iso) {
+        if (!iso) return "";
+        const [year, month, day] = iso.split("-").map(Number);
+        const d = new Date(Date.UTC(year, month - 1, day + 1));
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+    }
+    function syncAndValidate(showError) {
+        received.value = parseDate(receivedDisplay.value) || "";
+        expiry.value = parseDate(expiryDisplay.value) || "";
+        receivedDisplay.setCustomValidity(""); expiryDisplay.setCustomValidity("");
+        if (!received.value) receivedDisplay.setCustomValidity("Chọn ngày nhập theo định dạng ngày/tháng/năm.");
+        else if (received.value > vietnamToday()) receivedDisplay.setCustomValidity("Ngày nhập không được ở tương lai theo giờ Việt Nam.");
+        else if (!expiry.value) expiryDisplay.setCustomValidity("Chọn ngày hết hạn theo định dạng ngày/tháng/năm.");
+        else if (expiry.value <= received.value) expiryDisplay.setCustomValidity("Ngày hết hạn phải sau ngày nhập kho.");
+        const valid = receivedDisplay.checkValidity() && expiryDisplay.checkValidity();
+        if (!valid && showError) (receivedDisplay.validationMessage ? receivedDisplay : expiryDisplay).reportValidity();
+        return valid;
+    }
+    let expiryPicker;
+    const receivedPicker = flatpickr(receivedDisplay, {dateFormat:"d/m/Y", locale, allowInput:true, disableMobile:true, maxDate:vietnamToday(), onChange:()=>{syncAndValidate(false); if (expiryPicker) expiryPicker.set("minDate", received.value ? nextDate(received.value) : null);}});
+    expiryPicker = flatpickr(expiryDisplay, {dateFormat:"d/m/Y", locale, allowInput:true, disableMobile:true, minDate:received.value ? nextDate(received.value) : null, onChange:()=>syncAndValidate(false)});
+    receivedDisplay.addEventListener("input", () => { syncAndValidate(false); expiryPicker.set("minDate", received.value ? nextDate(received.value) : null); });
+    expiryDisplay.addEventListener("input", () => syncAndValidate(false));
+    form.addEventListener("submit", event => { if (!syncAndValidate(true)) event.preventDefault(); });
+    syncAndValidate(false);
+})();
+</script>
 </body>
 </html>
