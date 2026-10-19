@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{seller/seller-header :: head('Thiết lập thông tin thanh toán & Đối chiếu CCCD')}"></head>
+<body>
+
+<header th:replace="~{seller/seller-header :: navbar}"></header>
+
+<main class="seller-shell">
+    <!-- Stepper: Step 3 -->
+    <div th:replace="~{seller/seller-header :: stepper(3)}"></div>
+
+    <!-- Alert Messages -->
+    <div th:if="${errorMessage}" class="seller-alert danger">
+        <span style="font-size:18px;">⚠️</span>
+        <div th:text="${errorMessage}">Thông báo lỗi</div>
+    </div>
+    <div th:if="${successMessage}" class="seller-alert success">
+        <span style="font-size:18px;">✅</span>
+        <div th:text="${successMessage}">Thông báo thành công</div>
+    </div>
+
+    <!-- Status Banner for Payment Approval -->
+    <div th:if="${paymentApprovalStatus == 'PENDING'}" class="seller-alert warning">
+        <span style="font-size:20px;">⏳</span>
+        <div>
+            <strong>Đang đối chiếu thông tin thanh toán:</strong> Hồ sơ tài khoản ngân hàng của bạn đã được gửi tới Ban Vận Hành. Nhân viên kiểm soát sẽ đối chiếu Họ tên chủ tài khoản với CCCD trong vòng 2 - 4 giờ làm việc.
+        </div>
+    </div>
+
+    <div th:if="${paymentApprovalStatus == 'REJECTED'}" class="seller-alert danger">
+        <span style="font-size:20px;">❌</span>
+        <div>
+            <strong>Thông tin thanh toán chưa được phê duyệt:</strong> 
+            <span th:text="${bankRejectionReason ?: 'Tên chủ tài khoản không trùng khớp với CCCD đã xác thực.'}"></span>
+            <br>
+            <small style="margin-top:4px;display:inline-block;">Vui lòng kiểm tra lại chính xác Tên chủ tài khoản và Số tài khoản ngân hàng bên dưới.</small>
+        </div>
+    </div>
+
+    <div th:if="${paymentApprovalStatus == 'APPROVED'}" class="seller-alert success">
+        <span style="font-size:20px;">🎉</span>
+        <div style="flex:1;">
+            <strong>Thông tin thanh toán đã được phê duyệt thành công!</strong> Cửa hàng của bạn đã sẵn sàng mở bán và nhận doanh thu tự động.
+            <div style="margin-top:10px;">
+                <a th:href="@{/shopowner/home}" class="btn-seller-submit" style="font-size:13px;padding:8px 18px;">
+                    Vào Kênh Người Bán Ngay ➔
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card: Quy định đối chiếu CCCD -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:18px 24px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px;">
+        <span style="font-size:24px;">⚖️</span>
+        <div>
+            <div style="font-weight:800;color:#1e40af;font-size:14.5px;">
+                QUY ĐỊNH DUYỆT THANH TOÁN (ĐỐI CHIẾU CCCD)
+            </div>
+            <div style="font-size:13px;color:#1e3a8a;line-height:1.5;margin-top:4px;">
+                Để phòng chống gian lận và rửa tiền theo Thông tư NHNN, <strong>Tên chủ tài khoản ngân hàng</strong> phải trùng khớp hoàn toàn với <strong>Họ tên trên CCCD đã xác thực</strong> của Người bán:
+            </div>
+            <div style="margin-top:8px;display:inline-flex;align-items:center;gap:8px;background:#ffffff;padding:6px 14px;border-radius:8px;border:1px solid #93c5fd;">
+                <span style="font-size:12px;color:#64748b;font-weight:700;">HỌ TÊN CCCD:</span>
+                <span style="font-size:14px;font-weight:800;color:#15803d;" th:text="${shop.idCardName ?: 'CHÍNH CHỦ'}">NGUYỄN VĂN AN</span>
+                <span style="font-size:12px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-weight:700;">ĐÃ ĐỊNH DANH</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Setup Form Card -->
+    <div class="seller-card">
+        <div class="seller-card-title">
+            <span>💳</span> Tài Khoản Ngân Hàng Nhận Doanh Thu
+        </div>
+        <p class="seller-card-subtitle">
+            Hệ thống FreshFruit sẽ tự động đối soát và chuyển tiền bán hoa quả vào tài khoản ngân hàng này theo kỳ thanh toán.
+        </p>
+
+        <form th:action="@{/seller/payment}" th:object="${form}" method="post">
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="bankName">Tên Ngân hàng <span class="req">*</span></label>
+                    <select id="bankName" th:field="*{bankName}" required>
+                        <option value="">-- Chọn ngân hàng thụ hưởng --</option>
+                        <option value="Vietcombank (VCB)">Vietcombank - Ngân hàng Ngoại Thương</option>
+                        <option value="VietinBank (CTG)">VietinBank - Ngân hàng Công Thương</option>
+                        <option value="BIDV">BIDV - Ngân hàng Đầu tư và Phát triển</option>
+                        <option value="Agribank">Agribank - Ngân hàng Nông nghiệp & PTNT</option>
+                        <option value="Techcombank (TCB)">Techcombank - Ngân hàng Kỹ Thương</option>
+                        <option value="MB Bank (MB)">MB Bank - Ngân hàng Quân Đội</option>
+                        <option value="ACB">ACB - Ngân hàng Á Châu</option>
+                        <option value="VPBank (VPB)">VPBank - Ngân hàng Việt Nam Thịnh Vượng</option>
+                        <option value="TPBank (TPB)">TPBank - Ngân hàng Tiên Phong</option>
+                        <option value="VIB">VIB - Ngân hàng Quốc Tế</option>
+                        <option value="Sacombank (STB)">Sacombank - Ngân hàng Sài Gòn Thương Tín</option>
+                        <option value="HDBank (HDB)">HDBank - Ngân hàng Phát triển TP.HCM</option>
+                        <option value="SHB">SHB - Ngân hàng Sài Gòn Hà Nội</option>
+                        <option value="MSB">MSB - Ngân hàng Hàng Hải</option>
+                    </select>
+                    <div class="form-error" th:if="${#fields.hasErrors('bankName')}" th:errors="*{bankName}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="bankAccountNumber">Số tài khoản ngân hàng <span class="req">*</span></label>
+                    <input type="text" id="bankAccountNumber" th:field="*{bankAccountNumber}" placeholder="Ví dụ: 01234567899" required>
+                    <span class="form-hint">Nhập chính xác số tài khoản ngân hàng (không dùng số thẻ ATM).</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('bankAccountNumber')}" th:errors="*{bankAccountNumber}"></div>
+                </div>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="bankAccountName">Tên chủ tài khoản (In hoa không dấu) <span class="req">*</span></label>
+                    <input type="text" id="bankAccountName" th:field="*{bankAccountName}" placeholder="Ví dụ: NGUYEN VAN AN" style="text-transform:uppercase;font-weight:700;" required>
+                    <span class="form-hint">Bắt buộc phải trùng tên CCCD (<strong th:text="${shop.idCardName}">NGUYỄN VĂN AN</strong>) để Ban vận hành phê duyệt.</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('bankAccountName')}" th:errors="*{bankAccountName}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="bankBranch">Chi nhánh ngân hàng</label>
+                    <input type="text" id="bankBranch" th:field="*{bankBranch}" placeholder="Ví dụ: Chi nhánh Cầu Giấy, Hà Nội">
+                    <span class="form-hint">Tùy chọn ghi chi nhánh phát hành tài khoản.</span>
+                </div>
+            </div>
+
+            <div class="seller-actions-bar">
+                <a th:href="@{/seller/status}" class="btn-seller-secondary">← Xem Trạng Thái Hồ Sơ</a>
+                <button type="submit" class="btn-seller-submit">
+                    Lưu & Gửi Thông Tin Thanh Toán Để Duyệt ➔
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

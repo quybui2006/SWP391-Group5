@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title + ' | FreshFruit Kênh Người Bán'}">Kênh Người Bán | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --seller-primary: #15803d;
+            --seller-primary-dark: #166534;
+            --seller-accent: #22c55e;
+            --seller-bg: #f8fafc;
+            --seller-card: #ffffff;
+            --seller-border: #e2e8f0;
+            --seller-text: #0f172a;
+            --seller-muted: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--seller-bg);
+            color: var(--seller-text);
+            font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Top Navigation */
+        .seller-navbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--seller-border);
+            height: 68px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .seller-brand-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-decoration: none;
+        }
+        .seller-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .seller-brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #15803d, #22c55e);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 19px;
+            box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+        }
+        .seller-brand-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        .seller-brand-title span { color: #16a34a; }
+        .seller-nav-divider {
+            width: 1px;
+            height: 24px;
+            background: #cbd5e1;
+        }
+        .seller-badge-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--seller-primary-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .seller-user-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .btn-back-market {
+            color: #475569;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-back-market:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .seller-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px solid var(--seller-border);
+            padding: 4px 12px 4px 6px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .seller-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Container */
+        .seller-shell {
+            max-width: 920px;
+            margin: 32px auto 60px;
+            padding: 0 20px;
+        }
+        /* Stepper */
+        .seller-stepper-card {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid var(--seller-border);
+            padding: 20px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .seller-stepper {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            position: relative;
+        }
+        .step-node {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+        .step-node-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            background: #e2e8f0;
+            color: #64748b;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .step-node.completed .step-num {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .step-node.active .step-num {
+            background: var(--seller-primary);
+            color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+        }
+        .step-node-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            white-space: nowrap;
+        }
+        .step-node.completed .step-node-title {
+            color: #15803d;
+        }
+        .step-node.active .step-node-title {
+            color: #0f172a;
+        }
+        .step-node-desc {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-left: 34px;
+            line-height: 1.3;
+        }
+        .step-node.active .step-node-desc {
+            color: #64748b;
+        }
+        @media (max-width: 768px) {
+            .seller-navbar { padding: 0 16px; }
+            .seller-stepper { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        }
+        /* Common Form Cards */
+        .seller-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid var(--seller-border);
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            margin-bottom: 24px;
+        }
+        .seller-card-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .seller-card-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 24px;
+            line-height: 1.5;
+        }
+        .seller-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            margin: 24px 0 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 680px) {
+            .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+        .form-group label .req { color: #dc2626; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #0f172a;
+            background: #ffffff;
+            transition: all 0.15s;
+            box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+        }
+        .form-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        .form-error {
+            color: #dc2626;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        .btn-seller-submit {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: #ffffff;
+            padding: 13px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-seller-submit:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+        }
+        .btn-seller-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 13px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+        .btn-seller-secondary:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .seller-actions-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 14px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f5f9;
+        }
+        /* Alerts */
+        .seller-alert {
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            line-height: 1.4;
+        }
+        .seller-alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .seller-alert.danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .seller-alert.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+        .seller-alert.warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    </style>
+</head>
+<body>
+
+<!-- Header Component -->
+<header class="seller-navbar" th:fragment="navbar">
+    <div class="seller-brand-group">
+        <a th:href="@{/}" class="seller-logo">
+            <span class="seller-brand-mark">F</span>
+            <span class="seller-brand-title">Fresh<span>Fruit</span></span>
+        </a>
+        <div class="seller-nav-divider"></div>
+        <span class="seller-badge-title">Kênh Người Bán</span>
+    </div>
+
+    <div class="seller-user-actions">
+        <a th:href="@{/}" class="btn-back-market">
+            ← Mua sắm FreshFruit
+        </a>
+        <div class="seller-user-chip" th:if="${session.fullName != null || session.userId != null}">
+            <div class="seller-user-avatar" th:text="${session.fullName != null ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</div>
+            <span th:text="${session.fullName ?: 'Người bán'}">Họ tên</span>
+        </div>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:6px;" title="Đăng xuất">🚪</button>
+        </form>
+    </div>
+</header>
+
+<!-- 4-Step Visual Stepper -->
+<div class="seller-stepper-card" th:fragment="stepper(activeStep)">
+    <div class="seller-stepper">
+        <!-- Step 1 -->
+        <div class="step-node" th:classappend="${activeStep > 1} ? ' completed' : (${activeStep == 1} ? ' active' : '')">
+            <div class="step-node-header">
+                <span class="step-num" th:text="${activeStep > 1 ? '✓' : '1'}">1</span>
+                <span class="step-node-title">1. Kích hoạt tài khoản</span>
+            </div>
+            <span class="step-node-desc">Định danh CCCD & Thuế</span>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-node" th:classappend="${activeStep > 2} ? ' completed' : (${activeStep == 2} ? ' active' : '')">
+            <div class="step-node-header">
+                <span class="step-num" th:text="${activeStep > 2 ? '✓' : '2'}">2</span>
+                <span class="step-node-title">2. Tạo gian hàng</span>
+            </div>
+            <span class="step-node-desc">Tên Shop, Kho & Vận chuyển</span>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-node" th:classappend="${activeStep > 3} ? ' completed' : (${activeStep == 3} ? ' active' : '')">
+            <div class="step-node-header">
+                <span class="step-num" th:text="${activeStep > 3 ? '✓' : '3'}">3</span>
+                <span class="step-node-title">3. Duyệt thanh toán</span>
+            </div>
+            <span class="step-node-desc">Đối chiếu NH với CCCD</span>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-node" th:classappend="${activeStep == 4} ? ' completed active' : ''">
+            <div class="step-node-header">
+                <span class="step-num" th:text="${activeStep == 4 ? '✓' : '4'}">4</span>
+                <span class="step-node-title">4. Hoàn tất mở bán</span>
+            </div>
+            <span class="step-node-desc">Vào Kênh Quản lý</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

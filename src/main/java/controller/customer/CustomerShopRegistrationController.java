@@ -2,6 +2,8 @@ package controller.customer;
 
 import dto.customer.ShopPaymentSetupDto;
 import dto.customer.ShopRegistrationDto;
+import dto.seller.SellerAccountActivationDto;
+import dto.seller.SellerCreateShopDto;
 import entity.Shop;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -22,6 +24,8 @@ import java.util.Optional;
 @Controller
 public class CustomerShopRegistrationController {
 
+    public static final String SESSION_ACTIVATION_KEY = "sellerActivation";
+
     private final CustomerShopRegistrationService shopRegistrationService;
     private final CustomerAccountService customerAccountService;
 
@@ -41,6 +45,18 @@ public class CustomerShopRegistrationController {
         return null;
     }
 
+    /**
+     * Entry Point: Kênh Bán Hàng
+     * Luồng phân phối theo Shopee:
+     * 1. Chưa đăng nhập -> Login.
+     * 2. Đã có Shop:
+     *    - Đã duyệt Shop & Thanh toán -> Shop Owner Home
+     *    - Đã duyệt Shop nhưng chưa duyệt Thanh toán -> /seller/payment
+     *    - Chờ duyệt hoặc Bị từ chối -> /seller/status
+     * 3. Chưa có Shop:
+     *    - Đã xong bước kích hoạt (có trong session) -> /seller/create-shop
+     *    - Chưa xong bước kích hoạt -> /seller/activate
+     */
     @GetMapping({"/seller/channel", "/seller"})
     public String sellerChannel(HttpSession session) {
         Long userId = getUserIdFromSession(session);
@@ -53,12 +69,12 @@ public class CustomerShopRegistrationController {
             Shop shop = existingShopOpt.get();
             if ("APPROVED".equals(shop.getApprovalStatus())) {
                 if (!"APPROVED".equals(shop.getPaymentApprovalStatus())) {
-                    return "redirect:/customer/shop-registration/payment";
+                    return "redirect:/seller/payment";
                 }
                 session.setAttribute("role", "SHOP_OWNER");
                 return "redirect:/shopowner/home";
             }
-            return "redirect:/customer/shop-registration/status";
+            return "redirect:/seller/status";
         }
 
         Object role = session.getAttribute("role");
@@ -66,82 +82,85 @@ public class CustomerShopRegistrationController {
             return "redirect:/shopowner/home";
         }
 
-        return "redirect:/customer/shop-registration";
+        if (session.getAttribute(SESSION_ACTIVATION_KEY) != null) {
+            return "redirect:/seller/create-shop";
+        }
+
+        return "redirect:/seller/activate";
     }
 
-    @GetMapping("/customer/shop-registration")
-    public String showRegistrationForm(
+    // =========================================================================
+    // BƯỚC 1: KÍCH HOẠT TÀI KHOẢN NGƯỜI BÁN (CCCD & THUẾ) - KHÔNG NẰM TRONG CUSTOMER
+    // =========================================================================
+
+    @GetMapping("/seller/activate")
+    public String showSellerActivation(
             @RequestParam(value = "mode", required = false) String mode,
             Model model,
             HttpSession session) {
 
         Long userId = getUserIdFromSession(session);
         if (userId == null) {
-            return "redirect:/login?continueTo=/customer/shop-registration";
+            return "redirect:/login?continueTo=/seller/activate";
         }
 
         Optional<Shop> existingShopOpt = shopRegistrationService.getShopByOwnerId(userId);
         if (existingShopOpt.isPresent() && !"edit".equalsIgnoreCase(mode)) {
             Shop shop = existingShopOpt.get();
-            if ("PENDING".equals(shop.getApprovalStatus()) || "APPROVED".equals(shop.getApprovalStatus())) {
-                return "redirect:/customer/shop-registration/status";
+            if ("APPROVED".equals(shop.getApprovalStatus())) {
+                return !"APPROVED".equals(shop.getPaymentApprovalStatus())
+                        ? "redirect:/seller/payment"
+                        : "redirect:/shopowner/home";
+            }
+            if ("PENDING".equals(shop.getApprovalStatus())) {
+                return "redirect:/seller/status";
             }
         }
 
         if (!model.containsAttribute("form")) {
-            ShopRegistrationDto dto = new ShopRegistrationDto();
-            if (existingShopOpt.isPresent()) {
+            SellerAccountActivationDto form = new SellerAccountActivationDto();
+            SellerAccountActivationDto sessionActivation = (SellerAccountActivationDto) session.getAttribute(SESSION_ACTIVATION_KEY);
+
+            if (sessionActivation != null) {
+                form = sessionActivation;
+            } else if (existingShopOpt.isPresent()) {
                 Shop s = existingShopOpt.get();
-                dto.setName(s.getName());
-                dto.setDescription(s.getDescription());
-                dto.setPhone(s.getPhone());
-                dto.setProvinceCode(s.getProvinceCode());
-                dto.setWardName(s.getWardName());
-                dto.setAddressDetail(s.getAddressDetail());
-                dto.setIdCardNumber(s.getIdCardNumber());
-                dto.setIdCardName(s.getIdCardName());
-                dto.setIdCardDate(s.getIdCardDate() != null ? s.getIdCardDate().toString() : null);
-                dto.setIdCardPlace(s.getIdCardPlace());
-                dto.setBusinessType(s.getBusinessType() != null ? s.getBusinessType() : "INDIVIDUAL");
-                dto.setTaxCode(s.getTaxCode());
-                dto.setTaxName(s.getTaxName());
-                dto.setTaxEmail(s.getTaxEmail());
+                form.setPhone(s.getPhone());
+                form.setIdCardNumber(s.getIdCardNumber());
+                form.setIdCardName(s.getIdCardName());
+                form.setIdCardDate(s.getIdCardDate() != null ? s.getIdCardDate().toString() : null);
+                form.setIdCardPlace(s.getIdCardPlace());
+                form.setBusinessType(s.getBusinessType() != null ? s.getBusinessType() : "INDIVIDUAL");
+                form.setTaxCode(s.getTaxCode());
+                form.setTaxName(s.getTaxName());
+                form.setTaxEmail(s.getTaxEmail());
             } else {
                 try {
                     var prof = customerAccountService.profile(userId);
                     if (prof != null) {
                         if (prof.get("phone") != null && !prof.get("phone").toString().isBlank()) {
-                            dto.setPhone(prof.get("phone").toString());
+                            form.setPhone(prof.get("phone").toString());
+                        }
+                        if (prof.get("email") != null && !prof.get("email").toString().isBlank()) {
+                            form.setEmail(prof.get("email").toString());
+                            form.setTaxEmail(prof.get("email").toString());
                         }
                         if (prof.get("fullName") != null) {
-                            dto.setIdCardName(prof.get("fullName").toString());
-                        }
-                        if (prof.get("email") != null) {
-                            dto.setTaxEmail(prof.get("email").toString());
+                            form.setIdCardName(prof.get("fullName").toString());
                         }
                     }
                 } catch (Exception ignored) {}
             }
-            model.addAttribute("form", dto);
+            model.addAttribute("form", form);
         }
 
-        model.addAttribute("provinces", shopRegistrationService.getAllActiveProvinces());
-        model.addAttribute("isResubmit", existingShopOpt.isPresent() && "REJECTED".equals(existingShopOpt.get().getApprovalStatus()));
-        if (existingShopOpt.isPresent()) {
-            model.addAttribute("existingShop", existingShopOpt.get());
-        }
-
-        try {
-            model.addAttribute("profile", customerAccountService.profile(userId));
-        } catch (Exception ignored) {}
-
-        model.addAttribute("activePage", "shopRegistration");
-        return "customer/shop-registration";
+        model.addAttribute("activeStep", 1);
+        return "seller/activate";
     }
 
-    @PostMapping("/customer/shop-registration")
-    public String submitRegistration(
-            @Valid @ModelAttribute("form") ShopRegistrationDto form,
+    @PostMapping("/seller/activate")
+    public String submitSellerActivation(
+            @Valid @ModelAttribute("form") SellerAccountActivationDto form,
             BindingResult errors,
             HttpSession session,
             Model model,
@@ -149,7 +168,100 @@ public class CustomerShopRegistrationController {
 
         Long userId = getUserIdFromSession(session);
         if (userId == null) {
-            return "redirect:/login?continueTo=/customer/shop-registration";
+            return "redirect:/login?continueTo=/seller/activate";
+        }
+
+        if (errors.hasErrors()) {
+            model.addAttribute("activeStep", 1);
+            return "seller/activate";
+        }
+
+        // Lưu thông tin kích hoạt vào session
+        session.setAttribute(SESSION_ACTIVATION_KEY, form);
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Kích hoạt tài khoản Người bán thành công! Mời bạn tiếp tục hoàn tất thông tin tạo Shop.");
+
+        return "redirect:/seller/create-shop";
+    }
+
+    // =========================================================================
+    // BƯỚC 2: TẠO GIAN HÀNG (TÊN SHOP, ĐỊA CHỈ KHO, VẬN CHUYỂN) - KHÔNG NẰM TRONG CUSTOMER
+    // =========================================================================
+
+    @GetMapping("/seller/create-shop")
+    public String showCreateShopForm(
+            @RequestParam(value = "mode", required = false) String mode,
+            Model model,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        Long userId = getUserIdFromSession(session);
+        if (userId == null) {
+            return "redirect:/login?continueTo=/seller/create-shop";
+        }
+
+        Optional<Shop> existingShopOpt = shopRegistrationService.getShopByOwnerId(userId);
+        if (existingShopOpt.isPresent() && !"edit".equalsIgnoreCase(mode)) {
+            Shop shop = existingShopOpt.get();
+            if ("APPROVED".equals(shop.getApprovalStatus())) {
+                return !"APPROVED".equals(shop.getPaymentApprovalStatus())
+                        ? "redirect:/seller/payment"
+                        : "redirect:/shopowner/home";
+            }
+            if ("PENDING".equals(shop.getApprovalStatus())) {
+                return "redirect:/seller/status";
+            }
+        }
+
+        SellerAccountActivationDto activation = (SellerAccountActivationDto) session.getAttribute(SESSION_ACTIVATION_KEY);
+        if (activation == null && existingShopOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Vui lòng kích hoạt tài khoản Shop Owner (Định danh CCCD & Thuế) trước khi tạo Shop.");
+            return "redirect:/seller/activate";
+        }
+
+        if (!model.containsAttribute("form")) {
+            SellerCreateShopDto form = new SellerCreateShopDto();
+            if (existingShopOpt.isPresent()) {
+                Shop s = existingShopOpt.get();
+                form.setName(s.getName());
+                form.setDescription(s.getDescription());
+                form.setPhone(s.getPhone());
+                form.setProvinceCode(s.getProvinceCode());
+                form.setWardName(s.getWardName());
+                form.setAddressDetail(s.getAddressDetail());
+            } else if (activation != null && activation.getPhone() != null) {
+                form.setPhone(activation.getPhone());
+            }
+            model.addAttribute("form", form);
+        }
+
+        model.addAttribute("activation", activation);
+        model.addAttribute("provinces", shopRegistrationService.getAllActiveProvinces());
+        model.addAttribute("activeStep", 2);
+        return "seller/create-shop";
+    }
+
+    @PostMapping("/seller/create-shop")
+    public String submitCreateShop(
+            @Valid @ModelAttribute("form") SellerCreateShopDto form,
+            BindingResult errors,
+            HttpSession session,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        Long userId = getUserIdFromSession(session);
+        if (userId == null) {
+            return "redirect:/login?continueTo=/seller/create-shop";
+        }
+
+        SellerAccountActivationDto activation = (SellerAccountActivationDto) session.getAttribute(SESSION_ACTIVATION_KEY);
+        Optional<Shop> existingShopOpt = shopRegistrationService.getShopByOwnerId(userId);
+
+        if (activation == null && existingShopOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Phiên làm việc đã hết hạn hoặc chưa kích hoạt tài khoản. Vui lòng thực hiện Bước 1.");
+            return "redirect:/seller/activate";
         }
 
         if (!form.isAgreeTerms()) {
@@ -157,65 +269,107 @@ public class CustomerShopRegistrationController {
         }
 
         if (errors.hasErrors()) {
+            model.addAttribute("activation", activation);
             model.addAttribute("provinces", shopRegistrationService.getAllActiveProvinces());
-            model.addAttribute("activePage", "shopRegistration");
-            try {
-                model.addAttribute("profile", customerAccountService.profile(userId));
-            } catch (Exception ignored) {}
-            return "customer/shop-registration";
+            model.addAttribute("activeStep", 2);
+            return "seller/create-shop";
         }
 
         try {
-            shopRegistrationService.registerShop(userId, form);
-            redirectAttributes.addFlashAttribute("successMessage", "Hồ sơ đăng ký mở Shop đã được gửi thành công! Ban Quản trị sẽ xét duyệt trong thời gian sớm nhất.");
-            return "redirect:/customer/shop-registration/status";
+            if (existingShopOpt.isPresent() && "REJECTED".equals(existingShopOpt.get().getApprovalStatus())) {
+                ShopRegistrationDto fullDto = new ShopRegistrationDto();
+                fullDto.setName(form.getName());
+                fullDto.setDescription(form.getDescription());
+                fullDto.setPhone(form.getPhone());
+                fullDto.setProvinceCode(form.getProvinceCode());
+                fullDto.setWardName(form.getWardName());
+                fullDto.setAddressDetail(form.getAddressDetail());
+                fullDto.setShippingFast(form.isShippingFast());
+                fullDto.setShippingExpress(form.isShippingExpress());
+                fullDto.setShippingStandard(form.isShippingStandard());
+                fullDto.setAgreeTerms(form.isAgreeTerms());
+
+                if (activation != null) {
+                    fullDto.setIdCardNumber(activation.getIdCardNumber());
+                    fullDto.setIdCardName(activation.getIdCardName());
+                    fullDto.setIdCardDate(activation.getIdCardDate());
+                    fullDto.setIdCardPlace(activation.getIdCardPlace());
+                    fullDto.setBusinessType(activation.getBusinessType());
+                    fullDto.setTaxCode(activation.getTaxCode());
+                    fullDto.setTaxName(activation.getTaxName());
+                    fullDto.setTaxEmail(activation.getTaxEmail());
+                } else {
+                    Shop s = existingShopOpt.get();
+                    fullDto.setIdCardNumber(s.getIdCardNumber());
+                    fullDto.setIdCardName(s.getIdCardName());
+                    fullDto.setIdCardDate(s.getIdCardDate() != null ? s.getIdCardDate().toString() : null);
+                    fullDto.setIdCardPlace(s.getIdCardPlace());
+                    fullDto.setBusinessType(s.getBusinessType());
+                    fullDto.setTaxCode(s.getTaxCode());
+                    fullDto.setTaxName(s.getTaxName());
+                    fullDto.setTaxEmail(s.getTaxEmail());
+                }
+                shopRegistrationService.resubmitShop(userId, fullDto);
+            } else {
+                shopRegistrationService.registerShopFromSellerOnboarding(userId, activation, form);
+            }
+
+            // Xóa cache kích hoạt sau khi đã nộp thành công
+            session.removeAttribute(SESSION_ACTIVATION_KEY);
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Hồ sơ đăng ký mở Shop đã được gửi thành công! Ban Quản trị sẽ xét duyệt trong thời gian sớm nhất.");
+            return "redirect:/seller/status";
+
         } catch (Exception ex) {
             model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("activation", activation);
             model.addAttribute("provinces", shopRegistrationService.getAllActiveProvinces());
-            model.addAttribute("activePage", "shopRegistration");
-            try {
-                model.addAttribute("profile", customerAccountService.profile(userId));
-            } catch (Exception ignored) {}
-            return "customer/shop-registration";
+            model.addAttribute("activeStep", 2);
+            return "seller/create-shop";
         }
     }
 
-    @GetMapping("/customer/shop-registration/status")
-    public String showRegistrationStatus(Model model, HttpSession session) {
+    // =========================================================================
+    // BƯỚC 3: TIẾN TRÌNH XÉT DUYỆT HỒ SƠ SHOP (CHỜ DUYỆT / TỪ CHỐI / ĐÃ DUYỆT)
+    // =========================================================================
+
+    @GetMapping("/seller/status")
+    public String showSellerStatus(Model model, HttpSession session) {
         Long userId = getUserIdFromSession(session);
         if (userId == null) {
-            return "redirect:/login?continueTo=/customer/shop-registration/status";
+            return "redirect:/login?continueTo=/seller/status";
         }
 
         Map<String, Object> details = shopRegistrationService.getShopRegistrationStatusDetails(userId);
         if (!(Boolean) details.getOrDefault("hasShop", false)) {
-            return "redirect:/customer/shop-registration";
+            return "redirect:/seller/channel";
         }
 
         model.addAllAttributes(details);
-        try {
-            model.addAttribute("profile", customerAccountService.profile(userId));
-        } catch (Exception ignored) {}
-
-        model.addAttribute("activePage", "shopRegistrationStatus");
-        return "customer/shop-registration-status";
+        model.addAttribute("activeStep", 3);
+        return "seller/status";
     }
 
-    @GetMapping("/customer/shop-registration/payment")
-    public String showPaymentSetupForm(Model model, HttpSession session) {
+    // =========================================================================
+    // BƯỚC 4: THIẾT LẬP THÔNG TIN THANH TOÁN & ĐỐI CHIẾU CCCD
+    // =========================================================================
+
+    @GetMapping("/seller/payment")
+    public String showSellerPaymentSetup(Model model, HttpSession session) {
         Long userId = getUserIdFromSession(session);
         if (userId == null) {
-            return "redirect:/login?continueTo=/customer/shop-registration/payment";
+            return "redirect:/login?continueTo=/seller/payment";
         }
 
         Optional<Shop> shopOpt = shopRegistrationService.getShopByOwnerId(userId);
         if (shopOpt.isEmpty()) {
-            return "redirect:/customer/shop-registration";
+            return "redirect:/seller/channel";
         }
 
         Shop shop = shopOpt.get();
         if (!"APPROVED".equals(shop.getApprovalStatus())) {
-            return "redirect:/customer/shop-registration/status";
+            return "redirect:/seller/status";
         }
 
         if (!model.containsAttribute("form")) {
@@ -234,15 +388,12 @@ public class CustomerShopRegistrationController {
         model.addAttribute("shop", shop);
         model.addAttribute("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
         model.addAttribute("bankRejectionReason", shop.getBankRejectionReason());
-        try {
-            model.addAttribute("profile", customerAccountService.profile(userId));
-        } catch (Exception ignored) {}
-        model.addAttribute("activePage", "shopPaymentSetup");
-        return "customer/shop-payment-setup";
+        model.addAttribute("activeStep", 3);
+        return "seller/payment";
     }
 
-    @PostMapping("/customer/shop-registration/payment")
-    public String submitPaymentSetup(
+    @PostMapping("/seller/payment")
+    public String submitSellerPaymentSetup(
             @Valid @ModelAttribute("form") ShopPaymentSetupDto form,
             BindingResult errors,
             HttpSession session,
@@ -251,12 +402,12 @@ public class CustomerShopRegistrationController {
 
         Long userId = getUserIdFromSession(session);
         if (userId == null) {
-            return "redirect:/login?continueTo=/customer/shop-registration/payment";
+            return "redirect:/login?continueTo=/seller/payment";
         }
 
         Optional<Shop> shopOpt = shopRegistrationService.getShopByOwnerId(userId);
         if (shopOpt.isEmpty() || !"APPROVED".equals(shopOpt.get().getApprovalStatus())) {
-            return "redirect:/customer/shop-registration/status";
+            return "redirect:/seller/status";
         }
 
         Shop shop = shopOpt.get();
@@ -265,29 +416,53 @@ public class CustomerShopRegistrationController {
             model.addAttribute("shop", shop);
             model.addAttribute("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
             model.addAttribute("bankRejectionReason", shop.getBankRejectionReason());
-            try {
-                model.addAttribute("profile", customerAccountService.profile(userId));
-            } catch (Exception ignored) {}
-            model.addAttribute("activePage", "shopPaymentSetup");
-            return "customer/shop-payment-setup";
+            model.addAttribute("activeStep", 3);
+            return "seller/payment";
         }
 
         try {
             shopRegistrationService.submitPaymentInfo(userId, form);
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Đã lưu thông tin thanh toán thành công! Ban vận hành sẽ đối chiếu tên chủ tài khoản với CCCD (" + (shop.getIdCardName() != null ? shop.getIdCardName() : "") + ") và phê duyệt.");
-            return "redirect:/customer/shop-registration/payment";
+                    "Đã lưu thông tin thanh toán thành công! Ban vận hành sẽ đối chiếu tên chủ tài khoản với CCCD ("
+                            + (shop.getIdCardName() != null ? shop.getIdCardName() : "") + ") và phê duyệt.");
+            return "redirect:/seller/payment";
         } catch (Exception ex) {
             model.addAttribute("shop", shop);
             model.addAttribute("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
             model.addAttribute("bankRejectionReason", shop.getBankRejectionReason());
             model.addAttribute("errorMessage", ex.getMessage());
-            try {
-                model.addAttribute("profile", customerAccountService.profile(userId));
-            } catch (Exception ignored) {}
-            model.addAttribute("activePage", "shopPaymentSetup");
-            return "customer/shop-payment-setup";
+            model.addAttribute("activeStep", 3);
+            return "seller/payment";
         }
+    }
+
+    // =========================================================================
+    // LEGACY REDIRECTS (Tách hoàn toàn khỏi Customer, chuyển hướng về Seller Channel)
+    // =========================================================================
+
+    @GetMapping("/customer/shop-registration")
+    public String legacyCustomerShopRegistration() {
+        return "redirect:/seller/channel";
+    }
+
+    @PostMapping("/customer/shop-registration")
+    public String legacyPostCustomerShopRegistration() {
+        return "redirect:/seller/channel";
+    }
+
+    @GetMapping("/customer/shop-registration/status")
+    public String legacyCustomerShopRegistrationStatus() {
+        return "redirect:/seller/status";
+    }
+
+    @GetMapping("/customer/shop-registration/payment")
+    public String legacyCustomerShopRegistrationPayment() {
+        return "redirect:/seller/payment";
+    }
+
+    @PostMapping("/customer/shop-registration/payment")
+    public String legacyPostCustomerShopRegistrationPayment() {
+        return "redirect:/seller/payment";
     }
 
     @GetMapping("/register/shop-owner")
@@ -296,3 +471,4 @@ public class CustomerShopRegistrationController {
         return "login/register-shop-owner";
     }
 }
+

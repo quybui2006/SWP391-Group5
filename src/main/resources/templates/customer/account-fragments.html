@@ -32,7 +32,6 @@
         <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
         <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
         <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
-        <a th:classappend="${active == 'shopRegistration' || active == 'shopRegistrationStatus' || active == 'shopPaymentSetup'} ? 'active'" th:href="@{/customer/shop-registration}">🏪 Đăng ký mở Shop</a>
         <span class="nav-caption second">KHÁC</span>
         <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
         <a th:classappend="${active == 'changePassword'} ? 'active'" th:href="@{/customer/account/change-password}">Đổi mật khẩu</a>

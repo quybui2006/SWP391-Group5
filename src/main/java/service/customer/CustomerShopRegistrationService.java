@@ -277,6 +277,39 @@ public class CustomerShopRegistrationService {
         } catch (Exception ignored) {}
     }
 
+    @Transactional
+    public Shop registerShopFromSellerOnboarding(Long userId, dto.seller.SellerAccountActivationDto activation, dto.seller.SellerCreateShopDto shopDto) {
+        if (activation == null) {
+            throw new IllegalArgumentException("Vui lòng hoàn thành bước Kích hoạt tài khoản Người bán trước.");
+        }
+        if (shopDto == null) {
+            throw new IllegalArgumentException("Vui lòng nhập thông tin tạo cửa hàng.");
+        }
+
+        ShopRegistrationDto fullDto = new ShopRegistrationDto();
+        fullDto.setName(shopDto.getName());
+        fullDto.setDescription(shopDto.getDescription());
+        fullDto.setPhone(shopDto.getPhone());
+        fullDto.setProvinceCode(shopDto.getProvinceCode());
+        fullDto.setWardName(shopDto.getWardName());
+        fullDto.setAddressDetail(shopDto.getAddressDetail());
+        fullDto.setShippingFast(shopDto.isShippingFast());
+        fullDto.setShippingExpress(shopDto.isShippingExpress());
+        fullDto.setShippingStandard(shopDto.isShippingStandard());
+        fullDto.setAgreeTerms(shopDto.isAgreeTerms());
+
+        fullDto.setIdCardNumber(activation.getIdCardNumber());
+        fullDto.setIdCardName(activation.getIdCardName());
+        fullDto.setIdCardDate(activation.getIdCardDate());
+        fullDto.setIdCardPlace(activation.getIdCardPlace());
+        fullDto.setBusinessType(activation.getBusinessType());
+        fullDto.setTaxCode(activation.getTaxCode());
+        fullDto.setTaxName(activation.getTaxName());
+        fullDto.setTaxEmail(activation.getTaxEmail());
+
+        return registerShop(userId, fullDto);
+    }
+
     private void validateProvince(String provinceCode) {
         if (provinceCode == null || !provinceRepository.existsById(provinceCode)) {
             throw new IllegalArgumentException("Tỉnh/Thành phố được chọn không hợp lệ.");
