@@ -14,6 +14,9 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     boolean existsByShopIdAndSku(Long shopId, String sku);
 
+    /** Một sản phẩm không nên có hai biến thể cùng tên, ví dụ hai biến thể "Túi 1kg". */
+    boolean existsByProduct_IdAndNameIgnoreCaseAndIdNot(Long productId, String name, Long id);
+
     /** Hậu kiểm: biến thể đang bán của sản phẩm ACTIVE có thể được chọn tạo khuyến mãi dù approval_status còn PENDING. */
     @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p " +
             "WHERE pv.shopId = :shopId AND pv.status = 'ACTIVE' " +
