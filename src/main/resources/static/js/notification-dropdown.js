@@ -32,6 +32,26 @@ document.addEventListener('DOMContentLoaded', function () {
         if (dropdownMenu && !dropdownMenu.contains(e.target) && !bellBtn.contains(e.target)) {
             dropdownMenu.classList.remove('show');
         }
+        document.querySelectorAll('.user-dropdown.show').forEach(d => {
+            d.classList.remove('show');
+        });
+    });
+
+    // Support click/tap toggle for user avatar menu so it never vanishes prematurely
+    const userContainers = document.querySelectorAll('.user-menu-container');
+    userContainers.forEach(container => {
+        const avatar = container.querySelector('.user-avatar');
+        const userDropdown = container.querySelector('.user-dropdown');
+        if (avatar && userDropdown) {
+            avatar.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (dropdownMenu) dropdownMenu.classList.remove('show');
+                userDropdown.classList.toggle('show');
+            });
+            userDropdown.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
     });
 
     // Mark all as read
