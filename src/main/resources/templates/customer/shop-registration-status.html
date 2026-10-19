@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trạng thái đăng ký Shop | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-profile-layout.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .status-hero-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: relative;
+            overflow: hidden;
+        }
+        .status-banner {
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .status-banner.pending {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+        .status-banner.approved {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        .status-banner.rejected {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        .banner-icon {
+            font-size: 32px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .banner-content h3 {
+            margin: 0 0 6px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .banner-content p {
+            margin: 0 0 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        .reason-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 14px 18px;
+            border: 1px solid #fca5a5;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .reason-box strong {
+            color: #b91c1c;
+        }
+        .stepper-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .step-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .step-box.active {
+            border-color: #2e7d32;
+            background: #f0fdf4;
+        }
+        .step-box.danger {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .step-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .step-badge.done { background: #dcfce7; color: #15803d; }
+        .step-badge.wait { background: #fef3c7; color: #b45309; }
+        .step-badge.fail { background: #fee2e2; color: #b91c1c; }
+        .step-box h4 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .step-box p {
+            margin: 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .detail-item .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .action-bar {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 14px;
+        }
+        .btn-portal {
+            background: #16a34a;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-portal:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+        }
+        .btn-resubmit {
+            background: #dc2626;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .btn-resubmit:hover {
+            background: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+<div class="customer-shell">
+    <aside th:replace="~{customer/account-fragments :: sidebar('shopRegistrationStatus')}"></aside>
+
+    <main class="customer-main">
+        <header th:replace="~{customer/account-fragments :: topbar('Trạng thái mở Shop')}"></header>
+
+        <!-- Flash messages -->
+        <div th:if="${successMessage}" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:14px;font-weight:600;">
+            ✓ <span th:text="${successMessage}">Đã gửi hồ sơ thành công!</span>
+        </div>
+
+        <div class="status-hero-card">
+            <!-- PENDING BANNER -->
+            <div class="status-banner pending" th:if="${status == 'PENDING'}">
+                <div class="banner-icon">⏳</div>
+                <div class="banner-content">
+                    <h3>Hồ sơ đang được thẩm định (PENDING)</h3>
+                    <p>Ban Quản trị FreshFruit đã tiếp nhận hồ sơ mở cửa hàng <strong>"<span th:text="${shop.name}">Tên Shop</span>"</strong> của bạn. Chúng tôi đang kiểm tra tính xác thực của thông tin và liên hệ trong thời gian sớm nhất.</p>
+                    <small>⏱ Thời gian xử lý cam kết: Trong vòng 24 giờ làm việc. Bạn sẽ nhận được thông báo in-web ngay khi có kết quả.</small>
+                </div>
+            </div>
+
+            <!-- APPROVED BANNER -->
+            <div class="status-banner approved" th:if="${status == 'APPROVED'}">
+                <div class="banner-icon">🎉</div>
+                <div class="banner-content">
+                    <h3>Chúc mừng! Cửa hàng đã được phê duyệt hoạt động (APPROVED)</h3>
+                    <p>Yêu cầu mở Shop <strong>"<span th:text="${shop.name}">Tên Shop</span>"</strong> đã được xét duyệt thành công. Bạn đã chính thức trở thành Đối tác Người Bán của FreshFruit!</p>
+                    <a th:href="@{/shopowner/home}" class="btn-portal">
+                        Truy cập Kênh Người Bán & Quản lý Shop ➔
+                    </a>
+                </div>
+            </div>
+
+            <!-- REJECTED BANNER -->
+            <div class="status-banner rejected" th:if="${status == 'REJECTED'}">
+                <div class="banner-icon">⚠️</div>
+                <div class="banner-content" style="width: 100%;">
+                    <h3>Hồ sơ chưa đạt tiêu chuẩn (REJECTED)</h3>
+                    <p>Rất tiếc, yêu cầu mở cửa hàng của bạn tạm thời chưa được thông qua bởi Ban vận hành.</p>
+                    <div class="reason-box">
+                        <strong>Lý do từ chối:</strong>
+                        <div style="margin-top: 4px; color: #1e293b;" th:text="${shop.rejectionReason ?: 'Thông tin chưa đầy đủ hoặc chưa đáp ứng tiêu chuẩn sàn.'}">Lý do từ chối cụ thể...</div>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <a th:href="@{/customer/shop-registration(mode='edit')}" class="btn-resubmit">
+                            ✏ Chỉnh sửa thông tin & Nộp lại hồ sơ
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3-Step Visual Progress Stepper -->
+            <div class="stepper-row">
+                <div class="step-box active">
+                    <span class="step-badge done">✓ ĐÃ HOÀN TẤT</span>
+                    <h4>1. Gửi hồ sơ</h4>
+                    <p th:text="${createdAtFormatted != null ? 'Thời gian: ' + createdAtFormatted : 'Đã nộp thành công'}">Đã gửi hồ sơ</p>
+                </div>
+                <div class="step-box" th:classappend="${status == 'PENDING'} ? ' active' : (${status == 'REJECTED'} ? ' danger' : ' active')">
+                    <span class="step-badge" th:classappend="${status == 'PENDING'} ? ' wait' : (${status == 'REJECTED'} ? ' fail' : ' done')">
+                        <span th:text="${status == 'PENDING' ? '⏳ ĐANG XỬ LÝ' : (status == 'REJECTED' ? '❌ TỪ CHỐI' : '✓ ĐÃ DUYỆT')}">ĐANG XỬ LÝ</span>
+                    </span>
+                    <h4>2. Thẩm định vận hành</h4>
+                    <p th:text="${reviewedAtFormatted != null ? 'Xử lý: ' + reviewedAtFormatted : 'Đang chờ Ban kiểm duyệt'}">Đang thẩm định</p>
+                </div>
+                <div class="step-box" th:classappend="${status == 'APPROVED'} ? ' active' : ''">
+                    <span class="step-badge" th:classappend="${status == 'APPROVED'} ? ' done' : ' wait'">
+                        <span th:text="${status == 'APPROVED' ? '✓ ĐÃ KÍCH HOẠT' : 'CHỜ HOÀN TẤT'}">CHỜ HOÀN TẤT</span>
+                    </span>
+                    <h4>3. Mở bán sản phẩm</h4>
+                    <p>Đăng biến thể & bán hoa quả</p>
+                </div>
+            </div>
+
+            <!-- Detailed Shop Registration Information -->
+            <h3 style="font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 16px;">
+                📋 Chi tiết hồ sơ đã đăng ký
+            </h3>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>Tên cửa hàng</label>
+                    <div class="value" th:text="${shop.name}">Tên Shop</div>
+                </div>
+                <div class="detail-item">
+                    <label>Số điện thoại liên hệ</label>
+                    <div class="value" th:text="${shop.phone}">0912345678</div>
+                </div>
+                <div class="detail-item">
+                    <label>Tỉnh / Thành phố kho</label>
+                    <div class="value" th:text="${provinceName}">Hà Nội</div>
+                </div>
+                <div class="detail-item">
+                    <label>Phường / Xã</label>
+                    <div class="value" th:text="${shop.wardName}">Phường Dịch Vọng Hậu</div>
+                </div>
+                <div class="detail-item" style="grid-column: span 2;">
+                    <label>Địa chỉ kho lấy hàng chi tiết</label>
+                    <div class="value" th:text="${shop.addressDetail}">Số 45 ngõ 123 Cầu Giấy</div>
+                </div>
+                <div class="detail-item" style="grid-column: span 2;">
+                    <label>Giới thiệu & Tiêu chuẩn chất lượng</label>
+                    <div class="value" style="font-size: 14px; font-weight: 400; line-height: 1.5;" th:text="${!#strings.isEmpty(shop.description) ? shop.description : '(Chưa cung cấp mô tả chi tiết)'}">
+                        Mô tả cửa hàng
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <label>Trạng thái hoạt động</label>
+                    <div class="value">
+                        <span th:text="${shop.operatingStatus == 'OPEN' ? '🟢 Đang mở cửa bán' : (shop.operatingStatus == 'SUSPENDED' ? '🔴 Đang tạm dừng' : '⚪ Đang đóng cửa')}">Đang đóng cửa</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <label>Thời gian đăng ký</label>
+                    <div class="value" th:text="${createdAtFormatted ?: '—'}">—</div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <a th:href="@{/customer/account}" class="btn-cancel-reg" style="background:#f1f5f9;color:#475569;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
+                    ← Về trang tài khoản
+                </a>
+                <a th:if="${status == 'APPROVED'}" th:href="@{/shopowner/home}" class="btn-portal">
+                    Vào trang quản lý Shop ➔
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
