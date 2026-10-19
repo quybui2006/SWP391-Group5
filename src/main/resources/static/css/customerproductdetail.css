@@ -237,6 +237,8 @@ img {
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
+    padding: 0;
+    font-family: inherit;
     transition: transform 0.2s ease;
 }
 
@@ -265,7 +267,7 @@ img {
     overflow: hidden;
 }
 
-.user-menu-container:hover .user-dropdown {
+.user-menu-container.open .user-dropdown {
     display: block;
 }
 
@@ -832,6 +834,11 @@ img {
     cursor: pointer;
     transition: all 0.2s;
     font-weight: 500;
+    /* Cho phép dùng <a> thay <button> mà vẫn giữ nguyên giao diện chip */
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-family: inherit;
 }
 
 .variant-spec-chip:hover {

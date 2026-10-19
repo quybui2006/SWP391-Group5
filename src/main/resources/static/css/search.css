@@ -224,6 +224,8 @@ input {
     font-weight: 700;
     cursor: pointer;
     user-select: none;
+    padding: 0;
+    font-family: inherit;
     transition: transform 0.2s ease;
 }
 
@@ -251,7 +253,7 @@ input {
     overflow: hidden;
 }
 
-.user-menu-container:hover .user-dropdown {
+.user-menu-container.open .user-dropdown {
     display: block;
 }
 
