@@ -41,7 +41,7 @@ public class NotificationDto {
         } else if ("ACCOUNT".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account");
         } else if ("SHOP".equalsIgnoreCase(n.getTargetType())) {
-            dto.setTargetUrl("/customer/shop-registration/status");
+            dto.setTargetUrl("/seller/status");
         } else {
             dto.setTargetUrl("/customer/account/notifications");
         }
