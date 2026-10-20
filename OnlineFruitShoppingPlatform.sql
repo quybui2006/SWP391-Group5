@@ -121,23 +121,6 @@ CREATE TABLE shops (
     CHECK (operating_status <> 'SUSPENDED' OR (suspension_reason IS NOT NULL AND CHAR_LENGTH(TRIM(suspension_reason)) > 0))
 );
 
-CREATE TABLE shop_reopen_requests (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    shop_id BIGINT NOT NULL,
-    owner_id BIGINT NOT NULL,
-    explanation VARCHAR(1000) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
-        CHECK (status IN ('PENDING','APPROVED','REJECTED')),
-    operation_reason VARCHAR(1000) NULL,
-    requested_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    reviewed_at DATETIME(3) NULL,
-    FOREIGN KEY (shop_id) REFERENCES shops(id),
-    FOREIGN KEY (owner_id) REFERENCES users(id),
-    CHECK (CHAR_LENGTH(TRIM(explanation)) >= 10),
-    CHECK (status <> 'REJECTED' OR (operation_reason IS NOT NULL AND CHAR_LENGTH(TRIM(operation_reason)) >= 5))
-);
-CREATE INDEX IX_shop_reopen_requests_status ON shop_reopen_requests(status, requested_at);
-
 CREATE TABLE categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,

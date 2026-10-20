@@ -67,7 +67,7 @@
                             <img class="variant-thumb" th:if="${variant.image_url != null and !#strings.isEmpty(variant.image_url)}"
                                  th:src="${variant.image_url}" th:alt="${variant.variant_name}" loading="lazy"
                                  onerror="this.hidden=true; this.nextElementSibling.hidden=false">
-                            <span class="image-placeholder" th:hidden="${variant.image_url != null and !#strings.isEmpty(variant.image_url)}">🍊</span>
+                            <span class="image-placeholder" th:hidden="${variant.image_url != null and !#strings.isEmpty(variant.image_url)}"></span>
                         </td>
                         <td>
                             <div class="product-cell">
