@@ -6,7 +6,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,12 +80,13 @@ public class CsStaffController {
         model.addAttribute("selectedRating", rating);
 
         String sql = "SELECT r.id, r.rating, r.content, r.created_at, u.full_name AS customer_name, u.email AS customer_email, " +
-                "p.name AS product_name, pv.name AS variant_name, pv.image_url " +
+                "p.name AS product_name, pv.name AS variant_name, pv.image_url, " +
+                "COALESCE(r.moderation_status, 'PENDING') AS moderation_status " +
                 "FROM reviews r " +
                 "JOIN users u ON u.id = r.user_id " +
                 "JOIN product_variants pv ON pv.id = r.variant_id " +
                 "JOIN products p ON p.id = pv.product_id ";
-
+        
         List<Map<String, Object>> reviews;
         if (rating != null && rating >= 1 && rating <= 5) {
             sql += "WHERE r.rating = ? ORDER BY r.created_at DESC LIMIT 50";
@@ -91,9 +95,49 @@ public class CsStaffController {
             sql += "ORDER BY r.created_at DESC LIMIT 50";
             reviews = safeQueryList(sql);
         }
-
+        
         model.addAttribute("reviews", reviews);
         return "cs/reviews";
+    }
+
+    @PostMapping("/reviews/{id}/approve")
+    public String approveReview(@PathVariable Long id, HttpSession session, RedirectAttributes redirect) {
+        return updateReviewStatus(id, "APPROVED", session, redirect);
+    }
+
+    @PostMapping("/reviews/{id}/reject")
+    public String rejectReview(@PathVariable Long id, @RequestParam(required=false) String reason,
+                               HttpSession session, RedirectAttributes redirect) {
+        return updateReviewStatus(id, "REJECTED", session, redirect, reason);
+    }
+
+    @PostMapping("/reviews/{id}/remove")
+    public String removeReview(@PathVariable Long id, HttpSession session, RedirectAttributes redirect) {
+        try {
+            jdbc.update("UPDATE reviews SET moderation_status='REMOVED', moderated_by=?, moderated_at=CURRENT_TIMESTAMP(3) WHERE id=?",
+                    session != null && session.getAttribute("userId") instanceof Number n ? n.longValue() : null, id);
+            jdbc.update("DELETE FROM reviews WHERE id=?", id);
+            redirect.addFlashAttribute("message", "Đã xóa đánh giá #" + id + ".");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("error", "Không thể xóa đánh giá: " + e.getMessage());
+        }
+        return "redirect:/cs/reviews";
+    }
+
+    private String updateReviewStatus(Long id, String status, HttpSession session, RedirectAttributes redirect, String reason) {
+        try {
+            Object uid = session != null ? session.getAttribute("userId") : null;
+            jdbc.update("UPDATE reviews SET moderation_status=?, moderation_reason=?, moderated_by=?, moderated_at=CURRENT_TIMESTAMP(3) WHERE id=?",
+                    status, reason, uid instanceof Number n ? n.longValue() : null, id);
+            redirect.addFlashAttribute("message", "Đã " + status.toLowerCase() + " đánh giá #" + id + ".");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("error", "Không thể cập nhật đánh giá: " + e.getMessage());
+        }
+        return "redirect:/cs/reviews";
+    }
+
+    private String updateReviewStatus(Long id, String status, HttpSession session, RedirectAttributes redirect) {
+        return updateReviewStatus(id, status, session, redirect, null);
     }
 
     @GetMapping("/customers")
