@@ -1,9 +1,12 @@
 package service.shop;
 
 import entity.ProductVariant;
+import entity.VariantInventory;
 import repository.ProductVariantRepository;
 import repository.PromotionalPriceRepository;
 import repository.ShopRepository;
+import repository.VariantInventoryRepository;
+import repository.ActivePromotionPrice;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +16,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import repository.ActivePromotionPrice;
 
 @Service
 public class ProductService {
@@ -30,7 +32,7 @@ public class ProductService {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired
-    private repository.VariantInventoryRepository variantInventoryRepository;
+    private VariantInventoryRepository variantInventoryRepository;
 
     public List<ProductVariant> searchAndFilterProducts(String keyword, List<Long> categoryIds, String priceRange) {
         return searchAndFilterProducts(keyword, categoryIds, priceRange, null, null, null, false, "popular");
@@ -99,7 +101,7 @@ public class ProductService {
             var inventoryList = variantInventoryRepository.findByVariantIdIn(variantIds);
             var invMap = inventoryList.stream()
                     .collect(java.util.stream.Collectors.toMap(
-                            entity.VariantInventory::getVariantId,
+                            VariantInventory::getVariantId,
                             java.util.function.Function.identity(),
                             (a, b) -> a));
 
