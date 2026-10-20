@@ -25,58 +25,25 @@
 
 <body>
 
-<!-- =========================================================
-     HEADER
-
+<!-- HEADER -->
 <header class="site-header">
-
     <div class="container header-inner">
 
-        <!-- LOGO -->
-        <a
-                class="brand"
-                th:href="@{/}"
-                aria-label="FreshFruit - Trang chủ">
-
-            <span class="brand-mark">
-                F
-            </span>
-
+        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
+            <span class="brand-mark">F</span>
             <span>
                 <strong>FreshFruit</strong>
                 <small>Tươi ngon mỗi ngày</small>
             </span>
-
         </a>
 
-
-        <!-- NAVIGATION -->
-        <nav
-                class="main-nav"
-                aria-label="Điều hướng chính">
-
-            <a th:href="@{/}">
-                Trang chủ
-            </a>
-
-            <a
-                    class="active"
-                    th:href="@{/search}">
-                Sản phẩm
-            </a>
-
-            <a th:href="@{/#categories}">
-                Danh mục
-            </a>
-
-            <a th:href="@{/#about}">
-                Về chúng tôi
-            </a>
-
+        <nav class="main-nav" aria-label="Điều hướng chính">
+            <a th:href="@{/}">Trang chủ</a>
+            <a class="active" th:href="@{/search}">Sản phẩm</a>
+            <a th:href="@{/#categories}">Danh mục</a>
+            <a th:href="@{/#about}">Về chúng tôi</a>
         </nav>
 
-
-        <!-- HEADER ACTIONS -->
         <div class="header-actions">
 
             <!-- Kênh Bán hàng -->
@@ -84,16 +51,10 @@
                 🏪 Kênh Bán hàng
             </a>
 
-            <!-- SEARCH -->
-            <a
-                    class="icon-btn active-icon"
-                    th:href="@{/search}"
-                    title="Tìm kiếm"
-                    aria-label="Tìm kiếm">
-
-                ⌕
-
-            </a>
+            <a class="icon-btn"
+               th:href="@{/search}"
+               title="Tìm kiếm"
+               aria-label="Tìm kiếm">⌕</a>
 
             <!-- Shopee Style Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
@@ -106,21 +67,13 @@
                 </div>
             </div>
 
-            <!-- CART -->
-            <a
-                    class="icon-btn cart-btn"
-                    th:href="@{/cart}"
-                    title="Giỏ hàng"
-                    aria-label="Giỏ hàng">
-
+            <a class="icon-btn cart-btn"
+               th:href="@{/cart}"
+               title="Giỏ hàng"
+               aria-label="Giỏ hàng">
                 🛒
-
-                <span id="cartCount">
-                    0
-                </span>
-
+                <span id="cartCount" class="cart-count">0</span>
             </a>
-
 
             <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
             <th:block th:if="${session.role != null}">
@@ -169,19 +122,16 @@
                     </div>
                 </div>
             </th:block>
+
             <th:block th:if="${session.role == null}">
                 <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
             </th:block>
+
         </div>
-
     </div>
-
 </header>
 
-
-<!-- =========================================================
-     MAIN
-
+<!-- MAIN -->
 <main>
 
 
@@ -669,9 +619,7 @@
 </main>
 
 
-<!-- =========================================================
-     FOOTER
-
+<!-- FOOTER -->
 <footer class="site-footer">
 
     <div class="container footer-inner">
@@ -737,9 +685,7 @@
 </footer>
 
 
-<!-- =========================================================
-     JAVASCRIPT
-
+<!-- JAVASCRIPT -->
 <script th:src="@{/js/search.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
 <!-- Tan PTH integration: connect product cards to the database-backed cart. -->

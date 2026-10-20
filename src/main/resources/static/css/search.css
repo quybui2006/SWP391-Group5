@@ -96,27 +96,29 @@ input {
 }
 
 .brand strong {
-    font-size: 15px;
+    display: block;
+    font-size: 17px;
+    line-height: 1.1;
 }
 
 .brand small {
+    display: block;
     margin-top: 3px;
     color: var(--muted);
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .main-nav {
     display: flex;
     align-items: center;
-    gap: 27px;
+    gap: 30px;
 }
 
 .main-nav a {
     position: relative;
-
-    color: #69736b;
-
-    font-size: 12px;
+    padding: 28px 0;
+    color: #667068;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -127,17 +129,12 @@ input {
 
 .main-nav a.active::after {
     content: "";
-
     position: absolute;
-
     left: 0;
     right: 0;
-    bottom: -9px;
-
+    bottom: 18px;
     height: 2px;
-
-    border-radius: 5px;
-
+    border-radius: 2px;
     background: var(--green);
 }
 
@@ -148,17 +145,15 @@ input {
 }
 
 .icon-btn {
-    width: 38px;
-    height: 38px;
-
+    width: 40px;
+    height: 40px;
     display: grid;
     place-items: center;
-
     border: 1px solid var(--line);
     border-radius: 12px;
-
     background: white;
-
+    color: var(--ink);
+    cursor: pointer;
     font-size: 20px;
 }
 
@@ -174,45 +169,38 @@ input {
 
 #cartCount {
     position: absolute;
-
     right: -4px;
     top: -5px;
-
     min-width: 17px;
     height: 17px;
-
     padding: 0 4px;
-
     border-radius: 20px;
-
     background: var(--green);
     color: white;
-
     font-size: 10px;
     font-weight: 800;
-
     display: grid;
     place-items: center;
 }
 
 .login-btn {
     margin-left: 4px;
-
     padding: 10px 16px;
-
     border-radius: 11px;
-
     background: var(--green);
     color: white;
-
     font-size: 13px;
     font-weight: 700;
 }
 
+.login-btn:hover {
+    background: var(--green-dark);
+}
+
 /* USER MENU & DROPDOWN */
 .user-avatar {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     background: var(--green-light);
     color: var(--green-dark);
     border: 2px solid var(--green);
@@ -220,7 +208,7 @@ input {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     user-select: none;

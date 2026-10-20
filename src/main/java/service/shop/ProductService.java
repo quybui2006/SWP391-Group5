@@ -6,16 +6,14 @@ import repository.ProductVariantRepository;
 import repository.PromotionalPriceRepository;
 import repository.ShopRepository;
 import repository.VariantInventoryRepository;
-import repository.ActivePromotionPrice;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProductService {
