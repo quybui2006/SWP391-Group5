@@ -31,21 +31,83 @@ public class CustomerAccountService {
         return jdbc.queryForMap("SELECT u.id,u.full_name,u.email,u.phone,u.status,p.gender,p.birth_date,(p.avatar IS NOT NULL) AS has_avatar FROM users u LEFT JOIN customer_profiles p ON p.user_id=u.id WHERE u.id=? AND u.status='ACTIVE'", userId);
     }
     public List<Map<String,Object>> orders(Long userId) {
-        return jdbc.query("""
+        return orders(userId, null);
+    }
+
+    /**
+     * Lịch sử đơn hàng của khách, lọc theo nhóm trạng thái kiểu Shopee:
+     * all | pending-payment | shipping | completed | cancelled
+     */
+    public List<Map<String,Object>> orders(Long userId, String statusFilter) {
+        String condition = switch (statusFilter == null ? "all" : statusFilter) {
+            case "pending-payment" -> " AND o.status='PENDING' AND o.payment_status='UNPAID'";
+            case "shipping"        -> " AND (o.status IN ('CONFIRMED','PREPARING','SHIPPING','DELIVERED')"
+                                       + " OR (o.status='PENDING' AND o.payment_status='PAID'))";
+            case "completed"       -> " AND o.status='COMPLETED'";
+            case "cancelled"       -> " AND o.status='CANCELLED'";
+            default -> "";
+        };
+        List<Map<String,Object>> orders = jdbc.query("""
             SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_status,o.delivery_status,o.created_at,
-                   s.name AS shop_name
+                   s.name AS shop_name, s.id AS shop_id
             FROM orders o JOIN checkouts c ON c.id=o.checkout_id
             JOIN shops s ON s.id=o.shop_id
-            WHERE c.user_id=? ORDER BY o.created_at DESC,o.id DESC
-            """, (rs, row) -> {
+            WHERE c.user_id=?""" + condition + " ORDER BY o.created_at DESC,o.id DESC",
+            (rs, row) -> {
                 Map<String,Object> order = new java.util.LinkedHashMap<>();
-                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_status", "delivery_status", "shop_name"))
+                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_status", "delivery_status", "shop_name", "shop_id"))
                     order.put(column, rs.getObject(column));
                 var timestamp = rs.getTimestamp("created_at");
                 order.put("created_at", timestamp == null ? "—" : timestamp.toLocalDateTime()
                     .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 return order;
             }, userId);
+        for (Map<String,Object> order : orders) {
+            order.put("items", jdbc.queryForList("""
+                SELECT oi.id AS order_item_id, oi.variant_id, oi.product_name, oi.variant_name, oi.sku,
+                       oi.quantity, oi.unit_price, oi.sale_unit_price, oi.line_total,
+                       oi.image_url, oi.reviewed_at
+                FROM order_items oi WHERE oi.order_id=? ORDER BY oi.id
+                """, order.get("id")));
+        }
+        return orders;
+    }
+
+    /** Đếm số đơn theo từng tab trạng thái để hiển thị badge giống Shopee. */
+    public Map<String,Object> orderStatusCounts(Long userId) {
+        return jdbc.queryForMap("""
+            SELECT
+                COUNT(*) AS all_count,
+                COALESCE(SUM(CASE WHEN o.status='PENDING' AND o.payment_status='UNPAID' THEN 1 ELSE 0 END),0) AS pending_payment,
+                COALESCE(SUM(CASE WHEN o.status IN ('CONFIRMED','PREPARING','SHIPPING','DELIVERED')
+                    OR (o.status='PENDING' AND o.payment_status='PAID') THEN 1 ELSE 0 END),0) AS shipping,
+                COALESCE(SUM(CASE WHEN o.status='COMPLETED' THEN 1 ELSE 0 END),0) AS completed,
+                COALESCE(SUM(CASE WHEN o.status='CANCELLED' THEN 1 ELSE 0 END),0) AS cancelled
+            FROM orders o JOIN checkouts c ON c.id=o.checkout_id
+            WHERE c.user_id=?
+            """, userId);
+    }
+
+    /** Chi tiết một đơn hàng của khách (đảm bảo đơn thuộc về đúng user). */
+    public Map<String,Object> orderDetail(Long userId, Long orderId) {
+        var rows = jdbc.queryForList("""
+            SELECT o.*, s.name AS shop_name
+            FROM orders o JOIN checkouts c ON c.id=o.checkout_id
+            JOIN shops s ON s.id=o.shop_id
+            WHERE o.id=? AND c.user_id=?
+            """, orderId, userId);
+        if (rows.isEmpty())
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        Map<String,Object> order = new java.util.LinkedHashMap<>(rows.get(0));
+        order.put("items", jdbc.queryForList("""
+            SELECT oi.id AS order_item_id, oi.variant_id, oi.product_name, oi.variant_name, oi.sku,
+                   oi.quantity, oi.unit_price, oi.sale_unit_price, oi.line_total,
+                   oi.image_url, oi.base_unit_name, oi.reviewed_at
+            FROM order_items oi WHERE oi.order_id=? ORDER BY oi.id
+            """, orderId));
+        order.put("payments", jdbc.queryForList(
+            "SELECT payment_code, method, amount, status, paid_at FROM payments WHERE order_id=? ORDER BY id", orderId));
+        return order;
     }
     public List<Map<String,Object>> favorites(Long userId) {
         return jdbc.queryForList("""

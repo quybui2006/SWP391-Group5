@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{seller/seller-header :: head('Đăng ký tạo Shop')}"></head>
+<body>
+
+<header th:replace="~{seller/seller-header :: navbar}"></header>
+
+<main class="seller-shell">
+    <!-- Stepper: Step 2 -->
+    <div th:replace="~{seller/seller-header :: stepper(2)}"></div>
+
+    <!-- Alert Messages -->
+    <div th:if="${errorMessage}" class="seller-alert danger">
+        <span style="font-size:18px;">⚠️</span>
+        <div th:text="${errorMessage}">Thông báo lỗi</div>
+    </div>
+    <div th:if="${successMessage}" class="seller-alert success">
+        <span style="font-size:18px;">✅</span>
+        <div th:text="${successMessage}">Thông báo thành công</div>
+    </div>
+
+    <!-- Badge xác thực thông tin định danh từ Bước 1 -->
+    <div th:if="${activation != null}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:18px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;">
+                ✓
+            </div>
+            <div>
+                <div style="font-weight:700;color:#166534;font-size:14px;">
+                    Tài khoản Người bán đã được định danh chính chủ
+                </div>
+                <div style="font-size:12.5px;color:#334155;margin-top:2px;">
+                    Chủ sở hữu: <strong th:text="${activation.idCardName}">NGUYỄN VĂN AN</strong> 
+                    • CCCD: <strong th:text="${activation.idCardNumber}">001203004567</strong>
+                    • SĐT: <span th:text="${activation.phone}">0988776655</span>
+                </div>
+            </div>
+        </div>
+        <a th:href="@{/seller/activate}" style="font-size:12.5px;color:#15803d;text-decoration:none;font-weight:700;border:1px solid #86efac;background:#fff;padding:6px 12px;border-radius:8px;">
+            ✏️ Sửa định danh
+        </a>
+    </div>
+
+    <!-- Card Form -->
+    <div class="seller-card">
+        <div class="seller-card-title">
+            <span>🏪</span> Thông tin Gian hàng & Kho lấy hàng
+        </div>
+        <p class="seller-card-subtitle">
+            Hoàn tất các thông tin về thương hiệu cửa hàng, địa chỉ kho xuất hàng và phương thức giao nhận để người mua có trải nghiệm tốt nhất.
+        </p>
+
+        <form th:action="@{/seller/create-shop}" th:object="${form}" method="post">
+            <!-- 1. Thông tin gian hàng -->
+            <div class="seller-section-title">
+                <span>🏷️</span> 1. Thông tin gian hàng
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="name">Tên cửa hàng (Shop Name) <span class="req">*</span></label>
+                    <input type="text" id="name" th:field="*{name}" placeholder="Ví dụ: Nông Trại Hoa Quả Hữu Cơ Đà Lạt" required>
+                    <span class="form-hint">Tên thương hiệu sẽ hiển thị công khai trên ứng dụng mua sắm (từ 3 đến 160 ký tự).</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Số điện thoại Hotline Shop <span class="req">*</span></label>
+                    <input type="tel" id="phone" th:field="*{phone}" placeholder="0988776655" required>
+                    <span class="form-hint">Số hotline hỗ trợ khách hàng và liên hệ vận chuyển lấy hàng.</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Giới thiệu ngắn về Gian hàng</label>
+                <textarea id="description" th:field="*{description}" rows="3" placeholder="Giới thiệu về đặc sản vùng miền, tiêu chuẩn chất lượng (VietGAP, GlobalGAP, Organic)..."></textarea>
+                <span class="form-hint">Giúp người tiêu dùng hiểu rõ hơn về uy tín và chất lượng hoa quả của bạn.</span>
+                <div class="form-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+            </div>
+
+            <!-- 2. Địa chỉ kho xuất hàng -->
+            <div class="seller-section-title">
+                <span>📍</span> 2. Địa chỉ kho xuất hàng (Nơi Shipper đến lấy hàng)
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="provinceCode">Tỉnh / Thành phố kho hàng <span class="req">*</span></label>
+                    <select id="provinceCode" th:field="*{provinceCode}" required>
+                        <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                        <option th:each="p : ${provinces}" th:value="${p.code}" th:text="${p.name}"></option>
+                    </select>
+                    <div class="form-error" th:if="${#fields.hasErrors('provinceCode')}" th:errors="*{provinceCode}"></div>
+                </div>
+                <div class="form-group">
+                    <label for="wardName">Phường / Xã <span class="req">*</span></label>
+                    <input type="text" id="wardName" th:field="*{wardName}" placeholder="Ví dụ: Phường Dịch Vọng Hậu" required>
+                    <div class="form-error" th:if="${#fields.hasErrors('wardName')}" th:errors="*{wardName}"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="addressDetail">Địa chỉ chi tiết kho hàng <span class="req">*</span></label>
+                <input type="text" id="addressDetail" th:field="*{addressDetail}" placeholder="Ví dụ: Số 25, Ngõ 123 Cầu Giấy, Kho A3" required>
+                <span class="form-hint">Địa chỉ cụ thể kèm số nhà, ngõ ngách để đơn vị vận chuyển dễ tìm.</span>
+                <div class="form-error" th:if="${#fields.hasErrors('addressDetail')}" th:errors="*{addressDetail}"></div>
+            </div>
+
+            <!-- 3. Cài đặt vận chuyển -->
+            <div class="seller-section-title">
+                <span>🚚</span> 3. Cài đặt Phương thức Vận chuyển
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+                <div style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;">
+                    <input type="checkbox" id="shippingFast" th:field="*{shippingFast}" style="width:18px;height:18px;margin-top:2px;">
+                    <div>
+                        <label for="shippingFast" style="font-weight:700;font-size:13.5px;color:#0f172a;cursor:pointer;">
+                            ⚡ Vận chuyển Nhanh (Giao trong 24h - 48h)
+                        </label>
+                        <div style="font-size:12px;color:#64748b;">Áp dụng cho các loại trái cây có vỏ dày, bảo quản tốt ở điều kiện thường.</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;">
+                    <input type="checkbox" id="shippingExpress" th:field="*{shippingExpress}" style="width:18px;height:18px;margin-top:2px;">
+                    <div>
+                        <label for="shippingExpress" style="font-weight:700;font-size:13.5px;color:#0f172a;cursor:pointer;">
+                            🛵 Hỏa Tốc Fresh (Giao siêu tốc 2h - 4h nội thành)
+                        </label>
+                        <div style="font-size:12px;color:#64748b;">Khuyên dùng cho trái cây mọng nước, tươi cắt lát hoặc hoa quả cao cấp nhập khẩu.</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:flex-start;gap:12px;">
+                    <input type="checkbox" id="shippingStandard" th:field="*{shippingStandard}" style="width:18px;height:18px;margin-top:2px;">
+                    <div>
+                        <label for="shippingStandard" style="font-weight:700;font-size:13.5px;color:#0f172a;cursor:pointer;">
+                            📦 Tiết kiệm (Hàng cồng kềnh, sỉ thùng)
+                        </label>
+                        <div style="font-size:12px;color:#64748b;">Phù hợp với đơn hàng theo thùng 10kg - 50kg đi liên tỉnh.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Cam kết & Điều khoản -->
+            <div class="seller-section-title">
+                <span>📜</span> 4. Điều khoản & Cam kết
+            </div>
+            <div style="margin-bottom:24px;">
+                <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">
+                    <input type="checkbox" id="agreeTerms" th:field="*{agreeTerms}" style="width:18px;height:18px;margin-top:2px;" required>
+                    <span style="font-size:13px;color:#334155;line-height:1.5;">
+                        Tôi xác nhận mọi thông tin cung cấp là hoàn toàn chính xác. Tôi cam kết tuân thủ <strong>Quy chế hoạt động sàn TMĐT FreshFruit</strong>, đảm bảo nguồn gốc hoa quả an toàn vệ sinh thực phẩm và chịu trách nhiệm trước pháp luật.
+                    </span>
+                </label>
+                <div class="form-error" th:if="${#fields.hasErrors('agreeTerms')}" th:errors="*{agreeTerms}"></div>
+            </div>
+
+            <div class="seller-actions-bar">
+                <a th:href="@{/seller/activate}" class="btn-seller-secondary">← Quay lại Bước 1</a>
+                <button type="submit" class="btn-seller-submit">
+                    Gửi Hồ Sơ Tạo Shop Để Xét Duyệt ➔
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

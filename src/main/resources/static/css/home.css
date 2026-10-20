@@ -327,6 +327,8 @@ input {
     font-weight: 700;
     cursor: pointer;
     user-select: none;
+    padding: 0;
+    font-family: inherit;
     transition: transform 0.2s ease;
 }
 
@@ -339,20 +341,54 @@ input {
     position: absolute;
     right: 0;
     top: 100%;
-    margin-top: 12px;
+    margin-top: 8px;
     width: 220px;
     background: var(--white);
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
     border: 1px solid var(--line);
     z-index: 999;
-    overflow: hidden;
+    overflow: visible;
 }
 
-.user-menu-container:hover .user-dropdown {
-    display: block;
+/* Invisible bridge so mouse hover doesn't break over gap */
+.user-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -16px;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: transparent;
 }
 
+/* Gộp chung sự kiện hover, class .show và class .open để hiện dropdown */
+.user-menu-container:hover .user-dropdown,
+.user-dropdown.show,
+.user-menu-container.open .user-dropdown {
+    display: block !important;
+}
+
+.seller-channel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8f5e9;
+    color: #1b5e20;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 99px;
+    text-decoration: none;
+    border: 1px solid #c8e6c9;
+    transition: all 0.2s ease;
+}
+
+.seller-channel-btn:hover {
+    background: #2e7d32;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(46, 125, 50, 0.25);
+}
 .user-dropdown-header {
     padding: 14px 16px;
     background: var(--bg);

@@ -1,19 +1,19 @@
 package service.shop;
 
 import entity.ProductVariant;
+import entity.VariantInventory;
 import repository.ProductVariantRepository;
 import repository.PromotionalPriceRepository;
 import repository.ShopRepository;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import repository.VariantInventoryRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import repository.ActivePromotionPrice;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProductService {
@@ -29,40 +29,99 @@ public class ProductService {
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
-    public List searchAndFilterProducts(String keyword, List categoryIds, String priceRange) {
-        BigDecimal minPrice = null;
-        BigDecimal maxPrice = null;
+    @Autowired
+    private VariantInventoryRepository variantInventoryRepository;
 
-        // Xử lý khoảng giá
-        if ("under50".equals(priceRange)) {
-            maxPrice = new BigDecimal("50000");
-        } else if ("50to100".equals(priceRange)) {
-            minPrice = new BigDecimal("50000");
-            maxPrice = new BigDecimal("100000");
-        } else if ("over100".equals(priceRange)) {
-            minPrice = new BigDecimal("100000");
+    public List<ProductVariant> searchAndFilterProducts(String keyword, List<Long> categoryIds, String priceRange) {
+        return searchAndFilterProducts(keyword, categoryIds, priceRange, null, null, null, false, "popular");
+    }
+
+    public List<ProductVariant> searchAndFilterProducts(
+            String keyword,
+            List<Long> categoryIds,
+            String priceRange,
+            BigDecimal customMinPrice,
+            BigDecimal customMaxPrice,
+            List<String> origins,
+            Boolean inStockOnly,
+            String sortKey) {
+
+        BigDecimal minPrice = customMinPrice;
+        BigDecimal maxPrice = customMaxPrice;
+
+        // Xử lý khoảng giá nếu không nhập khoảng tùy chỉnh
+        if (minPrice == null && maxPrice == null && priceRange != null) {
+            if ("under50".equals(priceRange)) {
+                maxPrice = new BigDecimal("50000");
+            } else if ("50to100".equals(priceRange)) {
+                minPrice = new BigDecimal("50000");
+                maxPrice = new BigDecimal("100000");
+            } else if ("100to200".equals(priceRange)) {
+                minPrice = new BigDecimal("100000");
+                maxPrice = new BigDecimal("200000");
+            } else if ("over200".equals(priceRange)) {
+                minPrice = new BigDecimal("200000");
+            } else if ("over100".equals(priceRange)) {
+                minPrice = new BigDecimal("100000");
+            }
         }
 
-        // Xử lý danh mục (Nếu user không tích vào ô nào -> không lọc theo danh mục)
+        // Xử lý danh mục
         boolean filterByCategory = (categoryIds != null && !categoryIds.isEmpty());
-        List safeCategoryIds = filterByCategory ? categoryIds : List.of(-1L);
+        List<Long> safeCategoryIds = filterByCategory ? categoryIds : List.of(-1L);
+
+        // Xử lý xuất xứ / vùng miền
+        boolean filterByOrigin = (origins != null && !origins.isEmpty());
+        List<String> safeOrigins = filterByOrigin ? origins : List.of("__NONE__");
+
+        // Xử lý sắp xếp
+        org.springframework.data.domain.Sort sort;
+        if ("priceAsc".equalsIgnoreCase(sortKey)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "price");
+        } else if ("priceDesc".equalsIgnoreCase(sortKey)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "price");
+        } else if ("nameAsc".equalsIgnoreCase(sortKey)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "name");
+        } else if ("newest".equalsIgnoreCase(sortKey)) {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id");
+        } else {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id");
+        }
 
         String safeKeyword = (keyword == null) ? "" : keyword.trim();
 
-        List<ProductVariant> variants = productVariantRepository.searchAndFilter(
-                safeKeyword, minPrice, maxPrice, filterByCategory, safeCategoryIds);
-        applyActivePromotionPrices(variants);
-        return variants;
-    }
+        List<ProductVariant> variants = productVariantRepository.advancedSearchAndFilter(
+                safeKeyword, minPrice, maxPrice, filterByCategory, safeCategoryIds, filterByOrigin, safeOrigins, sort);
 
-    private void applyActivePromotionPrices(List<ProductVariant> variants) {
-        if (variants == null || variants.isEmpty()) return;
-        List<Long> ids = variants.stream().map(ProductVariant::getId).toList();
-        Map<Long, BigDecimal> prices = promotionalPriceRepository
-                .findActivePricesByVariantIds(ids, java.time.LocalDateTime.now(BUSINESS_ZONE)).stream()
-                .collect(Collectors.toMap(ActivePromotionPrice::getVariantId,
-                        ActivePromotionPrice::getPromotionalPrice));
-        variants.forEach(variant -> variant.setPromotionalPrice(prices.get(variant.getId())));
+        // Lọc tồn kho nếu yêu cầu inStockOnly
+        if (Boolean.TRUE.equals(inStockOnly) && !variants.isEmpty()) {
+            List<Long> variantIds = variants.stream().map(ProductVariant::getId).toList();
+            var inventoryList = variantInventoryRepository.findByVariantIdIn(variantIds);
+            var invMap = inventoryList.stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            VariantInventory::getVariantId,
+                            java.util.function.Function.identity(),
+                            (a, b) -> a));
+
+            variants = variants.stream()
+                    .filter(v -> {
+                        var inv = invMap.get(v.getId());
+                        return inv != null
+                                && "ACTIVE".equals(inv.getStatus())
+                                && inv.getAvailableQuantity() != null
+                                && inv.getAvailableQuantity() > 0;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Gán khuyến mãi hiện hành (nếu có)
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        for (ProductVariant variant : variants) {
+            promotionalPriceRepository.findActivePriceByVariantId(variant.getId(), now)
+                    .ifPresent(variant::setPromotionalPrice);
+        }
+
+        return variants;
     }
 
     public ProductVariant getProductVariantById(Long id) {

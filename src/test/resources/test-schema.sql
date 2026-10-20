@@ -11,7 +11,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255),
     phone VARCHAR(20),
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    email_verified_at TIMESTAMP
+    email_verified_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE roles (
@@ -59,6 +60,25 @@ CREATE TABLE shops (
     reviewed_at TIMESTAMP,
     suspension_reason VARCHAR(1000),
     rejection_reason VARCHAR(1000),
+    id_card_number VARCHAR(50),
+    id_card_name VARCHAR(150),
+    id_card_date DATE,
+    id_card_place VARCHAR(150),
+    business_type VARCHAR(50) DEFAULT 'INDIVIDUAL',
+    tax_code VARCHAR(50),
+    tax_name VARCHAR(150),
+    tax_email VARCHAR(254),
+    shipping_methods VARCHAR(255),
+    bank_name VARCHAR(100),
+    bank_account_number VARCHAR(50),
+    bank_account_name VARCHAR(150),
+    bank_branch VARCHAR(150),
+    payment_approval_status VARCHAR(50) NOT NULL DEFAULT 'UNCONFIGURED',
+    bank_rejection_reason VARCHAR(1000),
+    payment_reviewed_at TIMESTAMP,
+    seller_approval_status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    seller_rejection_reason VARCHAR(1000),
+    seller_reviewed_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -228,6 +248,12 @@ CREATE TABLE orders (
     status VARCHAR(25) NOT NULL,
     payment_status VARCHAR(20) NOT NULL,
     delivery_status VARCHAR(25) NOT NULL,
+    paid_at TIMESTAMP NULL,
+    shipped_at TIMESTAMP NULL,
+    delivered_at TIMESTAMP NULL,
+    completed_at TIMESTAMP NULL,
+    cancelled_at TIMESTAMP NULL,
+    cancellation_reason VARCHAR(1000) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(id, shop_id)
 );
@@ -249,7 +275,9 @@ CREATE TABLE order_items (
     sale_unit_price DECIMAL(19,0) NOT NULL,
     line_total DECIMAL(19,0) NOT NULL,
     expiry_date DATE NOT NULL,
-    allocation_status VARCHAR(20) NOT NULL
+    allocation_status VARCHAR(20) NOT NULL,
+    reviewed_at TIMESTAMP NULL
+
 );
 
 CREATE TABLE inventory_transactions (

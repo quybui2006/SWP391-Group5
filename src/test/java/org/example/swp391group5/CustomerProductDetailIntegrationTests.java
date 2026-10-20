@@ -61,7 +61,7 @@ class CustomerProductDetailIntegrationTests {
 
         mvc.perform(get("/product/" + variantId))
                 .andExpect(status().isOk())
-                .andExpect(view().name("customerproductdetail"))
+                .andExpect(view().name("customer/customerproductdetail"))
                 .andExpect(model().attributeExists("variant"))
                 .andExpect(model().attributeExists("shop"))
                 .andExpect(model().attributeExists("reviews"))

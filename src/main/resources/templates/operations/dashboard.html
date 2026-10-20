@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{operations/layout :: head('Dashboard Quản trị Vận hành')}"></head>
+<body style="background:var(--bg);">
+<div class="app-shell">
+    <aside th:replace="~{operations/layout :: sidebar('dashboard')}"></aside>
+    <main class="main-content">
+        <header th:replace="~{operations/layout :: pageHeader('Dashboard Quản trị Vận hành', 'Phân tích hiệu suất toàn bộ cửa hàng và chỉ số SLA thời gian thẩm định hồ sơ')}"></header>
+
+        <section class="approval-page" style="max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px;">
+
+            <!-- ================= SECTION 1: PHÂN TÍCH HIỆU SUẤT SHOP ================= -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                    <div>
+                        <h2 style="font-size:18px;font-weight:800;color:var(--ink);margin:0 0 4px;display:flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;">
+                            <span>🏪</span> Phân tích hiệu suất Cửa hàng (Shop Performance)
+                        </h2>
+                        <p style="margin:0;font-size:13px;color:var(--muted);">Quy mô đối tác người bán, trạng thái hoạt động và đóng góp doanh thu trên sàn</p>
+                    </div>
+                    <span style="font-size:12px;color:#28a866;background:#e9f8ee;border:1px solid #c2ebd0;padding:4px 12px;border-radius:20px;font-weight:700;">
+                        ● Dữ liệu thời gian thực
+                    </span>
+                </div>
+
+                <!-- 4 Top Cards for Shops -->
+                <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;margin-bottom:20px;">
+                    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">
+                        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Tổng cửa hàng</div>
+                        <div style="font-size:26px;font-weight:800;color:var(--ink);margin:8px 0 4px;font-family:'Plus Jakarta Sans',sans-serif;" th:text="${shopPerformance.totalShops}">0</div>
+                        <div style="font-size:12px;color:#16a34a;font-weight:600;">
+                            <span th:text="${shopPerformance.activeShops}">0</span> Shop đang mở bán (OPEN)
+                        </div>
+                    </div>
+
+                    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">
+                        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Hồ sơ chờ duyệt</div>
+                        <div style="font-size:26px;font-weight:800;color:#ea580c;margin:8px 0 4px;font-family:'Plus Jakarta Sans',sans-serif;" th:text="${shopPerformance.pendingShops}">0</div>
+                        <div style="font-size:12px;color:#9a3412;">
+                            <a th:href="@{/operations/shops(status='PENDING')}" style="color:#ea580c;font-weight:600;text-decoration:none;">Xử lý ngay ➔</a>
+                        </div>
+                    </div>
+
+                    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">
+                        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Tạm dừng / Bị từ chối</div>
+                        <div style="font-size:26px;font-weight:800;color:#e11d48;margin:8px 0 4px;font-family:'Plus Jakarta Sans',sans-serif;">
+                            <span th:text="${shopPerformance.suspendedShops}">0</span> / <span th:text="${shopPerformance.rejectedShops}">0</span>
+                        </div>
+                        <div style="font-size:12px;color:#9f1239;">Cần kiểm tra lý do vi phạm</div>
+                    </div>
+
+                    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">
+                        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Doanh thu toàn sàn</div>
+                        <div style="font-size:24px;font-weight:800;color:#28a866;margin:8px 0 4px;font-family:'Plus Jakarta Sans',sans-serif;" th:text="${#numbers.formatInteger(shopPerformance.totalRevenue, 1, 'COMMA') + ' ₫'}">0 ₫</div>
+                        <div style="font-size:12px;color:var(--muted);">
+                            Từ <strong th:text="${shopPerformance.totalCompletedOrders}">0</strong> đơn hàng hoàn tất
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Performing Shops Table -->
+                <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);">
+                    <h3 style="font-size:15px;font-weight:700;color:var(--ink);margin:0 0 14px;font-family:'Plus Jakarta Sans',sans-serif;">🏆 Top Cửa hàng có doanh thu cao nhất trên sàn</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <thead>
+                            <tr style="background:#fafcfb;border-bottom:1px solid var(--line);text-align:left;color:#9da8a0;font-size:10px;text-transform:uppercase;font-weight:800;">
+                                <th style="padding:12px 14px;">CỬA HÀNG</th>
+                                <th style="padding:12px 14px;">CHỦ SỞ HỮU</th>
+                                <th style="padding:12px 14px;">HOTLINE</th>
+                                <th style="padding:12px 14px;">TRẠNG THÁI</th>
+                                <th style="padding:12px 14px;text-align:right;">ĐƠN HÀNG</th>
+                                <th style="padding:12px 14px;text-align:right;">TỔNG DOANH THU</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="s : ${shopPerformance.topShops}" style="border-bottom:1px solid #f0f3f1;">
+                                <td style="padding:14px;">
+                                    <a th:href="@{/operations/shops/{id}(id=${s.id})}" style="color:#28a866;font-weight:700;text-decoration:none;" th:text="${s.name}">Tên Shop</a>
+                                </td>
+                                <td style="padding:14px;color:var(--ink);" th:text="${s.owner_name}">Chủ Shop</td>
+                                <td style="padding:14px;color:var(--muted);" th:text="${s.phone}">0912345678</td>
+                                <td style="padding:14px;">
+                                    <span th:if="${s.operating_status == 'OPEN'}" style="background:#e8f8ed;color:#269653;padding:4px 9px;border-radius:20px;font-weight:700;font-size:10px;">OPEN</span>
+                                    <span th:if="${s.operating_status != 'OPEN'}" style="background:#f1f5f9;color:#475569;padding:4px 9px;border-radius:20px;font-weight:700;font-size:10px;" th:text="${s.operating_status}">CLOSED</span>
+                                </td>
+                                <td style="padding:14px;text-align:right;font-weight:600;" th:text="${s.total_orders}">0</td>
+                                <td style="padding:14px;text-align:right;font-weight:700;color:#28a866;font-family:'Plus Jakarta Sans',sans-serif;" th:text="${#numbers.formatInteger(s.total_revenue, 1, 'COMMA') + ' ₫'}">0 ₫</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(shopPerformance.topShops)}">
+                                <td colspan="6" style="padding:24px;text-align:center;color:var(--muted);">Chưa có dữ liệu giao dịch từ các shop.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= SECTION 2: SLA DUYỆT HỒ SƠ ================= -->
+            <div>
+                <div style="margin-bottom:18px;">
+                    <h2 style="font-size:18px;font-weight:800;color:var(--ink);margin:0 0 4px;display:flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;">
+                        <span>⏱️</span> SLA Duyệt Hồ sơ mở Shop (Approval SLAs)
+                    </h2>
+                    <p style="margin:0;font-size:13px;color:var(--muted);">Đo lường thời gian thẩm định, tỷ lệ đạt chuẩn SLA và tồn đọng quá hạn</p>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <!-- SLA Shop Registrations -->
+                    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:var(--shadow);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;">
+                            <h3 style="font-size:15px;font-weight:700;color:var(--ink);margin:0;font-family:'Plus Jakarta Sans',sans-serif;">📋 SLA Duyệt Hồ sơ mở Shop (Chuẩn &lt; 24h)</h3>
+                            <a th:href="@{/operations/shops}" style="font-size:12px;color:#28a866;font-weight:700;text-decoration:none;">Xem danh sách ➔</a>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+                            <div style="background:#f7faf8;padding:14px;border-radius:10px;border:1px solid var(--line);">
+                                <div style="font-size:12px;color:var(--muted);">Thời gian duyệt trung bình</div>
+                                <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:4px;font-family:'Plus Jakarta Sans',sans-serif;">
+                                    <span th:text="${approvalSla.avgShopHours}">0.0</span> giờ
+                                </div>
+                            </div>
+                            <div style="background:#e8f8ed;padding:14px;border-radius:10px;border:1px solid #c2ebd0;">
+                                <div style="font-size:12px;color:#166534;">Tỷ lệ đạt SLA (&lt; 24h)</div>
+                                <div style="font-size:22px;font-weight:800;color:#16a34a;margin-top:4px;font-family:'Plus Jakarta Sans',sans-serif;">
+                                    <span th:text="${approvalSla.shopSlaRate}">100</span>%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--muted);">Hồ sơ tồn đọng quá hạn (&gt; 24h):</span>
+                                <strong style="color:#e11d48;" th:text="${approvalSla.overduePendingShops} + ' hồ sơ'">0 hồ sơ</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--muted);">Tỷ lệ phê duyệt thành công:</span>
+                                <strong style="color:#15803d;" th:text="${approvalSla.shopApprovalRate} + '%'">92%</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLA Post-Audit / Danh sách shop overview -->
+                    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:var(--shadow);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;">
+                            <h3 style="font-size:15px;font-weight:700;color:var(--ink);margin:0;font-family:'Plus Jakarta Sans',sans-serif;">🔍 Giám sát &amp; Hậu kiểm Cửa hàng</h3>
+                            <a th:href="@{/operations/post-audit}" style="font-size:12px;color:#28a866;font-weight:700;text-decoration:none;">Danh sách shop ➔</a>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+                            <div style="background:#f7faf8;padding:14px;border-radius:10px;border:1px solid var(--line);">
+                                <div style="font-size:12px;color:var(--muted);">Cửa hàng đang mở bán</div>
+                                <div style="font-size:22px;font-weight:800;color:#16a34a;margin-top:4px;font-family:'Plus Jakarta Sans',sans-serif;">
+                                    <span th:text="${shopPerformance.activeShops}">0</span> Shop
+                                </div>
+                            </div>
+                            <div style="background:#fff0ef;padding:14px;border-radius:10px;border:1px solid #fecdd3;">
+                                <div style="font-size:12px;color:#991b1b;">Cần kiểm tra / Tạm dừng</div>
+                                <div style="font-size:22px;font-weight:800;color:#e11d48;margin-top:4px;font-family:'Plus Jakarta Sans',sans-serif;">
+                                    <span th:text="${shopPerformance.suspendedShops}">0</span> Shop
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--muted);">Cơ chế kiểm soát:</span>
+                                <strong style="color:var(--ink);">Hậu kiểm sau khi mở bán</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;">
+                                <span style="color:var(--muted);">Trạng thái chất lượng:</span>
+                                <strong style="color:#15803d;">Tuân thủ quy chế sàn</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+</div>
+</body>
+</html>

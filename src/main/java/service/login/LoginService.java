@@ -16,11 +16,13 @@ public class LoginService {
     private final UserRepository users;
     private final UserRoleRepository userRoles;
     private final PasswordEncoder passwordEncoder;
+
     public LoginService(UserRepository users, UserRoleRepository userRoles, PasswordEncoder passwordEncoder) {
         this.users = users;
         this.userRoles = userRoles;
         this.passwordEncoder = passwordEncoder;
     }
+
     @Transactional(readOnly = true)
     public Optional<LoginResult> login(String email, String password){
         if(email==null||email.isBlank()||password==null){
@@ -35,9 +37,11 @@ public class LoginService {
         }
         Set<String> roles=userRoles.findByUser_Id(user.getId()).stream()
                 .map(userRole -> userRole.getRole().getCode()).collect(Collectors.toSet());
-        String role=roles.contains("ADMIN")?"ADMIN"
-                :roles.contains("SHOP_OWNER")?"SHOP_OWNER"
-                :roles.contains("CUSTOMER")?"CUSTOMER":null;
+        String role = roles.contains("ADMIN") ? "ADMIN"
+                : roles.contains("OPERATIONS_MANAGER") ? "OPERATIONS_MANAGER"
+                : roles.contains("CS_STAFF") ? "CS_STAFF"
+                : roles.contains("SHOP_OWNER") ? "SHOP_OWNER"
+                : roles.contains("CUSTOMER") ? "CUSTOMER" : null;
         if(role==null) return Optional.empty();
 
         return Optional.of(new LoginResult(user.getId(),user.getFullName(),role));

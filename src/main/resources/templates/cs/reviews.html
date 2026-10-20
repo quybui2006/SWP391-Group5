@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{cs/layout :: head('Đánh giá & Phản hồi')}"></head>
+<body>
+
+<aside th:replace="~{cs/layout :: sidebar('reviews')}"></aside>
+
+<div class="cs-main-wrapper">
+    <header class="cs-topbar">
+        <div>
+            <h1>Đánh giá & Phản hồi từ người mua</h1>
+            <p class="cs-topbar-subtitle">Theo dõi sự hài lòng của khách hàng đối với chất lượng trái cây trên toàn sàn.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a th:href="@{/cs/reviews}" class="btn-cs-sm" th:style="${selectedRating == null} ? 'background:#0284c7; color:#fff;' : ''">Tất cả</a>
+            <a th:href="@{/cs/reviews(rating=1)}" class="btn-cs-sm" th:style="${selectedRating == 1} ? 'background:#dc2626; color:#fff;' : ''">★ 1 Sao</a>
+            <a th:href="@{/cs/reviews(rating=2)}" class="btn-cs-sm" th:style="${selectedRating == 2} ? 'background:#ea580c; color:#fff;' : ''">★ 2 Sao</a>
+            <a th:href="@{/cs/reviews(rating=3)}" class="btn-cs-sm" th:style="${selectedRating == 3} ? 'background:#eab308; color:#fff;' : ''">★ 3 Sao</a>
+            <a th:href="@{/cs/reviews(rating=4)}" class="btn-cs-sm" th:style="${selectedRating == 4} ? 'background:#16a34a; color:#fff;' : ''">★ 4 Sao</a>
+            <a th:href="@{/cs/reviews(rating=5)}" class="btn-cs-sm" th:style="${selectedRating == 5} ? 'background:#16a34a; color:#fff;' : ''">★ 5 Sao</a>
+        </div>
+    </header>
+
+    <main class="cs-content">
+        <div class="cs-card">
+            <div style="overflow-x: auto;">
+                <table class="cs-table">
+                    <thead>
+                    <tr>
+                        <th>Khách hàng</th>
+                        <th>Sản phẩm</th>
+                        <th>Số sao</th>
+                        <th>Nội dung đánh giá</th>
+                        <th>Thời gian</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="rev : ${reviews}">
+                        <td>
+                            <strong th:text="${rev['customer_name']}">Nguyễn Văn B</strong>
+                            <small style="display: block; color: var(--cs-text-sub);" th:text="${rev['customer_email']}">user@gmail.com</small>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;" th:text="${rev['product_name']}">Táo Envy</div>
+                            <small style="color: var(--cs-text-sub);" th:text="${rev['variant_name']}">Hộp 1kg</small>
+                        </td>
+                        <td>
+                            <span style="color: #eab308; font-weight: 800; font-size: 14.5px;" th:text="${'★ ' + rev['rating'] + '/5'}">★ 5/5</span>
+                        </td>
+                        <td>
+                            <div style="max-width: 450px; line-height: 1.4;" th:text="${rev['content'] ?: 'Không có nội dung'}">Hàng tươi ngon, giao nhanh.</div>
+                        </td>
+                        <td style="color: var(--cs-text-sub); font-size: 13px;" th:text="${rev['created_at']}">19/10/2026</td>
+                        <td>
+                            <form th:action="@{/cs/reviews/{id}/remove(id=${rev['id']})}" method="post" style="display:inline;"
+                                  onsubmit="return confirm('Xóa đánh giá này?')">
+                                <button type="submit" class="btn-cs-sm" style="background:#dc2626; color:#fff;">Xóa đánh giá</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(reviews)}">
+                        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 40px;">
+                            Không có đánh giá nào phù hợp với bộ lọc.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

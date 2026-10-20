@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{seller/seller-header :: head('Kích hoạt tài khoản Người bán')}"></head>
+<body>
+
+<header th:replace="~{seller/seller-header :: navbar}"></header>
+
+<main class="seller-shell">
+    <!-- Stepper: Step 1 -->
+    <div th:replace="~{seller/seller-header :: stepper(1)}"></div>
+
+    <!-- Alert Messages -->
+    <div th:if="${errorMessage}" class="seller-alert danger">
+        <span style="font-size:18px;">⚠️</span>
+        <div th:text="${errorMessage}">Thông báo lỗi</div>
+    </div>
+    <div th:if="${successMessage}" class="seller-alert success">
+        <span style="font-size:18px;">✅</span>
+        <div th:text="${successMessage}">Thông báo thành công</div>
+    </div>
+
+    <!-- Card Form -->
+    <div class="seller-card">
+        <div class="seller-card-title">
+            <span>🛡️</span> Kích hoạt Tài khoản Người bán & Định danh
+        </div>
+        <p class="seller-card-subtitle">
+            Theo Nghị định 52/2013/NĐ-CP & Luật Giao dịch điện tử, Người bán trên sàn TMĐT FreshFruit bắt buộc phải định danh danh tính CCCD và thông tin thuế trước khi tiến hành khởi tạo gian hàng.
+        </p>
+
+        <form th:action="@{/seller/activate}" th:object="${form}" method="post">
+            <!-- 1. Thông tin liên hệ -->
+            <div class="seller-section-title">
+                <span>📞</span> 1. Thông tin liên hệ Người bán
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="phone">Số điện thoại liên hệ <span class="req">*</span></label>
+                    <input type="tel" id="phone" th:field="*{phone}" placeholder="0988776655" required>
+                    <span class="form-hint">Dùng để nhận OTP bảo mật và liên hệ khi có đơn hàng.</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email liên hệ <span class="req">*</span></label>
+                    <input type="email" id="email" th:field="*{email}" placeholder="seller@example.com" required>
+                    <span class="form-hint">Dùng nhận thông báo đối soát doanh thu & chính sách bán hàng.</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
+            </div>
+
+            <!-- 2. Thông tin định danh CCCD -->
+            <div class="seller-section-title">
+                <span>🪪</span> 2. Thông tin Định danh Cá nhân (CCCD / Hộ chiếu)
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="idCardName">Họ và tên trên CCCD <span class="req">*</span></label>
+                    <input type="text" id="idCardName" th:field="*{idCardName}" placeholder="NGUYỄN VĂN AN" style="text-transform:uppercase;" required>
+                    <span class="form-hint">Họ tên chính chủ (Sẽ dùng đối chiếu với Tên Tài khoản Ngân hàng).</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('idCardName')}" th:errors="*{idCardName}"></div>
+                </div>
+                <div class="form-group">
+                    <label for="idCardNumber">Số CCCD / Hộ chiếu <span class="req">*</span></label>
+                    <input type="text" id="idCardNumber" th:field="*{idCardNumber}" placeholder="Ví dụ: 001203004567" required>
+                    <span class="form-hint">Gồm 12 chữ số theo tiêu chuẩn căn cước công dân gắn chip.</span>
+                    <div class="form-error" th:if="${#fields.hasErrors('idCardNumber')}" th:errors="*{idCardNumber}"></div>
+                </div>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="idCardDate">Ngày cấp CCCD <span class="req">*</span></label>
+                    <input type="date" id="idCardDate" th:field="*{idCardDate}" required>
+                    <div class="form-error" th:if="${#fields.hasErrors('idCardDate')}" th:errors="*{idCardDate}"></div>
+                </div>
+                <div class="form-group">
+                    <label for="idCardPlace">Nơi cấp <span class="req">*</span></label>
+                    <input type="text" id="idCardPlace" th:field="*{idCardPlace}" placeholder="Cục Cảnh sát QLHC về TTXH" required>
+                    <div class="form-error" th:if="${#fields.hasErrors('idCardPlace')}" th:errors="*{idCardPlace}"></div>
+                </div>
+            </div>
+
+            <!-- 3. Thông tin thuế & Loại hình kinh doanh -->
+            <div class="seller-section-title">
+                <span>💼</span> 3. Thông tin Thuế & Loại hình kinh doanh
+            </div>
+            <div class="form-group">
+                <label for="businessType">Loại hình kinh doanh <span class="req">*</span></label>
+                <select id="businessType" th:field="*{businessType}">
+                    <option value="INDIVIDUAL">Cá nhân / Nhà vườn tự do (Mặc định)</option>
+                    <option value="HOUSEHOLD">Hộ kinh doanh cá thể</option>
+                    <option value="COMPANY">Doanh nghiệp / Hợp tác xã Nông nghiệp</option>
+                </select>
+            </div>
+
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label for="taxCode">Mã số thuế (MST)</label>
+                    <input type="text" id="taxCode" th:field="*{taxCode}" placeholder="8012345678 (nếu có)">
+                    <span class="form-hint">MST cá nhân hoặc MST doanh nghiệp.</span>
+                </div>
+                <div class="form-group">
+                    <label for="taxName">Tên người nộp thuế</label>
+                    <input type="text" id="taxName" th:field="*{taxName}" placeholder="Tên cá nhân hoặc công ty">
+                </div>
+                <div class="form-group">
+                    <label for="taxEmail">Email nhận chứng từ thuế</label>
+                    <input type="email" id="taxEmail" th:field="*{taxEmail}" placeholder="ketoan@cuahang.com">
+                </div>
+            </div>
+
+            <div class="seller-actions-bar">
+                <a th:href="@{/}" class="btn-seller-secondary">← Hủy bỏ & Quay lại</a>
+                <button type="submit" class="btn-seller-submit">
+                    Xác nhận Kích hoạt & Tiếp tục tạo Shop ➔
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

@@ -74,7 +74,7 @@ class RegisterControllerTests {
 
         String view = controller.verifyPage(session, model);
 
-        assertEquals("register-verify", view);
+        assertEquals("login/register-verify", view);
         assertEquals("user@example.com", model.getAttribute("email"));
     }
 
@@ -126,7 +126,7 @@ class RegisterControllerTests {
 
         String view = controller.verify("000000", session, model, redirect);
 
-        assertEquals("register-verify", view);
+        assertEquals("login/register-verify", view);
         assertTrue(model.containsAttribute("error"));
     }
 }

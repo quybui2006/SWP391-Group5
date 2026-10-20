@@ -49,6 +49,9 @@
             <button type="button" class="notif-tab" data-filter="order">
                 Đơn hàng
             </button>
+            <button type="button" class="notif-tab" data-filter="shop">
+                Cửa hàng & Duyệt
+            </button>
             <button type="button" class="notif-tab" data-filter="promo">
                 Khuyến mãi
             </button>
@@ -123,6 +126,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     item.style.display = !isRead ? "flex" : "none";
                 } else if (filter === "order") {
                     item.style.display = type.includes("order") ? "flex" : "none";
+                } else if (filter === "shop") {
+                    item.style.display = (type.includes("shop") || type.includes("approval")) ? "flex" : "none";
                 } else if (filter === "promo") {
                     item.style.display = (type.includes("promo") || type.includes("product")) ? "flex" : "none";
                 } else if (filter === "system") {

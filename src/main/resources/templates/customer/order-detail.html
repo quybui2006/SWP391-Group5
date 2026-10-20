@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{customer/account-fragments :: head('Chi tiết đơn hàng')}"></head>
+<body>
+<div class="customer-shell">
+<aside th:replace="~{customer/account-fragments :: sidebar('orders')}"></aside>
+<main class="customer-main">
+    <header th:replace="~{customer/account-fragments :: topbar('Chi tiết đơn hàng')}"></header>
+
+    <section class="account-panel order-detail-panel">
+
+        <!-- Header: quay lại + mã đơn + trạng thái -->
+        <div class="order-detail-top">
+            <a class="back-link" th:href="@{/customer/account/orders}">← Đơn hàng của tôi</a>
+            <div class="order-detail-title">
+                <h1 th:text="${'Đơn hàng ' + order['order_code']}">Đơn hàng FF-XXX</h1>
+                <span class="order-status"
+                      th:classappend="${order['status'] == 'COMPLETED'} ? ' completed' : (${order['status'] == 'CANCELLED'} ? ' cancelled' : '')"
+                      th:switch="${order['status']}">
+                    <span th:case="'PENDING'"
+                          th:text="${order['payment_status'] == 'UNPAID'} ? 'Chờ thanh toán' : 'Chờ xác nhận'">Chờ thanh toán</span>
+                    <span th:case="'CONFIRMED'">Đã xác nhận</span>
+                    <span th:case="'PREPARING'">Đang chuẩn bị hàng</span>
+                    <span th:case="'SHIPPING'">Đang vận chuyển</span>
+                    <span th:case="'DELIVERED'">Đã giao hàng</span>
+                    <span th:case="'COMPLETED'">Hoàn thành</span>
+                    <span th:case="'CANCELLED'">Đã hủy</span>
+                    <span th:case="*">Đang xử lý</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Timeline theo dõi đơn hàng -->
+        <div class="tracking-card" th:if="${order['status'] != 'CANCELLED'}">
+            <h3>📍 Trạng thái đơn hàng</h3>
+            <div class="tracking-steps">
+                <div class="track-step done">
+                    <div class="track-dot"></div>
+                    <div class="track-label">Đặt hàng</div>
+                    <div class="track-time" th:text="${order['created_at']}"></div>
+                </div>
+                <div class="track-step"
+                     th:classappend="${order['status'] != 'PENDING'} ? 'done' : ''">
+                    <div class="track-dot"></div>
+                    <div class="track-label">Xác nhận</div>
+                    <div class="track-time">—</div>
+                </div>
+                <div class="track-step"
+                     th:classappend="${order['status'] == 'PREPARING' or order['status'] == 'SHIPPING' or order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED'} ? 'done' : ''">
+                    <div class="track-dot"></div>
+                    <div class="track-label">Chuẩn bị hàng</div>
+                    <div class="track-time">—</div>
+                </div>
+                <div class="track-step"
+                     th:classappend="${order['status'] == 'SHIPPING' or order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED' or order['delivery_status'] == 'IN_TRANSIT' or order['delivery_status'] == 'DELIVERED'} ? 'done' : ''">
+                    <div class="track-dot"></div>
+                    <div class="track-label">Vận chuyển</div>
+                    <div class="track-time" th:if="${order['shipped_at'] != null}" th:text="${order['shipped_at']}"></div>
+                    <div class="track-time" th:if="${order['shipped_at'] == null}">—</div>
+                </div>
+                <div class="track-step"
+                     th:classappend="${order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED' or order['delivery_status'] == 'DELIVERED'} ? 'done' : ''">
+                    <div class="track-dot"></div>
+                    <div class="track-label">Đã giao</div>
+                    <div class="track-time" th:if="${order['delivered_at'] != null}" th:text="${order['delivered_at']}"></div>
+                    <div class="track-time" th:if="${order['delivered_at'] == null}">—</div>
+                </div>
+                <div class="track-step"
+                     th:classappend="${order['status'] == 'COMPLETED'} ? 'done' : ''">
+                    <div class="track-dot"></div>
+                    <div class="track-label">Hoàn thành</div>
+                    <div class="track-time" th:if="${order['completed_at'] != null}" th:text="${order['completed_at']}"></div>
+                    <div class="track-time" th:if="${order['completed_at'] == null}">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner đơn đã hủy -->
+        <div class="cancelled-banner" th:if="${order['status'] == 'CANCELLED'}">
+            <span class="cancel-icon">✕</span>
+            <div>
+                <strong>Đơn hàng đã bị hủy</strong>
+                <p th:if="${order['cancellation_reason'] != null}" th:text="${'Lý do: ' + order['cancellation_reason']}"></p>
+                <p th:if="${order['cancelled_at'] != null}" th:text="${'Thời gian hủy: ' + order['cancelled_at']}"></p>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <!-- CỘT TRÁI: thông tin nhận hàng + thanh toán -->
+            <div>
+                <div class="detail-card">
+                    <h3>📍 Địa chỉ nhận hàng</h3>
+                    <div class="addr-name" th:text="${order['recipient_name']}">Người nhận</div>
+                    <div class="addr-phone" th:text="${order['recipient_phone']}">09xx</div>
+                    <div class="addr-full"
+                         th:text="${order['delivery_address'] + ', ' + order['delivery_ward_name'] + ', ' + order['delivery_province_name']}">Địa chỉ</div>
+                    <div class="order-note" th:if="${order['customer_note'] != null and !#strings.isEmpty(order['customer_note'])}">
+                        <strong>Ghi chú:</strong> <span th:text="${order['customer_note']}"></span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>💳 Thanh toán</h3>
+                    <div class="pay-row">
+                        <span>Phương thức</span>
+                        <strong th:text="${order['payment_method'] == 'VNPAY'} ? 'VNPay' : 'Thanh toán khi nhận hàng (COD)'">COD</strong>
+                    </div>
+                    <div class="pay-row">
+                        <span>Trạng thái</span>
+                        <strong th:switch="${order['payment_status']}">
+                            <span th:case="'PAID'" style="color:#16803c">Đã thanh toán</span>
+                            <span th:case="'UNPAID'" style="color:#d48806">Chưa thanh toán</span>
+                            <span th:case="'FAILED'" style="color:#cf1322">Thanh toán thất bại</span>
+                            <span th:case="'REFUNDED'">Đã hoàn tiền</span>
+                            <span th:case="*">—</span>
+                        </strong>
+                    </div>
+                    <div class="pay-row" th:if="${order['paid_at'] != null}">
+                        <span>Thời gian thanh toán</span>
+                        <span th:text="${order['paid_at']}"></span>
+                    </div>
+                    <div class="pay-row" th:if="${order['delivery_code'] != null}">
+                        <span>Mã vận đơn</span>
+                        <strong th:text="${order['delivery_code']}"></strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: sản phẩm + tiền -->
+            <div>
+                <div class="detail-card">
+                    <h3>
+                        <a class="order-shop" th:href="@{/shop/{id}(id=${order['shop_id']})}">
+                            🏪 <span th:text="${order['shop_name']}">Shop</span>
+                        </a>
+                    </h3>
+                    <div class="detail-item" th:each="item : ${order['items']}">
+                        <img th:src="${item['image_url'] != null ? item['image_url'] : '/images/placeholder.png'}"
+                             th:alt="${item['product_name']}"
+                             onerror="this.src='/images/placeholder.png'">
+                        <div class="detail-item-info">
+                            <div class="detail-item-name">
+                                <a th:href="@{/product/{id}(id=${item['variant_id']})}"
+                                   th:text="${item['product_name']}">Sản phẩm</a>
+                            </div>
+                            <div class="detail-item-variant"
+                                 th:text="${item['variant_name'] + ' (' + item['sku'] + ')'}">Phân loại</div>
+                            <div class="detail-item-qty" th:text="'x' + ${item['quantity'] + ' ' + (item['base_unit_name'] != null ? item['base_unit_name'] : '')}">x1</div>
+                            <a class="review-btn"
+                               th:if="${(order['status'] == 'COMPLETED' or order['status'] == 'DELIVERED') and item['reviewed_at'] == null}"
+                               th:href="@{/product/{id}(id=${item['variant_id']})}#reviews-section">Đánh giá sản phẩm</a>
+                            <span class="reviewed-label" th:if="${item['reviewed_at'] != null}">Đã đánh giá</span>
+                        </div>
+                        <div class="detail-item-price">
+                            <small class="price-old"
+                                   th:if="${item['sale_unit_price'] != null and item['unit_price'] != null and item['sale_unit_price'] < item['unit_price']}"
+                                   th:text="${#numbers.formatDecimal(item['unit_price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></small>
+                            <strong th:text="${#numbers.formatDecimal(item['line_total'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>🧾 Tổng tiền</h3>
+                    <div class="pay-row">
+                        <span>Tổng tiền hàng</span>
+                        <span th:text="${#numbers.formatDecimal(order['subtotal'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                    </div>
+                    <div class="pay-row">
+                        <span>Phí vận chuyển</span>
+                        <span th:text="${#numbers.formatDecimal(order['shipping_fee'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                    </div>
+                    <div class="pay-row total">
+                        <span>Thành tiền</span>
+                        <span class="total-price"
+                              th:text="${#numbers.formatDecimal(order['total_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+</main>
+</div>
+<script th:src="@{/js/customer-account-pages.js}"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{seller/seller-header :: head('Trạng thái hồ sơ Kênh Người Bán')}"></head>
+<body>
+
+<header th:replace="~{seller/seller-header :: navbar}"></header>
+
+<main class="seller-shell">
+    <!-- Stepper -->
+    <div th:replace="~{seller/seller-header :: stepper(${stepIndex ?: 3})}"></div>
+
+    <!-- Alert Messages -->
+    <div th:if="${errorMessage}" class="seller-alert danger">
+        <span style="font-size:18px;">⚠️</span>
+        <div th:text="${errorMessage}">Thông báo lỗi</div>
+    </div>
+    <div th:if="${successMessage}" class="seller-alert success">
+        <span style="font-size:18px;">✅</span>
+        <div th:text="${successMessage}">Thông báo thành công</div>
+    </div>
+
+    <!-- Status Banner Card -->
+    <div class="seller-card" style="text-align:center;padding:40px 32px;">
+        <!-- Status Icon -->
+        <div th:if="${status == 'PENDING'}" style="width:72px;height:72px;border-radius:50%;background:#fef3c7;color:#d97706;display:inline-flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px;">
+            ⏳
+        </div>
+        <div th:if="${status == 'APPROVED' && paymentApprovalStatus != 'APPROVED'}" style="width:72px;height:72px;border-radius:50%;background:#e0f2fe;color:#0284c7;display:inline-flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px;">
+            💳
+        </div>
+        <div th:if="${status == 'APPROVED' && paymentApprovalStatus == 'APPROVED'}" style="width:72px;height:72px;border-radius:50%;background:#dcfce7;color:#15803d;display:inline-flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px;">
+            🎉
+        </div>
+        <div th:if="${status == 'REJECTED'}" style="width:72px;height:72px;border-radius:50%;background:#fee2e2;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px;">
+            ✕
+        </div>
+
+        <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 8px;" th:text="${statusTitle}">
+            Trạng thái xét duyệt
+        </h2>
+        <p style="color:#64748b;font-size:14.5px;max-width:560px;margin:0 auto 24px;line-height:1.5;" th:text="${statusDescription}">
+            Mô tả chi tiết trạng thái xử lý hồ sơ.
+        </p>
+
+        <!-- Actions according to status -->
+        <!-- 1. APPROVED and Payment APPROVED -->
+        <div th:if="${status == 'APPROVED' && paymentApprovalStatus == 'APPROVED'}">
+            <a th:href="@{/shopowner/home}" class="btn-seller-submit" style="font-size:15px;padding:14px 32px;">
+                🚀 Truy Cập Kênh Người Bán (Shop Owner Portal)
+            </a>
+        </div>
+
+        <!-- 2. APPROVED but Payment UNCONFIGURED or REJECTED -->
+        <div th:if="${status == 'APPROVED' && (paymentApprovalStatus == 'UNCONFIGURED' || paymentApprovalStatus == 'REJECTED')}">
+            <div th:if="${paymentApprovalStatus == 'REJECTED' && bankRejectionReason != null}" style="background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13.5px;text-align:left;max-width:600px;margin-left:auto;margin-right:auto;">
+                <strong>Lý do từ chối tài khoản ngân hàng:</strong> <span th:text="${bankRejectionReason}"></span>
+            </div>
+            <a th:href="@{/seller/payment}" class="btn-seller-submit" style="font-size:15px;padding:14px 32px;background:linear-gradient(135deg,#0284c7,#0369a1);">
+                💳 Thiết lập & Đối chiếu Thông tin Thanh toán ➔
+            </a>
+        </div>
+
+        <!-- 3. APPROVED but Payment PENDING -->
+        <div th:if="${status == 'APPROVED' && paymentApprovalStatus == 'PENDING'}">
+            <a th:href="@{/seller/payment}" class="btn-seller-secondary" style="font-size:14px;padding:12px 24px;">
+                🔍 Xem lại thông tin thanh toán đã gửi
+            </a>
+        </div>
+
+        <!-- 4. REJECTED Shop Registration -->
+        <div th:if="${status == 'REJECTED'}">
+            <div th:if="${shop.rejectionReason != null}" style="background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;padding:12px 18px;border-radius:10px;margin-bottom:18px;font-size:13.5px;text-align:left;max-width:600px;margin-left:auto;margin-right:auto;">
+                <strong>Lý do từ chối hồ sơ Shop:</strong> <span th:text="${shop.rejectionReason}"></span>
+            </div>
+            <div style="display:flex;justify-content:center;gap:12px;">
+                <a th:href="@{/seller/activate(mode='edit')}" class="btn-seller-secondary">Sửa thông tin Định danh</a>
+                <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-seller-submit">Cập nhật & Nộp lại hồ sơ ➔</a>
+            </div>
+        </div>
+
+        <!-- 5. PENDING Shop Registration -->
+        <div th:if="${status == 'PENDING'}">
+            <div style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;padding:8px 18px;border-radius:20px;font-size:13px;color:#475569;">
+                <span>⏱️</span> Thời gian nộp hồ sơ: <strong th:text="${createdAtFormatted ?: 'Hôm nay'}">--</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registered Shop Summary Card -->
+    <div class="seller-card" th:if="${shop != null}">
+        <div class="seller-card-title">
+            <span>📋</span> Chi tiết Hồ sơ đã gửi
+        </div>
+        <p class="seller-card-subtitle">
+            Thông tin đã được mã hóa và lưu trữ an toàn trong hệ thống FreshFruit.
+        </p>
+
+        <div class="form-row-2">
+            <div style="background:#f8fafc;padding:16px 20px;border-radius:12px;border:1px solid #e2e8f0;">
+                <div style="font-size:12px;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:8px;">
+                    Thông tin Gian hàng
+                </div>
+                <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;" th:text="${shop.name}">
+                    Tên gian hàng
+                </div>
+                <div style="font-size:13px;color:#475569;margin-bottom:6px;">
+                    Hotline: <strong th:text="${shop.phone}">0988776655</strong>
+                </div>
+                <div style="font-size:13px;color:#475569;line-height:1.4;">
+                    Kho: <span th:text="${shop.addressDetail + ', ' + shop.wardName + ', ' + provinceName}">Địa chỉ</span>
+                </div>
+            </div>
+
+            <div style="background:#f8fafc;padding:16px 20px;border-radius:12px;border:1px solid #e2e8f0;">
+                <div style="font-size:12px;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:8px;">
+                    Thông tin Định danh (CCCD & Thuế)
+                </div>
+                <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;" th:text="${shop.idCardName ?: 'Chưa cập nhật'}">
+                    Họ và tên CCCD
+                </div>
+                <div style="font-size:13px;color:#475569;margin-bottom:6px;">
+                    Số CCCD: <strong th:text="${shop.idCardNumber ?: 'Chưa cập nhật'}">001203004567</strong>
+                </div>
+                <div style="font-size:13px;color:#475569;">
+                    Loại hình: 
+                    <span th:switch="${shop.businessType}">
+                        <span th:case="'INDIVIDUAL'">Cá nhân / Nhà vườn</span>
+                        <span th:case="'HOUSEHOLD'">Hộ kinh doanh</span>
+                        <span th:case="'COMPANY'">Doanh nghiệp / HTX</span>
+                        <span th:case="*">Cá nhân</span>
+                    </span>
+                    <span th:if="${shop.taxCode != null && !shop.taxCode.isBlank()}">
+                        • MST: <strong th:text="${shop.taxCode}"></strong>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

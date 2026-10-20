@@ -39,6 +39,11 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
+            <!-- Kênh Bán hàng -->
+            <a class="seller-channel-btn" th:href="@{/seller/channel}" title="Kênh Bán hàng">
+                🏪 Kênh Bán hàng
+            </a>
+
             <!-- Search Button -->
             <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
 
@@ -62,9 +67,9 @@
             <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
             <th:block th:if="${session.role != null}">
                 <div class="user-menu-container">
-                    <div class="user-avatar" th:title="${session.fullName}">
+                    <button type="button" class="user-avatar" th:title="${session.fullName}" aria-label="Menu tài khoản" aria-haspopup="true">
                         <span th:text="${session.fullName != null && !#strings.isEmpty(session.fullName) ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</span>
-                    </div>
+                    </button>
                     <div class="user-dropdown">
                         <div class="user-dropdown-header">
                             <p class="user-dropdown-name" th:text="${session.fullName ?: 'Người dùng'}">Tên người dùng</p>
@@ -77,6 +82,7 @@
                         <div class="user-dropdown-links">
                             <!-- Customer links -->
                             <th:block th:if="${session.role == 'CUSTOMER'}">
+                                <a th:href="@{/seller/channel}">🏪 Kênh Bán hàng</a>
                                 <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
                                 <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
                                 <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
@@ -120,7 +126,7 @@
 ========================================================= -->
 <main class="page-body">
 
-    <!-- Breadcrumb (Đồng bộ font & màu) -->
+    <!-- Breadcrumb -->
     <div class="container breadcrumb-wrapper">
         <nav class="breadcrumb-nav" aria-label="Đường dẫn">
             <a th:href="@{/}">Trang chủ</a>
@@ -155,13 +161,13 @@
                         <p>Trái cây tươi FreshFruit</p>
                     </div>
 
-                    <!-- Badge Trạng thái Đang bán (Style màn Home) -->
+                    <!-- Badge Trạng thái Đang bán -->
                     <span class="fresh-tag" th:if="${variant.status != null and variant.status.equalsIgnoreCase('ACTIVE')}">
                         <span class="status-dot"></span> Đang bán
                     </span>
                 </div>
 
-                <!-- Thumbnail Strip (Bố cục Shopee) -->
+                <!-- Thumbnail Strip -->
                 <div class="thumbnail-strip" id="thumbnailStrip">
                     <button type="button" class="thumb-box active" onclick="selectThumbnail(this)">
                         <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
@@ -242,8 +248,9 @@
                     </button>
                 </div>
 
-                <!-- Price Banner (Nền xanh dịu mát FreshFruit) -->
+                <!-- Price Banner -->
                 <div class="fresh-price-banner">
+
                     <!-- Giá khuyến mãi đang có hiệu lực (giờ Việt Nam) -->
                     <span class="price-old" th:if="${variant.price != null and variant.promotionalPrice != null}"
                           th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">120.000 ₫</span>
@@ -253,13 +260,14 @@
                           th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">120.000 ₫</span>
                     <span class="price-main" th:if="${variant.price == null}">Liên hệ</span>
 
+
                     <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
                 </div>
 
-                <!-- Details Rows (Bố cục Shopee) -->
+                <!-- Details Rows -->
                 <div class="fresh-details-table">
 
-                    <!-- Voucher Shop (Chỉ giữ voucher của shop) -->
+                    <!-- Voucher Shop -->
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
                         <div class="detail-content vouchers-wrap">
@@ -269,7 +277,7 @@
                         </div>
                     </div>
 
-                    <!-- Bảo hiểm / Cam kết tươi ngon -->
+                    <!-- Bảo hiểm -->
                     <div class="detail-line">
                         <span class="detail-label">Bảo Hiểm</span>
                         <div class="detail-content">
@@ -282,18 +290,22 @@
                     <div class="detail-line">
                         <span class="detail-label">Biến thể</span>
                         <div class="detail-content variants-select-wrap">
-                            <button type="button" class="variant-spec-chip active" onclick="selectSpec(this)">
+                            <!-- Danh sách biến thể thật cùng sản phẩm: click = chuyển sang trang variant đó (kiểu Shopee) -->
+                            <a th:each="sv : ${siblingVariants}"
+                               th:href="@{/product/{id}(id=${sv.id})}"
+                               class="variant-spec-chip"
+                               th:classappend="${sv.id == variant.id} ? 'active'">
+                                <span th:text="${sv.specification != null && !sv.specification.isEmpty() ? sv.specification : sv.name}">
+                                    Hộp tiêu chuẩn 1kg
+                                </span>
+                                <span class="check-tick" th:if="${sv.id == variant.id}">✓</span>
+                            </a>
+                            <!-- Fallback khi sản phẩm chỉ có 1 biến thể (siblingVariants rỗng) -->
+                            <button type="button" class="variant-spec-chip active"
+                                    th:if="${siblingVariants == null or siblingVariants.empty}">
                                 <span th:text="${variant.specification != null && !variant.specification.isEmpty() ? variant.specification : (variant.baseUnit != null ? variant.baseUnit.name : 'Hộp tiêu chuẩn 1kg')}">
                                     Hộp tiêu chuẩn 1kg
                                 </span>
-                                <span class="check-tick">✓</span>
-                            </button>
-                            <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
-                                <span>Combo 2 Hộp</span>
-                                <span class="check-tick">✓</span>
-                            </button>
-                            <button type="button" class="variant-spec-chip" onclick="selectSpec(this)">
-                                <span>Thùng 5kg (Giá sỉ gia đình)</span>
                                 <span class="check-tick">✓</span>
                             </button>
                         </div>
@@ -314,18 +326,18 @@
 
                 </div>
 
-                <!-- Action CTA Buttons (Màu xanh Home chuẩn) -->
+                <!-- Action CTA Buttons -->
                 <div class="fresh-action-row">
                     <button class="fresh-add-cart-btn" type="button"
                             th:attr="data-variant-id=${variant.id}"
-                            onclick="addProductToCart(this)">
+                            onclick="addProductToCart(event, this)">
                         <span class="cart-btn-icon">🛒</span>
                         <span>Thêm Vào Giỏ Hàng</span>
                     </button>
 
                     <button class="fresh-buy-now-btn" type="button"
                             th:attr="data-variant-id=${variant.id}"
-                            onclick="buyNow(this)">
+                            onclick="buyNow(event, this)">
                         Mua Ngay
                     </button>
                 </div>
@@ -357,7 +369,7 @@
 
 
     <!-- =====================================================
-         2. SHOP PROFILE BANNER (KHUNG THÔNG TIN CỬA HÀNG)
+         2. SHOP PROFILE BANNER
     ====================================================== -->
     <section class="container shop-section">
         <div class="fresh-shop-card">
@@ -514,13 +526,11 @@
             </div>
 
             <div class="product-description-content">
-                <!-- Mô tả từ CSDL nếu có -->
                 <p class="db-description-paragraph" th:if="${variant.product != null and variant.product.description != null and !variant.product.description.isEmpty()}"
                    th:text="${variant.product.description}">
                     Mô tả sản phẩm
                 </p>
 
-                <!-- Tiêu chuẩn sản phẩm chất lượng cao chuẩn FreshFruit -->
                 <div class="desc-feature-block desc-green">
                     <h4>🍎 ĐẶC ĐIỂM NỔI BẬT VÀ CHẤT LƯỢNG</h4>
                     <ul>
@@ -555,7 +565,7 @@
 
 
     <!-- =====================================================
-         4. ĐÁNH GIÁ SẢN PHẨM (CHUẨN SHOPEE - TONE FRESHFRUIT)
+         4. ĐÁNH GIÁ SẢN PHẨM
     ====================================================== -->
     <section class="container reviews-section" id="reviews-section">
         <div class="fresh-reviews-card">
@@ -627,7 +637,6 @@
                 </div>
 
                 <form id="reviewForm" th:action="@{/product/{id}/review(id=${variant.id})}" method="POST" class="fresh-review-form">
-                    <!-- Interactive Star Rating -->
                     <div class="compose-stars-row">
                         <span class="field-label">Chất lượng sản phẩm:</span>
                         <div class="star-rating-interactive" id="starPickerGroup">
@@ -641,7 +650,6 @@
                         <input type="hidden" name="rating" id="ratingInput" value="5">
                     </div>
 
-                    <!-- Review Textarea -->
                     <div class="review-textarea-container">
                         <textarea name="content" id="reviewContentInput" rows="3" maxlength="2000"
                                   placeholder="Hãy chia sẻ cảm nhận thực tế về chất lượng quả tươi ngon, độ ngọt, bao bì đóng gói và thời gian giao hàng nhé..."
@@ -769,7 +777,11 @@
                                     th:text="${#numbers.formatDecimal(rel.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
                                 99.000 ₫
                             </strong>
-                            <button type="button" class="add-btn-circle" th:attr="data-variant-id=${rel.id}" onclick="addProductToCart(this)" aria-label="Thêm vào giỏ hàng">
+                            <!-- Chặn sự kiện click của thẻ <a> bao ngoài và gọi đúng hàm thêm giỏ hàng -->
+                            <button type="button" class="add-btn-circle"
+                                    th:attr="data-variant-id=${rel.id}"
+                                    onclick="addRelatedToCart(event, this)"
+                                    aria-label="Thêm vào giỏ hàng">
                                 +
                             </button>
                         </div>
@@ -801,7 +813,7 @@
 
 
 <!-- =========================================================
-     FOOTER (ĐỒNG BỘ 100% VỚI MÀN HOME)
+     FOOTER
 ========================================================= -->
 <footer class="site-footer">
     <div class="container footer-inner">
@@ -832,10 +844,19 @@
 <!-- =========================================================
      JAVASCRIPT
 ========================================================= -->
+<!-- JavaScript trang chi tiết sản phẩm -->
 <script th:src="@{/js/customerproductdetail.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
-<script th:src="@{/js/cart-integration.js(v='20261008-1')}"></script>
+
+<!-- Xử lý giỏ hàng riêng của trang chi tiết -->
+<script th:src="@{/js/product-cart.js(v='20261019-1')}"></script>
+
+<!-- Menu tài khoản và thông báo -->
+<script th:src="@{/js/user-menu.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
+
+</body>
+</html>
 
 </body>
 </html>
