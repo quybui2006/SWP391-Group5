@@ -1,53 +1,13 @@
 package controller.operations;
 
-import dto.operations.ApprovalActionResponse;
-import dto.operations.PendingProductApprovalDto;
-import dto.operations.RejectApprovalRequest;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import service.operations.OperationsProductApprovalService;
 
-import java.util.List;
-
+/** URL cũ được chuyển sang hàng đợi duyệt biến thể; parent Product không còn được duyệt. */
 @Controller
 public class OperationsProductApprovalController {
-    private final OperationsProductApprovalService approvals;
-
-    public OperationsProductApprovalController(OperationsProductApprovalService approvals) {
-        this.approvals = approvals;
-    }
-
-    @GetMapping("/operations/post-audit")
-    public String postAuditPage(Model model) {
-        model.addAttribute("activeNav", "post-audit");
-        return "operations/post-audit";
-    }
-
     @GetMapping("/operations/products")
-    public String pendingProducts(Model model) {
-        return "redirect:/operations/post-audit";
-    }
-
-    @PostMapping("/operations/api/products/{productId}/approve")
-    @ResponseBody
-    public ResponseEntity<ApprovalActionResponse> approveProduct(@PathVariable Long productId) {
-        approvals.approveProduct(productId);
-        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã hoàn tất hậu kiểm và duyệt sản phẩm."));
-    }
-
-    @PostMapping("/operations/api/products/{productId}/reject")
-    @ResponseBody
-    public ResponseEntity<ApprovalActionResponse> rejectProduct(
-            @PathVariable Long productId,
-            @Valid @RequestBody RejectApprovalRequest request) {
-        approvals.rejectProduct(productId, request);
-        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã từ chối sản phẩm ở bước hậu kiểm và gỡ khỏi sàn."));
+    public String legacyProductApprovalsRedirect() {
+        return "redirect:/operations/variants";
     }
 }

@@ -10,7 +10,7 @@
 <main class="main-content product-management">
     <header class="topbar"><div>
         <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Chỉnh sửa</span></p>
-        <h1>Chỉnh sửa biến thể</h1><p class="muted">Cập nhật thông tin bán hàng và tồn kho của biến thể.</p>
+        <h1>Chỉnh sửa biến thể</h1><p class="muted">Cập nhật biến thể đang bán. Thay đổi thông tin công khai sẽ được Operations hậu kiểm sau khi lưu.</p>
     </div><a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách biến thể</a></header>
     <p class="alert alert-error" th:if="${!errors.isEmpty()}">Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.</p>
     <form class="product-form" method="post" th:action="@{/shopowner/product-variants/{id}/edit(id=${form.id})}" th:object="${form}">
@@ -21,21 +21,25 @@
             <label class="field field-wide"><span>Quy cách</span><input type="text" th:field="*{specification}" maxlength="1000" placeholder="Ví dụ: Khoảng 1kg, 5-7 quả"></label>
             <label class="field"><span>Đơn vị <b>*</b></span><select th:field="*{unitId}"><option th:each="unit : ${form.units}" th:value="${unit.id}" th:text="${unit.name}"></option></select><em th:if="${errors.containsKey('unitId')}" th:text="${errors.get('unitId')}"></em></label>
             <label class="field"><span>Giá bán (VNĐ) <b>*</b></span><input type="number" th:field="*{price}" min="1" step="1" required><em th:if="${errors.containsKey('price')}" th:text="${errors.get('price')}"></em></label>
-            <label class="field"><span>Trạng thái</span>
+            <label class="field" th:unless="${form.approvalStatus == 'REJECTED'}"><span>Trạng thái</span>
                 <select th:field="*{status}">
-                    <option value="DRAFT">Bản nháp</option>
-                    <option value="ACTIVE" th:if="${form.productCanSell}">Đang bán</option>
-                    <option value="INACTIVE" th:if="${form.productCanSell}">Ngừng bán</option>
+                    <option value="ACTIVE">Đang bán</option>
+                    <option value="INACTIVE">Ngừng bán</option>
                 </select>
-                <small th:if="${!form.productCanSell}">Sản phẩm chưa ở trạng thái mở bán; biến thể chỉ có thể được bật bán khi sản phẩm ACTIVE.</small>
+                <small>Sản phẩm cha chỉ lưu thông tin quản lý; trạng thái bán do biến thể này quyết định.</small>
                 <em th:if="${errors.containsKey('status')}" th:text="${errors.get('status')}"></em>
+            </label>
+            <label class="field" th:if="${form.approvalStatus == 'REJECTED'}"><span>Trạng thái sau khi gửi</span>
+                <input type="text" value="Ngừng bán cho đến khi Operations duyệt" readonly>
+                <input type="hidden" th:field="*{status}">
+                <small>Biến thể chỉ mở bán trở lại sau khi Operations duyệt hậu kiểm.</small>
             </label>
         </div></section>
         <section class="form-card"><h2>Tồn kho</h2><div class="form-grid">
             <label class="field"><span>Số lượng hiện có <b>*</b></span><input type="number" th:field="*{quantityOnHand}" min="0" step="1" required><small>Không được thấp hơn số lượng đang giữ trong đơn hàng.</small><em th:if="${errors.containsKey('quantityOnHand')}" th:text="${errors.get('quantityOnHand')}"></em></label>
             <label class="field"><span>Ngưỡng cảnh báo (%) <b>*</b></span><input type="number" th:field="*{lowStockThresholdPct}" min="0" max="100" step="0.01" required><em th:if="${errors.containsKey('lowStockThresholdPct')}" th:text="${errors.get('lowStockThresholdPct')}"></em></label>
         </div></section>
-        <div class="form-actions"><a class="button button-ghost" th:href="@{/shopowner/product-variants}">Hủy</a><button class="button button-primary" type="submit">Lưu biến thể</button></div>
+        <div class="form-actions"><a class="button button-ghost" th:href="@{/shopowner/product-variants}">Hủy</a><button class="button button-primary" type="submit" th:text="${form.approvalStatus == 'REJECTED' ? 'Gửi hậu kiểm lại' : 'Lưu biến thể'}">Lưu biến thể</button></div>
     </form>
 </main></div>
 </body></html>

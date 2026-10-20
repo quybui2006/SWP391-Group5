@@ -100,7 +100,7 @@ public class CustomerProductDetailController {
         model.addAttribute("currentUserId", currentUserId);
         model.addAttribute("canReview", isCustomer && reviewService.canReview(id, currentUserId));
         // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)
-        List<ProductVariant> allActiveVariants = productVariantRepository.findByStatusAndProduct_SellingStatus("ACTIVE", "ACTIVE");
+        List<ProductVariant> allActiveVariants = productVariantRepository.findApprovedActiveForCatalog();
         List<ProductVariant> relatedProducts = allActiveVariants.stream()
                 .filter(v -> !v.getId().equals(id))
                 .limit(6)

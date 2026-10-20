@@ -151,8 +151,8 @@ CREATE TABLE products (
     CHECK (expiry_date >= received_date),
     CHECK (approval_status <> 'PENDING' OR submitted_at IS NOT NULL),
     CHECK (approval_status NOT IN ('APPROVED','REJECTED') OR reviewed_at IS NOT NULL),
-    CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0)),
-    CONSTRAINT chk_products_active_approved CHECK (selling_status <> 'ACTIVE' OR approval_status = 'APPROVED')
+    CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0))
+    -- Product là hồ sơ nhóm; kiểm duyệt được áp dụng ở từng product_variant.
 );
 
 CREATE TABLE product_images (
@@ -191,13 +191,20 @@ CREATE TABLE product_variants (
     price DECIMAL(19,0) NOT NULL CHECK (price > 0),
     min_order_quantity INT NOT NULL DEFAULT 1 CHECK (min_order_quantity > 0),
     status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT','ACTIVE','INACTIVE')),
+    approval_status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (approval_status IN ('DRAFT','PENDING','APPROVED','REJECTED')),
+    submitted_at DATETIME(3) NULL,
+    reviewed_at DATETIME(3) NULL,
+    rejection_reason VARCHAR(1000) NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     UNIQUE (shop_id, sku),
     UNIQUE (product_id, id),
     UNIQUE (id, shop_id),
     FOREIGN KEY (base_unit_id) REFERENCES units(id),
-    FOREIGN KEY (product_id, shop_id) REFERENCES products(id, shop_id)
+    FOREIGN KEY (product_id, shop_id) REFERENCES products(id, shop_id),
+    CHECK (approval_status <> 'PENDING' OR submitted_at IS NOT NULL),
+    CHECK (approval_status NOT IN ('APPROVED','REJECTED') OR reviewed_at IS NOT NULL),
+    CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0))
 );
 
 CREATE TABLE customer_favorites (

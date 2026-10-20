@@ -1,134 +1,49 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-
 <head th:fragment="head(pageTitle)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle + ' | FreshFruit Operations'}">FreshFruit Operations</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" th:href="@{/css/operations.css}">
-    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
-    <script th:src="@{/js/notification-dropdown.js}" defer></script>
 </head>
-
 <body>
-    <!-- Sidebar dùng chung chuẩn phong cách FreshFruit -->
-    <aside th:fragment="sidebar(activePage)" class="sidebar">
-        <!-- Brand -->
-        <a class="brand" th:href="@{/operations/dashboard}">
-            <span class="brand-mark">F</span>
-            <span>
-                Fresh<span>Fruit</span>
-                <small>QUẢN TRỊ VIÊN</small>
-            </span>
+<aside th:fragment="sidebar(activePage)" class="operations-sidebar">
+    <a class="operations-brand" th:href="@{/operations/shops}" aria-label="FreshFruit Operations">
+        <span class="brand-mark">F</span>
+        <span><strong>FreshFruit</strong><small>OPERATIONS</small></span>
+    </a>
+    <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+    <nav aria-label="Điều hướng quản lý vận hành">
+        <a th:href="@{/operations/shop-list}"
+           th:classappend="${activePage == 'shop-list'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">▦</span><span>Danh sách Shop</span>
         </a>
-
-        <!-- Role / Operator Switcher -->
-        <div class="shop-switcher">
-            <div class="shop-avatar">OP</div>
-            <div>
-                <strong>Operations Manager</strong>
-                <small>Khu vực quản trị nội bộ</small>
-            </div>
-        </div>
-
-        <!-- Navigation -->
-        <nav class="side-nav" aria-label="Điều hướng quản trị vận hành">
-            <span class="nav-label">TỔNG QUAN</span>
-            <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/operations/dashboard}">
-                <span>⌂</span> Tổng quan
-            </a>
-
-            <span class="nav-label">QUẢN LÝ VẬN HÀNH</span>
-            <a th:classappend="${activePage == 'shops'} ? ' active' : ''" th:href="@{/operations/shops}">
-                <span>▦</span> Duyệt mở Shop
-            </a>
-            <a th:classappend="${activePage == 'post-audit'} ? ' active' : ''" th:href="@{/operations/post-audit}">
-                <span>🔍</span> Danh sách shop
-            </a>
-
-            <span class="nav-label">KHÁC</span>
-            <a href="#" onclick="alert('Tính năng này đang hoàn thiện'); return false;">
-                <span>⚙</span> Cài đặt
-            </a>
-            <a href="#" onclick="alert('Tính năng này đang hoàn thiện'); return false;">
-                <span>?</span> Trợ giúp
-            </a>
-        </nav>
-
-        <!-- Current user footer -->
-        <div class="sidebar-footer">
-            <div class="mini-user">
-                <div class="avatar">OP</div>
-                <div>
-                    <strong>Operations Manager</strong>
-                    <small>Quản trị viên sàn</small>
-                </div>
-                <span>⋮</span>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Header dùng chung chuẩn phong cách FreshFruit -->
-    <header th:fragment="pageHeader(title, subtitle)" class="topbar">
-        <div>
-            <p class="breadcrumb">
-                Quản trị vận hành / <span th:text="${title}">Tổng quan</span>
-            </p>
-
-            <h1 th:if="${title == 'Dashboard Quản trị Vận hành' || title == 'Tổng quan' || #strings.contains(title, 'Dashboard')}">
-                Xin chào, <span style="color: #f0ae42;">Operations Manager</span> ✦
-            </h1>
-            <h1 th:unless="${title == 'Dashboard Quản trị Vận hành' || title == 'Tổng quan' || #strings.contains(title, 'Dashboard')}" th:text="${title}">
-                Duyệt yêu cầu
-            </h1>
-
-            <p class="muted" th:text="${subtitle ?: 'Đây là tình hình vận hành hệ thống hôm nay.'}">
-                Đây là tình hình vận hành hệ thống hôm nay.
-            </p>
-        </div>
-
-        <div class="top-actions">
-            <!-- In-web notification center dropdown -->
-            <div class="notif-dropdown-wrapper">
-                <button type="button" class="notif-bell-btn" id="globalNotifBellBtn" title="Thông báo" aria-label="Thông báo"
-                    style="background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 7px 11px; cursor: pointer;">
-                    🔔
-                    <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
-                </button>
-                <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
-                    <div class="notif-dropdown-header">
-                        <h4><span>🔔</span> Thông báo Vận hành</h4>
-                        <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
-                    </div>
-                    <div class="notif-dropdown-body" id="globalNotifList">
-                        <div class="notif-empty-box">Đang tải...</div>
-                    </div>
-                    <div class="notif-dropdown-footer">
-                        <a th:href="@{/operations/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="top-user">
-                <div class="avatar">OP</div>
-                <span>Operations Manager</span>
-            </div>
-
-            <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
-                <button type="submit" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'" title="Đăng xuất">
-                    🚪 Đăng xuất
-                </button>
-            </form>
-        </div>
-    </header>
-
-    <div th:fragment="toastHost" id="toastHost" class="toast-host" role="status" aria-live="polite" aria-atomic="true">
+        <a th:href="@{/operations/shops}"
+           th:classappend="${activePage == 'shops'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">＋</span><span>Duyệt mở Shop</span>
+        </a>
+        <a th:href="@{/operations/reopen-requests}"
+           th:classappend="${activePage == 'reopen-requests'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">↻</span><span>Yêu cầu mở lại Shop</span>
+        </a>
+        <a th:href="@{/operations/variants}"
+           th:classappend="${activePage == 'variants'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">▤</span><span>Hậu kiểm biến thể</span>
+        </a>
+    </nav>
+    <div class="sidebar-bottom">
+        <span class="operator-dot"></span>
+        <span><strong>Operations Manager</strong><small>Khu vực nội bộ sàn</small></span>
     </div>
+</aside>
+<header th:fragment="pageHeader(title, subtitle)" class="operations-topbar">
+    <div>
+        <p class="eyebrow">FRESHFRUIT / OPERATIONS</p>
+        <h1 th:text="${title}">Duyệt yêu cầu</h1>
+        <p class="page-subtitle" th:text="${subtitle}">Xử lý các yêu cầu đang chờ duyệt.</p>
+    </div>
+    <div class="secure-label"><span aria-hidden="true">●</span> Khu vực quản trị nội bộ</div>
+</header>
+<div th:fragment="toastHost" id="toastHost" class="toast-host" role="status" aria-live="polite" aria-atomic="true"></div>
 </body>
-
 </html>

@@ -88,9 +88,9 @@ public class PromotionServiceImpl {
             if (!shop.getId().equals(variant.getShopId())) {
                 throw new PromotionValidationException("variantId", "Bạn chỉ có thể tạo khuyến mãi cho sản phẩm thuộc cửa hàng của mình.");
             }
-            if (!"ACTIVE".equals(variant.getStatus()) || variant.getProduct() == null
-                    || !"ACTIVE".equals(variant.getProduct().getSellingStatus())) {
-                throw new PromotionValidationException("variantId", "Chỉ có thể tạo khuyến mãi cho biến thể ACTIVE thuộc sản phẩm đang mở bán.");
+            if (!"ACTIVE".equals(variant.getStatus())
+                    || !("APPROVED".equals(variant.getApprovalStatus()) || "PENDING".equals(variant.getApprovalStatus()))) {
+                throw new PromotionValidationException("variantId", "Chỉ có thể tạo khuyến mãi cho biến thể đang bán và đã đăng lên sàn.");
             }
             if (form.getPromotionalPrice() == null || form.getPromotionalPrice().compareTo(variant.getPrice()) >= 0) {
                 throw new PromotionValidationException("promotionalPrice", "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán hiện tại (" + variant.getPrice().toPlainString() + ").");
