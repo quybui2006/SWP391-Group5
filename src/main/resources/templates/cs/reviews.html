@@ -32,6 +32,7 @@
                         <th>Số sao</th>
                         <th>Nội dung đánh giá</th>
                         <th>Thời gian</th>
+                        <th>Thao tác</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -51,9 +52,15 @@
                             <div style="max-width: 450px; line-height: 1.4;" th:text="${rev['content'] ?: 'Không có nội dung'}">Hàng tươi ngon, giao nhanh.</div>
                         </td>
                         <td style="color: var(--cs-text-sub); font-size: 13px;" th:text="${rev['created_at']}">19/10/2026</td>
+                        <td>
+                            <form th:action="@{/cs/reviews/{id}/remove(id=${rev['id']})}" method="post" style="display:inline;"
+                                  onsubmit="return confirm('Xóa đánh giá này?')">
+                                <button type="submit" class="btn-cs-sm" style="background:#dc2626; color:#fff;">Xóa đánh giá</button>
+                            </form>
+                        </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(reviews)}">
-                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 40px;">
+                        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 40px;">
                             Không có đánh giá nào phù hợp với bộ lọc.
                         </td>
                     </tr>
