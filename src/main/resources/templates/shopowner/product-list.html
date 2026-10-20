@@ -12,12 +12,11 @@
     <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
     <main class="main-content product-management">
     <header class="topbar">
-        <div><p class="breadcrumb">Shop Owner / <span>Sản phẩm</span></p><h1>Sản phẩm</h1><p class="muted">Theo dõi sản phẩm, tồn kho và trạng thái bán hàng của cửa hàng.</p></div>
+        <div><p class="breadcrumb">Shop Owner / <span>Sản phẩm</span></p><h1>Sản phẩm</h1><p class="muted">Quản lý hồ sơ nhóm và thông tin chung. Việc đăng bán được thực hiện trên từng biến thể.</p></div>
         <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
     </header>
 
     <p class="alert alert-success" th:if="${success}" th:text="${success}">Đã lưu sản phẩm thành công.</p>
-    <p class="alert" id="approvalToast" role="status" aria-live="polite" hidden></p>
 
     <section class="panel">
         <form class="search-bar" method="get" th:action="@{/shop/products}">
@@ -36,8 +35,7 @@
                     <th>Danh mục</th>
                     <th>Biến thể</th>
                     <th>Tồn kho</th>
-                    <th>Trạng thái bán</th>
-                    <th>Duyệt</th>
+                    <th>Phân loại</th>
                     <th>Ngày tạo</th>
                     <th>Thao tác</th>
                 </tr>
@@ -55,25 +53,11 @@
                     <td th:text="${product.categoryName}">Danh mục</td>
                     <td th:text="${product.variantCount + ' biến thể'}">0 biến thể</td>
                     <td th:text="${product.stockQuantity}">0</td>
-                    <td>
-                        <span class="badge"
-                              th:classappend="${product.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'"
-                              th:text="${product.status == 'ACTIVE'} ? 'Đang bán' : 'Bản nháp'">Bản nháp</span>
-                    </td>
-                    <td class="approval-cell">
-                        <span class="badge approval-badge"
-                              th:classappend="${product.approvalStatus == 'APPROVED'} ? ' badge-active' : ' badge-draft'"
-                              th:text="${product.approvalStatus == 'PENDING'} ? 'Chờ duyệt' : (${product.approvalStatus == 'APPROVED'} ? 'Đã duyệt' : (${product.approvalStatus == 'REJECTED'} ? 'Bị từ chối' : 'Bản nháp'))">Bản nháp</span>
-                        <small class="rejection-reason" th:if="${product.approvalStatus == 'REJECTED' and product.rejectionReason != null}"
-                               th:text="${'Lý do: ' + product.rejectionReason}">Lý do từ chối</small>
-                    </td>
+                    <td><span class="badge badge-draft">Hồ sơ quản lý biến thể</span></td>
                     <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
                     <td class="product-actions">
                         <a th:href="@{/shop/product/{id}(id=${product.id})}">Chi tiết</a>
                         <a th:href="@{/shop/product/{id}/edit(id=${product.id})}">Sửa</a>
-                        <button class="button button-ghost submit-approval-button" type="button"
-                                th:if="${product.approvalStatus == 'DRAFT'}"
-                                th:attr="data-url=@{/shop/products/{id}/submit-approval(id=${product.id})}">Gửi duyệt</button>
                     </td>
                 </tr>
                 </tbody>
@@ -100,6 +84,5 @@
     </section>
 </main>
 </div>
-<script th:src="@{/js/product-approval.js}" defer></script>
 </body>
 </html>

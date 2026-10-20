@@ -46,7 +46,7 @@
             <div>
                 <p class="eyebrow">Quản lý sản phẩm / Chi tiết</p>
                 <h1 th:text="${product.name}">Tên sản phẩm</h1>
-                <p class="muted">Xem thông tin lô hàng, trạng thái kiểm duyệt và quản lý biến thể của sản phẩm.</p>
+                <p class="muted">Đây là hồ sơ nhóm để quản lý thông tin chung; mỗi biến thể cần được duyệt riêng trước khi mở bán.</p>
             </div>
             <div class="detail-actions">
                 <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách</a>
@@ -89,22 +89,15 @@
             </article>
 
             <aside class="form-card">
-                <h2>Trạng thái &amp; thao tác</h2>
-                <div class="status-panel">
-                    <span class="status-label"
-                          th:classappend="${product.sellingStatus == 'DRAFT'} ? ' draft' : (${product.sellingStatus == 'ARCHIVED'} ? ' archived' : (${product.approvalStatus == 'PENDING'} ? ' pending' : (${product.approvalStatus == 'REJECTED'} ? ' rejected' : '')) )"
-                          th:text="${product.sellingStatus == 'ACTIVE' ? 'Đang bán' : (product.sellingStatus == 'PAUSED' ? 'Tạm ngừng' : (product.sellingStatus == 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'))}">Bản nháp</span>
-                    <p class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.6"
-                       th:text="${product.approvalStatus == 'PENDING' ? 'Sản phẩm đang được mở bán và chờ Quản lý vận hành hậu kiểm.' : (product.approvalStatus == 'APPROVED' ? 'Sản phẩm đã được duyệt.' : (product.approvalStatus == 'REJECTED' ? 'Sản phẩm bị từ chối; hãy xem lý do và chỉnh sửa.' : 'Sản phẩm chưa gửi yêu cầu duyệt.'))}">Trạng thái duyệt</p>
-                </div>
+                <h2>Hồ sơ nhóm biến thể</h2>
+                <p class="muted" style="font-size:13px;line-height:1.65">Sản phẩm này chỉ lưu thông tin chung như tên, danh mục, lô và hạn sử dụng. Không duyệt hoặc bán trực tiếp ở cấp sản phẩm.</p>
                 <div class="status-meta">
-                    <div><span>Trạng thái duyệt</span><strong th:text="${product.approvalStatus}">DRAFT</strong></div>
-                    <div><span>Biến thể</span><strong th:text="${#lists.size(product.variants)} + ' biến thể'">0 biến thể</strong></div>
+                    <div><span>Số biến thể</span><strong th:text="${#lists.size(product.variants)} + ' biến thể'">0 biến thể</strong></div>
                     <div th:if="${product.expiringSoon}"><span>Hạn sử dụng</span><strong style="color:#b42318">Sắp hết hạn</strong></div>
                 </div>
-                <a class="button button-primary button-block" style="margin-top:18px" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa thông tin</a>
+                <a class="button button-primary button-block" style="margin-top:18px" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa thông tin chung</a>
                 <a class="button button-ghost button-block" style="margin-top:9px" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể</a>
-                <p class="danger-note">Lưu trữ sẽ gỡ sản phẩm khỏi gian hàng ngay lập tức. Hệ thống không xóa cứng để bảo toàn biến thể, khóa ngoại và lịch sử đơn hàng; thao tác này áp dụng cả khi sản phẩm đang chờ hậu kiểm.</p>
+                <p class="danger-note">Lưu trữ hồ sơ nhóm sẽ gỡ các biến thể thuộc hồ sơ này khỏi gian hàng; lịch sử đơn hàng và giao dịch vẫn được giữ.</p>
             </aside>
         </section>
 
@@ -115,19 +108,20 @@
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>SKU</th><th>Tên biến thể</th><th>Quy cách</th><th>Giá bán</th><th>Tồn kho</th><th>Có thể bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                    <thead><tr><th>Ảnh</th><th>SKU</th><th>Tên biến thể</th><th>Quy cách</th><th>Giá bán</th><th>Tồn kho</th><th>Có thể bán</th><th>Trạng thái duyệt / bán</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="variant : ${product.variants}">
+                        <td><img th:if="${variant.imageUrl != null}" th:src="${variant.imageUrl}" th:alt="${variant.name}" style="width:48px;height:48px;object-fit:cover;border-radius:8px" onerror="this.hidden=true"></td>
                         <td><strong th:text="${variant.sku}">SKU</strong></td>
                         <td th:text="${variant.name}">Tên biến thể</td>
                         <td th:text="${variant.specification ?: '-'}">-</td>
                         <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.quantityOnHand}">0</td>
                         <td th:text="${variant.availableQuantity}">0</td>
-                        <td><span class="badge" th:classappend="${variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.status}">DRAFT</span></td>
-                        <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a> · <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a></td>
+                        <td><span class="badge" th:classappend="${variant.approvalStatus == 'APPROVED' and variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.approvalStatus == 'PENDING' ? 'Chờ duyệt' : (variant.approvalStatus == 'APPROVED' ? variant.status : variant.approvalStatus)}">DRAFT</span></td>
+                        <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a> · <a th:if="${variant.approvalStatus != 'PENDING'}" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a></td>
                     </tr>
-                    <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="8" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>
+                    <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>
                     </tbody>
                 </table>
             </div>

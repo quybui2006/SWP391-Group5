@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{operations/layout :: head('Chi tiết Shop')}"></head>
+<body>
+<div class="operations-shell">
+    <aside th:replace="~{operations/layout :: sidebar('shop-list')}"></aside>
+    <main class="operations-main">
+        <header th:replace="~{operations/layout :: pageHeader('Chi tiết Shop', 'Thông tin cửa hàng và các biến thể đang được quản lý.')}"></header>
+        <p class="alert alert-success" th:if="${success}" th:text="${success}"></p>
+        <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
+        <p><a class="button button-secondary" th:href="@{/operations/shop-list}">← Danh sách Shop</a></p>
+        <section class="table-card" style="padding:22px;margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;flex-wrap:wrap">
+                <div>
+                    <p class="eyebrow">SHOP #<span th:text="${shop.id}">0</span></p>
+                    <h2 th:text="${shop.name}">Tên Shop</h2>
+                    <p><strong>Chủ Shop:</strong> <span th:text="${shop.ownerName}">Chủ</span> · <span th:text="${shop.ownerEmail}">email</span></p>
+                    <p><strong>Điện thoại:</strong> <span th:text="${shop.phone}">-</span></p>
+                    <p><strong>Địa chỉ:</strong> <span th:text="${shop.address}">-</span></p>
+                    <p><strong>Trạng thái:</strong> <span th:text="${shop.approvalStatus + ' / ' + shop.operatingStatus}">APPROVED / OPEN</span></p>
+                    <p th:if="${shop.suspensionReason != null}"><strong>Lý do chặn:</strong> <span th:text="${shop.suspensionReason}">-</span></p>
+                </div>
+                <form th:if="${shop.approvalStatus == 'APPROVED' and shop.operatingStatus != 'SUSPENDED'}" method="post" th:action="@{/operations/shop-list/{id}/block(id=${shop.id})}" style="min-width:min(100%,360px)">
+                    <label class="field"><span>Lý do chặn Shop <b>*</b></span><textarea name="reason" rows="4" maxlength="1000" minlength="5" required placeholder="Nhập lý do rõ ràng cho chủ Shop"></textarea></label>
+                    <button class="button button-reject" type="submit" style="margin-top:10px">Chặn Shop</button>
+                </form>
+            </div>
+        </section>
+        <section class="approval-page">
+            <div class="section-heading"><div><h2>Sản phẩm và biến thể</h2><p>Thông tin bán hàng, hình ảnh, trạng thái và số lượng tồn kho.</p></div><span class="pending-count" th:text="${#lists.size(variants) + ' biến thể'}">0 biến thể</span></div>
+            <div class="table-card"><div class="table-scroll">
+                <table><thead><tr><th>ẢNH / BIẾN THỂ</th><th>HỒ SƠ NHÓM</th><th>SKU</th><th>GIÁ</th><th>TỒN KHO</th><th>TRẠNG THÁI</th><th>LÔ / HẠN</th></tr></thead>
+                    <tbody>
+                    <tr th:each="variant : ${variants}">
+                        <td><div style="display:flex;align-items:center;gap:10px"><img th:if="${variant.imageUrl != null}" th:src="${variant.imageUrl}" th:alt="${variant.variantName}" style="width:52px;height:52px;object-fit:cover;border-radius:8px"><strong th:text="${variant.variantName}">Biến thể</strong></div></td>
+                        <td th:text="${variant.productName}">Sản phẩm</td><td th:text="${variant.sku}">SKU</td>
+                        <td th:text="${#numbers.formatInteger(variant.price,1,'COMMA') + ' ₫ / ' + variant.unitName}">0 ₫</td>
+                        <td th:text="${variant.quantityOnHand + ' · có thể bán ' + variant.availableQuantity}">0</td>
+                        <td th:text="${variant.variantStatus + ' / ' + variant.approvalStatus}">ACTIVE / PENDING</td>
+                        <td th:text="${variant.batchCode + ' · HSD ' + (variant.expiryDate != null ? #temporals.format(variant.expiryDate,'dd/MM/yyyy') : '—')}">Lô</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(variants)}"><td colspan="7">Shop chưa có biến thể nào.</td></tr>
+                    </tbody>
+                </table>
+            </div></div>
+        </section>
+    </main>
+</div>
+<div th:replace="~{operations/layout :: toastHost}"></div>
+</body>
+</html>

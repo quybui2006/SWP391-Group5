@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{operations/layout :: head('Danh sách Shop')}"></head>
+<body>
+<div class="operations-shell">
+    <aside th:replace="~{operations/layout :: sidebar('shop-list')}"></aside>
+    <main class="operations-main">
+        <header th:replace="~{operations/layout :: pageHeader('Danh sách Shop', 'Xem trạng thái cửa hàng, hồ sơ biến thể và xử lý vi phạm.')}"></header>
+        <p class="alert alert-success" th:if="${success}" th:text="${success}"></p>
+        <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
+        <section class="approval-page">
+            <form class="table-toolbar" method="get" th:action="@{/operations/shop-list}">
+                <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm Shop, chủ Shop hoặc email"></label>
+                <button class="button button-secondary" type="submit">Tìm</button>
+            </form>
+            <div class="table-card"><div class="table-scroll">
+                <table><thead><tr><th>CỬA HÀNG</th><th>CHỦ SHOP</th><th>LIÊN HỆ</th><th>TRẠNG THÁI</th><th>SẢN PHẨM / BIẾN THỂ</th><th>THAO TÁC</th></tr></thead>
+                    <tbody>
+                    <tr th:each="shop : ${shops}">
+                        <td><strong th:text="${shop.name}">FreshFruit</strong><div class="secondary-cell" th:text="${shop.address}">Địa chỉ</div></td>
+                        <td><strong th:text="${shop.ownerName}">Chủ Shop</strong><div class="secondary-cell" th:text="${shop.ownerEmail}">email</div></td>
+                        <td th:text="${shop.phone}">Số điện thoại</td>
+                        <td><span class="status-pill" th:text="${shop.operatingStatus}">OPEN</span><div class="secondary-cell" th:text="${shop.approvalStatus}">APPROVED</div></td>
+                        <td th:text="${shop.productCount + ' hồ sơ · ' + shop.variantCount + ' biến thể'}">0</td>
+                        <td><a class="button button-secondary" th:href="@{/operations/shop-list/{id}(id=${shop.id})}">Chi tiết</a></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(shops)}"><td colspan="6">Không tìm thấy cửa hàng.</td></tr>
+                    </tbody>
+                </table>
+            </div></div>
+        </section>
+    </main>
+</div>
+<div th:replace="~{operations/layout :: toastHost}"></div>
+</body>
+</html>

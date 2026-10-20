@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice(assignableTypes = {
         OperationsShopApprovalController.class,
+        OperationsVariantApprovalController.class,
         OperationsProductApprovalController.class
 })
 public class OperationsApprovalExceptionHandler {

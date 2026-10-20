@@ -82,10 +82,10 @@ public class CustomerShopController {
 
         // Nếu shop trong database chưa có sản phẩm gán riêng và user chưa filter sâu -> fallback hiển thị sản phẩm active
         if (variants.isEmpty() && safeKeyword.isEmpty() && categoryId == null) {
-            variants = productVariantRepository.findByStatusAndProduct_SellingStatus("ACTIVE", "ACTIVE");
+            variants = productVariantRepository.findApprovedActiveForCatalog();
         } else if (variants.isEmpty() && categoryId != null) {
             // Nếu lọc theo danh mục mà chưa có variant map với shopId, hiển thị variants theo categoryId
-            List<ProductVariant> allActive = productVariantRepository.findByStatusAndProduct_SellingStatus("ACTIVE", "ACTIVE");
+            List<ProductVariant> allActive = productVariantRepository.findApprovedActiveForCatalog();
             variants = allActive.stream()
                     .filter(v -> v.getProduct() != null && v.getProduct().getCategories() != null
                             && v.getProduct().getCategories().stream().anyMatch(c -> Objects.equals(c.getId(), categoryId)))

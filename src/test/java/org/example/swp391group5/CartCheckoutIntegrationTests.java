@@ -64,7 +64,7 @@ class CartCheckoutIntegrationTests {
         long unit = jdbc.queryForObject("SELECT id FROM units WHERE code='UNIT-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO products(shop_id,name,batch_code,received_date,expiry_date,approval_status,selling_status) VALUES (?,?,?,?,?,'APPROVED','ACTIVE')", shop, "Apple", "BATCH-CHECKOUT", java.time.LocalDate.now(), java.time.LocalDate.now().plusDays(10));
         long product = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-CHECKOUT'", Long.class);
-        jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status) VALUES (?,?,?,?,?,?,'ACTIVE')", product, shop, "SKU-CHECKOUT", "1kg", unit, 50000);
+        jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status,approval_status,reviewed_at) VALUES (?,?,?,?,?,?,'ACTIVE','APPROVED',CURRENT_TIMESTAMP)", product, shop, "SKU-CHECKOUT", "1kg", unit, 50000);
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,available_quantity,created_by) VALUES (?,?,?, ?,?)", variant, 20, 20, 20, user);
         jdbc.update("INSERT INTO user_addresses(user_id,recipient_name,recipient_phone,province_code,ward_name,address_detail,is_default) VALUES (?,?,?,?,?,?,TRUE)", user, "Recipient", "0912345678", "P-CHECKOUT", "Ward", "1 Test St");
@@ -241,7 +241,7 @@ class CartCheckoutIntegrationTests {
         long unit = jdbc.queryForObject("SELECT id FROM units WHERE code='UNIT-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO products(shop_id,name,batch_code,received_date,expiry_date,approval_status,selling_status) VALUES (?,?,?,?,?,'APPROVED','ACTIVE')", secondShop, "Pear", "BATCH-CHECKOUT-2", java.time.LocalDate.now(), java.time.LocalDate.now().plusDays(10));
         long product = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-CHECKOUT-2'", Long.class);
-        jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status) VALUES (?,?,?,?,?,?,'ACTIVE')", product, secondShop, "SKU-CHECKOUT-2", "500g", unit, 30000);
+        jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status,approval_status,reviewed_at) VALUES (?,?,?,?,?,?,'ACTIVE','APPROVED',CURRENT_TIMESTAMP)", product, secondShop, "SKU-CHECKOUT-2", "500g", unit, 30000);
         long secondVariant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT-2'", Long.class);
         jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,available_quantity,created_by) VALUES (?,?,?, ?,?)", secondVariant, 20, 20, 20, owner);
         long firstVariant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);

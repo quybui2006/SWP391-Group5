@@ -40,6 +40,8 @@ public class NotificationDto {
             dto.setTargetUrl("/customer/account/orders");
         } else if ("ACCOUNT".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account");
+        } else if ("SHOP".equalsIgnoreCase(n.getTargetType())) {
+            dto.setTargetUrl("/shopowner/reopen-request");
         } else {
             dto.setTargetUrl("/customer/account/notifications");
         }

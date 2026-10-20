@@ -3,6 +3,7 @@ package service.shop;
 import entity.ProductVariant;
 import repository.ProductVariantRepository;
 import repository.PromotionalPriceRepository;
+import repository.ShopRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class ProductService {
 
     @Autowired
     private PromotionalPriceRepository promotionalPriceRepository;
+
+    @Autowired
+    private ShopRepository shopRepository;
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -62,11 +66,7 @@ public class ProductService {
     }
 
     public ProductVariant getProductVariantById(Long id) {
-        ProductVariant variant = productVariantRepository.findById(id)
-                // Hậu kiểm: khách hàng chỉ cần sản phẩm đang ACTIVE; approval_status không chặn catalog.
-                .filter(v -> "ACTIVE".equals(v.getStatus())
-                        && "ACTIVE".equals(v.getProduct().getSellingStatus()))
-                .orElse(null);
+        ProductVariant variant = productVariantRepository.findSellableById(id).orElse(null);
         if (variant != null) {
             variant.setPromotionalPrice(promotionalPriceRepository
                     .findActivePriceByVariantId(id, LocalDateTime.now(BUSINESS_ZONE)).orElse(null));

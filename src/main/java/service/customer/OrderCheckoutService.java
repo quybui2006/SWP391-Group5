@@ -67,18 +67,18 @@ public class OrderCheckoutService {
         // HẬU KIỂM: lấy cả sản phẩm đã bị tạm ngừng/từ chối để có thể chặn checkout
         // bằng tên cụ thể. FOR UPDATE khóa các dòng liên quan trong suốt lúc chốt đơn,
         // tránh Operations Manager từ chối đúng giữa bước kiểm tra và tạo đơn.
-        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.status AS variant_status,pv.price AS original_price, " +
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.status AS variant_status,pv.approval_status AS variant_approval_status,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
-                "pv.image_url,p.expiry_date,p.name AS product_name,p.selling_status AS product_selling_status,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity, " +
+                "pv.image_url,p.expiry_date,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity, " +
                 "s.province_code AS shop_province_code,s.name AS shop_name,s.approval_status AS shop_approval_status,s.operating_status AS shop_operating_status " +
                 "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") FOR UPDATE", args);
         if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hàng. Vui lòng tải lại giỏ hàng.");
         BigDecimal subtotal = BigDecimal.ZERO;
         for (Map<String, Object> line : lines) {
             String productName = String.valueOf(line.get("product_name"));
-            if (!"ACTIVE".equals(line.get("product_selling_status"))) {
-                throw new IllegalArgumentException("Sản phẩm " + productName + " đã bị gỡ khỏi sàn.");
+            if (!("APPROVED".equals(line.get("variant_approval_status")) || "PENDING".equals(line.get("variant_approval_status")))) {
+                throw new IllegalArgumentException("Biến thể của " + productName + " không còn đủ điều kiện bán.");
             }
             if (!"ACTIVE".equals(line.get("variant_status"))) {
                 throw new IllegalArgumentException("Phân loại của sản phẩm " + productName + " hiện không còn mở bán.");

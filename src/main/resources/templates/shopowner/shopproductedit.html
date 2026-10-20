@@ -19,7 +19,7 @@
                 <p class="breadcrumb"><a th:href="@{/shopowner/home}">Tổng quan</a> / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chỉnh sửa</span></p>
                 <p class="edit-eyebrow">QUẢN LÝ SẢN PHẨM</p>
                 <h1>Chỉnh sửa sản phẩm</h1>
-                <p class="muted">Cập nhật thông tin cho <strong th:text="${form.name}">sản phẩm</strong>. Các thay đổi sẽ được kiểm tra theo quy trình duyệt của hệ thống.</p>
+                <p class="muted">Cập nhật thông tin cho <strong th:text="${form.name}">sản phẩm</strong>. Hồ sơ này chỉ nhóm và quản lý các biến thể.</p>
             </div>
             <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">← Xem chi tiết</a>
         </header>
@@ -88,31 +88,10 @@
 
             <section class="form-card edit-section">
                 <div class="edit-section-heading">
-                    <div class="edit-section-icon edit-status-icon">↗</div>
-                    <div><h2>Trạng thái &amp; mô tả</h2><p>Điều chỉnh khả năng hiển thị và nội dung giới thiệu sản phẩm.</p></div>
+                    <div class="edit-section-icon">✎</div>
+                    <div><h2>Mô tả hồ sơ nhóm</h2><p>Thông tin chung dùng để quản lý các biến thể bên dưới.</p></div>
                 </div>
-
                 <div class="form-grid edit-fields-grid">
-                    <label class="field">
-                        <span>Trạng thái bán <b>*</b></span>
-                        <select th:field="*{sellingStatus}" th:classappend="${errors.containsKey('sellingStatus')} ? ' is-invalid' : ''">
-                            <option value="DRAFT">Bản nháp</option>
-                            <option value="ACTIVE" th:disabled="${form.approvalStatus != 'APPROVED'}">Đang bán</option>
-                            <option value="PAUSED">Tạm ngừng</option>
-                            <option value="ARCHIVED">Đã ẩn</option>
-                        </select>
-                        <small th:if="${form.approvalStatus == 'PENDING'}"><span class="edit-info-dot">i</span> Sản phẩm đã mở bán trong thời gian hậu kiểm; không thể lưu thay đổi cho đến khi Operations Manager hoàn tất kiểm tra.</small>
-                        <small th:if="${form.approvalStatus == 'DRAFT' or form.approvalStatus == 'REJECTED'}"><span class="edit-info-dot">i</span> Sản phẩm cần được gửi lại vào hàng đợi hậu kiểm trước khi mở bán.</small>
-                        <small th:if="${form.approvalStatus == 'APPROVED'}">Sản phẩm đã được duyệt; bạn có thể bật hoặc tạm ngừng bán.</small>
-                        <em th:if="${errors.containsKey('sellingStatus')}" th:text="${errors.get('sellingStatus')}"></em>
-                    </label>
-
-                    <div class="edit-approval-summary">
-                        <span class="edit-summary-label">Trạng thái kiểm duyệt</span>
-                        <strong th:text="${form.approvalStatus == 'APPROVED' ? 'Đã duyệt' : (form.approvalStatus == 'PENDING' ? 'Chờ duyệt' : (form.approvalStatus == 'REJECTED' ? 'Bị từ chối' : 'Bản nháp'))}">Bản nháp</strong>
-                        <small>Trạng thái kiểm duyệt do hệ thống quản lý.</small>
-                    </div>
-
                     <label class="field field-wide">
                         <span>Mô tả sản phẩm</span>
                         <textarea th:field="*{description}" rows="5" maxlength="2000" placeholder="Mô tả đặc điểm, hương vị, cách bảo quản..."

@@ -53,14 +53,14 @@ public class CustomerAccountService {
                    p.id AS product_id,p.name AS product_name,u.name AS unit_name
             FROM customer_favorites f JOIN product_variants pv ON pv.id=f.variant_id
             JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id
-            WHERE f.user_id=? ORDER BY f.created_at DESC
+            WHERE f.user_id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') ORDER BY f.created_at DESC
             """, userId);
     }
     @Transactional
     public void updateProfile(Long userId, String fullName, String phone) {
         if (fullName == null || fullName.isBlank() || fullName.trim().length() > 150) throw new IllegalArgumentException("Họ tên không hợp lệ.");
         if (phone != null && phone.trim().length() > 20) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
-        jdbc.update("UPDATE users SET full_name=?, phone=? WHERE id=? AND status='ACTIVE'", fullName.trim(), phone == null || phone.isBlank() ? null : phone.trim(), userId);
+        jdbc.update("UPDATE users SET full_name=?, phone=? WHERE id=? AND status='ACTIVE' AND approval_status='APPROVED'", fullName.trim(), phone == null || phone.isBlank() ? null : phone.trim(), userId);
     }
     @Transactional
     public void saveProfile(Long userId, String fullName, String phone, String gender, String birthDate,
@@ -106,7 +106,7 @@ public class CustomerAccountService {
     public void toggleFavorite(Long userId, Long variantId) {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=? AND variant_id=?", Integer.class, userId, variantId);
         if (count != null && count > 0) jdbc.update("DELETE FROM customer_favorites WHERE user_id=? AND variant_id=?", userId, variantId);
-        else jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,id FROM product_variants WHERE id=? AND status='ACTIVE'", userId, variantId);
+        else jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,pv.id FROM product_variants pv WHERE pv.id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING')", userId, variantId);
     }
     public List<Long> favoriteIds(Long userId) {
         return jdbc.queryForList("SELECT variant_id FROM customer_favorites WHERE user_id=?", Long.class, userId);
@@ -120,7 +120,7 @@ public class CustomerAccountService {
             return false;
         }
         if (!isFavorite(userId, variantId)) {
-            int inserted = jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,id FROM product_variants WHERE id=? AND status='ACTIVE'", userId, variantId);
+            int inserted = jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,pv.id FROM product_variants pv WHERE pv.id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING')", userId, variantId);
             if (inserted == 0) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Sản phẩm không còn khả dụng.");
         }
         return true;

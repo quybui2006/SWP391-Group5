@@ -48,10 +48,10 @@ class CustomerProductDetailIntegrationTests {
                 "New Zealand", "BATCH-SHOPEE-01", LocalDate.now(), LocalDate.now().plusDays(10));
         long productId = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-SHOPEE-01'", Long.class);
 
-        jdbc.update("INSERT INTO product_variants(product_id, name, image_url, price, status, base_unit_id, shop_id, sku, specification, min_order_quantity) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        jdbc.update("INSERT INTO product_variants(product_id, name, image_url, price, status, approval_status, reviewed_at, base_unit_id, shop_id, sku, specification, min_order_quantity) " +
+                        "VALUES (?, ?, ?, ?, 'ACTIVE', 'APPROVED', CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
                 productId, "Táo Envy New Zealand Hộp 1kg", "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6",
-                new BigDecimal("129000"), "ACTIVE", unitId, shopId, "SKU-SHOPEE-ENVY", "Hộp 1kg (4-5 quả)", 1);
+                new BigDecimal("129000"), unitId, shopId, "SKU-SHOPEE-ENVY", "Hộp 1kg (4-5 quả)", 1);
         return jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-SHOPEE-ENVY'", Long.class);
     }
 

@@ -8,6 +8,7 @@ public class ProductVariantEditForm {
     private Long id;
     private String productName;
     private boolean productCanSell;
+    private String approvalStatus;
     private String variantName;
     private String sku;
     private String specification;
@@ -21,6 +22,7 @@ public class ProductVariantEditForm {
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
     public String getProductName() { return productName; } public void setProductName(String productName) { this.productName = productName; }
     public boolean isProductCanSell() { return productCanSell; } public void setProductCanSell(boolean productCanSell) { this.productCanSell = productCanSell; }
+    public String getApprovalStatus() { return approvalStatus; } public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
     public String getVariantName() { return variantName; } public void setVariantName(String variantName) { this.variantName = variantName; }
     public String getSku() { return sku; } public void setSku(String sku) { this.sku = sku; }
     public String getSpecification() { return specification; } public void setSpecification(String specification) { this.specification = specification; }

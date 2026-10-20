@@ -14,13 +14,21 @@
     </a>
     <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
     <nav aria-label="Điều hướng quản lý vận hành">
+        <a th:href="@{/operations/shop-list}"
+           th:classappend="${activePage == 'shop-list'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">▦</span><span>Danh sách Shop</span>
+        </a>
         <a th:href="@{/operations/shops}"
            th:classappend="${activePage == 'shops'} ? ' is-active' : ''">
-            <span class="nav-icon" aria-hidden="true">▦</span><span>Duyệt mở Shop</span>
+            <span class="nav-icon" aria-hidden="true">＋</span><span>Duyệt mở Shop</span>
         </a>
-        <a th:href="@{/operations/products}"
-           th:classappend="${activePage == 'products'} ? ' is-active' : ''">
-            <span class="nav-icon" aria-hidden="true">▤</span><span>Duyệt sản phẩm</span>
+        <a th:href="@{/operations/reopen-requests}"
+           th:classappend="${activePage == 'reopen-requests'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">↻</span><span>Yêu cầu mở lại Shop</span>
+        </a>
+        <a th:href="@{/operations/variants}"
+           th:classappend="${activePage == 'variants'} ? ' is-active' : ''">
+            <span class="nav-icon" aria-hidden="true">▤</span><span>Hậu kiểm biến thể</span>
         </a>
     </nav>
     <div class="sidebar-bottom">
