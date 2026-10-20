@@ -62,7 +62,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("categoryIds") List<Long> categoryIds,
             @Param("filterByOrigin") boolean filterByOrigin,
             @Param("origins") List<String> origins,
-            org.springframework.data.domain.Sort sort);
+            Sort sort);
 
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
@@ -91,31 +91,4 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("shopId") Long shopId,
             @Param("categoryId") Long categoryId,
             @Param("keyword") String keyword);
-
-    boolean existsByProduct_IdAndNameIgnoreCaseAndIdNot(
-            Long productId, String name, Long id);
-
-    @Query("""
-    SELECT DISTINCT pv FROM ProductVariant pv
-    JOIN pv.product p JOIN Shop s ON s.id = pv.shopId
-    LEFT JOIN p.categories c
-    WHERE s.approvalStatus = 'APPROVED'
-      AND s.operatingStatus = 'OPEN'
-      AND pv.status = 'ACTIVE'
-      AND pv.approvalStatus IN ('APPROVED', 'PENDING')
-      AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-      AND (:minPrice IS NULL OR pv.price >= :minPrice)
-      AND (:maxPrice IS NULL OR pv.price <= :maxPrice)
-      AND (:filterByCategory = false OR c.id IN :categoryIds)
-      AND (:filterByOrigin = false OR p.origin IN :origins)
-    """)
-    List<ProductVariant> advancedSearchAndFilter(
-            @Param("keyword") String keyword,
-            @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice,
-            @Param("filterByCategory") boolean filterByCategory,
-            @Param("categoryIds") List<Long> categoryIds,
-            @Param("filterByOrigin") boolean filterByOrigin,
-            @Param("origins") List<String> origins,
-            Sort sort);
 }
