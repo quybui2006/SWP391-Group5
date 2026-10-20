@@ -14,6 +14,9 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     boolean existsByShopIdAndSku(Long shopId, String sku);
 
+    /** Một sản phẩm không nên có hai biến thể cùng tên, ví dụ hai biến thể "Túi 1kg". */
+    boolean existsByProduct_IdAndNameIgnoreCaseAndIdNot(Long productId, String name, Long id);
+
     /** Tin đang bán thuộc shop: hậu kiểm PENDING và đã duyệt APPROVED đều đủ điều kiện. */
     @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
             "WHERE pv.shopId = :shopId AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
@@ -31,6 +34,34 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             "WHERE pv.id = :variantId AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
             "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
     java.util.Optional<ProductVariant> findSellableById(@Param("variantId") Long variantId);
+
+    // Câu Query kết hợp Tìm kiếm đa trường (Tên biến thể, Tên sản phẩm, Xuất xứ, Mô tả, SKU, Lô hàng) + Lọc giá + Danh mục + Xuất xứ
+    @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
+            "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
+            "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
+            "AND (:keyword = '' OR (" +
+            "   LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   (p.origin IS NOT NULL AND LOWER(p.origin) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+            "   (p.description IS NOT NULL AND LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+            "   LOWER(pv.sku) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(p.batchCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   (pv.specification IS NOT NULL AND LOWER(pv.specification) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
+            ")) " +
+            "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
+            "AND (:filterByCategory = false OR c.id IN :categoryIds) " +
+            "AND (:filterByOrigin = false OR p.origin IN :origins)")
+    List<ProductVariant> advancedSearchAndFilter(
+            @Param("keyword") String keyword,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("filterByCategory") boolean filterByCategory,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("filterByOrigin") boolean filterByOrigin,
+            @Param("origins") List<String> origins,
+            org.springframework.data.domain.Sort sort);
 
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
