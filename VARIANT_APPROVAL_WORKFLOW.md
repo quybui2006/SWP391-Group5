@@ -13,7 +13,7 @@
 ### Database hiện có (giữ dữ liệu)
 
 1. Sao lưu database trước.
-2. Chạy **một lần** file `database/migrations/20261019_variant_approval_workflow.sql` trên đúng database FreshFruit. File này bổ sung trạng thái duyệt vào `product_variants`, chuyển trạng thái cũ sang từng biến thể, gỡ ràng buộc duyệt/bán ở cấp sản phẩm cha và giữ nguyên các bảng/dữ liệu khác.
+2. Chạy **một lần** file `src/main/resources/database` trên đúng database FreshFruit. File này bổ sung trạng thái duyệt vào `product_variants`, chuyển trạng thái cũ sang từng biến thể, gỡ ràng buộc duyệt/bán ở cấp sản phẩm cha và giữ nguyên các bảng/dữ liệu khác.
 3. Không chạy lại migration sau khi đã áp dụng; file migration không được thiết kế để chạy lặp.
 
 ### Tạo database mới
