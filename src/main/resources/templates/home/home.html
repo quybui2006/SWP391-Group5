@@ -116,6 +116,7 @@
 
             <th:block th:if="${session.role == null}">
                 <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+                <a class="register-btn" th:href="@{/register}">Đăng ký</a>
             </th:block>
 
         </div>
@@ -568,6 +569,8 @@
 
 <script th:src="@{/js/home.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
+<!-- Tan PTH integration: connect product cards to the database-backed cart. -->
+<script th:src="@{/js/cart-integration.js(v='20261009-1')}"></script>
 <script th:src="@{/js/user-menu.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
 </body>
