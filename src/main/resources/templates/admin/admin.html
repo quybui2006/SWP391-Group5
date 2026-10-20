@@ -112,6 +112,12 @@
                     <p style="color: var(--muted); font-size: 13px; margin: 0;">Đặt tỷ lệ hoa hồng và theo dõi phí thu</p>
                 </div>
             </a>
+            <a th:href="@{/admin/categories}" style="text-decoration: none; color: inherit;">
+                <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa; cursor: pointer;">
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">🍎 Cấu hình danh mục</h3>
+                    <p style="color: var(--muted); font-size: 13px; margin: 0;">Thêm và bật/tắt danh mục sản phẩm</p>
+                </div>
+            </a>
             <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
                 <h3 style="margin: 0 0 8px; font-size: 16px;">👤 Tài khoản</h3>
                 <p style="color: var(--muted); font-size: 13px; margin: 0;" th:text="${session.fullName ?: 'Admin'}">Admin</p>
