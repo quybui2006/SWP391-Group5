@@ -17,16 +17,18 @@ import java.util.*;
 @Service
 public class VNPayService {
 
-    @Value("${vnpay.tmn-code:F75XL8R2}")
+
+    @Value("${vnpay.tmn-code}")
     private String vnpTmnCode;
 
-    @Value("${vnpay.hash-secret:MGHOWCGFLAOWUNIMOOJIDDHSXWMSANQR}")
+    @Value("${vnpay.hash-secret}")
     private String vnpHashSecret;
 
-    @Value("${vnpay.pay-url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
+    @Value("${vnpay.pay-url}")
     private String vnpPayUrl;
 
-    @Value("${vnpay.return-url:http://localhost:8080/payment/vnpay-return}")
+    @Value("${vnpay.return-url}")
+
     private String vnpReturnUrl;
 
     private static final ZoneId VNPAY_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");

@@ -26,6 +26,11 @@ public class NotificationWebController {
         }
         Long userId = number.longValue();
 
+        Object roleObj = session.getAttribute("role");
+        if ("OPERATIONS_MANAGER".equals(roleObj)) {
+            return "redirect:/operations/notifications";
+        }
+
         notificationService.ensureSampleNotificationsIfEmpty(userId);
         model.addAttribute("notifications", notificationService.getAllNotifications(userId));
         model.addAttribute("unreadCount", notificationService.getUnreadCount(userId));
@@ -38,5 +43,21 @@ public class NotificationWebController {
         }
 
         return "customer/notifications";
+    }
+
+    @GetMapping("/operations/notifications")
+    public String showOperationsNotifications(Model model, HttpSession session) {
+        Object userIdObj = session.getAttribute("userId");
+        if (!(userIdObj instanceof Number number)) {
+            return "redirect:/login?continueTo=/operations/notifications";
+        }
+        Long userId = number.longValue();
+
+        notificationService.ensureSampleNotificationsIfEmpty(userId);
+        model.addAttribute("notifications", notificationService.getAllNotifications(userId));
+        model.addAttribute("unreadCount", notificationService.getUnreadCount(userId));
+        model.addAttribute("activePage", "notifications");
+
+        return "operations/notifications";
     }
 }

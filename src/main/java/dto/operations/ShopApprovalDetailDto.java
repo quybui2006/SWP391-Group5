@@ -19,6 +19,11 @@ public class ShopApprovalDetailDto {
     private String rejectionReason;
     private String suspensionReason;
 
+    // Stage 1: Seller Account Approval Info
+    private String sellerApprovalStatus = "PENDING";
+    private String sellerRejectionReason;
+    private LocalDateTime sellerReviewedAt;
+
     // Seller Activation & Onboarding Info
     private String idCardNumber;
     private String idCardName;
@@ -147,4 +152,13 @@ public class ShopApprovalDetailDto {
 
     public boolean isBankAccountMatchesIdCard() { return bankAccountMatchesIdCard; }
     public void setBankAccountMatchesIdCard(boolean bankAccountMatchesIdCard) { this.bankAccountMatchesIdCard = bankAccountMatchesIdCard; }
+
+    public String getSellerApprovalStatus() { return sellerApprovalStatus; }
+    public void setSellerApprovalStatus(String sellerApprovalStatus) { this.sellerApprovalStatus = sellerApprovalStatus; }
+
+    public String getSellerRejectionReason() { return sellerRejectionReason; }
+    public void setSellerRejectionReason(String sellerRejectionReason) { this.sellerRejectionReason = sellerRejectionReason; }
+
+    public LocalDateTime getSellerReviewedAt() { return sellerReviewedAt; }
+    public void setSellerReviewedAt(LocalDateTime sellerReviewedAt) { this.sellerReviewedAt = sellerReviewedAt; }
 }

@@ -1,18 +1,19 @@
 package service.shop;
 
 import entity.ProductVariant;
+import entity.VariantInventory;
 import repository.ProductVariantRepository;
 import repository.PromotionalPriceRepository;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import repository.ShopRepository;
+import repository.VariantInventoryRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import repository.ActivePromotionPrice;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProductService {
@@ -23,10 +24,13 @@ public class ProductService {
     @Autowired
     private PromotionalPriceRepository promotionalPriceRepository;
 
+    @Autowired
+    private ShopRepository shopRepository;
+
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired
-    private repository.VariantInventoryRepository variantInventoryRepository;
+    private VariantInventoryRepository variantInventoryRepository;
 
     public List<ProductVariant> searchAndFilterProducts(String keyword, List<Long> categoryIds, String priceRange) {
         return searchAndFilterProducts(keyword, categoryIds, priceRange, null, null, null, false, "popular");
@@ -95,7 +99,7 @@ public class ProductService {
             var inventoryList = variantInventoryRepository.findByVariantIdIn(variantIds);
             var invMap = inventoryList.stream()
                     .collect(java.util.stream.Collectors.toMap(
-                            entity.VariantInventory::getVariantId,
+                            VariantInventory::getVariantId,
                             java.util.function.Function.identity(),
                             (a, b) -> a));
 
@@ -121,11 +125,7 @@ public class ProductService {
     }
 
     public ProductVariant getProductVariantById(Long id) {
-        ProductVariant variant = productVariantRepository.findById(id)
-                // Hậu kiểm: khách hàng chỉ cần sản phẩm đang ACTIVE; approval_status không chặn catalog.
-                .filter(v -> "ACTIVE".equals(v.getStatus())
-                        && "ACTIVE".equals(v.getProduct().getSellingStatus()))
-                .orElse(null);
+        ProductVariant variant = productVariantRepository.findSellableById(id).orElse(null);
         if (variant != null) {
             variant.setPromotionalPrice(promotionalPriceRepository
                     .findActivePriceByVariantId(id, LocalDateTime.now(BUSINESS_ZONE)).orElse(null));

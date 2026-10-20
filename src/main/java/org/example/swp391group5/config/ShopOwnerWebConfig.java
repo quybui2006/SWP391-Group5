@@ -40,13 +40,20 @@ public class ShopOwnerWebConfig implements WebMvcConfigurer {
                     return false;
                 }
 
-                // Kiểm tra quyền từ Spring Security Authentication (hỗ trợ cả tài khoản có nhiều role)
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                boolean isShopOwnerOrAdmin = auth != null && auth.getAuthorities().stream()
-                        .anyMatch(a -> "ROLE_SHOP_OWNER".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()));
+                // Kiểm tra quyền từ session hoặc Spring Security Authentication (hỗ trợ cả session và auth context)
+                Object roleAttr = session.getAttribute("role");
+                boolean isShopOwnerOrAdmin = "SHOP_OWNER".equals(roleAttr) || "ADMIN".equals(roleAttr);
 
                 if (!isShopOwnerOrAdmin) {
-                    response.sendRedirect(request.getContextPath() + "/403");
+                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                    if (auth != null && auth.isAuthenticated()) {
+                        isShopOwnerOrAdmin = auth.getAuthorities().stream()
+                                .anyMatch(a -> "ROLE_SHOP_OWNER".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()));
+                    }
+                }
+
+                if (!isShopOwnerOrAdmin) {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Tài khoản không có quyền Shop Owner.");
                     return false;
                 }
 

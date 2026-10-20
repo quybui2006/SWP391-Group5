@@ -161,7 +161,7 @@ class SellerChannelFlowIntegrationTests {
                 .andExpect(view().name("seller/status"))
                 .andExpect(model().attribute("status", "PENDING"));
 
-        // 7. Operator reviews and approves shop registration
+        // 7. Operator trực tiếp phê duyệt mở Shop
         operationsShopService.approveShop(shopId);
 
         // 8. Now /seller/channel should redirect to /seller/payment

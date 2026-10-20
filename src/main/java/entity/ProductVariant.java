@@ -1,6 +1,7 @@
 package entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product_variants")
@@ -29,8 +30,22 @@ public class ProductVariant {
     public void setPromotionalPrice(BigDecimal promotionalPrice) { this.promotionalPrice = promotionalPrice; }
 
 
+    /** Trạng thái kiểm duyệt: DRAFT / PENDING / APPROVED / REJECTED. */
+    @Column(name = "approval_status", nullable = false)
+    private String approvalStatus = "DRAFT";
+
+    @Column(name = "submitted_at")
+    private java.time.LocalDateTime submittedAt;
+
+    @Column(name = "reviewed_at")
+    private java.time.LocalDateTime reviewedAt;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    /** Trạng thái bán: DRAFT / ACTIVE / INACTIVE. ACTIVE + PENDING được bán trong hậu kiểm. */
     @Column(name = "status", nullable = false)
-    private String status;
+    private String status = "DRAFT";
 
     @ManyToOne
     @JoinColumn(name = "base_unit_id", nullable = false)
@@ -70,6 +85,14 @@ public class ProductVariant {
     public void setPrice(BigDecimal price) { this.price = price; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
+    public java.time.LocalDateTime getSubmittedAt() { return submittedAt; }
+    public void setSubmittedAt(java.time.LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+    public java.time.LocalDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(java.time.LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public Unit getBaseUnit() { return baseUnit; }
     public void setBaseUnit(Unit baseUnit) { this.baseUnit = baseUnit; }
 

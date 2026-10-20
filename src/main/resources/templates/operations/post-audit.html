@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{operations/layout :: head('Danh sách shop')}"></head>
+
+<body style="background:var(--bg);">
+    <div class="app-shell">
+        <aside th:replace="~{operations/layout :: sidebar('post-audit')}"></aside>
+        <main class="main-content">
+            <header
+                th:replace="~{operations/layout :: pageHeader('Danh sách shop', 'Giám sát tuân thủ, kiểm soát chất lượng nông sản và hậu kiểm các gian hàng trên sàn.')}">
+            </header>
+
+            <section class="approval-page"
+                style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+                <!-- Information Card: Post-Audit Model -->
+                <div
+                    style="background:#fff;border-radius:14px;border:1px solid var(--line);padding:24px 28px;box-shadow:var(--shadow);">
+                    <div style="display:flex;align-items:flex-start;gap:16px;">
+                        <div
+                            style="width:48px;height:48px;border-radius:12px;background:#e5f7eb;color:#26a15d;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+                            🔍
+                        </div>
+                        <div>
+                            <h2 style="font-size:18px;font-weight:800;color:var(--ink);margin:0 0 6px;font-family:'Plus Jakarta Sans',sans-serif;">
+                                Cơ chế Hậu kiểm Sản phẩm & Gian hàng
+                            </h2>
+                            <p style="margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.6;">
+                                Theo mô hình vận hành mới, <strong>Operations Manager không còn duyệt từng sản phẩm
+                                    trước khi mở bán</strong>. Các gian hàng đạt chuẩn sau khi hoàn tất 3 bước thẩm định
+                                (Tài khoản bán hàng → Duyệt mở Shop → Xác minh thanh toán) sẽ được phép đăng tải sản
+                                phẩm trực tiếp. Bộ phận Vận hành sẽ thực hiện <strong>Hậu kiểm</strong> định kỳ hoặc khi
+                                có phản hồi, khiếu nại từ người tiêu dùng.
+                            </p>
+                            <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;">
+                                <span
+                                    style="background:#f4f8f5;color:#198b4e;border:1px solid #e0ede4;padding:6px 12px;border-radius:20px;font-weight:600;">
+                                    ⚡ Tối ưu thời gian lên sàn cho người bán
+                                </span>
+                                <span
+                                    style="background:#f4f8f5;color:#198b4e;border:1px solid #e0ede4;padding:6px 12px;border-radius:20px;font-weight:600;">
+                                    🛡️ Tập trung xử lý các trường hợp vi phạm thực tế
+                                </span>
+                                <span
+                                    style="background:#f4f8f5;color:#198b4e;border:1px solid #e0ede4;padding:6px 12px;border-radius:20px;font-weight:600;">
+                                    📦 Lấy mẫu kiểm định ngẫu nhiên chất lượng hoa quả
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prominent Shop List Section (Danh sách shop) -->
+                <div
+                    style="background:#fff;border-radius:14px;border:1px solid var(--line);padding:36px;box-shadow:var(--shadow);text-align:center;">
+                    <div
+                        style="width:64px;height:64px;border-radius:50%;background:#e7f2ff;color:#4f9ae5;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;">
+                        🏪
+                    </div>
+                    <h3 style="font-size:20px;font-weight:800;color:var(--ink);margin:0 0 8px;font-family:'Plus Jakarta Sans',sans-serif;">
+                        Danh sách shop
+                    </h3>
+                    <p style="font-size:14px;color:var(--muted);max-width:580px;margin:0 auto 24px;line-height:1.5;">
+                        Quản lý toàn bộ danh sách các cửa hàng đang hoạt động để thực hiện hậu kiểm thông tin, đánh giá
+                        rủi ro gian hàng và kiểm tra tính tuân thủ quy chế sàn FreshFruit.
+                    </p>
+
+                    <!-- Button that shows notification when clicked -->
+                    <button type="button" id="btnShopList" onclick="showPendingFeatureNotice()"
+                        style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(40,168,102,0.3);transition:all 0.15s;"
+                        onmouseover="this.style.background='var(--green-dark)';this.style.transform='translateY(-1px)';"
+                        onmouseout="this.style.background='var(--green)';this.style.transform='none';">
+                        <span>🏪</span>
+                        <span>Danh sách shop</span>
+                    </button>
+                </div>
+
+                <!-- Feature Alert Notification Card (Inline Alert for visibility) -->
+                <div id="inlineNoticeBox"
+                    style="display:none;background:#fefce8;border:1px solid #fef08a;border-radius:12px;padding:16px 20px;color:#854d0e;font-size:14px;font-weight:600;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:20px;">ℹ️</span>
+                        <span>Tính năng này đang hoàn thiện</span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.style.display='none'"
+                        style="background:none;border:none;color:#854d0e;font-weight:700;font-size:16px;cursor:pointer;">×</button>
+                </div>
+
+                <!-- 3 Operational Guidelines Cards -->
+                <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;">
+                    <div
+                        style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size:24px;margin-bottom:10px;">📋</div>
+                        <h4 style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 6px;">1. Hậu kiểm định kỳ
+                        </h4>
+                        <p style="font-size:13px;color:#64748b;margin:0;line-height:1.5;">
+                            Kiểm tra ngẫu nhiên chứng chỉ VietGAP, nguồn gốc xuất xứ hoa quả và hình ảnh sản phẩm đã
+                            đăng.
+                        </p>
+                    </div>
+
+                    <div
+                        style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size:24px;margin-bottom:10px;">⚠️</div>
+                        <h4 style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 6px;">2. Xử lý khiếu nại</h4>
+                        <p style="font-size:13px;color:#64748b;margin:0;line-height:1.5;">
+                            Nhận báo cáo từ CSKH hoặc người mua khi sản phẩm không đúng mô tả, hoa quả bị dập nát, quá
+                            hạn.
+                        </p>
+                    </div>
+
+                    <div
+                        style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size:24px;margin-bottom:10px;">🚫</div>
+                        <h4 style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 6px;">3. Tạm dừng & Chế tài
+                        </h4>
+                        <p style="font-size:13px;color:#64748b;margin:0;line-height:1.5;">
+                            Chủ động tạm dừng (SUSPEND) các cửa hàng vi phạm nghiêm trọng chính sách chất lượng hoặc vệ
+                            sinh ATTP.
+                        </p>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Dialog Notification: "Tính năng này đang hoàn thiện" -->
+    <dialog id="noticeModal"
+        style="border:none;border-radius:16px;padding:28px;box-shadow:0 20px 40px rgba(0,0,0,0.25);width:400px;max-width:90vw;text-align:center;">
+        <div
+            style="width:56px;height:56px;border-radius:50%;background:#fef3c7;color:#d97706;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;">
+            🚧
+        </div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800;color:#1e293b;">Thông báo</h3>
+        <p style="font-size:15px;font-weight:600;color:#0f172a;margin:0 0 20px;">
+            Tính năng này đang hoàn thiện
+        </p>
+        <div style="display:flex;justify-content:center;">
+            <button type="button" onclick="document.getElementById('noticeModal').close()"
+                style="padding:10px 24px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+                Đã hiểu
+            </button>
+        </div>
+    </dialog>
+
+    <script>
+        function showPendingFeatureNotice() {
+            // Show dialog modal
+            var modal = document.getElementById('noticeModal');
+            if (modal && typeof modal.showModal === 'function') {
+                modal.showModal();
+            } else {
+                alert('Tính năng này đang hoàn thiện');
+            }
+
+            // Also display inline notice banner
+            var inline = document.getElementById('inlineNoticeBox');
+            if (inline) {
+                inline.style.display = 'flex';
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -57,6 +57,9 @@ public class Shop {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "suspension_reason", length = 1000)
+    private String suspensionReason;
+
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
@@ -109,6 +112,16 @@ public class Shop {
     @Column(name = "payment_reviewed_at")
     private LocalDateTime paymentReviewedAt;
 
+    /** PENDING / APPROVED / REJECTED */
+    @Column(name = "seller_approval_status", length = 50, nullable = false)
+    private String sellerApprovalStatus = "PENDING";
+
+    @Column(name = "seller_rejection_reason", length = 1000)
+    private String sellerRejectionReason;
+
+    @Column(name = "seller_reviewed_at")
+    private LocalDateTime sellerReviewedAt;
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -137,6 +150,8 @@ public class Shop {
     public void setOperatingStatus(String operatingStatus) { this.operatingStatus = operatingStatus; }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
     public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+    public String getSuspensionReason() { return suspensionReason; }
+    public void setSuspensionReason(String suspensionReason) { this.suspensionReason = suspensionReason; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public String getIdCardNumber() { return idCardNumber; }
@@ -178,6 +193,15 @@ public class Shop {
 
     public LocalDateTime getPaymentReviewedAt() { return paymentReviewedAt; }
     public void setPaymentReviewedAt(LocalDateTime paymentReviewedAt) { this.paymentReviewedAt = paymentReviewedAt; }
+
+    public String getSellerApprovalStatus() { return sellerApprovalStatus; }
+    public void setSellerApprovalStatus(String sellerApprovalStatus) { this.sellerApprovalStatus = sellerApprovalStatus; }
+
+    public String getSellerRejectionReason() { return sellerRejectionReason; }
+    public void setSellerRejectionReason(String sellerRejectionReason) { this.sellerRejectionReason = sellerRejectionReason; }
+
+    public LocalDateTime getSellerReviewedAt() { return sellerReviewedAt; }
+    public void setSellerReviewedAt(LocalDateTime sellerReviewedAt) { this.sellerReviewedAt = sellerReviewedAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

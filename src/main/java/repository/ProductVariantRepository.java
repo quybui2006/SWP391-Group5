@@ -1,6 +1,7 @@
 package repository;
 
 import entity.ProductVariant;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,23 +15,38 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     boolean existsByShopIdAndSku(Long shopId, String sku);
 
-    /** Một sản phẩm không nên có hai biến thể cùng tên, ví dụ hai biến thể "Túi 1kg". */
+    /**
+     * Một sản phẩm không nên có hai biến thể cùng tên, ví dụ hai biến thể "Túi 1kg".
+     */
     boolean existsByProduct_IdAndNameIgnoreCaseAndIdNot(Long productId, String name, Long id);
 
-    /** Hậu kiểm: biến thể đang bán của sản phẩm ACTIVE có thể được chọn tạo khuyến mãi dù approval_status còn PENDING. */
-    @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p " +
-            "WHERE pv.shopId = :shopId AND pv.status = 'ACTIVE' " +
-            "AND p.sellingStatus = 'ACTIVE' " +
+    /**
+     * Tin đang bán thuộc shop: hậu kiểm PENDING và đã duyệt APPROVED đều đủ điều kiện.
+     */
+    @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
+            "WHERE pv.shopId = :shopId AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "ORDER BY pv.name ASC")
     List<ProductVariant> findPromotionEligibleVariants(@Param("shopId") Long shopId);
 
-    /** Danh mục khách hàng theo hậu kiểm: chỉ xét trạng thái bán của sản phẩm, không xét approval_status. */
-    List<ProductVariant> findByStatusAndProduct_SellingStatus(String variantStatus, String productStatus);
+    /**
+     * Catalog bán ngay tin PENDING trong lúc Operations hậu kiểm.
+     */
+    @Query("SELECT DISTINCT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
+            "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
+    List<ProductVariant> findApprovedActiveForCatalog();
+
+    @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
+            "WHERE pv.id = :variantId AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
+    java.util.Optional<ProductVariant> findSellableById(@Param("variantId") Long variantId);
 
     // Câu Query kết hợp Tìm kiếm đa trường (Tên biến thể, Tên sản phẩm, Xuất xứ, Mô tả, SKU, Lô hàng) + Lọc giá + Danh mục + Xuất xứ
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
-            "JOIN pv.product p LEFT JOIN p.categories c " +
-            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
+            "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
+            "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "AND (:keyword = '' OR (" +
             "   LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "   LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -54,11 +70,11 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("origins") List<String> origins,
             org.springframework.data.domain.Sort sort);
 
-    // Backward-compatible searchAndFilter method
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
-            "JOIN pv.product p LEFT JOIN p.categories c " +
-            "WHERE pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' AND p.approvalStatus = 'APPROVED' " +
-            "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
+            "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
+            "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
             "AND (:filterByCategory = false OR c.id IN :categoryIds)")
@@ -69,11 +85,14 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("filterByCategory") boolean filterByCategory,
             @Param("categoryIds") List<Long> categoryIds);
 
-    // Lấy danh sách sản phẩm theo shop, có lọc theo category và keyword
+    /**
+     * Lấy biến thể đang bán của một shop, gồm tin đang chờ hậu kiểm.
+     */
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
-            "JOIN pv.product p LEFT JOIN p.categories c " +
+            "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
             "WHERE (pv.shopId = :shopId OR p.shopId = :shopId) " +
-            "AND pv.status = 'ACTIVE' AND p.sellingStatus = 'ACTIVE' " +
+            "AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
+            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "AND (:categoryId IS NULL OR c.id = :categoryId) " +
             "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<ProductVariant> findByShopAndCategoryAndKeyword(

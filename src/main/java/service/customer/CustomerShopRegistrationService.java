@@ -106,6 +106,12 @@ public class CustomerShopRegistrationService {
         // Send in-web notification
         try {
             notificationService.notifyShopRegistrationSubmitted(userId, savedShop.getId(), savedShop.getName());
+            String ownerName = userRepository.findById(userId).map(entity.User::getFullName).orElse(dto.getIdCardName());
+            notificationService.notifyOperationsNewShopRegistration(
+                    savedShop.getId(),
+                    savedShop.getName(),
+                    ownerName
+            );
         } catch (Exception ignored) {
         }
 
@@ -157,6 +163,12 @@ public class CustomerShopRegistrationService {
 
         try {
             notificationService.notifyShopRegistrationSubmitted(userId, saved.getId(), saved.getName());
+            String ownerName = userRepository.findById(userId).map(entity.User::getFullName).orElse(dto.getIdCardName());
+            notificationService.notifyOperationsNewShopRegistration(
+                    saved.getId(),
+                    saved.getName(),
+                    ownerName
+            );
         } catch (Exception ignored) {
         }
 

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{operations/layout :: head('Yêu cầu mở lại Shop')}"></head>
+<body>
+<div class="operations-shell">
+    <aside th:replace="~{operations/layout :: sidebar('reopen-requests')}"></aside>
+    <main class="operations-main">
+        <header th:replace="~{operations/layout :: pageHeader('Yêu cầu mở lại Shop', 'Xem giải trình và quyết định có mở lại cửa hàng hay không.')}"></header>
+        <p class="alert alert-success" th:if="${success}" th:text="${success}"></p><p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
+        <section class="approval-page"><div class="table-card"><div class="table-scroll">
+            <table><thead><tr><th>SHOP / CHỦ SHOP</th><th>GIẢI TRÌNH</th><th>NGÀY GỬI</th><th>THAO TÁC</th></tr></thead>
+                <tbody>
+                <tr th:each="request : ${requests}">
+                    <td><a th:href="@{/operations/shop-list/{id}(id=${request.shopId})}" th:text="${request.shopName}">Shop</a><div class="secondary-cell" th:text="${request.ownerName + ' · ' + request.ownerEmail}">Chủ shop</div></td>
+                    <td style="white-space:normal;min-width:260px" th:text="${request.explanation}">Giải trình</td>
+                    <td class="date-cell" th:text="${request.requestedAt != null ? #temporals.format(request.requestedAt,'dd/MM/yyyy HH:mm') : '—'}">—</td>
+                    <td style="min-width:240px"><form method="post" th:action="@{/operations/reopen-requests/{id}/approve(id=${request.id})}" style="display:inline"><button class="button button-approve" type="submit">Mở lại</button></form>
+                        <form method="post" th:action="@{/operations/reopen-requests/{id}/reject(id=${request.id})}" style="margin-top:8px"><input name="reason" required minlength="5" maxlength="1000" placeholder="Lý do từ chối"><button class="button button-reject" type="submit" style="margin-left:6px">Từ chối</button></form></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(requests)}"><td colspan="4">Chưa có yêu cầu mở lại nào đang chờ xử lý.</td></tr>
+                </tbody>
+            </table>
+        </div></div></section>
+    </main>
+</div>
+</body>
+</html>

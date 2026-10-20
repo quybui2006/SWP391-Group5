@@ -1,7 +1,13 @@
-CREATE DATABASE IF NOT EXISTS freshfruit_v5 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE freshfruit_v5;
+﻿-- =============================================================================
+-- FreshFruit Platform - Complete Consolidated Database Schema
+-- Combined from OnlineFruitShoppingPlatform.sql + Migrations V1 -> V7
+-- Target RDBMS: MySQL 8.0+
+-- Database Name: freshfruit_v5
+-- =============================================================================
 
-CREATE TABLE membership_tiers (
+
+-- 1. Membership Tiers
+CREATE TABLE IF NOT EXISTS membership_tiers (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(20) NOT NULL UNIQUE CHECK (code IN ('BRONZE','SILVER','GOLD','DIAMOND')),
     name VARCHAR(80) NOT NULL UNIQUE,
@@ -10,22 +16,21 @@ CREATE TABLE membership_tiers (
     is_active TINYINT(1) NOT NULL DEFAULT 0,
     CHECK (is_active = 0 OR min_spending IS NOT NULL)
 );
--- Note: MySQL does not support filtered indexes natively like SQL Server. 
--- UX_tiers_threshold logic (UNIQUE on min_spending WHERE min_spending IS NOT NULL) 
--- is partially handled by MySQL automatically allowing multiple NULLs in UNIQUE columns.
 CREATE UNIQUE INDEX UX_tiers_threshold ON membership_tiers(min_spending);
 
-CREATE TABLE provinces (
+-- 2. Provinces
+CREATE TABLE IF NOT EXISTS provinces (
     code VARCHAR(20) NOT NULL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     is_active TINYINT(1) NOT NULL DEFAULT 1
 );
 
-CREATE TABLE users (
+-- 3. Users
+CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(254) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NULL, 
+    password_hash VARCHAR(255) NULL,
     phone VARCHAR(20) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
         CHECK (status IN ('ACTIVE','INACTIVE','LOCKED')),
@@ -38,7 +43,8 @@ CREATE TABLE users (
     FOREIGN KEY (membership_tier_id) REFERENCES membership_tiers(id)
 );
 
-CREATE TABLE customer_profiles (
+-- 4. Customer Profiles
+CREATE TABLE IF NOT EXISTS customer_profiles (
     user_id BIGINT PRIMARY KEY,
     gender VARCHAR(10) NULL,
     birth_date DATE NULL,
@@ -47,13 +53,15 @@ CREATE TABLE customer_profiles (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE roles (
+-- 5. Roles
+CREATE TABLE IF NOT EXISTS roles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(40) NOT NULL UNIQUE,
     name VARCHAR(80) NOT NULL
 );
 
-CREATE TABLE user_roles (
+-- 6. User Roles
+CREATE TABLE IF NOT EXISTS user_roles (
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
     assigned_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -64,7 +72,8 @@ CREATE TABLE user_roles (
     FOREIGN KEY (assigned_by) REFERENCES users(id)
 );
 
-CREATE TABLE user_addresses (
+-- 7. User Addresses
+CREATE TABLE IF NOT EXISTS user_addresses (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     recipient_name VARCHAR(150) NOT NULL,
@@ -77,10 +86,10 @@ CREATE TABLE user_addresses (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (province_code) REFERENCES provinces(code)
 );
--- App-level enforcement recommended for uniqueness of is_default = 1 per user_id
 CREATE INDEX IX_addresses_default ON user_addresses(user_id, is_default);
 
-CREATE TABLE email_otps (
+-- 8. Email OTPs
+CREATE TABLE IF NOT EXISTS email_otps (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NULL,
     email VARCHAR(254) NOT NULL,
@@ -94,7 +103,8 @@ CREATE TABLE email_otps (
     CHECK (expires_at > created_at)
 );
 
-CREATE TABLE shops (
+-- 9. Shops (Integrated with V5, V6, V7)
+CREATE TABLE IF NOT EXISTS shops (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     owner_id BIGINT NOT NULL,
     name VARCHAR(160) NOT NULL,
@@ -110,6 +120,28 @@ CREATE TABLE shops (
     reviewed_at DATETIME(3) NULL,
     suspension_reason VARCHAR(1000) NULL,
     rejection_reason VARCHAR(1000) NULL,
+    -- Identity & Business Information (V6)
+    id_card_number VARCHAR(50) NULL,
+    id_card_name VARCHAR(150) NULL,
+    id_card_date DATE NULL,
+    id_card_place VARCHAR(150) NULL,
+    business_type VARCHAR(50) NOT NULL DEFAULT 'INDIVIDUAL',
+    tax_code VARCHAR(50) NULL,
+    tax_name VARCHAR(150) NULL,
+    tax_email VARCHAR(254) NULL,
+    shipping_methods VARCHAR(255) NULL,
+    -- Banking Information for Settlement / Reimbursement (V6)
+    bank_name VARCHAR(100) NULL,
+    bank_account_number VARCHAR(50) NULL,
+    bank_account_name VARCHAR(150) NULL,
+    bank_branch VARCHAR(150) NULL,
+    payment_approval_status VARCHAR(50) NOT NULL DEFAULT 'UNCONFIGURED',
+    bank_rejection_reason VARCHAR(1000) NULL,
+    payment_reviewed_at DATETIME(3) NULL,
+    -- Seller Approval Workflow (V5)
+    seller_approval_status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    seller_rejection_reason VARCHAR(1000) NULL,
+    seller_reviewed_at DATETIME NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     UNIQUE (owner_id),
@@ -121,13 +153,62 @@ CREATE TABLE shops (
     CHECK (operating_status <> 'SUSPENDED' OR (suspension_reason IS NOT NULL AND CHAR_LENGTH(TRIM(suspension_reason)) > 0))
 );
 
-CREATE TABLE categories (
+-- 10. Shop Reopen Requests (V7)
+CREATE TABLE IF NOT EXISTS shop_reopen_requests (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    shop_id BIGINT NOT NULL,
+    owner_id BIGINT NOT NULL,
+    explanation VARCHAR(1000) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    operation_reason VARCHAR(1000) NULL,
+    requested_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    reviewed_at DATETIME(3) NULL,
+    CONSTRAINT FK_shop_reopen_shop FOREIGN KEY (shop_id) REFERENCES shops(id),
+    CONSTRAINT FK_shop_reopen_owner FOREIGN KEY (owner_id) REFERENCES users(id),
+    CONSTRAINT CHK_shop_reopen_status CHECK (status IN ('PENDING','APPROVED','REJECTED')),
+    CONSTRAINT CHK_shop_reopen_explanation CHECK (CHAR_LENGTH(TRIM(explanation)) >= 10),
+    CONSTRAINT CHK_shop_reopen_reason CHECK (status <> 'REJECTED' OR (operation_reason IS NOT NULL AND CHAR_LENGTH(TRIM(operation_reason)) >= 5))
+);
+CREATE INDEX IX_shop_reopen_requests_status ON shop_reopen_requests(status, requested_at);
+
+-- 11. Vouchers (V2)
+CREATE TABLE IF NOT EXISTS vouchers (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    shop_id BIGINT NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    discount_type VARCHAR(20) NOT NULL,
+    discount_value DECIMAL(19,0) NOT NULL,
+    max_discount_amount DECIMAL(19,0) NULL,
+    min_order_value DECIMAL(19,0) NOT NULL DEFAULT 0,
+    max_usages INT NOT NULL,
+    used_count INT NOT NULL DEFAULT 0,
+    is_public TINYINT(1) NOT NULL DEFAULT 1,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    starts_at DATETIME(3) NOT NULL,
+    ends_at DATETIME(3) NOT NULL,
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_vouchers_shop_code (shop_id, code),
+    KEY idx_vouchers_shop_status (shop_id, status),
+    CONSTRAINT fk_vouchers_shop FOREIGN KEY (shop_id) REFERENCES shops(id),
+    CONSTRAINT chk_vouchers_type CHECK (discount_type IN ('PERCENTAGE', 'FIXED_AMOUNT')),
+    CONSTRAINT chk_vouchers_dates CHECK (ends_at > starts_at),
+    CONSTRAINT chk_vouchers_discount_value CHECK (discount_value > 0),
+    CONSTRAINT chk_vouchers_usages CHECK (max_usages > 0 AND used_count >= 0 AND used_count <= max_usages),
+    CONSTRAINT chk_vouchers_status CHECK (status IN ('ACTIVE', 'PAUSED', 'EXPIRED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Categories
+CREATE TABLE IF NOT EXISTS categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     is_active TINYINT(1) NOT NULL DEFAULT 1
 );
 
-CREATE TABLE products (
+-- 13. Products (V1, V4 - Grouping entity)
+CREATE TABLE IF NOT EXISTS products (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     shop_id BIGINT NOT NULL,
     name VARCHAR(200) NOT NULL CHECK (CHAR_LENGTH(TRIM(name)) > 0),
@@ -151,11 +232,11 @@ CREATE TABLE products (
     CHECK (expiry_date >= received_date),
     CHECK (approval_status <> 'PENDING' OR submitted_at IS NOT NULL),
     CHECK (approval_status NOT IN ('APPROVED','REJECTED') OR reviewed_at IS NOT NULL),
-    CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0)),
-    CONSTRAINT chk_products_active_approved CHECK (selling_status <> 'ACTIVE' OR approval_status = 'APPROVED')
+    CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0))
 );
 
-CREATE TABLE product_images (
+-- 14. Product Images
+CREATE TABLE IF NOT EXISTS product_images (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     product_id BIGINT NOT NULL,
     image_url VARCHAR(1000) NOT NULL,
@@ -164,7 +245,8 @@ CREATE TABLE product_images (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
-CREATE TABLE product_categories (
+-- 15. Product Categories
+CREATE TABLE IF NOT EXISTS product_categories (
     product_id BIGINT NOT NULL,
     category_id BIGINT NOT NULL,
     PRIMARY KEY (product_id, category_id),
@@ -172,14 +254,16 @@ CREATE TABLE product_categories (
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
-CREATE TABLE units (
+-- 16. Units
+CREATE TABLE IF NOT EXISTS units (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(50) NOT NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1
 );
 
-CREATE TABLE product_variants (
+-- 17. Product Variants (V4, V7 - Variant-level post-moderation workflow)
+CREATE TABLE IF NOT EXISTS product_variants (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     product_id BIGINT NOT NULL,
     shop_id BIGINT NOT NULL,
@@ -191,16 +275,24 @@ CREATE TABLE product_variants (
     price DECIMAL(19,0) NOT NULL CHECK (price > 0),
     min_order_quantity INT NOT NULL DEFAULT 1 CHECK (min_order_quantity > 0),
     status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT','ACTIVE','INACTIVE')),
+    approval_status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (approval_status IN ('DRAFT','PENDING','APPROVED','REJECTED')),
+    submitted_at DATETIME(3) NULL,
+    reviewed_at DATETIME(3) NULL,
+    rejection_reason VARCHAR(1000) NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     UNIQUE (shop_id, sku),
     UNIQUE (product_id, id),
     UNIQUE (id, shop_id),
     FOREIGN KEY (base_unit_id) REFERENCES units(id),
-    FOREIGN KEY (product_id, shop_id) REFERENCES products(id, shop_id)
+    FOREIGN KEY (product_id, shop_id) REFERENCES products(id, shop_id),
+    CHECK (approval_status <> 'PENDING' OR submitted_at IS NOT NULL),
+    CHECK (approval_status NOT IN ('APPROVED','REJECTED') OR reviewed_at IS NOT NULL),
+    CHECK (approval_status <> 'REJECTED' OR (rejection_reason IS NOT NULL AND CHAR_LENGTH(TRIM(rejection_reason)) > 0))
 );
 
-CREATE TABLE customer_favorites (
+-- 18. Customer Favorites
+CREATE TABLE IF NOT EXISTS customer_favorites (
     user_id BIGINT NOT NULL,
     variant_id BIGINT NOT NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -209,7 +301,8 @@ CREATE TABLE customer_favorites (
     FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
 
-CREATE TABLE variant_inventory (
+-- 19. Variant Inventory
+CREATE TABLE IF NOT EXISTS variant_inventory (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     variant_id BIGINT NOT NULL,
     initial_quantity INT NOT NULL CHECK (initial_quantity > 0),
@@ -228,7 +321,8 @@ CREATE TABLE variant_inventory (
     CHECK (reserved_quantity <= quantity_on_hand)
 );
 
-CREATE TABLE promotional_prices (
+-- 20. Promotional Prices
+CREATE TABLE IF NOT EXISTS promotional_prices (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     inventory_id BIGINT NOT NULL,
     variant_id BIGINT NOT NULL,
@@ -244,13 +338,15 @@ CREATE TABLE promotional_prices (
     CHECK (ends_at > starts_at)
 );
 
-CREATE TABLE carts (
+-- 21. Carts
+CREATE TABLE IF NOT EXISTS carts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE cart_items (
+-- 22. Cart Items
+CREATE TABLE IF NOT EXISTS cart_items (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     cart_id BIGINT NOT NULL,
     variant_id BIGINT NOT NULL,
@@ -261,7 +357,8 @@ CREATE TABLE cart_items (
     FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
 
-CREATE TABLE shop_monthly_fees (
+-- 23. Shop Monthly Fees
+CREATE TABLE IF NOT EXISTS shop_monthly_fees (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     shop_id BIGINT NOT NULL,
     revenue_month DATE NOT NULL CHECK (DAY(revenue_month) = 1),
@@ -280,7 +377,8 @@ CREATE TABLE shop_monthly_fees (
     CHECK ((status = 'UNPAID' AND paid_at IS NULL) OR (status = 'PAID' AND paid_at IS NOT NULL))
 );
 
-CREATE TABLE checkouts (
+-- 24. Checkouts
+CREATE TABLE IF NOT EXISTS checkouts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     checkout_code VARCHAR(40) NOT NULL UNIQUE,
     request_key VARCHAR(100) NOT NULL UNIQUE,
@@ -302,7 +400,8 @@ CREATE TABLE checkouts (
 );
 CREATE UNIQUE INDEX UX_guest_token ON checkouts(guest_access_token_hash);
 
-CREATE TABLE orders (
+-- 25. Orders
+CREATE TABLE IF NOT EXISTS orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_code VARCHAR(40) NOT NULL UNIQUE,
     checkout_id BIGINT NOT NULL,
@@ -375,7 +474,8 @@ CREATE TABLE orders (
         OR (delivered_at IS NOT NULL AND auto_complete_at IS NOT NULL AND auto_complete_at = DATE_ADD(delivered_at, INTERVAL 3 DAY)))
 );
 
-CREATE TABLE order_items (
+-- 26. Order Items
+CREATE TABLE IF NOT EXISTS order_items (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id BIGINT NOT NULL,
     shop_id BIGINT NOT NULL,
@@ -404,7 +504,8 @@ CREATE TABLE order_items (
     CHECK (line_total = ROUND(quantity * sale_unit_price, 0))
 );
 
-CREATE TABLE inventory_transactions (
+-- 27. Inventory Transactions
+CREATE TABLE IF NOT EXISTS inventory_transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     inventory_id BIGINT NOT NULL,
     order_item_id BIGINT NULL,
@@ -430,7 +531,8 @@ CREATE TABLE inventory_transactions (
         OR (type = 'DISCARD' AND on_hand_delta < 0 AND reserved_delta = 0))
 );
 
-CREATE TABLE payments (
+-- 28. Payments
+CREATE TABLE IF NOT EXISTS payments (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     payment_code VARCHAR(40) NOT NULL UNIQUE,
     order_id BIGINT NOT NULL,
@@ -449,7 +551,8 @@ CREATE TABLE payments (
 CREATE UNIQUE INDEX UX_payments_success ON payments(order_id, (CASE WHEN status = 'SUCCEEDED' THEN 1 ELSE NULL END));
 CREATE UNIQUE INDEX UX_payments_provider ON payments(provider_reference);
 
-CREATE TABLE loyalty_transactions (
+-- 29. Loyalty Transactions
+CREATE TABLE IF NOT EXISTS loyalty_transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     order_id BIGINT NOT NULL,
@@ -465,7 +568,8 @@ CREATE TABLE loyalty_transactions (
     CHECK ((type = 'REDEEM' AND points_change < 0) OR (type IN ('EARN','RESTORE') AND points_change > 0))
 );
 
-CREATE TABLE reviews (
+-- 30. Reviews (V3 - variant & user based)
+CREATE TABLE IF NOT EXISTS reviews (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     variant_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -478,7 +582,8 @@ CREATE TABLE reviews (
     FOREIGN KEY (order_item_id) REFERENCES order_items(id)
 );
 
-CREATE TABLE notifications (
+-- 31. Notifications (V6, V7)
+CREATE TABLE IF NOT EXISTS notifications (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     event_key VARCHAR(150) NOT NULL,
@@ -493,7 +598,8 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE platform_wallet_transactions (
+-- 32. Platform Wallet Transactions
+CREATE TABLE IF NOT EXISTS platform_wallet_transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     type VARCHAR(25) NOT NULL CHECK (type IN ('SHOP_FEE','POINT_SUBSIDY','TOP_UP')),
     amount DECIMAL(19,0) NOT NULL CHECK (amount > 0),
@@ -510,6 +616,9 @@ CREATE TABLE platform_wallet_transactions (
 CREATE UNIQUE INDEX UX_wallet_fee ON platform_wallet_transactions(monthly_fee_id);
 CREATE UNIQUE INDEX UX_wallet_subsidy ON platform_wallet_transactions(order_id);
 
+-- =============================================================================
+-- INDEXES
+-- =============================================================================
 CREATE INDEX IX_wallet_history ON platform_wallet_transactions(created_at DESC);
 CREATE INDEX IX_fee_overdue ON shop_monthly_fees(shop_id, status, due_at);
 CREATE INDEX IX_item_inventory ON order_items(inventory_id, allocation_status);
@@ -538,7 +647,10 @@ CREATE INDEX IX_payments_order ON payments(order_id, created_at DESC);
 CREATE INDEX IX_monthly_fees_status ON shop_monthly_fees(status, revenue_month);
 CREATE INDEX IX_notifications_inbox ON notifications(user_id, id DESC);
 
-INSERT INTO roles(code, name) VALUES
+-- =============================================================================
+-- SEED DATA (LOOKUP TABLES & DEFAULT ROLES)
+-- =============================================================================
+INSERT IGNORE INTO roles(code, name) VALUES
 ('CUSTOMER', 'Customer'),
 ('SHOP_OWNER', 'Shop Owner'),
 ('DELIVERY_MANAGER', 'Delivery Manager'),
@@ -546,13 +658,34 @@ INSERT INTO roles(code, name) VALUES
 ('OPERATIONS_MANAGER', 'Operations Manager'),
 ('ADMIN', 'Admin');
 
-INSERT INTO units(code, name) VALUES
-('KG', 'Kg'), ('GRAM', 'Gram'), ('BOX', 'Hộp'),
-('TRAY', 'Khay'), ('CARTON', 'Thùng'), ('PIECE', 'Quả'), ('PACK', 'Gói');
+INSERT IGNORE INTO units(code, name) VALUES
+('KG', 'Kg'), ('GRAM', 'Gram'), ('BOX', 'Há»™p'),
+('TRAY', 'Khay'), ('CARTON', 'ThÃ¹ng'), ('PIECE', 'Quáº£'), ('PACK', 'GÃ³i');
 
-INSERT INTO membership_tiers(code, name, rank_order) VALUES
-('BRONZE', 'Đồng', 1), ('SILVER', 'Bạc', 2), ('GOLD', 'Vàng', 3), ('DIAMOND', 'Kim cương', 4);
+INSERT IGNORE INTO membership_tiers(code, name, rank_order) VALUES
+('BRONZE', 'Äá»“ng', 1), ('SILVER', 'Báº¡c', 2), ('GOLD', 'VÃ ng', 3), ('DIAMOND', 'Kim cÆ°Æ¡ng', 4);
 
+INSERT IGNORE INTO provinces(code, name, is_active) VALUES
+('DEMO', 'Demo Province', 1);
+
+
+-- Assign Roles to demo users
+INSERT IGNORE INTO user_roles(user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'customer.demo@freshfruit.example' AND r.code = 'CUSTOMER';
+INSERT IGNORE INTO user_roles(user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'owner.demo@freshfruit.example' AND r.code IN ('CUSTOMER', 'SHOP_OWNER');
+INSERT IGNORE INTO user_roles(user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'admin.demo@freshfruit.example' AND r.code = 'ADMIN';
+INSERT IGNORE INTO user_roles(user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'cs.demo@freshfruit.example' AND r.code = 'CS_STAFF';
+INSERT IGNORE INTO user_roles(user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'delivery.demo@freshfruit.example' AND r.code = 'DELIVERY_MANAGER';
+INSERT IGNORE INTO user_roles(user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.email = 'op.demo@freshfruit.example' AND r.code = 'OPERATIONS_MANAGER';
+
+-- =============================================================================
+-- VIEWS
+-- =============================================================================
 CREATE OR REPLACE VIEW v_shop_sales_access AS
 SELECT s.id AS shop_id, s.approval_status, s.operating_status,
        CAST(CASE WHEN EXISTS (SELECT 1 FROM shop_monthly_fees f
@@ -577,6 +710,10 @@ FROM orders
 WHERE status = 'COMPLETED' AND payment_status = 'PAID'
 GROUP BY shop_id, DATE_FORMAT(DATE_ADD(completed_at, INTERVAL 7 HOUR), '%Y-%m-01');
 
+-- =============================================================================
+-- STORED PROCEDURES
+-- =============================================================================
+DROP PROCEDURE IF EXISTS usp_generate_monthly_fees;
 DELIMITER $$
 CREATE PROCEDURE usp_generate_monthly_fees (IN p_revenue_month DATE)
 BEGIN
@@ -629,6 +766,7 @@ BEGIN
 END$$
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS usp_pay_shop_fee;
 DELIMITER $$
 CREATE PROCEDURE usp_pay_shop_fee (IN p_fee_id BIGINT, IN p_owner_user_id BIGINT)
 BEGIN

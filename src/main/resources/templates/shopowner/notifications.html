@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Thông báo | FreshFruit</title><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}"></head>
+<body><div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('notifications')}"></aside>
+<main class="main-content product-management"><header class="topbar"><div><p class="breadcrumb">Shop Owner / <span>Thông báo</span></p><h1>Thông báo</h1><p class="muted">Cập nhật về trạng thái cửa hàng và các yêu cầu của bạn.</p></div><button type="button" class="button button-ghost" id="readAll">Đánh dấu đã đọc</button></header>
+<section class="panel"><div class="table-wrap"><table><thead><tr><th>TRẠNG THÁI</th><th>THÔNG BÁO</th><th>THỜI GIAN</th><th>THAO TÁC</th></tr></thead><tbody>
+<tr th:each="item : ${notifications}" th:attr="data-notification-id=${item.id},data-target-url=${item.targetUrl}">
+<td><span class="badge" th:classappend="${item.read} ? '' : ' badge-active'" th:text="${item.read} ? 'Đã đọc' : 'Mới'"></span></td>
+<td><strong th:text="${item.title}">Thông báo</strong><div class="secondary-cell" th:text="${item.content}">Nội dung</div></td>
+<td th:text="${item.createdAtFormatted}">—</td><td><button class="button button-secondary mark-read" type="button" th:if="${!item.read}">Đã đọc</button><a class="button button-ghost" th:href="${item.targetUrl}">Mở</a></td>
+</tr><tr th:if="${#lists.isEmpty(notifications)}"><td colspan="4">Chưa có thông báo.</td></tr>
+</tbody></table></div></section>
+</main></div>
+<script>
+(() => {
+    document.querySelectorAll('.mark-read').forEach(button => button.addEventListener('click', async () => {
+        const row = button.closest('[data-notification-id]');
+        const response = await fetch(`/api/notifications/${row.dataset.notificationId}/read`, {method: 'POST', credentials: 'same-origin'});
+        if (!response.ok) return;
+        button.remove();
+        row.querySelector('.badge').textContent = 'Đã đọc';
+    }));
+    document.getElementById('readAll')?.addEventListener('click', async () => {
+        const response = await fetch('/api/notifications/read-all', {method: 'POST', credentials: 'same-origin'});
+        if (response.ok) window.location.reload();
+    });
+})();
+</script>
+</body></html>

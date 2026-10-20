@@ -8,6 +8,8 @@
         <header th:replace="~{operations/layout :: pageHeader('Duyệt yêu cầu mở Shop', 'Kiểm tra, thẩm định hồ sơ cửa hàng trước khi cấp phép hoạt động trên sàn.')}"></header>
 
         <section class="approval-page" aria-labelledby="shop-list-heading">
+
+
             <!-- KPI Summary Cards -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
                 <a th:href="@{/operations/shops(status='PENDING')}" style="text-decoration:none;">
@@ -75,7 +77,7 @@
                 <form th:action="@{/operations/shops}" method="get" style="display:flex;align-items:center;gap:8px;margin:0;">
                     <input type="hidden" name="status" th:value="${currentStatus}">
                     <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, email..." style="padding:8px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;min-width:240px;">
-                    <button type="submit" style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Tìm kiếm</button>
+                    <button type="submit" style="padding:8px 14px;background:#28a866;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Tìm kiếm</button>
                     <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/shops(status=${currentStatus})}" style="font-size:13px;color:#dc2626;text-decoration:none;">Xóa tìm</a>
                 </form>
             </div>
@@ -97,7 +99,7 @@
                         <tr th:each="shop : ${shops}" data-approval-row th:attr="data-record-id=${shop.id}">
                             <td>
                                 <a th:href="@{/operations/shops/{id}(id=${shop.id})}" style="text-decoration:none;color:inherit;">
-                                    <div class="primary-cell" style="color:#2e7d32;font-weight:700;" th:text="${shop.name}">Tên cửa hàng</div>
+                                    <div class="primary-cell" style="color:#28a866;font-weight:700;" th:text="${shop.name}">Tên cửa hàng</div>
                                 </a>
                                 <div class="secondary-cell" th:text="${shop.description != null and !#strings.isEmpty(shop.description.trim()) ? shop.description : 'Chưa có mô tả'}">Mô tả cửa hàng</div>
                             </td>

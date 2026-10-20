@@ -62,10 +62,11 @@ class ShopPaymentApprovalIntegrationTests {
         assertEquals("PENDING", registeredShop.getApprovalStatus());
         assertEquals("CLOSED", registeredShop.getOperatingStatus());
 
-        // 2. Operator reviews and approves shop registration (Step 1)
+        // 2. Operator trực tiếp phê duyệt mở Shop
         operationsShopService.approveShop(registeredShop.getId());
 
         ShopApprovalDetailDto detailAfterStep1 = operationsShopService.getShopDetail(registeredShop.getId());
+        assertEquals("APPROVED", detailAfterStep1.getSellerApprovalStatus());
         assertEquals("APPROVED", detailAfterStep1.getApprovalStatus());
         assertEquals("CLOSED", detailAfterStep1.getOperatingStatus());
         assertEquals("UNCONFIGURED", detailAfterStep1.getPaymentApprovalStatus());
@@ -152,5 +153,31 @@ class ShopPaymentApprovalIntegrationTests {
         ShopApprovalDetailDto approvedDetail = operationsShopService.getShopDetail(shop.getId());
         assertEquals("APPROVED", approvedDetail.getPaymentApprovalStatus());
         assertEquals("OPEN", approvedDetail.getOperatingStatus());
+    }
+
+    @Test
+    void testDirectShopApproval() {
+        String code = "P-STAGE-CHECK";
+        ensureProvince(code, "Hải Phòng");
+
+        Long ownerId = createTestUser("seller-stage-test@example.com", "Vũ Hoàng");
+
+        ShopRegistrationDto regDto = new ShopRegistrationDto();
+        regDto.setName("Hải Phòng Fruit");
+        regDto.setPhone("0933445566");
+        regDto.setProvinceCode(code);
+        regDto.setWardName("Lê Chân");
+        regDto.setAddressDetail("Số 10 Lạch Tray");
+        regDto.setIdCardNumber("031195007890");
+        regDto.setIdCardName("Vũ Hoàng");
+        regDto.setAgreeTerms(true);
+
+        Shop shop = customerShopService.registerShop(ownerId, regDto);
+
+        // Operations trực tiếp duyệt shop mà không cần duyệt tài khoản riêng biệt
+        operationsShopService.approveShop(shop.getId());
+        ShopApprovalDetailDto detail = operationsShopService.getShopDetail(shop.getId());
+        assertEquals("APPROVED", detail.getApprovalStatus());
+        assertEquals("APPROVED", detail.getSellerApprovalStatus());
     }
 }

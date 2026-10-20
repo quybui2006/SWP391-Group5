@@ -80,7 +80,8 @@ public class AdminUserController {
         }
 
         try {
-            Long adminId = (Long) session.getAttribute("userId");
+            Object uid = session.getAttribute("userId");
+            Long adminId = uid instanceof Number num ? num.longValue() : null;
             adminUserService.createUser(form, adminId);
             ra.addFlashAttribute("message", "Thêm người dùng mới thành công!");
             return "redirect:/admin/users";

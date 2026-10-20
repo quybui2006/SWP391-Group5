@@ -32,12 +32,16 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
 
     long countByOperatingStatus(String operatingStatus);
 
+    long countBySellerApprovalStatus(String sellerApprovalStatus);
+
+    long countByPaymentApprovalStatus(String paymentApprovalStatus);
+
     @Query("""
             SELECT new dto.operations.ShopApprovalItemDto(
                 s.id, s.name, s.description, u.fullName, u.email, s.phone,
                 s.provinceCode, s.wardName, s.addressDetail, s.approvalStatus,
                 s.operatingStatus, s.createdAt, s.reviewedAt, s.rejectionReason,
-                s.paymentApprovalStatus
+                s.paymentApprovalStatus, s.sellerApprovalStatus
             )
             FROM Shop s, User u
             WHERE u.id = s.ownerId
@@ -50,13 +54,47 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
                 s.id, s.name, s.description, u.fullName, u.email, s.phone,
                 s.provinceCode, s.wardName, s.addressDetail, s.approvalStatus,
                 s.operatingStatus, s.createdAt, s.reviewedAt, s.rejectionReason,
-                s.paymentApprovalStatus
+                s.paymentApprovalStatus, s.sellerApprovalStatus
             )
             FROM Shop s, User u
             WHERE u.id = s.ownerId AND s.approvalStatus = :status
             ORDER BY s.createdAt DESC
             """)
     List<dto.operations.ShopApprovalItemDto> findByApprovalStatusWithOwners(@Param("status") String status);
+
+    @Query("""
+            SELECT new dto.operations.ShopApprovalItemDto(
+                s.id, s.name, s.description, u.fullName, u.email, s.phone,
+                s.provinceCode, s.wardName, s.addressDetail, s.approvalStatus,
+                s.operatingStatus, s.createdAt, s.reviewedAt, s.rejectionReason,
+                s.paymentApprovalStatus, s.sellerApprovalStatus
+            )
+            FROM Shop s, User u
+            WHERE u.id = s.ownerId AND s.sellerApprovalStatus = :status
+            ORDER BY s.createdAt DESC
+            """)
+    List<dto.operations.ShopApprovalItemDto> findBySellerApprovalStatusWithOwners(@Param("status") String status);
+
+    @Query("""
+            SELECT new dto.operations.ShopApprovalItemDto(
+                s.id, s.name, s.description, u.fullName, u.email, s.phone,
+                s.provinceCode, s.wardName, s.addressDetail, s.approvalStatus,
+                s.operatingStatus, s.createdAt, s.reviewedAt, s.rejectionReason,
+                s.paymentApprovalStatus, s.sellerApprovalStatus
+            )
+            FROM Shop s, User u
+            WHERE u.id = s.ownerId AND s.paymentApprovalStatus = :status
+            ORDER BY s.createdAt DESC
+            """)
+    List<dto.operations.ShopApprovalItemDto> findByPaymentApprovalStatusWithOwners(@Param("status") String status);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE shops SET seller_approval_status = 'APPROVED', seller_reviewed_at = NOW(), seller_rejection_reason = NULL WHERE id = :shopId", nativeQuery = true)
+    int approveSellerAccount(@Param("shopId") Long shopId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE shops SET seller_approval_status = 'REJECTED', seller_reviewed_at = NOW(), seller_rejection_reason = :reason WHERE id = :shopId", nativeQuery = true)
+    int rejectSellerAccount(@Param("shopId") Long shopId, @Param("reason") String reason);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE shops SET approval_status = 'APPROVED', operating_status = 'CLOSED', reviewed_at = NOW(), rejection_reason = NULL WHERE id = :shopId AND approval_status = 'PENDING'", nativeQuery = true)

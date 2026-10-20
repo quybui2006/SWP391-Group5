@@ -1,13 +1,10 @@
 package controller.shop;
 
 import dto.shop.ProductCreateRequest;
-import dto.operations.SubmitProductApprovalResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,13 +13,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.shop.ProductValidationException;
 import service.shop.ShopProductService;
-import service.shop.ProductNotFoundException;
 import repository.CategoryRepository;
 
 import java.time.LocalDate;
@@ -80,7 +73,7 @@ public class ShopProductManagementController {
         }
         try {
             Long productId = products.createProduct(ownerId, form);
-            redirect.addFlashAttribute("success", "Đã tạo sản phẩm và đưa lên sàn theo cơ chế hậu kiểm. Bạn có thể thêm biến thể trong mục Biến thể sản phẩm; Quản lý vận hành sẽ kiểm tra sau.");
+            redirect.addFlashAttribute("success", "Đã tạo hồ sơ sản phẩm để quản lý biến thể. Hãy thêm biến thể để đăng bán; Operations sẽ hậu kiểm sau.");
             return "redirect:/shop/products";
         } catch (ProductValidationException ex) {
             // The service supplies user-facing text, not a Spring message-code.
@@ -96,38 +89,6 @@ public class ShopProductManagementController {
         }
         populateActiveCategories(model);
         return "shopowner/product-form";
-    }
-
-    /** API Shop Owner gửi sản phẩm đang ở DRAFT sang Operations Manager duyệt. */
-    @PostMapping({"/shop/products/{id}/submit-approval", "/shopowner/products/{id}/submit-approval"})
-    @ResponseBody
-    public ResponseEntity<SubmitProductApprovalResponse> submitForApproval(
-            @PathVariable Long id, HttpServletRequest request) {
-        Long ownerId = ownerId(request);
-        if (ownerId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new SubmitProductApprovalResponse(false, "Vui lòng đăng nhập bằng tài khoản Shop Owner.", null));
-        }
-        try {
-            products.submitForApproval(id, ownerId);
-            return ResponseEntity.ok(new SubmitProductApprovalResponse(
-                    true, "Sản phẩm đã được đưa vào hàng đợi hậu kiểm.", "PENDING"));
-        } catch (ProductValidationException ex) {
-            String message = ex.getFieldErrors().values().stream().findFirst()
-                    .orElse("Dữ liệu sản phẩm chưa hợp lệ.");
-            return ResponseEntity.badRequest().body(
-                    new SubmitProductApprovalResponse(false, message, null));
-        } catch (ProductNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new SubmitProductApprovalResponse(false, "Không tìm thấy sản phẩm của cửa hàng.", null));
-        } catch (ResponseStatusException ex) {
-            return ResponseEntity.status(ex.getStatusCode()).body(
-                    new SubmitProductApprovalResponse(false,
-                            ex.getReason() == null ? "Không thể gửi duyệt sản phẩm." : ex.getReason(), null));
-        } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.badRequest().body(new SubmitProductApprovalResponse(false,
-                    "Không thể gửi duyệt do dữ liệu chưa đáp ứng điều kiện hệ thống. Vui lòng tải lại và thử lại.", null));
-        }
     }
 
     private void populateActiveCategories(Model model) {

@@ -74,7 +74,8 @@ public class ProductDetailView {
     public void setVariants(List<VariantRow> variants) { this.variants = variants; }
 
     public record VariantRow(Long id, String sku, String name, String specification,
-                             String status, BigDecimal price, String unitName,
+                             String status, String approvalStatus, String rejectionReason,
+                             String imageUrl, BigDecimal price, String unitName,
                              int quantityOnHand, int reservedQuantity,
                              int availableQuantity, boolean lowStock) {
     }

@@ -82,14 +82,30 @@ public class CustomerAccountHomeController {
     }
 
     @GetMapping("/orders")
-    public String orders(Model model, HttpSession session) {
+    public String orders(@RequestParam(value = "status", defaultValue = "all") String status,
+                         Model model, HttpSession session) {
         Long id = current(session);
         String r = login(id, "/customer/account/orders");
         if (r != null) return r;
+        if (!java.util.Set.of("all", "pending-payment", "shipping", "completed", "cancelled").contains(status))
+            status = "all";
         model.addAttribute("profile", account.profile(id));
-        model.addAttribute("orders", account.orders(id));
+        model.addAttribute("orders", account.orders(id, status));
+        model.addAttribute("statusCounts", account.orderStatusCounts(id));
+        model.addAttribute("currentStatus", status);
         model.addAttribute("activePage", "orders");
         return "customer/orders";
+    }
+
+    @GetMapping("/orders/{id}")
+    public String orderDetail(@PathVariable Long id, Model model, HttpSession session) {
+        Long customerId = current(session);
+        String r = login(customerId, "/customer/account/orders/" + id);
+        if (r != null) return r;
+        model.addAttribute("profile", account.profile(customerId));
+        model.addAttribute("order", account.orderDetail(customerId, id));
+        model.addAttribute("activePage", "orders");
+        return "customer/order-detail";
     }
 
     @GetMapping("/favorites")

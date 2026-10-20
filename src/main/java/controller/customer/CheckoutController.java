@@ -89,10 +89,15 @@ public class CheckoutController {
                 return "redirect:" + vnpayUrl;
             }
 
-            // Nếu chọn COD -> Chuyển về giỏ hàng kèm thông báo đặt hàng thành công
-            redirectAttributes.addFlashAttribute("message", "Đặt hàng thành công. Mã đơn: " + String.join(", ", result.orderCodes()));
-            redirectAttributes.addFlashAttribute("checkoutResult", result);
-            return "redirect:/cart";
+            // Nếu chọn COD -> Chuyển sang trang payment-result với trạng thái Đang chờ thanh toán
+            model.addAttribute("isSuccess", true);
+            model.addAttribute("paymentMethod", "COD");
+            model.addAttribute("paymentMethodLabel", "Thanh toán khi nhận hàng (COD)");
+            model.addAttribute("totalAmount", result.totalAmount());
+            model.addAttribute("checkoutCode", result.checkoutCode());
+            model.addAttribute("orderCodes", String.join(", ", result.orderCodes()));
+            model.addAttribute("suggestedProducts", loadSuggestedProducts());
+            return "customer/payment-result";
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,7 +112,6 @@ public class CheckoutController {
         String responseCode = allParams.get("vnp_ResponseCode");
         String checkoutCode = allParams.get("vnp_TxnRef");
 
-        // VNPay trả về số tiền đã nhân 100 -> Chia lại cho 100 để hiển thị
         BigDecimal totalAmount = BigDecimal.ZERO;
         try {
             String rawAmount = allParams.get("vnp_Amount");
@@ -144,7 +148,6 @@ public class CheckoutController {
         return "customer/payment-result";
     }
 
-    // Lấy 8 sản phẩm gợi ý cho mục "Có thể bạn cũng thích"
     private List<Map<String, Object>> loadSuggestedProducts() {
         try {
             return jdbc.queryForList(
