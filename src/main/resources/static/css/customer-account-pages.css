@@ -17,10 +17,12 @@
 
 /* ==================== ORDER HISTORY (Shopee-style) ==================== */
 .orders-panel{padding-top:22px}
-.order-tabs{display:flex;border-bottom:2px solid var(--line);margin-bottom:18px;overflow-x:auto}
-.order-tabs a{flex:1;min-width:110px;text-align:center;padding:12px 8px;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:.18s}
-.order-tabs a:hover{color:var(--green-dark)}
-.order-tabs a.active{color:var(--green-dark);border-bottom-color:var(--green)}
+.order-tabs{display:flex;border-bottom:1.5px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.order-tabs a{flex:1;min-width:110px;text-align:center;padding:13px 8px;font-size:13.5px;font-weight:600;color:var(--muted);position:relative;white-space:nowrap;transition:.18s;border-radius:10px 10px 0 0}
+.order-tabs a::after{content:"";position:absolute;left:0;right:0;bottom:-1.5px;height:4px;border-radius:4px 4px 0 0;background:transparent;transition:.2s}
+.order-tabs a:hover{color:var(--green-dark);background:#f4faf5}
+.order-tabs a.active{color:var(--green-dark);font-weight:800;background:var(--green-soft)}
+.order-tabs a.active::after{background:var(--green)}
 .tab-count{display:inline-block;min-width:18px;padding:1px 5px;margin-left:4px;background:var(--green);color:#fff;border-radius:99px;font-size:11px;font-weight:700}
 
 .order-card{border:1px solid var(--line);border-radius:12px;margin-bottom:16px;background:#fff;overflow:hidden}
