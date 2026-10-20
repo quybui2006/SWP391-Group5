@@ -90,6 +90,56 @@
             </div>
         </header>
 
+        <!-- Shop Onboarding Banner (Đăng ký mở Shop khi chưa có cửa hàng) -->
+        <section th:if="${shop.approvalStatus == 'NOT_REGISTERED'}" class="shop-setup-banner">
+            <div class="setup-banner-left">
+                <span class="setup-tag">BƯỚC BẮT BUỘC</span>
+                <h2>Bạn chưa hoàn tất đăng ký thông tin Cửa hàng! 🏪</h2>
+                <p>Để bắt đầu bán hàng và tiếp cận người tiêu dùng FreshFruit, vui lòng đăng ký thông tin định danh (CCCD/Thuế), tên gian hàng và địa chỉ kho lấy hàng.</p>
+                <div class="setup-steps">
+                    <span class="setup-step-item"><b>1</b> Định danh CCCD & Thuế</span>
+                    <span class="setup-sep">➔</span>
+                    <span class="setup-step-item"><b>2</b> Thông tin Shop & Kho hàng</span>
+                    <span class="setup-sep">➔</span>
+                    <span class="setup-step-item"><b>3</b> Ban Quản trị phê duyệt</span>
+                </div>
+            </div>
+            <div class="setup-banner-right">
+                <a th:href="@{/seller/activate}" class="setup-open-shop-btn">
+                    <span>Đăng ký mở Shop ngay</span>
+                    <span class="btn-arrow">➔</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Banner khi hồ sơ đang chờ duyệt -->
+        <section th:if="${shop.approvalStatus == 'PENDING'}" class="shop-setup-banner pending">
+            <div class="setup-banner-left">
+                <span class="setup-tag pending">ĐANG XÉT DUYỆT</span>
+                <h2>Hồ sơ mở Shop đang được Ban Quản trị kiểm tra ⏳</h2>
+                <p>Hồ sơ mở cửa hàng của bạn đã được gửi thành công. Ban Quản trị FreshFruit đang thẩm định và sẽ thông báo kết quả sớm nhất.</p>
+            </div>
+            <div class="setup-banner-right">
+                <a th:href="@{/seller/status}" class="setup-open-shop-btn secondary">
+                    <span>Theo dõi tiến trình hồ sơ ➔</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Banner khi hồ sơ bị từ chối -->
+        <section th:if="${shop.approvalStatus == 'REJECTED'}" class="shop-setup-banner rejected">
+            <div class="setup-banner-left">
+                <span class="setup-tag rejected">CẦN BỔ SUNG</span>
+                <h2>Hồ sơ mở Shop chưa được phê duyệt ⚠️</h2>
+                <p>Ban Quản trị đã gửi yêu cầu chỉnh sửa hoặc bổ sung thông tin. Vui lòng kiểm tra chi tiết phản hồi để cập nhật lại hồ sơ.</p>
+            </div>
+            <div class="setup-banner-right">
+                <a th:href="@{/seller/status}" class="setup-open-shop-btn rejected">
+                    <span>Xem phản hồi & Nộp lại ➔</span>
+                </a>
+            </div>
+        </section>
+
         <!-- Thống kê tổng quan: dữ liệu từ backend -->
         <section class="stats-grid">
 
@@ -251,6 +301,19 @@
                 </div>
 
                 <div class="quick-actions">
+
+                    <!-- Đăng ký mở Shop nếu chưa có cửa hàng -->
+                    <a th:if="${shop.approvalStatus == 'NOT_REGISTERED'}"
+                       th:href="@{/seller/activate}"
+                       class="quick-action"
+                       style="background: #f0fdf4; border: 1.5px dashed #22c55e; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;">
+                        <span class="quick-icon green" style="font-size: 20px;">🏪</span>
+                        <div>
+                            <strong style="color: #15803d; font-size: 13px;">Đăng ký mở Shop</strong>
+                            <small style="color: #166534;">Thiết lập thông tin cửa hàng, kho hàng & vận chuyển</small>
+                        </div>
+                        <b style="color: #16a34a; font-size: 16px;">➔</b>
+                    </a>
 
                     <a th:href="@{/shop/products/add}"
                        class="quick-action">
