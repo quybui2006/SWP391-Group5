@@ -248,7 +248,12 @@ CREATE TABLE orders (
     status VARCHAR(25) NOT NULL,
     payment_status VARCHAR(20) NOT NULL,
     delivery_status VARCHAR(25) NOT NULL,
-    completed_at TIMESTAMP,
+    paid_at TIMESTAMP NULL,
+    shipped_at TIMESTAMP NULL,
+    delivered_at TIMESTAMP NULL,
+    completed_at TIMESTAMP NULL,
+    cancelled_at TIMESTAMP NULL,
+    cancellation_reason VARCHAR(1000) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(id, shop_id)
 );
@@ -271,7 +276,8 @@ CREATE TABLE order_items (
     line_total DECIMAL(19,0) NOT NULL,
     expiry_date DATE NOT NULL,
     allocation_status VARCHAR(20) NOT NULL,
-    reviewed_at TIMESTAMP
+    reviewed_at TIMESTAMP NULL
+
 );
 
 CREATE TABLE inventory_transactions (
