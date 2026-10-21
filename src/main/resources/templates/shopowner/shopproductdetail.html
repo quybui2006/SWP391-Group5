@@ -51,10 +51,10 @@
             <div class="detail-actions">
                 <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách</a>
                 <a class="button button-primary" th:href="@{/shop/product/{id}/edit(id=${product.id})}">✎ Chỉnh sửa</a>
-                <form th:action="@{/shop/product/{id}/archive(id=${product.id})}" method="post"
-                      onsubmit="return confirm('Lưu trữ sản phẩm này? Sản phẩm sẽ bị gỡ khỏi gian hàng nhưng dữ liệu và lịch sử vẫn được giữ.');">
-                    <button class="button button-danger" type="submit">Lưu trữ sản phẩm</button>
-                </form>
+<!--                <form th:action="@{/shop/product/{id}/archive(id=${product.id})}" method="post"-->
+<!--                      onsubmit="return confirm('Lưu trữ sản phẩm này? Sản phẩm sẽ bị gỡ khỏi gian hàng nhưng dữ liệu và lịch sử vẫn được giữ.');">-->
+<!--                    <button class="button button-danger" type="submit">Lưu trữ sản phẩm</button>-->
+<!--                </form>-->
                 <form th:action="@{/shop/product/{id}/delete(id=${product.id})}" method="post"
                       onsubmit="return confirm('Bạn chắc chắn muốn xóa sản phẩm? Chỉ sản phẩm chưa có đơn hàng, đánh giá hoặc lịch sử giao dịch kho mới được xóa.');">
                     <button class="button button-danger" type="submit">Xóa sản phẩm</button>

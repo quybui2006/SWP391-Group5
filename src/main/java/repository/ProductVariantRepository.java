@@ -68,7 +68,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("categoryIds") List<Long> categoryIds,
             @Param("filterByOrigin") boolean filterByOrigin,
             @Param("origins") List<String> origins,
-            Sort sort);
+            org.springframework.data.domain.Sort sort);
 
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
