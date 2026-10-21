@@ -20,16 +20,19 @@ public class CustomerShopRegistrationService {
     private final ProvinceRepository provinceRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final AddressLocationService addressLocationService;
 
     public CustomerShopRegistrationService(
             ShopRepository shopRepository,
             ProvinceRepository provinceRepository,
             UserRepository userRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            AddressLocationService addressLocationService) {
         this.shopRepository = shopRepository;
         this.provinceRepository = provinceRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.addressLocationService = addressLocationService;
     }
 
     @Transactional(readOnly = true)
@@ -38,12 +41,27 @@ public class CustomerShopRegistrationService {
         return shopRepository.findByOwnerId(userId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Province> getAllActiveProvinces() {
-        return provinceRepository.findAll().stream()
-                .filter(Province::isActive)
+        List<Province> list = provinceRepository.findAll().stream()
+                .filter(p -> p.isActive() && !"DEMO".equalsIgnoreCase(p.getCode()))
                 .sorted(Comparator.comparing(Province::getName))
                 .toList();
+
+        if (list.size() <= 1 && addressLocationService != null) {
+            List<Province> seeded = addressLocationService.getLocations().stream()
+                    .map(loc -> new Province(String.valueOf(loc.code()), loc.name()))
+                    .filter(p -> !provinceRepository.existsById(p.getCode()))
+                    .toList();
+            if (!seeded.isEmpty()) {
+                provinceRepository.saveAll(seeded);
+                list = provinceRepository.findAll().stream()
+                        .filter(p -> p.isActive() && !"DEMO".equalsIgnoreCase(p.getCode()))
+                        .sorted(Comparator.comparing(Province::getName))
+                        .toList();
+            }
+        }
+        return list;
     }
 
     @Transactional
