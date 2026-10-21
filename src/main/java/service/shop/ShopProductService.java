@@ -17,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.HashMap;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import entity.Product;
@@ -267,7 +268,20 @@ public class ShopProductService {
     public Map<String, Object> shopDashboard(Long ownerUserId) {
         Shop shop = shopRepository.findByOwnerId(ownerUserId).orElse(null);
         if (shop == null) return Map.of("name", "Chưa đăng ký cửa hàng", "approvalStatus", "NOT_REGISTERED", "operatingStatus", "CLOSED");
-        return Map.of("name", shop.getName(), "approvalStatus", shop.getApprovalStatus(), "operatingStatus", shop.getOperatingStatus());
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", shop.getId());
+        map.put("name", shop.getName());
+        map.put("approvalStatus", shop.getApprovalStatus());
+        map.put("operatingStatus", shop.getOperatingStatus());
+        map.put("paymentApprovalStatus", shop.getPaymentApprovalStatus() != null ? shop.getPaymentApprovalStatus() : "UNCONFIGURED");
+        map.put("bankRejectionReason", shop.getBankRejectionReason());
+        map.put("bankName", shop.getBankName());
+        map.put("bankAccountNumber", shop.getBankAccountNumber());
+        map.put("bankAccountName", shop.getBankAccountName());
+        map.put("idCardName", shop.getIdCardName());
+        map.put("idCardNumber", shop.getIdCardNumber());
+        map.put("phone", shop.getPhone());
+        return map;
     }
 
     public Map<String, Long> shopDashboardStats(Long ownerUserId) {
