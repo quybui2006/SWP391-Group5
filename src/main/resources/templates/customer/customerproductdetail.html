@@ -271,9 +271,9 @@
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
                         <div class="detail-content vouchers-wrap">
-                            <span class="fresh-voucher-chip">Giảm 15k đơn từ 150k</span>
-                            <span class="fresh-voucher-chip">Giảm 30k đơn từ 300k</span>
-                            <span class="fresh-voucher-chip highlight">Giảm 10% cho khách mới</span>
+                            <span class="fresh-voucher-chip" th:each="voucher : ${shopVouchers}"
+                                  th:text="${voucher.name + ' · ' + voucher.code}">Voucher cửa hàng</span>
+                            <span th:if="${shopVouchers == null or #lists.isEmpty(shopVouchers)}">Hiện shop chưa có voucher.</span>
                         </div>
                     </div>
 
@@ -492,11 +492,6 @@
                 <div class="spec-row">
                     <span class="spec-col-label">Xuất Xứ</span>
                     <span class="spec-col-value" th:text="${variant.product != null && variant.product.origin != null ? variant.product.origin : 'Nông trại Việt Nam'}">Việt Nam</span>
-                </div>
-
-                <div class="spec-row">
-                    <span class="spec-col-label">Hạn Sử Dụng</span>
-                    <span class="spec-col-value" th:text="${variant.product != null && variant.product.expiryDate != null ? variant.product.expiryDate : '5 - 7 ngày bảo quản lạnh'}">5 - 7 ngày bảo quản lạnh</span>
                 </div>
 
                 <div class="spec-row">

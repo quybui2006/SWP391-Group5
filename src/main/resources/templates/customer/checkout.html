@@ -60,6 +60,11 @@
                     <div class="checkout-card">
                         <h3>📍 Địa chỉ nhận hàng</h3>
 
+                        <div th:if="${guest}" style="margin-bottom:14px;">
+                            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Email nhận xác nhận đơn *</label>
+                            <input type="email" name="guestEmail" class="form-control" maxlength="254" required placeholder="email@example.com">
+                        </div>
+
                         <div th:if="${addresses != null and !addresses.isEmpty()}">
                             <label class="address-option" th:each="addr, stat : ${addresses}">
                                 <input type="radio" name="addressId" th:value="${addr['id']}"
@@ -133,7 +138,7 @@
                             </div>
                         </label>
 
-                        <label class="payment-option">
+                        <label class="payment-option" th:unless="${guest}">
                             <input type="radio" name="paymentMethod" value="VNPAY">
                             <div>
                                 <strong>Thanh toán trực tuyến qua cổng VNPay (ATM / QR / Thẻ nội địa)</strong>
@@ -169,6 +174,20 @@
                             </strong>
                         </div>
 
+                        <div th:each="shop : ${checkoutShops}" style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
+                            <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;"
+                                   th:text="'Voucher của ' + ${shop.shopName}">Voucher cửa hàng</label>
+                            <div style="display:flex;gap:8px;">
+                                <input class="form-control" type="text" maxlength="50" autocomplete="off"
+                                       th:name="'voucherCode_' + ${shop.shopId}" th:value="${shop.code}"
+                                       placeholder="Nhập mã voucher của shop">
+                                <button class="form-control" type="submit" formaction="/checkout" formmethod="post" formnovalidate
+                                        style="width:auto;white-space:nowrap;background:#eef6f0;color:#14532d;font-weight:700;cursor:pointer;">Áp dụng</button>
+                            </div>
+                            <small th:if="${shop.voucherError != null}" th:text="${shop.voucherError}" style="color:#b42318;"></small>
+                            <small th:if="${shop.discount > 0}" th:text="'Đã giảm ' + ${#numbers.formatDecimal(shop.discount,0,'COMMA',0,'POINT')} + ' ₫'" style="color:#16803c;"></small>
+                        </div>
+
                         <!-- Phần tính tiền đã đổi tên theo đúng yêu cầu -->
                         <div style="margin-top: 16px;">
                             <div class="summary-line">
@@ -180,6 +199,10 @@
                                 <span>Phí vận chuyển</span>
                                 <strong style="color:#111827;"
                                         th:text="${#numbers.formatDecimal(shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}">20.000 ₫</strong>
+                            </div>
+                            <div class="summary-line" th:if="${voucherDiscount > 0}">
+                                <span>Giảm giá voucher</span>
+                                <strong style="color:#16803c;" th:text="'- ' + ${#numbers.formatDecimal(voucherDiscount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">- 0 ₫</strong>
                             </div>
                             <div class="summary-total">
                                 <span>Thành tiền</span>

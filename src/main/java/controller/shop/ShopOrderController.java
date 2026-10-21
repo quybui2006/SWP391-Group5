@@ -59,7 +59,7 @@ public class ShopOrderController {
         Long owner = currentUser.requireUserId(request);
         if (token == null || !token.equals(request.getSession(false).getAttribute("shopOrderToken")))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
-        try { orders.confirmCod(owner, id); redirect.addFlashAttribute("message", "Đã xác nhận đơn hàng và giữ tồn kho khả dụng."); }
+        try { orders.confirmCod(owner, id); redirect.addFlashAttribute("message", "Đã xác nhận đơn hàng và ghi nhận số lượng đã bán."); }
         catch (IllegalArgumentException ex) { redirect.addFlashAttribute("message", ex.getMessage()); }
         return "redirect:/shopowner/orders/" + id;
     }

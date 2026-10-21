@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,6 +18,8 @@ import repository.ProvinceRepository;
 import repository.ShopRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Controller
@@ -33,6 +36,9 @@ public class CustomerShopController {
 
     @Autowired
     private ProvinceRepository provinceRepository;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @GetMapping({"/shops/{id}", "/shop/{id:[0-9]+}"})
     public String shopProfilePage(
@@ -80,28 +86,19 @@ public class CustomerShopController {
         List<ProductVariant> variants = productVariantRepository.findByShopAndCategoryAndKeyword(
                 shop.getId(), categoryId, safeKeyword);
 
-        // Nếu shop trong database chưa có sản phẩm gán riêng và user chưa filter sâu -> fallback hiển thị sản phẩm active
-        if (variants.isEmpty() && safeKeyword.isEmpty() && categoryId == null) {
-            variants = productVariantRepository.findApprovedActiveForCatalog();
-        } else if (variants.isEmpty() && categoryId != null) {
-            // Nếu lọc theo danh mục mà chưa có variant map với shopId, hiển thị variants theo categoryId
-            List<ProductVariant> allActive = productVariantRepository.findApprovedActiveForCatalog();
-            variants = allActive.stream()
-                    .filter(v -> v.getProduct() != null && v.getProduct().getCategories() != null
-                            && v.getProduct().getCategories().stream().anyMatch(c -> Objects.equals(c.getId(), categoryId)))
-                    .toList();
-        }
-
         // Sắp xếp danh sách sản phẩm
         List<ProductVariant> sortedVariants = new ArrayList<>(variants);
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        sortedVariants.forEach(v -> jdbc.query("SELECT promotional_price FROM promotional_prices WHERE variant_id=? AND is_enabled=1 AND starts_at<=? AND ends_at>? ORDER BY starts_at DESC,id DESC LIMIT 1",
+                rs -> { if (rs.next()) v.setPromotionalPrice(rs.getBigDecimal(1)); }, v.getId(), now, now));
         if ("price_asc".equals(sort)) {
             sortedVariants.sort(Comparator.comparing(
-                    v -> v.getPrice() != null ? v.getPrice() : BigDecimal.ZERO
+                    v -> v.getPromotionalPrice() != null ? v.getPromotionalPrice() : (v.getPrice() != null ? v.getPrice() : BigDecimal.ZERO)
             ));
         } else if ("price_desc".equals(sort)) {
             sortedVariants.sort((v1, v2) -> {
-                BigDecimal p1 = v1.getPrice() != null ? v1.getPrice() : BigDecimal.ZERO;
-                BigDecimal p2 = v2.getPrice() != null ? v2.getPrice() : BigDecimal.ZERO;
+                BigDecimal p1 = v1.getPromotionalPrice() != null ? v1.getPromotionalPrice() : (v1.getPrice() != null ? v1.getPrice() : BigDecimal.ZERO);
+                BigDecimal p2 = v2.getPromotionalPrice() != null ? v2.getPromotionalPrice() : (v2.getPrice() != null ? v2.getPrice() : BigDecimal.ZERO);
                 return p2.compareTo(p1);
             });
         } else if ("newest".equals(sort)) {
@@ -109,40 +106,19 @@ public class CustomerShopController {
         }
 
         // 5. Danh sách Voucher độc quyền của Shop (Giữ đúng voucher của shop)
-        List<Map<String, String>> shopVouchers = List.of(
-                Map.of(
-                        "code", "FFSHOP15K",
-                        "title", "Giảm 15k",
-                        "condition", "Đơn Tối Thiểu 150k",
-                        "discountText", "15.000₫",
-                        "expiry", "HSD: 31.12.2026",
-                        "tag", "Toàn Shop"
-                ),
-                Map.of(
-                        "code", "FFSHOP30K",
-                        "title", "Giảm 30k",
-                        "condition", "Đơn Tối Thiểu 300k",
-                        "discountText", "30.000₫",
-                        "expiry", "HSD: 31.12.2026",
-                        "tag", "Đơn lớn"
-                ),
-                Map.of(
-                        "code", "FFSHOP10PCT",
-                        "title", "Giảm 10%",
-                        "condition", "Đơn Tối Thiểu 200k (Tối đa 50k)",
-                        "discountText", "10%",
-                        "expiry", "HSD: 31.12.2026",
-                        "tag", "Khách mới"
-                ),
-                Map.of(
-                        "code", "FFSHOP50K",
-                        "title", "Giảm 50k",
-                        "condition", "Đơn Tối Thiểu 500k",
-                        "discountText", "50.000₫",
-                        "expiry", "HSD: 31.12.2026",
-                        "tag", "VIP Member"
-                )
-        );
+        List<Map<String, String>> shopVouchers = jdbc.query("SELECT code,name,discount_type,discount_value,max_discount_amount,min_order_value FROM vouchers WHERE shop_id=? AND is_public=1 AND status='ACTIVE' AND starts_at<=? AND ends_at>? AND used_count<max_usages AND EXISTS (SELECT 1 FROM shops s WHERE s.id=vouchers.shop_id AND s.approval_status='APPROVED' AND s.operating_status='OPEN') ORDER BY starts_at,id",
+                (rs, row) -> {
+                    Map<String, String> voucher = new LinkedHashMap<>();
+                    String discountText = "PERCENTAGE".equals(rs.getString("discount_type"))
+                            ? rs.getBigDecimal("discount_value").stripTrailingZeros().toPlainString() + "%"
+                            : String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,d₫", rs.getBigDecimal("discount_value").longValue());
+                    String condition = "Đơn tối thiểu " + String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,d₫", rs.getBigDecimal("min_order_value").longValue());
+                    if (rs.getBigDecimal("max_discount_amount") != null) condition += " · Giảm tối đa " + String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,d₫", rs.getBigDecimal("max_discount_amount").longValue());
+                    voucher.put("code", rs.getString("code")); voucher.put("title", "Giảm " + discountText);
+                    voucher.put("condition", condition); voucher.put("discountText", discountText);
+                    voucher.put("tag", rs.getString("name"));
+                    return voucher;
+                }, shop.getId(), now, now);
 
         // 6. Đưa dữ liệu sang View Thymeleaf
         model.addAttribute("shop", shop);

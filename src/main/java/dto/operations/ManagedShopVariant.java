@@ -1,7 +1,6 @@
 package dto.operations;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 public record ManagedShopVariant(
         Long variantId,
@@ -15,5 +14,4 @@ public record ManagedShopVariant(
         String approvalStatus,
         Integer quantityOnHand,
         Integer availableQuantity,
-        String batchCode,
-        LocalDate expiryDate) { }
+        String batchCode) { }

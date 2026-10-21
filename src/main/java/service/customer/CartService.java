@@ -21,7 +21,7 @@ public class CartService {
     public void validateVariant(Long variantId, int quantity) {
         if (variantId == null) throw new IllegalArgumentException("Sản phẩm không hợp lệ.");
         if (quantity < 1 || quantity > 99) throw new IllegalArgumentException("Số lượng phải từ 1 đến 99.");
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM product_variants pv WHERE pv.id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING')", Integer.class, variantId);
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE pv.id=? AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", Integer.class, variantId);
         if (count == null || count == 0) throw new IllegalArgumentException("Sản phẩm hiện không còn mở bán.");
     }
 
@@ -44,10 +44,11 @@ public class CartService {
 
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) " +
-                        "FROM product_variants pv " +
+                        "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id " +
                         "WHERE pv.id = ? " +
+                        "AND p.is_visible = 1 " +
                         "AND pv.status = 'ACTIVE' " +
-                        "AND pv.approval_status IN ('APPROVED','PENDING')",
+                        "AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'",
                 Integer.class,
                 variantId
         );
@@ -101,7 +102,7 @@ public class CartService {
                         "JOIN product_variants pv ON pv.id = ci.variant_id " +
                         "JOIN products p ON p.id = pv.product_id " +
                         "JOIN variant_inventory vi ON vi.variant_id = pv.id " +
-                        "WHERE ci.cart_id = ? " +
+                        "WHERE ci.cart_id = ? AND p.is_visible=1 " +
                         "ORDER BY ci.id",
                 now, now, cartId
         );
@@ -115,11 +116,11 @@ public class CartService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         args.add(now); args.add(now); args.addAll(quantities.keySet());
         List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT pv.id AS variant_id,pv.name AS variant_name,p.name AS product_name,pv.image_url,pv.price AS original_price, " +
+                "SELECT pv.id AS variant_id,pv.shop_id,s.name AS shop_name,pv.name AS variant_name,p.name AS product_name,pv.image_url,pv.price AS original_price, " +
                         "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 " +
                         "AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price,vi.available_quantity " +
-                        "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
-                        "WHERE pv.id IN (" + marks + ") AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING')", args.toArray());
+                        "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
+                        "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args.toArray());
         for (Map<String, Object> row : rows) row.put("quantity", quantities.get(((Number) row.get("variant_id")).longValue()));
         return rows;
     }

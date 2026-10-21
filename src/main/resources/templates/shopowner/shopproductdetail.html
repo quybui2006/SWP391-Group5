@@ -51,10 +51,6 @@
             <div class="detail-actions">
                 <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách</a>
                 <a class="button button-primary" th:href="@{/shop/product/{id}/edit(id=${product.id})}">✎ Chỉnh sửa</a>
-<!--                <form th:action="@{/shop/product/{id}/archive(id=${product.id})}" method="post"-->
-<!--                      onsubmit="return confirm('Lưu trữ sản phẩm này? Sản phẩm sẽ bị gỡ khỏi gian hàng nhưng dữ liệu và lịch sử vẫn được giữ.');">-->
-<!--                    <button class="button button-danger" type="submit">Lưu trữ sản phẩm</button>-->
-<!--                </form>-->
                 <form th:action="@{/shop/product/{id}/delete(id=${product.id})}" method="post"
                       onsubmit="return confirm('Bạn chắc chắn muốn xóa sản phẩm? Chỉ sản phẩm chưa có đơn hàng, đánh giá hoặc lịch sử giao dịch kho mới được xóa.');">
                     <button class="button button-danger" type="submit">Xóa sản phẩm</button>
@@ -78,8 +74,6 @@
                         <div><span>Mã lô</span><strong th:text="${product.batchCode}">-</strong></div>
                         <div><span>Xuất xứ</span><strong th:text="${product.origin ?: 'Chưa cập nhật'}">-</strong></div>
                         <div><span>Cửa hàng</span><strong th:text="${product.shopName}">-</strong></div>
-                        <div><span>Ngày nhập</span><strong th:text="${product.receivedDate != null ? #temporals.format(product.receivedDate, 'dd/MM/yyyy') : '-'}">-</strong></div>
-                        <div><span>Ngày hết hạn</span><strong th:text="${product.expiryDate != null ? #temporals.format(product.expiryDate, 'dd/MM/yyyy') : '-'}">-</strong></div>
                     </div>
                 </div>
                 <div class="description-block">
@@ -90,14 +84,12 @@
 
             <aside class="form-card">
                 <h2>Hồ sơ nhóm biến thể</h2>
-                <p class="muted" style="font-size:13px;line-height:1.65">Sản phẩm này chỉ lưu thông tin chung như tên, danh mục, lô và hạn sử dụng. Không duyệt hoặc bán trực tiếp ở cấp sản phẩm.</p>
+                <p class="muted" style="font-size:13px;line-height:1.65">Sản phẩm này lưu thông tin chung để quản lý các biến thể. Không duyệt hoặc bán trực tiếp ở cấp sản phẩm.</p>
                 <div class="status-meta">
                     <div><span>Số biến thể</span><strong th:text="${#lists.size(product.variants)} + ' biến thể'">0 biến thể</strong></div>
-                    <div th:if="${product.expiringSoon}"><span>Hạn sử dụng</span><strong style="color:#b42318">Sắp hết hạn</strong></div>
                 </div>
                 <a class="button button-primary button-block" style="margin-top:18px" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Chỉnh sửa thông tin chung</a>
                 <a class="button button-ghost button-block" style="margin-top:9px" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể</a>
-                <p class="danger-note">Lưu trữ hồ sơ nhóm sẽ gỡ các biến thể thuộc hồ sơ này khỏi gian hàng; lịch sử đơn hàng và giao dịch vẫn được giữ.</p>
             </aside>
         </section>
 
@@ -119,7 +111,7 @@
                         <td th:text="${variant.quantityOnHand}">0</td>
                         <td th:text="${variant.availableQuantity}">0</td>
                         <td><span class="badge" th:classappend="${variant.approvalStatus == 'APPROVED' and variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.approvalStatus == 'PENDING' ? 'Chờ duyệt' : (variant.approvalStatus == 'APPROVED' ? variant.status : variant.approvalStatus)}">DRAFT</span></td>
-                        <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a> · <a th:if="${variant.approvalStatus != 'PENDING'}" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a></td>
+                        <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a></td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>
                     </tbody>

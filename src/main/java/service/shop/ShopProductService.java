@@ -35,11 +35,9 @@ import entity.Category;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -60,7 +58,6 @@ import java.util.stream.Collectors;
 public class ShopProductService {
 
     /** Cảnh báo khi còn tối đa 3 ngày tới hạn. */
-    private static final long EXPIRY_WARNING_DAYS = 3L;
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired private ShopProductRepository productRepository;
@@ -97,7 +94,7 @@ public class ShopProductService {
         Long total = jdbc.queryForObject("SELECT COUNT(*) FROM products p WHERE " + condition,
                 Long.class, shopId, term, like, like);
         List<ShopProductListItem> rows = jdbc.query("""
-                SELECT p.id, p.name, p.selling_status AS status, p.approval_status, p.rejection_reason, p.created_at,
+                SELECT p.id, p.name, p.selling_status AS status, p.approval_status, p.rejection_reason, p.is_visible, p.created_at,
                     (SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image_url,
                      (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id=p.id) AS variant_count,
                      (SELECT COALESCE(SUM(vi.quantity_on_hand), 0) FROM product_variants pv LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
@@ -111,6 +108,7 @@ public class ShopProductService {
                 ((Number) rs.getObject("variant_count")).intValue(), rs.getString("category_name"),
                 ((Number) rs.getObject("stock_quantity")).intValue(), rs.getString("status"),
                 rs.getString("approval_status"), rs.getString("rejection_reason"),
+                rs.getBoolean("is_visible"),
                 rs.getTimestamp("created_at").toLocalDateTime()),
                 shopId, term, like, like, size, (long) page * size);
         return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
@@ -220,10 +218,8 @@ public class ShopProductService {
     public void showVariantForSale(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
         if ("REJECTED".equals(variant.getApprovalStatus())) {
-            throw new ResponseStatusException(
-                    org.springframework.http.HttpStatus.CONFLICT,
-                    "Operations đã từ chối biến thể này nên không thể bật bán lại."
-            );
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                    "Operations đã từ chối biến thể này nên không thể bật bán lại.");
         }
         if ("INACTIVE".equals(variant.getStatus())) {
             variant.setStatus("ACTIVE");
@@ -307,13 +303,6 @@ public class ShopProductService {
 
     @Transactional
     public Long createProduct(Long ownerUserId, ProductCreateRequest form) {
-        Map<String, String> errors = new LinkedHashMap<>();
-        if (form.getReceivedDate() != null && form.getExpiryDate() != null
-                && !form.getExpiryDate().isAfter(form.getReceivedDate())) {
-            errors.put("expiryDate", "Ngày hết hạn phải sau ngày nhập kho.");
-        }
-        if (!errors.isEmpty()) throw new ProductValidationException(errors);
-
         // Danh mục gửi từ form phải tồn tại và đang hoạt động; không tin trực tiếp ID từ client.
         List<Long> selectedCategoryIds = new java.util.ArrayList<>();
         if (form.getCategoryIds() != null) {
@@ -358,8 +347,6 @@ public class ShopProductService {
             product.setDescription(blankToNull(form.getDescription()));
             product.setOrigin(blankToNull(form.getOrigin()));
             product.setBatchCode(batchCode);
-            product.setReceivedDate(form.getReceivedDate());
-            product.setExpiryDate(form.getExpiryDate());
             // Product là hồ sơ nhóm/metadata để quản lý các biến thể, không gửi duyệt và không bán trực tiếp.
             // Việc duyệt và mở bán thuộc từng product_variant.
             product.setApprovalStatus("DRAFT");
@@ -452,8 +439,6 @@ public class ShopProductService {
         form.setBatchCode(product.getBatchCode());
         form.setApprovalStatus(product.getApprovalStatus());
         form.setSellingStatus(product.getSellingStatus());
-        form.setReceivedDate(product.getReceivedDate());
-        form.setExpiryDate(product.getExpiryDate());
         form.setShopName(shopRepository.findById(product.getShopId())
                 .map(shop -> shop.getName()).orElse("-"));
 
@@ -483,8 +468,6 @@ public class ShopProductService {
         product.setName(name);
         product.setOrigin(origin);
         product.setDescription(description);
-        product.setReceivedDate(form.getReceivedDate());
-        product.setExpiryDate(form.getExpiryDate());
         if (!"ARCHIVED".equals(product.getSellingStatus())) product.setSellingStatus("DRAFT");
         product.setApprovalStatus("DRAFT");
         product.setSubmittedAt(null);
@@ -546,7 +529,7 @@ public class ShopProductService {
                     || (reviewHistory != null && reviewHistory > 0)
                     || (inventoryHistory != null && inventoryHistory > 0)) {
                 throw new ProductValidationException("product",
-                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho.");
+                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho. Hãy dùng Lưu trữ sản phẩm.");
             }
 
             // Chỉ dọn dữ liệu phụ khi chưa có lịch sử cần bảo toàn.
@@ -583,21 +566,6 @@ public class ShopProductService {
         }
         if (form.getDescription() != null && form.getDescription().trim().length() > 2000) {
             errors.put("description", "Mô tả tối đa 2000 ký tự");
-        }
-
-        LocalDate received = form.getReceivedDate();
-        LocalDate expiry = form.getExpiryDate();
-        if (received == null) {
-            errors.put("receivedDate", "Ngày nhập kho không được để trống");
-        } else if (received.isAfter(LocalDate.now())) {
-            errors.put("receivedDate", "Ngày nhập kho không được ở tương lai");
-        }
-        if (expiry == null) {
-            errors.put("expiryDate", "Hạn sử dụng không được để trống");
-        }
-        // Quy tắc nghiệp vụ: expiry_date phải lớn hơn received_date
-        if (received != null && expiry != null && !expiry.isAfter(received)) {
-            errors.put("expiryDate", "Ngày hết hạn phải sau ngày nhập kho");
         }
 
         // Danh mục phải tồn tại, nếu không sẽ vi phạm foreign key
@@ -649,18 +617,11 @@ public class ShopProductService {
         view.setBatchCode(product.getBatchCode());
         view.setApprovalStatus(product.getApprovalStatus());
         view.setSellingStatus(product.getSellingStatus());
-        view.setReceivedDate(product.getReceivedDate());
-        view.setExpiryDate(product.getExpiryDate());
         view.setShopName(shopRepository.findById(product.getShopId())
                 .map(shop -> shop.getName()).orElse("-"));
 
         List<String> categories = categoryLinkRepository.findCategoryNames(product.getId());
         view.setCategoryName(categories.isEmpty() ? "Trái cây" : String.join(", ", categories));
-
-        long days = product.getExpiryDate() == null ? 0L
-                : ChronoUnit.DAYS.between(LocalDate.now(), product.getExpiryDate());
-        view.setDaysUntilExpiry(days);
-        view.setExpiringSoon(days >= 0 && days <= EXPIRY_WARNING_DAYS);
 
         view.setImageUrls(imageRepository
                 .findByProductIdOrderBySortOrderAsc(product.getId()).stream()
@@ -735,4 +696,32 @@ public class ShopProductService {
     private LocalDateTime utcNow() {
         return LocalDateTime.now(ZoneOffset.UTC);
     }
+
+    @Transactional
+    public void hideProductFromSale(Long productId, Long ownerUserId) {
+        Product product = loadOwnedProduct(productId, ownerUserId);
+        if ("ARCHIVED".equals(product.getSellingStatus())) {
+            throw new ProductValidationException(
+                    "visibility",
+                    "Sản phẩm đã lưu trữ, không thể đổi trạng thái hiển thị."
+            );
+        }
+        product.setVisible(false);
+        productRepository.save(product);
+    }
+
+    @Transactional
+    public void showProductForSale(Long productId, Long ownerUserId) {
+        Product product = loadOwnedProduct(productId, ownerUserId);
+        if ("ARCHIVED".equals(product.getSellingStatus())) {
+            throw new ProductValidationException(
+                    "visibility",
+                    "Sản phẩm đã lưu trữ, hãy khôi phục hồ sơ trước."
+            );
+        }
+        product.setVisible(true);
+        productRepository.save(product);
+    }
 }
+
+

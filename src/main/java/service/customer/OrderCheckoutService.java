@@ -7,8 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,9 +31,65 @@ public class OrderCheckoutService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         Object[] args = new Object[variantIds.size() + 3]; args[0] = now; args[1] = now; args[2] = userId;
         for (int i = 0; i < variantIds.size(); i++) args[i + 3] = variantIds.get(i);
-        return jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.image_url,pv.price AS original_price, " +
+        return jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.name AS name,pv.image_url,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price " +
-                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ")", args);
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args);
+    }
+
+    public List<Map<String, Object>> guestItems(Map<Long, Integer> guestCart, List<Long> variantIds) {
+        if (guestCart == null || variantIds == null || variantIds.isEmpty()) return List.of();
+        List<Long> selected = variantIds.stream().distinct().filter(guestCart::containsKey).toList();
+        if (selected.isEmpty()) return List.of();
+        String marks = String.join(",", java.util.Collections.nCopies(selected.size(), "?"));
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        Object[] args = new Object[selected.size() + 2];
+        args[0] = now; args[1] = now;
+        for (int i = 0; i < selected.size(); i++) args[i + 2] = selected.get(i);
+        List<Map<String, Object>> rows = jdbc.queryForList("SELECT pv.id AS variant_id,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.name AS name,pv.image_url,pv.price AS original_price, " +
+                "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price,vi.available_quantity " +
+                "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
+                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args);
+        rows.forEach(row -> row.put("quantity", guestCart.get(((Number) row.get("variant_id")).longValue())));
+        return rows;
+    }
+
+    public record VoucherQuote(Long voucherId, String code, BigDecimal discount, String error) {}
+
+    public VoucherQuote previewVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal) {
+        if (rawCode == null || rawCode.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
+        try {
+            return quoteVoucher(shopId, rawCode, shopSubtotal, false);
+        } catch (IllegalArgumentException ex) {
+            return new VoucherQuote(null, rawCode.trim().toUpperCase(java.util.Locale.ROOT), BigDecimal.ZERO, ex.getMessage());
+        }
+    }
+
+    private VoucherQuote quoteVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
+        String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
+        if (code.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
+        String lockClause = lock ? " FOR UPDATE" : "";
+        List<Map<String, Object>> rows = jdbc.queryForList("SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at " +
+                "FROM vouchers WHERE shop_id=? AND code=? AND is_public=1" + lockClause, shopId, code);
+        if (rows.isEmpty()) throw new IllegalArgumentException("Mã voucher không thuộc cửa hàng này.");
+        Map<String, Object> v = rows.get(0);
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        LocalDateTime startsAt = toLocalDateTime(v.get("starts_at"));
+        LocalDateTime endsAt = toLocalDateTime(v.get("ends_at"));
+        if (!"ACTIVE".equals(v.get("status")) || startsAt.isAfter(now) || !endsAt.isAfter(now)) {
+            throw new IllegalArgumentException("Voucher chưa có hiệu lực hoặc đã hết hạn.");
+        }
+        if (((Number) v.get("used_count")).intValue() >= ((Number) v.get("max_usages")).intValue())
+            throw new IllegalArgumentException("Voucher đã hết lượt sử dụng.");
+        if (shopSubtotal.compareTo((BigDecimal) v.get("min_order_value")) < 0)
+            throw new IllegalArgumentException("Đơn hàng của shop chưa đạt giá trị tối thiểu của voucher.");
+        BigDecimal discountValue = (BigDecimal) v.get("discount_value");
+        BigDecimal discount = "PERCENTAGE".equals(v.get("discount_type"))
+                ? shopSubtotal.multiply(discountValue).divide(new BigDecimal("100"), 0, RoundingMode.DOWN)
+                : discountValue;
+        BigDecimal maxDiscount = (BigDecimal) v.get("max_discount_amount");
+        if (maxDiscount != null) discount = discount.min(maxDiscount);
+        discount = discount.min(shopSubtotal).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN);
+        return new VoucherQuote(((Number) v.get("id")).longValue(), code, discount, null);
     }
 
     public List<Map<String, Object>> addresses(Long userId) {
@@ -71,7 +130,7 @@ public class OrderCheckoutService {
         List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.status AS variant_status,pv.approval_status AS variant_approval_status,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
-                "pv.image_url,p.expiry_date,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity, " +
+                "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity, " +
                 "s.province_code AS shop_province_code,s.name AS shop_name,s.approval_status AS shop_approval_status,s.operating_status AS shop_operating_status " +
                 "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") FOR UPDATE", args);
         if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hàng. Vui lòng tải lại giỏ hàng.");
@@ -112,7 +171,7 @@ public class OrderCheckoutService {
                 Long inventoryId = ((Number) line.get("inventory_id")).longValue();
                 int quantity = ((Number) line.get("quantity")).intValue();
                 BigDecimal price = (BigDecimal) line.get("price");
-                insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,expiry_date,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UNRESERVED')", orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)), line.get("expiry_date"));
+                insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UNRESERVED')", orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)));
             }
         }
         Object[] deleteArgs = new Object[variantIds.size() + 1];
@@ -167,11 +226,20 @@ public class OrderCheckoutService {
     }
     // Thêm Record này vào trong class OrderCheckoutService để gói dữ liệu trả về
     public record CheckoutResult(String checkoutCode, BigDecimal totalAmount, List<String> orderCodes, String paymentMethod) {}
+    public record GuestCheckoutResult(CheckoutResult checkout, String guestAccessToken) {}
 
     @Transactional
     public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                                      String recipientPhone, String provinceCode, String wardName, String addressDetail,
                                      String note, String paymentMethod) {
+        return placeOrder(userId, variantIds, addressId, recipientName, recipientPhone,
+                provinceCode, wardName, addressDetail, note, paymentMethod, Map.of());
+    }
+
+    @Transactional
+    public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
+                                     String recipientPhone, String provinceCode, String wardName, String addressDetail,
+                                     String note, String paymentMethod, Map<Long, String> voucherCodes) {
         if (variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
 
         // Chuẩn hóa phương thức thanh toán
@@ -199,38 +267,11 @@ public class OrderCheckoutService {
         Object[] args = new Object[variantIds.size() + 5]; args[0] = now; args[1] = now; args[2] = now; args[3] = now; args[4] = userId;
         for (int i = 0; i < variantIds.size(); i++) args[i + 5] = variantIds.get(i);
 
-        List<Map<String, Object>> lines = jdbc.queryForList(
-                "SELECT ci.variant_id, ci.quantity, pv.shop_id, pv.sku, " +
-                        "pv.name AS variant_name, pv.price AS original_price, " +
-                        "COALESCE((SELECT pp.promotional_price " +
-                        "FROM promotional_prices pp " +
-                        "WHERE pp.variant_id = pv.id AND pp.is_enabled = 1 " +
-                        "AND pp.starts_at <= ? AND pp.ends_at > ? " +
-                        "ORDER BY pp.starts_at DESC, pp.id DESC LIMIT 1), pv.price) AS price, " +
-                        "(SELECT pp.id FROM promotional_prices pp " +
-                        "WHERE pp.variant_id = pv.id AND pp.is_enabled = 1 " +
-                        "AND pp.starts_at <= ? AND pp.ends_at > ? " +
-                        "ORDER BY pp.starts_at DESC, pp.id DESC LIMIT 1) AS promotion_id, " +
-                        "pv.image_url, p.expiry_date, p.name AS product_name, " +
-                        "u.name AS unit_name, vi.id AS inventory_id, " +
-                        "vi.quantity_on_hand, vi.available_quantity, " +
-                        "s.province_code AS shop_province_code " +
-                        "FROM carts c " +
-                        "JOIN cart_items ci ON ci.cart_id = c.id " +
-                        "JOIN product_variants pv ON pv.id = ci.variant_id " +
-                        "JOIN products p ON p.id = pv.product_id " +
-                        "JOIN units u ON u.id = pv.base_unit_id " +
-                        "JOIN variant_inventory vi ON vi.variant_id = pv.id " +
-                        "JOIN shops s ON s.id = pv.shop_id " +
-                        "WHERE c.user_id = ? " +
-                        "AND ci.variant_id IN (" + marks + ") " +
-                        "AND pv.status = 'ACTIVE' " +
-                        "AND pv.approval_status IN ('APPROVED', 'PENDING') " +
-                        "AND s.approval_status = 'APPROVED' " +
-                        "AND s.operating_status = 'OPEN' " +
-                        "FOR UPDATE",
-                args
-        );
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
+                "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
+                "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
+                "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code " +
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
 
         if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hoặc không mở bán.");
 
@@ -243,24 +284,33 @@ public class OrderCheckoutService {
 
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
                 line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
-        BigDecimal total = subtotal.add(SHIPPING_FEE.multiply(BigDecimal.valueOf(shopLines.size())));
+        Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (var entry : shopLines.entrySet()) {
+            BigDecimal shopSubtotal = sumLines(entry.getValue());
+            VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
+            voucherQuotes.put(entry.getKey(), quote);
+            total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
+        }
 
         String checkoutCode = code("CK-");
         String checkoutStatus = "VNPAY".equals(method) ? "PENDING" : "CONFIRMED";
         Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status) VALUES(?,?,?,?,?,?,?)",
                 checkoutCode, UUID.randomUUID().toString(), userId, user.get("email"), method, total, checkoutStatus);
 
-        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,0,?,0,?,?,?, ?,CASE WHEN ? IN ('VNPAY','MOCK_ONLINE') THEN DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 15 MINUTE) ELSE NULL END,?,'PENDING','UNPAID','NOT_STARTED')";
+        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,0,?,0,?,?,?,?,?,?,?,CASE WHEN ? IN ('VNPAY','MOCK_ONLINE') THEN DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 15 MINUTE) ELSE NULL END,?,'PENDING','UNPAID','NOT_STARTED')";
 
         java.util.List<String> orderCodes = new java.util.ArrayList<>();
         for (var shopEntry : shopLines.entrySet()) {
             long shopId = shopEntry.getKey();
             List<Map<String, Object>> shopItems = shopEntry.getValue();
-            BigDecimal shopSubtotal = shopItems.stream().map(line -> ((BigDecimal) line.get("price")).multiply(BigDecimal.valueOf(((Number) line.get("quantity")).longValue()))).reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal shopTotal = shopSubtotal.add(SHIPPING_FEE);
+            BigDecimal shopSubtotal = sumLines(shopItems);
+            VoucherQuote voucher = voucherQuotes.get(shopId);
+            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
             String orderCode = code("FF-");
 
-            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal, method, method, code("DL-"));
+            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), method, method, code("DL-"));
+            countVoucherUse(voucher);
             orderCodes.add(orderCode);
 
             jdbc.update("INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,?,?,'PENDING')",
@@ -275,7 +325,7 @@ public class OrderCheckoutService {
                 BigDecimal price = (BigDecimal) line.get("price");
                 boolean reserveNow = "VNPAY".equals(method);
                 if (reserveNow && jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity) != 1) throw new IllegalArgumentException("Tồn kho vừa thay đổi. Vui lòng kiểm tra lại giỏ hàng.");
-                Long itemId = insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,expiry_date,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)), line.get("expiry_date"), reserveNow ? "RESERVED" : "UNRESERVED");
+                Long itemId = insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)), reserveNow ? "RESERVED" : "UNRESERVED");
                 if (reserveNow) {
                     int reservedAfter = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
                     int onHand = ((Number) line.get("quantity_on_hand")).intValue();
@@ -292,6 +342,107 @@ public class OrderCheckoutService {
         jdbc.update("DELETE FROM cart_items WHERE cart_id=(SELECT id FROM carts WHERE user_id=?) AND variant_id IN (" + marks + ")", deleteArgs);
 
         return new CheckoutResult(checkoutCode, total, orderCodes, method);
+    }
+
+    @Transactional
+    public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
+                                                String recipientName, String recipientPhone, String provinceCode,
+                                                String wardName, String addressDetail, String note,
+                                                Map<Long, String> voucherCodes) {
+        if (guestCart == null || variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
+        String contactEmail = required(email, 254, "Email").toLowerCase(java.util.Locale.ROOT);
+        if (!contactEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) throw new IllegalArgumentException("Email không hợp lệ.");
+        String name = required(recipientName, 150, "Tên người nhận");
+        String phone = required(recipientPhone, 20, "Số điện thoại").replaceAll("[\\s.-]", "");
+        String ward = required(wardName, 150, "Phường/xã");
+        String detail = required(addressDetail, 500, "Địa chỉ cụ thể");
+        if (!phone.matches("0[35789][0-9]{8}")) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
+        Map<String, Object> province = jdbc.queryForMap("SELECT code,name FROM provinces WHERE code=? AND is_active=1", provinceCode);
+
+        List<Long> selected = variantIds.stream().distinct().filter(guestCart::containsKey).toList();
+        if (selected.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ. Vui lòng tải lại.");
+        String marks = String.join(",", java.util.Collections.nCopies(selected.size(), "?"));
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        Object[] args = new Object[selected.size() + 4]; args[0] = now; args[1] = now; args[2] = now; args[3] = now;
+        for (int i = 0; i < selected.size(); i++) args[i + 4] = selected.get(i);
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT pv.id AS variant_id,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
+                "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
+                "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
+                "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code,s.name AS shop_name " +
+                "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id " +
+                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
+        if (lines.size() != selected.size()) throw new IllegalArgumentException("Một số sản phẩm đã ngừng bán hoặc bị ẩn.");
+        for (Map<String, Object> line : lines) {
+            int quantity = guestCart.get(((Number) line.get("variant_id")).longValue());
+            if (quantity < 1 || quantity > 99) throw new IllegalArgumentException("Số lượng trong giỏ không hợp lệ.");
+            if (quantity > ((Number) line.get("available_quantity")).intValue()) throw new IllegalArgumentException("Số lượng tồn kho không đủ cho " + line.get("product_name") + ".");
+            line.put("quantity", quantity);
+        }
+        Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
+                line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
+        Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (var entry : shopLines.entrySet()) {
+            BigDecimal shopSubtotal = sumLines(entry.getValue());
+            VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
+            voucherQuotes.put(entry.getKey(), quote);
+            total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
+        }
+
+        String checkoutCode = code("CK-");
+        String accessToken = UUID.randomUUID() + UUID.randomUUID().toString().replace("-", "");
+        Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status,guest_access_token_hash,guest_access_expires_at) " +
+                "VALUES(?,?,NULL,?,'COD',?,'CONFIRMED',UNHEX(SHA2(?,256)),DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 7 DAY))",
+                checkoutCode, UUID.randomUUID().toString(), contactEmail, total, accessToken);
+        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,?,?,?,'COD',NULL,?,'PENDING','UNPAID','NOT_STARTED')";
+        List<String> orderCodes = new java.util.ArrayList<>();
+        for (var entry : shopLines.entrySet()) {
+            long shopId = entry.getKey();
+            List<Map<String, Object>> shopItems = entry.getValue();
+            BigDecimal shopSubtotal = sumLines(shopItems);
+            VoucherQuote voucher = voucherQuotes.get(shopId);
+            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
+            String orderCode = code("FF-");
+            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, name, phone, province.get("code"), province.get("name"), ward,
+                    detail, shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal,
+                    shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(),
+                    voucher.discount(), code("DL-"));
+            countVoucherUse(voucher);
+            orderCodes.add(orderCode);
+            jdbc.update("INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,'COD',?,'PENDING')",
+                    code("PAY-"), orderId, UUID.randomUUID().toString(), shopTotal);
+            notifyShopOwner(shopId, "ORDER_NEW_SHOP_" + orderId, "Có đơn hàng mới", "Đơn " + orderCode + " chờ bạn xác nhận.", orderId);
+            for (Map<String, Object> line : shopItems) {
+                Long variantId = ((Number) line.get("variant_id")).longValue();
+                Long inventoryId = ((Number) line.get("inventory_id")).longValue();
+                int quantity = ((Number) line.get("quantity")).intValue();
+                BigDecimal price = (BigDecimal) line.get("price");
+                insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UNRESERVED')",
+                        orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"),
+                        line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)));
+            }
+        }
+        return new GuestCheckoutResult(new CheckoutResult(checkoutCode, total, orderCodes, "COD"), accessToken);
+    }
+
+    private BigDecimal sumLines(List<Map<String, Object>> lines) {
+        return lines.stream().map(line -> ((BigDecimal) line.get("price"))
+                .multiply(BigDecimal.valueOf(((Number) line.get("quantity")).longValue())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value instanceof LocalDateTime dateTime) return dateTime;
+        if (value instanceof java.sql.Timestamp timestamp) return timestamp.toLocalDateTime();
+        throw new IllegalStateException("Kiểu dữ liệu thời gian voucher không được hỗ trợ: "
+                + (value == null ? "null" : value.getClass().getName()));
+    }
+
+    private void countVoucherUse(VoucherQuote quote) {
+        if (quote.voucherId() != null && jdbc.update("UPDATE vouchers SET used_count=used_count+1 WHERE id=? AND status='ACTIVE' AND used_count<max_usages", quote.voucherId()) != 1) {
+            throw new IllegalArgumentException("Voucher vừa hết lượt sử dụng. Hãy thử mã khác.");
+        }
     }
 
     /**
@@ -314,6 +465,9 @@ public class OrderCheckoutService {
             jdbc.update("UPDATE checkouts SET status='CONFIRMED' WHERE id=? AND status='PENDING'", checkoutId);
             jdbc.update("UPDATE orders SET status='CONFIRMED',payment_status='PAID',paid_at=? WHERE checkout_id=? AND status='PENDING' AND payment_status='UNPAID'", now, checkoutId);
             jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE status='PENDING' AND order_id IN (SELECT id FROM orders WHERE checkout_id=?)", now, checkoutId);
+            for (Map<String, Object> order : orderRows) {
+                recordConfirmedSales(((Number) order.get("id")).longValue(), String.valueOf(order.get("order_code")));
+            }
             notifyCheckoutParties(checkoutId, "ORDER_PAID", "Đơn online đã thanh toán", "Thanh toán VNPay thành công; đơn đã được xác nhận.");
         } else {
             if (orderRows.isEmpty() || orderRows.stream().allMatch(row -> "CANCELLED".equals(row.get("status")))) return orderCodes;
@@ -372,6 +526,21 @@ public class OrderCheckoutService {
             int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
             int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
             jdbc.update("INSERT IGNORE INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,NULL)", inventoryId, itemId, -quantity, onHand, reserved, eventPrefix + "-" + itemId);
+        }
+    }
+
+    private void recordConfirmedSales(Long orderId, String orderCode) {
+        List<Map<String, Object>> items = jdbc.queryForList("SELECT id,inventory_id,quantity FROM order_items WHERE order_id=? AND allocation_status='RESERVED' ORDER BY inventory_id FOR UPDATE", orderId);
+        for (Map<String, Object> item : items) {
+            long itemId = ((Number) item.get("id")).longValue();
+            long inventoryId = ((Number) item.get("inventory_id")).longValue();
+            int quantity = ((Number) item.get("quantity")).intValue();
+            if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-? WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, inventoryId, quantity, quantity) != 1)
+                throw new IllegalStateException("Không thể ghi nhận số lượng đã bán cho mặt hàng " + itemId + ".");
+            jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=? AND allocation_status='RESERVED'", itemId);
+            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'SALE',?,?,?,?,?,?,NULL)", inventoryId, itemId, -quantity, -quantity, onHand, reserved, "sale-confirm-" + itemId, "Bán theo đơn " + orderCode);
         }
     }
 

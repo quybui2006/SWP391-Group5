@@ -1,8 +1,5 @@
 package dto.shop;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -26,12 +23,6 @@ public class ProductEditView {
     private String sellingStatus;
     private String shopName;
 
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    private LocalDate receivedDate;
-
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    private LocalDate expiryDate;
-
     private List<CategoryOption> categories;
     private Long categoryId;
 
@@ -51,10 +42,6 @@ public class ProductEditView {
     public void setSellingStatus(String sellingStatus) { this.sellingStatus = sellingStatus; }
     public String getShopName() { return shopName; }
     public void setShopName(String shopName) { this.shopName = shopName; }
-    public LocalDate getReceivedDate() { return receivedDate; }
-    public void setReceivedDate(LocalDate receivedDate) { this.receivedDate = receivedDate; }
-    public LocalDate getExpiryDate() { return expiryDate; }
-    public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
     public List<CategoryOption> getCategories() { return categories; }
     public void setCategories(List<CategoryOption> categories) { this.categories = categories; }
     public Long getCategoryId() { return categoryId; }

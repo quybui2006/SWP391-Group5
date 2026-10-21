@@ -30,41 +30,39 @@
                 <section class="table-card" style="padding:22px">
                     <h2>Thông tin bán hàng của biến thể</h2>
                     <table><tbody>
-                    <tr><th>SKU</th><td th:text="${variant.sku}">-</td></tr>
-                    <tr><th>Quy cách</th><td th:text="${variant.specification ?: '-'}">-</td></tr>
-                    <tr><th>Giá bán</th><td th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">-</td></tr>
-                    <tr><th>Đơn vị</th><td th:text="${variant.unitName}">-</td></tr>
-                    <tr><th>Số lượng mua tối thiểu</th><td th:text="${variant.minOrderQuantity}">1</td></tr>
-                    <tr><th>Trạng thái bán</th><td th:text="${variant.variantStatus}">DRAFT</td></tr>
-                    <tr><th>Ngày tạo</th><td th:text="${variant.createdAt != null ? #temporals.format(variant.createdAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
-                    <tr><th>Cập nhật lần cuối</th><td th:text="${variant.updatedAt != null ? #temporals.format(variant.updatedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
-                    <tr><th>Đăng bán lúc</th><td th:text="${variant.submittedAt != null ? #temporals.format(variant.submittedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
-                    <tr><th>Đã xử lý lúc</th><td th:text="${variant.reviewedAt != null ? #temporals.format(variant.reviewedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
+                        <tr><th>SKU</th><td th:text="${variant.sku}">-</td></tr>
+                        <tr><th>Quy cách</th><td th:text="${variant.specification ?: '-'}">-</td></tr>
+                        <tr><th>Giá bán</th><td th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">-</td></tr>
+                        <tr><th>Đơn vị</th><td th:text="${variant.unitName}">-</td></tr>
+                        <tr><th>Số lượng mua tối thiểu</th><td th:text="${variant.minOrderQuantity}">1</td></tr>
+                        <tr><th>Trạng thái bán</th><td th:text="${variant.variantStatus}">DRAFT</td></tr>
+                        <tr><th>Ngày tạo</th><td th:text="${variant.createdAt != null ? #temporals.format(variant.createdAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
+                        <tr><th>Cập nhật lần cuối</th><td th:text="${variant.updatedAt != null ? #temporals.format(variant.updatedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
+                        <tr><th>Đăng bán lúc</th><td th:text="${variant.submittedAt != null ? #temporals.format(variant.submittedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
+                        <tr><th>Đã xử lý lúc</th><td th:text="${variant.reviewedAt != null ? #temporals.format(variant.reviewedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td></tr>
                     </tbody></table>
                 </section>
                 <section class="table-card" style="padding:22px">
                     <h2>Tồn kho và cảnh báo</h2>
                     <table><tbody>
-                    <tr><th>Tồn ban đầu</th><td th:text="${variant.initialQuantity ?: 0}">0</td></tr>
-                    <tr><th>Hiện có</th><td th:text="${variant.quantityOnHand ?: 0}">0</td></tr>
-                    <tr><th>Đang giữ cho đơn</th><td th:text="${variant.reservedQuantity ?: 0}">0</td></tr>
-                    <tr><th>Có thể bán</th><td th:text="${variant.availableQuantity ?: 0}">0</td></tr>
-                    <tr><th>Ngưỡng cảnh báo tồn thấp</th><td th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '—'}">—</td></tr>
-                    <tr><th>Trạng thái tồn kho</th><td th:text="${variant.inventoryStatus ?: 'Chưa cấu hình'}">-</td></tr>
+                        <tr><th>Tồn ban đầu</th><td th:text="${variant.initialQuantity ?: 0}">0</td></tr>
+                        <tr><th>Hiện có</th><td th:text="${variant.quantityOnHand ?: 0}">0</td></tr>
+                        <tr><th>Đang giữ cho đơn</th><td th:text="${variant.reservedQuantity ?: 0}">0</td></tr>
+                        <tr><th>Có thể bán</th><td th:text="${variant.availableQuantity ?: 0}">0</td></tr>
+                        <tr><th>Ngưỡng cảnh báo tồn thấp</th><td th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '—'}">—</td></tr>
+                        <tr><th>Trạng thái tồn kho</th><td th:text="${variant.inventoryStatus ?: 'Chưa cấu hình'}">-</td></tr>
                     </tbody></table>
                 </section>
                 <section class="table-card" style="padding:22px;grid-column:1/-1">
                     <h2>Thông tin hồ sơ sản phẩm nhóm (tham chiếu)</h2>
                     <table><tbody>
-                    <tr><th>Tên hồ sơ</th><td th:text="${variant.productName}">-</td></tr>
-                    <tr><th>Danh mục</th><td th:text="${variant.categoryName}">-</td></tr>
-                    <tr><th>Mô tả</th><td th:text="${variant.productDescription ?: 'Chưa có mô tả'}">-</td></tr>
-                    <tr><th>Xuất xứ</th><td th:text="${variant.origin ?: 'Chưa cập nhật'}">-</td></tr>
-                    <tr><th>Mã lô</th><td th:text="${variant.batchCode}">-</td></tr>
-                    <tr><th>Ngày nhập</th><td th:text="${variant.receivedDate != null ? #temporals.format(variant.receivedDate, 'dd/MM/yyyy') : '—'}">—</td></tr>
-                    <tr><th>Ngày hết hạn</th><td th:text="${variant.expiryDate != null ? #temporals.format(variant.expiryDate, 'dd/MM/yyyy') : '—'}">—</td></tr>
-                    <tr><th>Điện thoại shop</th><td th:text="${variant.shopPhone ?: '—'}">—</td></tr>
-                    <tr><th>Địa chỉ shop</th><td th:text="${variant.shopAddress ?: '—'}">—</td></tr>
+                        <tr><th>Tên hồ sơ</th><td th:text="${variant.productName}">-</td></tr>
+                        <tr><th>Danh mục</th><td th:text="${variant.categoryName}">-</td></tr>
+                        <tr><th>Mô tả</th><td th:text="${variant.productDescription ?: 'Chưa có mô tả'}">-</td></tr>
+                        <tr><th>Xuất xứ</th><td th:text="${variant.origin ?: 'Chưa cập nhật'}">-</td></tr>
+                        <tr><th>Mã lô</th><td th:text="${variant.batchCode}">-</td></tr>
+                        <tr><th>Điện thoại shop</th><td th:text="${variant.shopPhone ?: '—'}">—</td></tr>
+                        <tr><th>Địa chỉ shop</th><td th:text="${variant.shopAddress ?: '—'}">—</td></tr>
                     </tbody></table>
                 </section>
             </div>
