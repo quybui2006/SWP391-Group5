@@ -29,7 +29,7 @@ public class OperationsVariantApprovalService {
     public List<PendingVariantApprovalDto> findPendingVariants() {
         return jdbc.query("""
                 SELECT pv.id AS variant_id, pv.name AS variant_name, pv.sku,
-                       COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                       pv.image_url AS image_url,
                        p.name AS product_name, s.name AS shop_name,
                        COALESCE((SELECT c.name FROM product_categories pc JOIN categories c ON c.id = pc.category_id
                                  WHERE pc.product_id = p.id ORDER BY c.name LIMIT 1), 'Chưa phân loại') AS category_name,
@@ -57,7 +57,7 @@ public class OperationsVariantApprovalService {
         List<OperationsVariantDetailDto> rows = jdbc.query("""
                 SELECT pv.id AS variant_id, pv.product_id, pv.name AS variant_name, pv.sku,
                        pv.specification,
-                       COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                       pv.image_url AS image_url,
                        pv.price, pv.min_order_quantity,
                        pv.status AS variant_status, pv.approval_status, pv.rejection_reason,
                        pv.submitted_at, pv.reviewed_at, pv.created_at AS variant_created_at, pv.updated_at AS variant_updated_at,

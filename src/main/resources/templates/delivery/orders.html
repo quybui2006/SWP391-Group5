@@ -256,10 +256,8 @@
         <div class="status-tabs">
             <a th:href="@{/delivery/orders(status='ALL')}"
                class="tab-btn" th:classappend="${currentStatus == 'ALL' ? 'active' : ''}">Tất cả</a>
-            <a th:href="@{/delivery/orders(status='PENDING')}"
-               class="tab-btn" th:classappend="${currentStatus == 'PENDING' ? 'active' : ''}">Chờ lấy hàng</a>
             <a th:href="@{/delivery/orders(status='CONFIRMED')}"
-               class="tab-btn" th:classappend="${currentStatus == 'CONFIRMED' ? 'active' : ''}">Đã xác nhận</a>
+               class="tab-btn" th:classappend="${currentStatus == 'CONFIRMED' ? 'active' : ''}">Chờ lấy hàng</a>
             <a th:href="@{/delivery/orders(status='SHIPPING')}"
                class="tab-btn" th:classappend="${currentStatus == 'SHIPPING' ? 'active' : ''}">Đang giao</a>
             <a th:href="@{/delivery/orders(status='COMPLETED')}"
@@ -359,7 +357,7 @@
                             <button type="submit" class="btn-action btn-ship">Bắt đầu giao</button>
                         </form>
 
-                        <form th:action="@{/delivery/orders/update-status}" method="post">
+                        <form th:if="${ord['status'] == 'SHIPPING'}" th:action="@{/delivery/orders/update-status}" method="post">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="COMPLETED">
                             <input type="hidden" name="currentStatus" th:value="${currentStatus}">

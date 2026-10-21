@@ -3,9 +3,11 @@ package org.example.swp391group5;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {"org.example.swp391group5", "controller", "service", "repository"})
 @AutoConfigurationPackage(basePackages = {"org.example.swp391group5", "entity", "repository"})
+@EnableScheduling
 public class  Swp391Group5Application {
 
     public static void main(String[] args) {

@@ -522,7 +522,7 @@ public class ShopProductService {
                     || (reviewHistory != null && reviewHistory > 0)
                     || (inventoryHistory != null && inventoryHistory > 0)) {
                 throw new ProductValidationException("product",
-                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho. Hãy dùng Lưu trữ sản phẩm.");
+                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho.");
             }
 
             // Chỉ dọn dữ liệu phụ khi chưa có lịch sử cần bảo toàn.

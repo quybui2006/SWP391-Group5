@@ -172,7 +172,7 @@ CREATE TABLE variant_inventory (
     initial_quantity INT NOT NULL,
     quantity_on_hand INT NOT NULL,
     reserved_quantity INT NOT NULL DEFAULT 0,
-    available_quantity INT,
+    available_quantity INT GENERATED ALWAYS AS (quantity_on_hand - reserved_quantity),
     low_stock_threshold_pct DECIMAL(5,2) NOT NULL DEFAULT 10,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_by BIGINT NOT NULL,
@@ -244,6 +244,7 @@ CREATE TABLE orders (
     total_amount DECIMAL(19,0) NOT NULL,
     shop_revenue_amount DECIMAL(19,0) NOT NULL,
     payment_method VARCHAR(20) NOT NULL,
+    payment_expires_at TIMESTAMP NULL,
     delivery_code VARCHAR(60) NOT NULL UNIQUE,
     status VARCHAR(25) NOT NULL,
     payment_status VARCHAR(20) NOT NULL,
@@ -251,8 +252,11 @@ CREATE TABLE orders (
     paid_at TIMESTAMP NULL,
     shipped_at TIMESTAMP NULL,
     delivered_at TIMESTAMP NULL,
+    auto_complete_at TIMESTAMP NULL,
     completed_at TIMESTAMP NULL,
     cancelled_at TIMESTAMP NULL,
+    delivery_updated_at TIMESTAMP NULL,
+    delivery_failure_reason VARCHAR(1000) NULL,
     cancellation_reason VARCHAR(1000) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(id, shop_id)
@@ -302,7 +306,9 @@ CREATE TABLE payments (
     request_key VARCHAR(100) NOT NULL UNIQUE,
     method VARCHAR(20) NOT NULL,
     amount DECIMAL(19,0) NOT NULL,
-    status VARCHAR(20) NOT NULL
+    status VARCHAR(20) NOT NULL,
+    paid_at TIMESTAMP NULL,
+    failure_reason VARCHAR(1000) NULL
 );
 
 CREATE TABLE notifications (
