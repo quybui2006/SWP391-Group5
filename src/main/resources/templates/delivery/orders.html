@@ -3,406 +3,512 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Giao hàng | FreshFruit Delivery</title>
-    <link rel="stylesheet" th:href="@{/css/home.css}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Quản lý đơn hàng | FreshFruit Delivery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --fresh-green: #16803c;
-            --fresh-green-dark: #14532d;
-            --bg-light: #f8faf9;
+            --green-primary: #16803c;
+            --green-dark: #11632e;
+            --danger: #dc2626;
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
             --border-color: #e5e7eb;
         }
 
         body {
-            background-color: var(--bg-light);
-            font-family: 'Inter', sans-serif;
-            color: #1f2937;
             margin: 0;
+            background-color: #f4f7f5;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
         }
 
-        .delivery-container {
-            max-width: 1280px;
-            margin: 28px auto 60px;
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--green-primary);
+            color: #fff;
+            font-weight: 700;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            padding: 7px 14px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: var(--danger);
+            text-decoration: none;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .page-wrap {
+            max-width: 1320px;
+            margin: 28px auto;
             padding: 0 20px;
         }
 
-        /* Thống kê nhanh */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: #fff;
+        .card-panel {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 18px 20px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+            padding: 24px 28px;
         }
 
-        .stat-card .stat-label {
-            font-size: 13.5px;
-            color: #6b7280;
-            font-weight: 600;
-        }
-
-        .stat-card .stat-value {
-            font-size: 26px;
-            font-weight: 800;
-            color: #111827;
-            margin-top: 6px;
-        }
-
-        /* Bộ lọc & Tìm kiếm */
-        .filter-bar {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
+        .card-header-links {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            justify-content: space-between;
-            gap: 16px;
+            gap: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
         }
 
-        .status-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .tab-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13.5px;
+        .card-header-links a {
+            font-size: 17px;
             font-weight: 600;
-            text-decoration: none;
-            color: #4b5563;
-            background: #f3f4f6;
-            transition: all 0.2s;
-        }
-
-        .tab-btn:hover {
-            background: #e5e7eb;
-        }
-
-        .tab-btn.active {
-            background: var(--fresh-green);
-            color: #fff;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 8px;
-        }
-
-        .search-box input {
-            padding: 9px 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-            width: 260px;
-        }
-
-        .search-box button {
-            padding: 9px 16px;
-            background: var(--fresh-green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            text-decoration: underline;
             cursor: pointer;
         }
 
-        /* Bảng đơn hàng */
-        .table-card {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        .link-title { color: var(--text-dark); }
+        .link-export { color: var(--green-primary); }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
         }
 
-        table {
+        .table-controls select,
+        .table-controls input[type="search"] {
+            padding: 7px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .order-table {
             width: 100%;
             border-collapse: collapse;
-            text-align: left;
-        }
-
-        th {
-            background: #f9fafb;
-            padding: 14px 16px;
-            font-size: 12.5px;
-            font-weight: 700;
-            color: #374151;
-            border-bottom: 1px solid var(--border-color);
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-
-        td {
-            padding: 16px;
-            border-bottom: 1px solid #f3f4f6;
             font-size: 14px;
-            vertical-align: top;
         }
 
-        tr:hover td {
-            background: #fcfdfd;
+        .order-table thead th,
+        .order-table tfoot th {
+            background: #ffffff;
+            color: #374151;
+            font-weight: 700;
+            padding: 13px 14px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+            white-space: nowrap;
         }
 
-        /* Nhãn trạng thái (Badge) */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
+        .order-table tfoot th {
+            border-top: 1px solid var(--border-color);
+            border-bottom: none;
+        }
+
+        .order-table tbody tr {
+            background: #f3f4f6;
+            border-bottom: 4px solid #ffffff;
+        }
+
+        .order-table tbody tr:hover {
+            background: #eaf3ed;
+        }
+
+        .order-table tbody td {
+            padding: 16px 14px;
+            color: #374151;
+            vertical-align: middle;
+        }
+
+        .detail-link {
+            color: var(--green-primary);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-link:hover { text-decoration: underline; }
+
+        .info-dot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: var(--green-primary);
+            color: #fff;
+            font-size: 11px;
             font-weight: 700;
         }
 
-        .badge-pending { background: #fef3c7; color: #b45309; }
-        .badge-shipping { background: #dbeafe; color: #1d4ed8; }
-        .badge-completed { background: #dcfce7; color: #15803d; }
-        .badge-cancelled { background: #fee2e2; color: #b91c1c; }
-
-        /* Nút thao tác chuyển trạng thái */
-        .action-group {
+        /* Nút bấm hành động giống Ảnh */
+        .action-btns {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            min-width: 165px;
+            gap: 6px;
+            align-items: flex-start;
         }
 
-        .btn-action {
-            width: 100%;
-            padding: 8px 12px;
+        .btn-action-confirm {
+            background: transparent;
             border: none;
-            border-radius: 6px;
+            color: var(--green-primary);
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            text-align: left;
+        }
+        .btn-action-confirm:hover { text-decoration: underline; }
+
+        .btn-action-cancel {
+            background: transparent;
+            border: none;
+            color: var(--danger);
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            text-align: left;
+        }
+        .btn-action-cancel:hover { text-decoration: underline; }
+
+        .status-done {
+            color: var(--green-primary);
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-cancelled {
+            color: var(--danger);
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 18px;
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 6px 13px;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: #374151;
+            cursor: pointer;
             font-size: 13px;
             font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
         }
 
-        .btn-action:hover { opacity: 0.9; }
-        .btn-ship { background: #2563eb; color: #fff; }
-        .btn-complete { background: var(--fresh-green); color: #fff; }
-        .btn-fail { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .page-btn.active {
+            background: var(--green-primary);
+            color: #fff;
+            border-color: var(--green-primary);
+        }
 
-        .alert-box {
-            padding: 14px 18px;
+        .alert {
+            padding: 12px 16px;
             border-radius: 8px;
-            margin-bottom: 18px;
-            font-weight: 600;
+            margin-bottom: 16px;
             font-size: 14px;
+            font-weight: 600;
         }
-        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #dcfce7; color: #166534; }
+        .alert-error { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body>
 
-<header class="site-header">
-    <div class="container header-inner">
-        <a class="brand" th:href="@{/delivery/orders}">
-            <span class="brand-mark">F</span>
-            <span>
-                <strong>FreshFruit Delivery</strong>
-                <small>Hệ thống điều phối & giao nhận</small>
-            </span>
-        </a>
-        <div class="header-actions" style="display:flex; align-items:center; gap:14px;">
-            <span style="font-size:14px; font-weight:600; color:#374151;" th:text="${managerName}">Delivery Manager</span>
-            <a th:href="@{/}" class="tab-btn">Về Trang chủ</a>
-            <a th:href="@{/logout}" class="tab-btn" style="background:#fee2e2; color:#dc2626;">Đăng xuất</a>
+<header class="topbar">
+    <a class="brand-box" th:href="@{/delivery/orders}">
+        <span class="brand-logo">F</span>
+        <div>
+            <div style="font-weight:700; font-size:16px;">FreshFruit Delivery</div>
+            <div style="font-size:12px; color:#6b7280;">Quản lý vận chuyển đơn hàng</div>
         </div>
+    </a>
+
+    <div class="user-nav">
+        <span th:text="${managerName}">Delivery Manager</span>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" class="btn-logout">Đăng xuất</button>
+        </form>
     </div>
 </header>
 
-<main class="delivery-container">
-    <h1 style="margin: 0 0 20px; font-size: 22px; font-weight: 700;">Quản lý Đơn hàng Giao nhận</h1>
+<div class="page-wrap">
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
 
-    <!-- Thông báo kết quả cập nhật -->
-    <div th:if="${successMessage}" class="alert-box alert-success" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="alert-box alert-error" th:text="${errorMessage}"></div>
-
-    <!-- 4 Thẻ thống kê -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Tổng đơn hàng</div>
-            <div class="stat-value" th:text="${counts['total_all'] ?: 0}">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Chờ lấy / Chuẩn bị giao</div>
-            <div class="stat-value" style="color:#d97706;" th:text="${counts['waiting_pickup'] ?: 0}">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Đang giao hàng</div>
-            <div class="stat-value" style="color:#2563eb;" th:text="${counts['shipping_count'] ?: 0}">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Đã giao thành công</div>
-            <div class="stat-value" style="color:#16803c;" th:text="${counts['delivered_count'] ?: 0}">0</div>
-        </div>
-    </div>
-
-    <!-- Thanh lọc trạng thái & Tìm kiếm -->
-    <div class="filter-bar">
-        <div class="status-tabs">
-            <a th:href="@{/delivery/orders(status='ALL')}"
-               class="tab-btn" th:classappend="${currentStatus == 'ALL' ? 'active' : ''}">Tất cả</a>
-            <a th:href="@{/delivery/orders(status='PENDING')}"
-               class="tab-btn" th:classappend="${currentStatus == 'PENDING' ? 'active' : ''}">Chờ lấy hàng</a>
-            <a th:href="@{/delivery/orders(status='CONFIRMED')}"
-               class="tab-btn" th:classappend="${currentStatus == 'CONFIRMED' ? 'active' : ''}">Đã xác nhận</a>
-            <a th:href="@{/delivery/orders(status='SHIPPING')}"
-               class="tab-btn" th:classappend="${currentStatus == 'SHIPPING' ? 'active' : ''}">Đang giao</a>
-            <a th:href="@{/delivery/orders(status='COMPLETED')}"
-               class="tab-btn" th:classappend="${currentStatus == 'COMPLETED' ? 'active' : ''}">Hoàn tất</a>
-            <a th:href="@{/delivery/orders(status='CANCELLED')}"
-               class="tab-btn" th:classappend="${currentStatus == 'CANCELLED' ? 'active' : ''}">Đã hủy</a>
+    <div class="card-panel">
+        <div class="card-header-links">
+            <a class="link-title" th:href="@{/delivery/orders}">Quản lý đơn hàng</a>
+            <a class="link-export" onclick="exportTableToCSV('danh-sach-don-hang.csv')">Xuất file Excel</a>
         </div>
 
-        <form th:action="@{/delivery/orders}" method="get" class="search-box">
-            <input type="hidden" name="status" th:value="${currentStatus}">
-            <input type="text" name="keyword" th:value="${keyword}" placeholder="Mã đơn, tên hoặc SĐT người nhận...">
-            <button type="submit">Tìm kiếm</button>
-        </form>
-    </div>
+        <div class="table-controls">
+            <div>
+                Show
+                <select id="entriesSelect" onchange="changePageSize()">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+                entries
+            </div>
 
-    <!-- Bảng danh sách đơn hàng -->
-    <div class="table-card">
-        <table>
+            <div>
+                Search:
+                <input type="search" id="searchInput" oninput="filterAndPaginate()" placeholder="Tìm mã đơn, khách hàng, SĐT...">
+            </div>
+        </div>
+
+        <table class="order-table" id="deliveryTable">
             <thead>
             <tr>
-                <th>Mã đơn / Cửa hàng</th>
-                <th>Người nhận & Địa chỉ giao</th>
-                <th>Sản phẩm trong đơn</th>
-                <th>Thanh toán</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
+                <th>Mã đơn hàng</th>
+                <th>Tên khách hàng</th>
+                <th>Số ĐT</th>
+                <th>Ngày đặt hàng</th>
+                <th>Địa chỉ</th>
+                <th>Tổng tiền</th>
+                <th>Chi tiết đơn hàng</th>
+                <th>Hành động</th>
             </tr>
             </thead>
-            <tbody>
-            <tr th:if="${#lists.isEmpty(orders)}">
-                <td colspan="6" style="text-align:center; padding: 40px; color:#6b7280;">
-                    Không có đơn hàng nào khớp với bộ lọc hiện tại.
-                </td>
-            </tr>
-
-            <tr th:each="ord : ${orders}">
-                <!-- Cột 1: Mã đơn -->
+            <tbody id="orderTableBody">
+            <tr th:each="ord : ${orders}" class="order-row">
+                <td th:text="${ord['order_code']}">29</td>
+                <td th:text="${ord['recipient_name']}">demo tên</td>
+                <td th:text="${ord['recipient_phone']}">0915291997</td>
+                <td th:text="${#temporals.format(ord['created_at'], 'yyyy-MM-dd')}">2022-02-17</td>
+                <td th:text="${ord['full_address']}">demo địa chỉ</td>
+                <td th:text="${#numbers.formatDecimal(ord['total_amount'], 0, 'COMMA', 0, 'POINT') + ' đ'}">72.500 đ</td>
                 <td>
-                    <strong style="color:#111827; font-size:15px;" th:text="${ord['order_code']}">FF-123</strong>
-                    <div style="font-size:12.5px; color:#6b7280; margin-top:4px;"
-                         th:text="'Shop: ' + (${ord['shop_name']} ?: 'FreshFruit')">Shop</div>
-                    <div style="font-size:12px; color:#9ca3af; margin-top:2px;"
-                         th:text="${#temporals.format(ord['created_at'], 'dd/MM/yyyy HH:mm')}">20/10/2026</div>
+                    <a class="detail-link" th:href="@{/delivery/orders/{id}(id=${ord['id']})}">
+                        <span class="info-dot">i</span> Chi tiết đơn hàng
+                    </a>
                 </td>
-
-                <!-- Cột 2: Người nhận & Địa chỉ -->
-                <td style="max-width: 260px;">
-                    <div style="font-weight:700; color:#111827;" th:text="${ord['recipient_name']}">Nguyễn Văn A</div>
-                    <div style="color:#16803c; font-weight:600; font-size:13.5px; margin:2px 0;"
-                         th:text="'SĐT: ' + ${ord['recipient_phone']}">0901234567</div>
-                    <div style="font-size:13px; color:#4b5563; line-height:1.4;"
-                         th:text="${ord['address_detail'] + ', ' + ord['ward_name'] + (ord['province_name'] != null ? ', ' + ord['province_name'] : '')}">
-                        Địa chỉ
-                    </div>
-                    <div th:if="${ord['customer_note'] != null and !#strings.isEmpty(ord['customer_note'])}"
-                         style="margin-top:6px; padding:4px 8px; background:#fffbeb; border-left:3px solid #f59e0b; font-size:12px; color:#92400e;">
-                        <strong>Ghi chú:</strong> <span th:text="${ord['customer_note']}"></span>
-                    </div>
-                </td>
-
-                <!-- Cột 3: Tóm tắt sản phẩm -->
-                <td style="max-width: 220px;">
-                    <div style="font-size:13.5px; color:#374151; line-height:1.5;"
-                         th:text="${ord['items_summary'] ?: 'Đang cập nhật'}">Táo Fuji (x2)</div>
-                </td>
-
-                <!-- Cột 4: Tiền cần thu / Phương thức -->
                 <td>
-                    <div style="font-weight:800; font-size:15px; color:#16803c;"
-                         th:text="${#numbers.formatDecimal(ord['total_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-                        150,000 ₫
-                    </div>
-                    <div style="font-size:12.5px; margin-top:4px;">
-                        <span style="font-weight:600;" th:text="${ord['payment_method']}">COD</span>
-                        <span>•</span>
-                        <span th:if="${ord['payment_status'] == 'PAID'}" style="color:#16803c; font-weight:700;">Đã thanh toán</span>
-                        <span th:if="${ord['payment_status'] != 'PAID'}" style="color:#d97706; font-weight:700;">Chờ thu tiền</span>
-                    </div>
-                </td>
-
-                <!-- Cột 5: Trạng thái hiện tại -->
-                <td>
-                        <span class="badge"
-                              th:classappend="${ord['status'] == 'SHIPPING' ? 'badge-shipping' : (ord['status'] == 'COMPLETED' or ord['status'] == 'DELIVERED' ? 'badge-completed' : (ord['status'] == 'CANCELLED' ? 'badge-cancelled' : 'badge-pending'))}"
-                              th:text="${ord['status']}">
-                            PENDING
-                        </span>
-                </td>
-
-                <!-- Cột 6: Nút chuyển trạng thái nhanh -->
-                <td>
-                    <div class="action-group" th:if="${ord['status'] != 'COMPLETED' and ord['status'] != 'DELIVERED' and ord['status'] != 'CANCELLED'}">
-                        <form th:if="${ord['status'] != 'SHIPPING'}" th:action="@{/delivery/orders/update-status}" method="post">
+                    <!-- Đang được xử lý -> Nút Xác nhận (Bắt đầu giao) & Nút Hủy đơn -->
+                    <div class="action-btns" th:if="${ord['ui_status'] == 'PROCESSING'}">
+                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="SHIPPING">
-                            <input type="hidden" name="currentStatus" th:value="${currentStatus}">
-                            <button type="submit" class="btn-action btn-ship">Bắt đầu giao</button>
+                            <button type="submit" class="btn-action-confirm">✔ Xác nhận</button>
                         </form>
-
-                        <form th:action="@{/delivery/orders/update-status}" method="post">
-                            <input type="hidden" name="orderId" th:value="${ord['id']}">
-                            <input type="hidden" name="newStatus" value="COMPLETED">
-                            <input type="hidden" name="currentStatus" th:value="${currentStatus}">
-                            <button type="submit" class="btn-action btn-complete"
-                                    onclick="return confirm('Xác nhận đã giao đơn hàng này thành công cho khách?');">
-                                Đã giao thành công
-                            </button>
-                        </form>
-
-                        <form th:action="@{/delivery/orders/update-status}" method="post"
-                              onsubmit="return promptCancelReason(this);">
+                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return promptCancel(this);">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="CANCELLED">
                             <input type="hidden" name="cancelReason" value="">
-                            <input type="hidden" name="currentStatus" th:value="${currentStatus}">
-                            <button type="submit" class="btn-action btn-fail">Giao thất bại / Hủy</button>
+                            <button type="submit" class="btn-action-cancel">🗑 Hủy đơn</button>
                         </form>
                     </div>
 
-                    <div th:if="${ord['status'] == 'COMPLETED' or ord['status'] == 'DELIVERED'}"
-                         style="color:#16803c; font-size:13px; font-weight:600;">
-                        Đã hoàn tất giao nhận
+                    <!-- Đang giao hàng -> Nút Giao thành công & Nút Hủy đơn -->
+                    <div class="action-btns" th:if="${ord['ui_status'] == 'SHIPPING'}">
+                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return confirm('Xác nhận khách đã nhận hàng và thanh toán?');">
+                            <input type="hidden" name="orderId" th:value="${ord['id']}">
+                            <input type="hidden" name="newStatus" value="COMPLETED">
+                            <button type="submit" class="btn-action-confirm">✔ Hoàn tất</button>
+                        </form>
+                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return promptCancel(this);">
+                            <input type="hidden" name="orderId" th:value="${ord['id']}">
+                            <input type="hidden" name="newStatus" value="CANCELLED">
+                            <input type="hidden" name="cancelReason" value="">
+                            <button type="submit" class="btn-action-cancel">🗑 Hủy đơn</button>
+                        </form>
                     </div>
-                    <div th:if="${ord['status'] == 'CANCELLED'}"
-                         style="color:#dc2626; font-size:13px; font-weight:600;">
-                        Đơn đã hủy
-                    </div>
+
+                    <!-- Đã hoàn tất -->
+                    <span class="status-done" th:if="${ord['ui_status'] == 'COMPLETED'}">
+                            ✔ Đã thanh toán
+                        </span>
+
+                    <!-- Đã hủy -->
+                    <span class="status-cancelled" th:if="${ord['ui_status'] == 'CANCELLED'}">
+                            🗑 Đã huỷ
+                        </span>
                 </td>
             </tr>
             </tbody>
+            <tfoot>
+            <tr>
+                <th>Mã đơn hàng</th>
+                <th>Tên khách hàng</th>
+                <th>Số ĐT</th>
+                <th>Ngày đặt hàng</th>
+                <th>Địa chỉ</th>
+                <th>Tổng tiền</th>
+                <th>Chi tiết đơn hàng</th>
+                <th>Hành động</th>
+            </tr>
+            </tfoot>
         </table>
+
+        <div class="table-footer">
+            <div id="showingInfo">Showing 0 to 0 of 0 entries</div>
+            <div class="pagination" id="paginationControls"></div>
+        </div>
     </div>
-</main>
+</div>
 
 <script>
-    function promptCancelReason(form) {
-        const reason = prompt("Nhập lý do giao hàng thất bại / hủy đơn:", "Khách không nghe máy / Từ chối nhận hàng");
-        if (reason === null) {
-            return false;
-        }
+    function promptCancel(form) {
+        const reason = prompt('Nhập lý do hủy đơn hàng:', 'Khách không nghe máy / Từ chối nhận');
+        if (reason === null) return false;
         form.querySelector('input[name="cancelReason"]').value = reason;
         return true;
     }
+
+    let currentPage = 1;
+    let pageSize = 10;
+
+    function changePageSize() {
+        pageSize = parseInt(document.getElementById('entriesSelect').value, 10) || 10;
+        currentPage = 1;
+        filterAndPaginate();
+    }
+
+    function filterAndPaginate() {
+        const keyword = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+        const allRows = Array.from(document.querySelectorAll('#orderTableBody .order-row'));
+
+        const matchedRows = allRows.filter(row => row.innerText.toLowerCase().includes(keyword));
+
+        const totalEntries = matchedRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalEntries / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalEntries);
+
+        allRows.forEach(row => row.style.display = 'none');
+        matchedRows.slice(startIdx, endIdx).forEach(row => row.style.display = '');
+
+        const startLabel = totalEntries === 0 ? 0 : startIdx + 1;
+        document.getElementById('showingInfo').textContent =
+            `Showing ${startLabel} to ${endIdx} of ${totalEntries} entries`;
+
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        const container = document.getElementById('paginationControls');
+        container.innerHTML = '';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.textContent = 'Previous';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => { currentPage--; filterAndPaginate(); };
+        container.appendChild(prevBtn);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+            btn.textContent = i;
+            btn.onclick = () => { currentPage = i; filterAndPaginate(); };
+            container.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.textContent = 'Next';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => { currentPage++; filterAndPaginate(); };
+        container.appendChild(nextBtn);
+    }
+
+    function exportTableToCSV(filename) {
+        const rows = document.querySelectorAll('#deliveryTable tr');
+        let csv = ['\uFEFF'];
+        rows.forEach((row) => {
+            if (row.style.display === 'none') return;
+            if (row.parentElement.tagName === 'TFOOT') return;
+            const cols = row.querySelectorAll('td, th');
+            const rowData = [];
+            for (let i = 0; i < cols.length; i++) {
+                if (i === 6) continue;
+                let text = cols[i].innerText.replace(/\s+/g, ' ').trim();
+                rowData.push('"' + text.replace(/"/g, '""') + '"');
+            }
+            csv.push(rowData.join(','));
+        });
+
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+    }
+
+    document.addEventListener('DOMContentLoaded', filterAndPaginate);
 </script>
 
 </body>

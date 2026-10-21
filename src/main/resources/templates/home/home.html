@@ -79,6 +79,7 @@
                                 <span th:if="${session.role == 'CUSTOMER'}">Khách hàng</span>
                                 <span th:if="${session.role == 'SHOP_OWNER'}">Chủ cửa hàng</span>
                                 <span th:if="${session.role == 'ADMIN'}">Quản trị viên</span>
+                                <span th:if="${session.role == 'DELIVERY_MANAGER'}">Shipper</span>
                             </p>
                         </div>
                         <div class="user-dropdown-links">
@@ -98,6 +99,11 @@
                                 <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
                                 <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
                                 <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
+                            </th:block>
+
+                            <!-- Delivery Manager links -->
+                            <th:block th:if="${session.role == 'DELIVERY_MANAGER'}">
+                                <a th:href="@{/delivery/orders}">🚚 Giao hàng</a>
                             </th:block>
 
                             <!-- Admin links -->
@@ -356,29 +362,14 @@
                                 Liên hệ
                             </strong>
 
-                            <!-- Add to cart (Đã gắn data-variant-id chuẩn xác) -->
-                            <form th:action="@{/cart/items}"
-                                  method="post"
-                                  class="add-cart-form"
-                                  th:attr="data-variant-id=${variant.id}"
-                                  onclick="event.stopPropagation()"
-                                  onsubmit="addToCart(event, this)">
-
-                                <input type="hidden"
-                                       name="variantId"
-                                       th:value="${variant.id}">
-
-                                <input type="hidden"
-                                       name="quantity"
-                                       value="1">
-
-                                <button class="add-btn"
-                                        type="submit"
-                                        th:attr="data-variant-id=${variant.id}"
-                                        aria-label="Thêm sản phẩm vào giỏ hàng">
-                                    +
-                                </button>
-                            </form>
+                            <!-- Nút thêm giỏ hàng được cập nhật gọi hàm AJAX dùng chung -->
+                            <button type="button"
+                                    class="add-btn"
+                                    title="Thêm vào giỏ"
+                                    th:attr="data-variant-id=${variant.id}"
+                                    onclick="addProductToCart(event, this)">
+                                +
+                            </button>
 
                         </div>
                     </div>
@@ -475,100 +466,15 @@
     </div>
 </footer>
 
+<!-- Toast Notifications -->
+<div id="toast-container"></div>
+
 <!-- JAVASCRIPT -->
-<script th:src="@{/js/home.js}"></script>
-<script th:src="@{/js/favorites-integration.js}"></script>
-
-<script>
-    // Cập nhật số lượng giỏ hàng từ server.
-    async function refreshCartCount() {
-        try {
-            const response = await fetch('/cart/count', {
-                method: 'GET',
-                credentials: 'same-origin'
-            });
-
-            if (!response.ok) {
-                return;
-            }
-
-            const text = await response.text();
-            const count = Number.parseInt(text.trim(), 10);
-
-            const badge = document.getElementById('cartCount');
-
-            if (badge && Number.isFinite(count)) {
-                badge.textContent = count;
-            }
-        } catch (error) {
-            console.error('Không thể cập nhật số lượng giỏ hàng:', error);
-        }
-    }
-
-    // Thêm sản phẩm vào giỏ.
-    async function addToCart(event, form) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const button = form.querySelector('button[type="submit"]');
-        const oldText = button.textContent;
-
-        button.disabled = true;
-
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                credentials: 'same-origin',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (response.status === 401) {
-                window.location.href = '/login';
-                return;
-            }
-
-            if (!response.ok) {
-                const message = await response.text();
-                throw new Error(message || 'Không thể thêm sản phẩm vào giỏ hàng.');
-            }
-
-            // Đọc text 1 lần duy nhất
-            const countText = (await response.text()).trim();
-            const count = Number.parseInt(countText, 10);
-
-            if (Number.isFinite(count)) {
-                const badge = document.getElementById('cartCount');
-                if (badge) {
-                    badge.textContent = count;
-                }
-            } else {
-                await refreshCartCount();
-            }
-
-            button.textContent = '✓';
-
-            setTimeout(() => {
-                button.textContent = oldText;
-            }, 1000);
-
-        } catch (error) {
-            console.error('Lỗi thêm giỏ hàng:', error);
-            alert('Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.');
-        } finally {
-            button.disabled = false;
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', refreshCartCount);
-</script>
-
-
 <script th:src="@{/js/home.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
 <script th:src="@{/js/user-menu.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
+<script th:src="@{/js/product-cart.js}"></script>
+
 </body>
 </html>

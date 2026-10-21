@@ -110,4 +110,5 @@ public class LoginController {
         return path != null && path.startsWith("/") && !path.startsWith("//") && !path.contains("\\")
                 ? path : "/";
     }
+
 }

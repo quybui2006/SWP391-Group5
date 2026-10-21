@@ -98,6 +98,7 @@ async function sendAddToCartRequest(variantId, quantity) {
 }
 
 // Thêm sản phẩm ở trang chi tiết.
+// Thêm sản phẩm ở trang chủ / chi tiết (Không hiện thông báo, chỉ đổi nút thành ✓)
 async function addProductToCart(event, button) {
     if (event) {
         event.preventDefault();
@@ -111,6 +112,7 @@ async function addProductToCart(event, button) {
     const variantId = button.getAttribute('data-variant-id');
     const quantityInput = document.getElementById('quantity');
 
+    // Lấy số lượng từ ô input (nếu ở trang chi tiết), còn ở trang chủ không có ô này thì mặc định là 1
     const quantity = Math.max(
         1,
         Math.min(
@@ -126,19 +128,26 @@ async function addProductToCart(event, button) {
         const success = await sendAddToCartRequest(variantId, quantity);
 
         if (success) {
-            if (typeof showToast === 'function') {
-                showToast('Đã thêm sản phẩm vào giỏ hàng!');
-            } else {
-                alert('Đã thêm sản phẩm vào giỏ hàng!');
-            }
+
+            button.innerHTML = '✓';
+
+            setTimeout(() => {
+                button.innerHTML = oldContent;
+                button.disabled = false;
+            }, 1000);
+
+            return;
         }
     } catch (error) {
         console.error('Lỗi thêm vào giỏ hàng:', error);
-        alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng.');
-    } finally {
-        button.disabled = false;
-        button.innerHTML = oldContent;
+
+        if (error.message !== "login-required") {
+            alert(error.message || 'Không thể thêm sản phẩm vào giỏ hàng.');
+        }
     }
+
+    button.disabled = false;
+    button.innerHTML = oldContent;
 }
 
 // Thêm sản phẩm từ danh sách gợi ý.

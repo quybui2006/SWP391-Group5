@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết đơn hàng | FreshFruit Delivery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green-primary: #16803c;
+            --green-dark: #11632e;
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            margin: 0;
+            background-color: #f4f7f5;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        .page-wrap {
+            max-width: 1280px;
+            margin: 26px auto;
+            padding: 0 20px;
+        }
+
+        /* Breadcrumb Header giống Ảnh 3 */
+        .page-top-bar {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .page-top-bar h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--green-primary);
+        }
+
+        .card-panel {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 24px 28px;
+        }
+
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .card-top-row h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .btn-back {
+            padding: 9px 22px;
+            border-radius: 99px;
+            background: var(--green-primary);
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-back:hover {
+            background: var(--green-dark);
+        }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .table-controls select,
+        .table-controls input[type="search"] {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .detail-table thead th,
+        .detail-table tfoot th {
+            background: #ffffff;
+            color: #374151;
+            font-weight: 700;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .detail-table tfoot th {
+            border-top: 1px solid var(--border-color);
+            border-bottom: none;
+        }
+
+        .detail-table tbody tr {
+            background: #f3f4f6;
+            border-bottom: 4px solid #ffffff;
+        }
+
+        .detail-table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+        }
+
+        .prod-img {
+            width: 68px;
+            height: 68px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 18px;
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 6px 13px;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .page-btn.active {
+            background: var(--green-primary);
+            color: #fff;
+            border-color: var(--green-primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+    <div class="page-top-bar">
+        <h1>Quản Lý Đơn Hàng</h1>
+        <div class="breadcrumb">
+            <a th:href="@{/delivery/orders}">Trang chủ</a>
+            <span>›</span>
+            <a th:href="@{/delivery/orders}">Quản lý đơn hàng</a>
+            <span>›</span>
+            <span th:text="'Đơn #' + ${order['order_code']}">Chi tiết</span>
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-top-row">
+            <h2>Chi tiết đơn hàng</h2>
+            <a class="btn-back" th:href="@{/delivery/orders}">Quay lại</a>
+        </div>
+
+        <div class="table-controls">
+            <div>
+                Show
+                <select>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                </select>
+                entries
+            </div>
+            <div>
+                Search:
+                <input type="search" id="itemSearch" oninput="filterItems()" placeholder="Tìm tên sản phẩm...">
+            </div>
+        </div>
+
+        <table class="detail-table">
+            <thead>
+            <tr>
+                <th>STT</th>
+                <th>Sản phẩm</th>
+                <th>Tên sản phẩm</th>
+                <th>Số lượng</th>
+                <th>Đơn giá</th>
+                <th>Tổng tiền</th>
+            </tr>
+            </thead>
+            <tbody id="itemTableBody">
+            <tr th:each="item : ${items}" class="item-row">
+                <td th:text="${item['stt']}">1</td>
+                <td>
+                    <img th:if="${item['display_image'] != null and !#strings.isEmpty(item['display_image'])}"
+                         th:src="${item['display_image']}"
+                         class="prod-img"
+                         alt="Sản phẩm">
+                    <div th:if="${item['display_image'] == null or #strings.isEmpty(item['display_image'])}"
+                         class="prod-img"
+                         style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">
+                        No img
+                    </div>
+                </td>
+                <td th:text="${item['display_name']}">Nho xanh</td>
+                <td th:text="${item['quantity']}">1</td>
+                <td th:text="${#numbers.formatDecimal(item['unit_price'], 0, 'COMMA', 0, 'POINT') + ' đ'}">161.500 đ</td>
+                <td th:text="${#numbers.formatDecimal(item['line_total'], 0, 'COMMA', 0, 'POINT') + ' đ'}">161.500 đ</td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th>STT</th>
+                <th>Sản phẩm</th>
+                <th>Tên sản phẩm</th>
+                <th>Số lượng</th>
+                <th>Đơn giá</th>
+                <th>Tổng tiền</th>
+            </tr>
+            </tfoot>
+        </table>
+
+        <div class="table-footer">
+            <div th:text="'Showing 1 to ' + ${#lists.size(items)} + ' of ' + ${#lists.size(items)} + ' entries'">
+                Showing 1 to 2 of 2 entries
+            </div>
+            <div class="pagination">
+                <button class="page-btn" disabled>Previous</button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterItems() {
+        const kw = (document.getElementById('itemSearch').value || '').toLowerCase().trim();
+        document.querySelectorAll('#itemTableBody .item-row').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(kw) ? '' : 'none';
+        });
+    }
+</script>
+
+</body>
+</html>
