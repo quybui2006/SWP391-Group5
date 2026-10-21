@@ -25,38 +25,111 @@
 </header>
 
 <main class="login-main">
-    <section class="login-card">
-        <span class="login-eyebrow">FRESHFRUIT</span>
-        <h1>Đăng ký khách hàng</h1>
+    <div class="register-shell">
+        <!-- Flipgrid-style Account Type Tabs -->
+        <div class="role-selector-header" role="tablist" aria-label="Loại tài khoản đăng ký">
+            <button type="button" class="role-tab-btn active" id="tabCustomer" data-role="CUSTOMER" role="tab" aria-selected="true">
+                <span class="tab-check" id="checkCustomer">✓</span> KHÁCH HÀNG
+            </button>
+            <button type="button" class="role-tab-btn" id="tabShopOwner" data-role="SHOP_OWNER" role="tab" aria-selected="false">
+                <span class="tab-check" id="checkShopOwner" style="display:none;">✓</span> BÁN HÀNG
+            </button>
+        </div>
 
-        <form th:action="@{/register}" th:object="${form}" method="post">
-            <label for="fullName">Họ tên</label>
-            <input id="fullName" th:field="*{fullName}" maxlength="150" required>
-            <p class="login-error" th:if="${#fields.hasErrors('fullName')}"
-               th:errors="*{fullName}"></p>
+        <section class="login-card register-card">
+            <span class="login-eyebrow" id="roleEyebrow">FRESHFRUIT</span>
+            <h1 id="registerTitle">Đăng ký khách hàng</h1>
+            <p id="registerSub" class="register-subtitle">Tạo tài khoản để mua sắm hoa quả sạch chuẩn VietGAP và nhận ưu đãi mỗi ngày.</p>
 
-            <label for="email">Email</label>
-            <input id="email" type="email" th:field="*{email}" maxlength="254" required>
-            <p class="login-error" th:if="${#fields.hasErrors('email')}"
-               th:errors="*{email}"></p>
+            <form th:action="@{/register}" th:object="${form}" method="post">
+                <!-- Hidden input to hold the selected role -->
+                <input type="hidden" id="roleInput" th:field="*{role}">
 
-            <label for="phone">Số điện thoại (không bắt buộc)</label>
-            <input id="phone" type="tel" th:field="*{phone}" maxlength="20">
+                <label for="fullName" id="nameLabel">Họ và tên</label>
+                <input id="fullName" th:field="*{fullName}" maxlength="150" placeholder="Nguyễn Văn A" required>
+                <p class="login-error" th:if="${#fields.hasErrors('fullName')}"
+                   th:errors="*{fullName}"></p>
 
-            <label for="password">Mật khẩu</label>
-            <input id="password" name="password" type="password" minlength="8" required>
-            <p class="login-error" th:if="${#fields.hasErrors('password')}"
-               th:errors="*{password}"></p>
+                <label for="email" id="emailLabel">Email</label>
+                <input id="email" type="email" th:field="*{email}" maxlength="254" placeholder="email@example.com" required>
+                <p class="login-error" th:if="${#fields.hasErrors('email')}"
+                   th:errors="*{email}"></p>
 
-            <label for="confirmPassword">Xác nhận mật khẩu</label>
-            <input id="confirmPassword" name="confirmPassword" type="password" required>
-            <p class="login-error" th:if="${#fields.hasErrors('confirmPassword')}"
-               th:errors="*{confirmPassword}"></p>
+                <label for="phone">Số điện thoại (không bắt buộc)</label>
+                <input id="phone" type="tel" th:field="*{phone}" maxlength="20" placeholder="0912345678">
 
-            <button type="submit">Đăng ký</button>
-        </form>
-        <p>Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
-    </section>
+                <label for="password">Mật khẩu</label>
+                <input id="password" name="password" type="password" minlength="8" placeholder="Tối thiểu 8 ký tự" required>
+                <p class="login-error" th:if="${#fields.hasErrors('password')}"
+                   th:errors="*{password}"></p>
+
+                <label for="confirmPassword">Xác nhận mật khẩu</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" required>
+                <p class="login-error" th:if="${#fields.hasErrors('confirmPassword')}"
+                   th:errors="*{confirmPassword}"></p>
+
+                <button type="submit" id="submitBtn">Đăng ký tài khoản Khách hàng</button>
+            </form>
+            <p style="margin-top: 20px;">Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
+        </section>
+    </div>
 </main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabCustomer = document.getElementById('tabCustomer');
+        const tabShopOwner = document.getElementById('tabShopOwner');
+        const checkCustomer = document.getElementById('checkCustomer');
+        const checkShopOwner = document.getElementById('checkShopOwner');
+        const roleInput = document.getElementById('roleInput');
+        const roleEyebrow = document.getElementById('roleEyebrow');
+        const registerTitle = document.getElementById('registerTitle');
+        const registerSub = document.getElementById('registerSub');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function setRole(role) {
+            if (role === 'SHOP_OWNER') {
+                tabShopOwner.classList.add('active');
+                tabCustomer.classList.remove('active');
+                checkShopOwner.style.display = 'inline-flex';
+                checkCustomer.style.display = 'none';
+                roleInput.value = 'SHOP_OWNER';
+                roleEyebrow.textContent = 'FRESHFRUIT PARTNER';
+                registerTitle.textContent = 'Đăng ký Người bán hàng';
+                registerSub.textContent = 'Tạo tài khoản bán hàng để mở gian hàng, quản lý kho và tiếp cận hàng ngàn khách hàng.';
+                submitBtn.textContent = 'Đăng ký tài khoản Bán hàng';
+            } else {
+                tabCustomer.classList.add('active');
+                tabShopOwner.classList.remove('active');
+                checkCustomer.style.display = 'inline-flex';
+                checkShopOwner.style.display = 'none';
+                roleInput.value = 'CUSTOMER';
+                roleEyebrow.textContent = 'FRESHFRUIT';
+                registerTitle.textContent = 'Đăng ký khách hàng';
+                registerSub.textContent = 'Tạo tài khoản để mua sắm hoa quả sạch chuẩn VietGAP và nhận ưu đãi mỗi ngày.';
+                submitBtn.textContent = 'Đăng ký tài khoản Khách hàng';
+            }
+        }
+
+        tabCustomer.addEventListener('click', function() {
+            setRole('CUSTOMER');
+        });
+
+        tabShopOwner.addEventListener('click', function() {
+            setRole('SHOP_OWNER');
+        });
+
+        // Initialize from URL params or hidden input value
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRole = urlParams.get('role');
+        if (urlRole && (urlRole.toLowerCase() === 'seller' || urlRole.toLowerCase() === 'shop_owner' || urlRole.toLowerCase() === 'shopowner')) {
+            setRole('SHOP_OWNER');
+        } else if (roleInput && roleInput.value === 'SHOP_OWNER') {
+            setRole('SHOP_OWNER');
+        } else {
+            setRole('CUSTOMER');
+        }
+    });
+</script>
 </body>
 </html>

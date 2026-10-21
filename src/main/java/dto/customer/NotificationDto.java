@@ -42,6 +42,10 @@ public class NotificationDto {
             dto.setTargetUrl("/customer/account");
         } else if ("SHOP".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/shopowner/reopen-request");
+        } else if ("POST_AUDIT".equalsIgnoreCase(n.getTargetType()) || "POST_AUDIT".equalsIgnoreCase(n.getType())) {
+            dto.setTargetUrl("/operations/post-audit");
+        } else if ("SHOP_APPROVAL".equalsIgnoreCase(n.getTargetType()) || "SHOP_APPROVAL".equalsIgnoreCase(n.getType())) {
+            dto.setTargetUrl(n.getTargetId() != null ? "/operations/shops/" + n.getTargetId() : "/operations/shops");
         } else {
             dto.setTargetUrl("/customer/account/notifications");
         }

@@ -36,12 +36,6 @@
         </nav>
 
         <div class="header-actions">
-
-            <!-- Kênh Bán hàng -->
-            <a class="seller-channel-btn" th:href="@{/seller/channel}" title="Kênh Bán hàng">
-                🏪 Kênh Bán hàng
-            </a>
-
             <a class="icon-btn"
                th:href="@{/search}"
                title="Tìm kiếm"
@@ -53,9 +47,7 @@
                     <span class="bell-icon">🔔</span>
                     <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
                 </button>
-                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
-                    <!-- Dynamic content loaded by notifications.js -->
-                </div>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true"></div>
             </div>
 
             <a class="icon-btn cart-btn"
@@ -66,7 +58,7 @@
                 <span id="cartCount" class="cart-count">0</span>
             </a>
 
-            <!-- User Menu & Avatar (CUSTOMER / SHOP_OWNER / ADMIN) -->
+            <!-- User Menu & Avatar -->
             <th:block th:if="${session.role != null}">
                 <div class="user-menu-container">
                     <button type="button" class="user-avatar" th:title="${session.fullName}" aria-label="Menu tài khoản" aria-haspopup="true">
@@ -83,9 +75,7 @@
                             </p>
                         </div>
                         <div class="user-dropdown-links">
-                            <!-- Customer links -->
                             <th:block th:if="${session.role == 'CUSTOMER'}">
-                                <a th:href="@{/seller/channel}">🏪 Kênh Bán hàng</a>
                                 <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
                                 <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
                                 <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
@@ -93,7 +83,6 @@
                                 <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
                             </th:block>
 
-                            <!-- Shop Owner links -->
                             <th:block th:if="${session.role == 'SHOP_OWNER'}">
                                 <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
                                 <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
@@ -101,12 +90,10 @@
                                 <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
                             </th:block>
 
-                            <!-- Delivery Manager links -->
                             <th:block th:if="${session.role == 'DELIVERY_MANAGER'}">
                                 <a th:href="@{/delivery/orders}">🚚 Giao hàng</a>
                             </th:block>
 
-                            <!-- Admin links -->
                             <th:block th:if="${session.role == 'ADMIN'}">
                                 <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
                             </th:block>
@@ -122,6 +109,7 @@
 
             <th:block th:if="${session.role == null}">
                 <a class="login-btn" th:href="@{/login}">Đăng nhập</a>
+                <a class="register-btn" th:href="@{/register}">Đăng ký</a>
             </th:block>
 
         </div>
@@ -134,143 +122,14 @@
     <!-- HERO -->
     <section class="hero">
         <div class="container hero-grid">
-
             <div class="hero-content">
-                <span class="eyebrow">
-                    TRÁI CÂY TƯƠI • GIAO HÀNG TẬN NƠI
-                </span>
-
-                <h1>
-                    Vị tươi ngon
-                    <br>
-                    <span>cho mỗi ngày.</span>
-                </h1>
-
-                <p>
-                    Khám phá những loại trái cây tươi ngon được
-                    tuyển chọn kỹ càng, giao nhanh đến tận tay bạn.
-                </p>
-
+                <span class="eyebrow">TRÁI CÂY TƯƠI • GIAO HÀNG TẬN NƠI</span>
+                <h1>Vị tươi ngon<br><span>cho mỗi ngày.</span></h1>
+                <p>Khám phá những loại trái cây tươi ngon được tuyển chọn kỹ càng, giao nhanh đến tận tay bạn.</p>
                 <div class="hero-actions">
-                    <a class="primary-btn" th:href="@{/search}">
-                        Mua ngay <span>→</span>
-                    </a>
-
-                    <a class="secondary-btn" href="#categories">
-                        Khám phá danh mục
-                    </a>
+                    <a class="primary-btn" th:href="@{/search}">Mua ngay <span>→</span></a>
+                    <a class="secondary-btn" href="#categories">Khám phá danh mục</a>
                 </div>
-
-                <div class="hero-features">
-                    <div><span>✓</span> Tươi mỗi ngày</div>
-                    <div><span>✓</span> Nguồn gốc rõ ràng</div>
-                    <div><span>✓</span> Giao hàng nhanh</div>
-                </div>
-            </div>
-
-            <div class="hero-visual">
-                <div class="hero-orbit orbit-one"></div>
-                <div class="hero-orbit orbit-two"></div>
-
-                <div class="fruit-bowl">
-                    <span class="fruit fruit-orange">🍊</span>
-                    <span class="fruit fruit-apple">🍎</span>
-                    <span class="fruit fruit-grape">🍇</span>
-                    <span class="fruit fruit-lemon">🍋</span>
-                    <span class="fruit fruit-watermelon">🍉</span>
-                </div>
-
-                <div class="fresh-badge">
-                    <strong>100%</strong>
-                    <span>TƯƠI NGON</span>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- BENEFITS -->
-    <section class="quick-benefits">
-        <div class="container benefit-grid">
-
-            <div class="benefit">
-                <div class="benefit-icon">🚚</div>
-                <div>
-                    <strong>Giao hàng nhanh</strong>
-                    <span>Đóng gói cẩn thận</span>
-                </div>
-            </div>
-
-            <div class="benefit">
-                <div class="benefit-icon">🌱</div>
-                <div>
-                    <strong>Nguồn gốc rõ ràng</strong>
-                    <span>Kiểm soát chất lượng</span>
-                </div>
-            </div>
-
-            <div class="benefit">
-                <div class="benefit-icon">🍎</div>
-                <div>
-                    <strong>Tươi mỗi ngày</strong>
-                    <span>Lựa chọn kỹ trước khi giao</span>
-                </div>
-            </div>
-
-            <div class="benefit">
-                <div class="benefit-icon">💳</div>
-                <div>
-                    <strong>Thanh toán an toàn</strong>
-                    <span>Nhiều phương thức tiện lợi</span>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- CATEGORIES -->
-    <section class="section" id="categories">
-        <div class="container">
-
-            <div class="section-heading">
-                <div>
-                    <span class="section-kicker">KHÁM PHÁ</span>
-                    <h2>Danh mục nổi bật</h2>
-                </div>
-
-                <a class="view-all" th:href="@{/search}">Xem tất cả →</a>
-            </div>
-
-            <div class="category-grid">
-
-                <a class="category-card category-red"
-                   th:href="@{/search(categoryId=1)}">
-                    <span class="category-emoji">🍎</span>
-                    <strong>Táo</strong>
-                    <span>Trái cây nhập khẩu</span>
-                </a>
-
-                <a class="category-card category-yellow"
-                   th:href="@{/search(categoryId=2)}">
-                    <span class="category-emoji">🍌</span>
-                    <strong>Chuối</strong>
-                    <span>Tươi ngon mỗi ngày</span>
-                </a>
-
-                <a class="category-card category-purple"
-                   th:href="@{/search(categoryId=3)}">
-                    <span class="category-emoji">🍇</span>
-                    <strong>Nho</strong>
-                    <span>Ngọt mọng tự nhiên</span>
-                </a>
-
-                <a class="category-card category-green"
-                   th:href="@{/search(categoryId=4)}">
-                    <span class="category-emoji">🥝</span>
-                    <strong>Trái cây xanh</strong>
-                    <span>Giàu vitamin</span>
-                </a>
-
             </div>
         </div>
     </section>
@@ -278,203 +137,74 @@
     <!-- PRODUCTS -->
     <section class="section products-section" id="products">
         <div class="container">
-
             <div class="section-heading">
                 <div>
                     <span class="section-kicker">FRESH PICKS</span>
                     <h2>Sản phẩm đang bán</h2>
                 </div>
-
-                <div class="search-box">
-                    <span>⌕</span>
-                    <input id="productSearch"
-                           type="search"
-                           placeholder="Tìm trái cây..."
-                           autocomplete="off"
-                           aria-label="Tìm sản phẩm"
-                           oninput="filterProducts()">
-                </div>
             </div>
 
             <!-- Có sản phẩm -->
-            <div class="product-grid"
-                 th:if="${products != null and !products.isEmpty()}">
-
+            <div class="product-grid" th:if="${products != null and !products.isEmpty()}">
                 <article class="product-card"
                          th:each="variant : ${products}"
                          th:attr="data-name=${variant.name + ' ' + variant.product.name}"
-                         th:onclick="|openProductDetail(${variant.id})|"
-                         role="link"
-                         tabindex="0"
-                         th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
+                         th:onclick="|openProductDetail(${variant.id})|">
 
-                    <!-- Product image -->
                     <div class="product-image">
-
                         <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
                              th:src="${variant.imageUrl}"
                              th:alt="${variant.name}"
                              onerror="handleImageError(this)">
-
                         <div class="image-placeholder"
-                             th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
-                                ? 'display:none' : 'display:grid'">
+                             th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()} ? 'display:none' : 'display:grid'">
                             🍎
                         </div>
-
                         <span class="fresh-tag">Đang bán</span>
-
-                        <button class="heart-btn"
-                                type="button"
-                                title="Yêu thích"
-                                aria-label="Thêm vào yêu thích"
-                                th:attr="data-favorite-id=${variant.id}"
-                                onclick="toggleFavorite(event, this)">
-                            ♡
-                        </button>
                     </div>
 
-                    <!-- Product info -->
                     <div class="product-info">
-
-                        <span class="product-category"
-                              th:text="${variant.product.name}">
-                            Trái cây
-                        </span>
-
-                        <h3 th:text="${variant.name}">
-                            Tên sản phẩm
-                        </h3>
+                        <span class="product-category" th:text="${variant.product.name}">Trái cây</span>
+                        <h3 th:text="${variant.name}">Tên sản phẩm</h3>
 
                         <div class="product-bottom">
-
-                            <span class="price-old" th:if="${variant.promotionalPrice != null}"
-                                  th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
-                            <strong class="price price-promotion"
-                                    th:if="${variant.price != null and variant.promotionalPrice != null}"
-                                    th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
                             <strong class="price"
-                                    th:if="${variant.price != null and variant.promotionalPrice == null}"
+                                    th:if="${variant.price != null}"
                                     th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</strong>
 
-                            <strong class="price"
-                                    th:unless="${variant.price != null}">
-                                Liên hệ
-                            </strong>
-
-                            <!-- Nút thêm giỏ hàng được cập nhật gọi hàm AJAX dùng chung -->
-                            <button type="button"
-                                    class="add-btn"
-                                    title="Thêm vào giỏ"
-                                    th:attr="data-variant-id=${variant.id}"
-                                    onclick="addProductToCart(event, this)">
-                                +
-                            </button>
-
+                            <!-- Form thêm giỏ hàng gọi hàm JS chung -->
+                            <form th:action="@{/cart/items}"
+                                  method="post"
+                                  class="add-cart-form"
+                                  th:attr="data-variant-id=${variant.id}"
+                                  onclick="event.stopPropagation()"
+                                  onsubmit="addToCart(event, this)">
+                                <input type="hidden" name="variantId" th:value="${variant.id}">
+                                <input type="hidden" name="quantity" value="1">
+                                <button class="add-btn" type="submit">+</button>
+                            </form>
                         </div>
                     </div>
                 </article>
-
             </div>
-
-            <!-- Không có sản phẩm -->
-            <div class="empty-state"
-                 th:if="${products == null or products.isEmpty()}">
-
-                <div>🍃</div>
-
-                <h3>Chưa có sản phẩm đang bán</h3>
-
-                <p>
-                    Hiện chưa có sản phẩm nào phù hợp.
-                    Vui lòng quay lại sau.
-                </p>
-
-                <a class="primary-btn" th:href="@{/search}">
-                    Xem sản phẩm <span>→</span>
-                </a>
-            </div>
-
-            <p class="no-result"
-               id="noResult"
-               style="display:none;">
-                Không tìm thấy sản phẩm phù hợp.
-            </p>
-
         </div>
     </section>
-
-    <!-- ABOUT -->
-    <section class="promo-section" id="about">
-        <div class="container promo-card">
-
-            <div>
-                <span class="section-kicker">FRESHFRUIT</span>
-
-                <h2>
-                    Tươi ngon từ nguồn
-                    <br>
-                    đến bàn ăn.
-                </h2>
-
-                <p>
-                    Chúng tôi lựa chọn những sản phẩm chất lượng
-                    để mang đến trải nghiệm mua trái cây đơn giản
-                    và đáng tin cậy.
-                </p>
-
-                <a class="primary-btn" th:href="@{/search}">
-                    Khám phá ngay <span>→</span>
-                </a>
-            </div>
-
-            <div class="promo-visual">
-                <span>🍓</span>
-                <span>🍊</span>
-                <span>🍇</span>
-                <span>🥭</span>
-            </div>
-
-        </div>
-    </section>
-
 </main>
 
 <!-- FOOTER -->
 <footer class="site-footer">
     <div class="container footer-inner">
-
-        <div>
-            <a class="brand footer-brand" th:href="@{/}">
-                <span class="brand-mark">F</span>
-                <span>
-                    <strong>FreshFruit</strong>
-                    <small>Tươi ngon mỗi ngày</small>
-                </span>
-            </a>
-
-            <p>Trái cây tươi chất lượng, giao tận nơi.</p>
-        </div>
-
-        <div class="footer-links">
-            <a th:href="@{/search}">Sản phẩm</a>
-            <a href="#categories">Danh mục</a>
-            <a href="#about">Về chúng tôi</a>
-        </div>
-
-        <small>© 2026 FreshFruit. All rights reserved.</small>
+        <p>© 2026 FreshFruit. All rights reserved.</p>
     </div>
 </footer>
-
-<!-- Toast Notifications -->
-<div id="toast-container"></div>
 
 <!-- JAVASCRIPT -->
 <script th:src="@{/js/home.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
 <script th:src="@{/js/user-menu.js}"></script>
 <script th:src="@{/js/notifications.js}"></script>
-<script th:src="@{/js/product-cart.js}"></script>
+<!-- Thay thế toàn bộ script cũ bằng file quản lý giỏ hàng sạch sẽ này -->
+<script th:src="@{/js/home-cart-sync.js}"></script>
 
 </body>
 </html>

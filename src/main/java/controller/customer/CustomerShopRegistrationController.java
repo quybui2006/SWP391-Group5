@@ -77,11 +77,6 @@ public class CustomerShopRegistrationController {
             return "redirect:/seller/status";
         }
 
-        Object role = session.getAttribute("role");
-        if ("SHOP_OWNER".equals(role)) {
-            return "redirect:/shopowner/home";
-        }
-
         if (session.getAttribute(SESSION_ACTIVATION_KEY) != null) {
             return "redirect:/seller/create-shop";
         }
@@ -466,9 +461,8 @@ public class CustomerShopRegistrationController {
     }
 
     @GetMapping("/register/shop-owner")
-    public String showShopOwnerRegistrationLanding(Model model) {
-        model.addAttribute("provinces", shopRegistrationService.getAllActiveProvinces());
-        return "login/register-shop-owner";
+    public String showShopOwnerRegistrationLanding() {
+        return "redirect:/register?role=shop_owner";
     }
 }
 
