@@ -207,6 +207,30 @@ public class ShopProductService {
         variantRepository.save(variant); inventoryRepository.save(inventory);
     }
 
+    @Transactional
+    public void hideVariantFromSale(Long variantId, Long ownerUserId) {
+        ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
+        if ("ACTIVE".equals(variant.getStatus())) {
+            variant.setStatus("INACTIVE");
+            variantRepository.save(variant);
+        }
+    }
+
+    @Transactional
+    public void showVariantForSale(Long variantId, Long ownerUserId) {
+        ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
+        if ("REJECTED".equals(variant.getApprovalStatus())) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    "Operations đã từ chối biến thể này nên không thể bật bán lại."
+            );
+        }
+        if ("INACTIVE".equals(variant.getStatus())) {
+            variant.setStatus("ACTIVE");
+            variantRepository.save(variant);
+        }
+    }
+
     // Tan PTH integration: expose the same persisted variant/inventory rows used by product detail.
     public List<Map<String, Object>> searchShopVariants(Long ownerUserId, String keyword) {
         Long shopId = requireShopId(ownerUserId);
