@@ -41,7 +41,8 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
                 s.id, s.name, s.description, u.fullName, u.email, s.phone,
                 s.provinceCode, s.wardName, s.addressDetail, s.approvalStatus,
                 s.operatingStatus, s.createdAt, s.reviewedAt, s.rejectionReason,
-                s.paymentApprovalStatus, s.sellerApprovalStatus
+                s.paymentApprovalStatus, s.sellerApprovalStatus,
+                s.bankName, s.bankAccountNumber, s.bankAccountName, s.idCardName
             )
             FROM Shop s, User u
             WHERE u.id = s.ownerId
@@ -80,7 +81,8 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
                 s.id, s.name, s.description, u.fullName, u.email, s.phone,
                 s.provinceCode, s.wardName, s.addressDetail, s.approvalStatus,
                 s.operatingStatus, s.createdAt, s.reviewedAt, s.rejectionReason,
-                s.paymentApprovalStatus, s.sellerApprovalStatus
+                s.paymentApprovalStatus, s.sellerApprovalStatus,
+                s.bankName, s.bankAccountNumber, s.bankAccountName, s.idCardName
             )
             FROM Shop s, User u
             WHERE u.id = s.ownerId AND s.paymentApprovalStatus = :status

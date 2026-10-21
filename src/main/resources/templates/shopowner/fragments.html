@@ -84,6 +84,11 @@
             <span>♧</span> Tồn kho
         </a>
 
+        <a th:classappend="${activePage == 'payment-verification'} ? ' active' : ''"
+           th:href="@{/shopowner/payment-verification}">
+            <span>💳</span> Đối soát thanh toán
+        </a>
+
         <span class="nav-label">KHÁC</span>
 
         <a href="#" data-pending>

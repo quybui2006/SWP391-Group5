@@ -160,20 +160,27 @@ public class OperationsShopApprovalController {
     }
 
     @PostMapping("/operations/shops/{id:[0-9]+}/payment/approve")
-    public String approvePaymentForm(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String approvePaymentForm(
+            @PathVariable Long id,
+            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            RedirectAttributes redirectAttributes) {
         try {
             approvals.approvePayment(id);
             redirectAttributes.addFlashAttribute("successMessage", "Đã phê duyệt thông tin tài khoản ngân hàng thành công! Cửa hàng đã được mở bán (OPEN).");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/operations/shops/" + id;
+        if (redirectUrl != null && !redirectUrl.isBlank()) {
+            return "redirect:" + redirectUrl;
+        }
+        return "redirect:/operations/payments";
     }
 
     @PostMapping("/operations/shops/{id:[0-9]+}/payment/reject")
     public String rejectPaymentForm(
             @PathVariable Long id,
             @RequestParam("reason") String reason,
+            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
             RedirectAttributes redirectAttributes) {
         try {
             approvals.rejectPayment(id, reason);
@@ -181,7 +188,10 @@ public class OperationsShopApprovalController {
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/operations/shops/" + id;
+        if (redirectUrl != null && !redirectUrl.isBlank()) {
+            return "redirect:" + redirectUrl;
+        }
+        return "redirect:/operations/payments";
     }
 
     // JSON API for existing AJAX callers

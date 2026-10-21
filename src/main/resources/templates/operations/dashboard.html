@@ -8,8 +8,8 @@
     <main class="main-content">
         <header th:replace="~{operations/layout :: pageHeader('Tổng quan Vận hành', 'Phân tích hiệu suất toàn bộ cửa hàng và chỉ số SLA thời gian thẩm định hồ sơ')}"></header>
 
-        <!-- KPI STATS CARDS (4 COLUMNS) -->
-        <section class="stats-grid">
+        <!-- KPI STATS CARDS (5 COLUMNS) -->
+        <section class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
             <!-- 1. Tổng cửa hàng -->
             <div class="stat-card">
                 <div class="stat-icon blue">🏪</div>
@@ -34,7 +34,19 @@
                 </div>
             </a>
 
-            <!-- 3. Tạm dừng / Từ chối -->
+            <!-- 3. Chờ Đối soát thanh toán -->
+            <a th:href="@{/operations/payments(status='PENDING')}" class="stat-card">
+                <div class="stat-icon purple" style="background: #eff6ff; color: #2563eb;">💳</div>
+                <div class="stat-info">
+                    <div class="stat-label">Chờ Đối soát</div>
+                    <strong style="color: #2563eb;" th:text="${shopPerformance.pendingPayments ?: 0}">0</strong>
+                    <p class="stat-sub warning" style="color: #1e40af;">
+                        Đối soát tài khoản →
+                    </p>
+                </div>
+            </a>
+
+            <!-- 4. Tạm dừng / Từ chối -->
             <div class="stat-card">
                 <div class="stat-icon red">⚠️</div>
                 <div class="stat-info">
@@ -46,7 +58,7 @@
                 </div>
             </div>
 
-            <!-- 4. Doanh thu toàn sàn -->
+            <!-- 5. Doanh thu toàn sàn -->
             <div class="stat-card">
                 <div class="stat-icon green">💰</div>
                 <div class="stat-info">

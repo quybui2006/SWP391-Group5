@@ -41,6 +41,10 @@
                         style="background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:11.5px;font-weight:600;cursor:pointer;">
                     🏪 Yêu cầu duyệt Shop
                 </button>
+                <button type="button" class="op-notif-tab" data-filter="payment"
+                        style="background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:11.5px;font-weight:600;cursor:pointer;">
+                    💳 Đối soát thanh toán
+                </button>
                 <button type="button" class="op-notif-tab" data-filter="audit"
                         style="background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:11.5px;font-weight:600;cursor:pointer;">
                     🔍 Giải trình Hậu kiểm
@@ -57,7 +61,7 @@
                     
                     <!-- Icon Box -->
                     <div style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;"
-                         th:styleappend="${n.type == 'POST_AUDIT' ? 'background:#f3e8ff;color:#9333ea;' : 'background:#e9f8ee;color:#16804b;'}">
+                         th:styleappend="${n.type == 'POST_AUDIT' ? 'background:#f3e8ff;color:#9333ea;' : (n.type == 'OP_PAYMENT' or n.type == 'PAYMENT' ? 'background:#eff6ff;color:#2563eb;' : 'background:#e9f8ee;color:#16804b;')}">
                         <span th:text="${n.icon ?: '🔔'}">🏪</span>
                     </div>
 
@@ -69,7 +73,11 @@
                                       style="background:#f3e8ff;color:#7e22ce;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">
                                     GIẢI TRÌNH HẬU KIỂM
                                 </span>
-                                <span th:if="${n.type != 'POST_AUDIT'}"
+                                <span th:if="${n.type == 'OP_PAYMENT' or n.type == 'PAYMENT' or n.type == 'PAYMENT_VERIFICATION'}"
+                                      style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">
+                                    ĐỐI SOÁT THANH TOÁN
+                                </span>
+                                <span th:if="${n.type != 'POST_AUDIT' and n.type != 'OP_PAYMENT' and n.type != 'PAYMENT' and n.type != 'PAYMENT_VERIFICATION'}"
                                       style="background:#e9f8ee;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">
                                     DUYỆT MỞ SHOP
                                 </span>
@@ -86,10 +94,11 @@
                         <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f0f3f1;padding-top:10px;">
                             <span style="font-size:11px;color:var(--muted);" th:text="'Thời gian: ' + ${n.createdAtFormatted}">Thời gian</span>
                             
-                            <a th:href="${n.targetUrl ?: '/operations/shops'}"
+                            <a th:href="${n.targetUrl ?: '/operations/payments'}"
                                style="color:#28a866;font-weight:700;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
                                 <span th:if="${n.type == 'POST_AUDIT'}">Kiểm tra Hậu kiểm ➔</span>
-                                <span th:if="${n.type != 'POST_AUDIT'}">Thẩm định hồ sơ ➔</span>
+                                <span th:if="${n.type == 'OP_PAYMENT' or n.type == 'PAYMENT' or n.type == 'PAYMENT_VERIFICATION'}">Đối soát tài khoản ➔</span>
+                                <span th:if="${n.type != 'POST_AUDIT' and n.type != 'OP_PAYMENT' and n.type != 'PAYMENT' and n.type != 'PAYMENT_VERIFICATION'}">Thẩm định hồ sơ ➔</span>
                             </a>
                         </div>
                     </div>
@@ -138,7 +147,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (filter === 'unread') {
                     card.style.display = isUnread ? 'flex' : 'none';
                 } else if (filter === 'shop') {
-                    card.style.display = (type !== 'POST_AUDIT') ? 'flex' : 'none';
+                    card.style.display = (type !== 'POST_AUDIT' && type !== 'OP_PAYMENT' && type !== 'PAYMENT') ? 'flex' : 'none';
+                } else if (filter === 'payment') {
+                    card.style.display = (type === 'OP_PAYMENT' || type === 'PAYMENT' || type === 'PAYMENT_VERIFICATION') ? 'flex' : 'none';
                 } else if (filter === 'audit') {
                     card.style.display = (type === 'POST_AUDIT') ? 'flex' : 'none';
                 }
