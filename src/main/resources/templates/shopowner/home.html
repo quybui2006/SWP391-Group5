@@ -229,56 +229,47 @@
                     </div>
                 </div>
 
-                <p>
-                    Trạng thái duyệt:
-                    <strong th:text="${shop.approvalStatus}">
-                        Chưa xác định
-                    </strong>
-                </p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 10px;">
+                    <span style="font-size: 11px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px; color: #475569;">
+                        Duyệt: <strong style="color: #16a34a;" th:text="${shop.approvalStatus}">APPROVED</strong>
+                    </span>
+                    <span style="font-size: 11px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px; color: #475569;">
+                        Hoạt động: <strong style="color: #0284c7;" th:text="${shop.operatingStatus}">OPEN</strong>
+                    </span>
+                    <span style="font-size: 11px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px; color: #475569;">
+                        Sản phẩm: <strong style="color: #0f172a;" th:text="${stats.products}">0</strong>
+                    </span>
+                </div>
 
-                <p>
-                    Trạng thái hoạt động:
-                    <strong th:text="${shop.operatingStatus}">
-                        Chưa xác định
-                    </strong>
-                </p>
-
-                <p>
-                    Số sản phẩm:
-                    <strong th:text="${stats.products}">
-                        0
-                    </strong>
-                </p>
-
-                <div style="margin-top: 14px;">
-                    <h4 style="font-size: 13px; font-weight: 700; color: #475569; margin: 0 0 10px; text-transform: uppercase;">Xu hướng doanh thu 7 ngày qua</h4>
-                    <div style="display: flex; align-items: flex-end; gap: 10px; height: 120px; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                <div style="margin-top: 8px;">
+                    <h4 style="font-size: 11.5px; font-weight: 700; color: #475569; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.3px;">Xu hướng doanh thu 7 ngày qua</h4>
+                    <div style="display: flex; align-items: flex-end; gap: 8px; height: 86px; padding: 4px 0; border-bottom: 1px solid #f1f5f9;">
                         <th:block th:each="day : ${revenueAnalytics.dailyTrend}">
-                            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end;">
-                                <span style="font-size: 10px; font-weight: 700; color: #16a34a;" th:text="${#numbers.formatInteger(day.revenue, 1, 'COMMA')}">0</span>
-                                <div style="width: 100%; max-width: 28px; background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); border-radius: 4px 4px 0 0; min-height: 6px;"
-                                     th:styleappend="${day.revenue > 0 ? 'height:' + (day.revenue > 500000 ? 80 : 40) + 'px;' : 'height:6px;background:#e2e8f0;'}"></div>
-                                <span style="font-size: 11px; color: #64748b;" th:text="${day.day_label}">01/01</span>
+                            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end;">
+                                <span style="font-size: 9.5px; font-weight: 700; color: #16a34a;" th:text="${#numbers.formatInteger(day.revenue, 1, 'COMMA')}">0</span>
+                                <div style="width: 100%; max-width: 24px; background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); border-radius: 3px 3px 0 0; min-height: 5px;"
+                                     th:styleappend="${day.revenue > 0 ? 'height:' + (day.revenue > 500000 ? 56 : 30) + 'px;' : 'height:5px;background:#e2e8f0;'}"></div>
+                                <span style="font-size: 10px; color: #64748b;" th:text="${day.day_label}">01/01</span>
                             </div>
                         </th:block>
-                        <div th:if="${#lists.isEmpty(revenueAnalytics.dailyTrend)}" style="width: 100%; text-align: center; color: #94a3b8; font-size: 13px; padding-top: 40px;">
+                        <div th:if="${#lists.isEmpty(revenueAnalytics.dailyTrend)}" style="width: 100%; text-align: center; color: #94a3b8; font-size: 12px; padding-top: 25px;">
                             Chưa có dữ liệu doanh thu trong 7 ngày gần đây.
                         </div>
                     </div>
 
                     <!-- Order statuses breakdown -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px;">
-                        <div style="background: #f8fafc; padding: 8px 10px; border-radius: 8px; text-align: center;">
-                            <small style="color: #64748b; font-size: 11px; display: block;">Chờ xác nhận</small>
-                            <strong style="color: #ea580c; font-size: 14px;" th:text="${revenueAnalytics.statusCounts.pending}">0</strong>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">
+                        <div style="background: #f8fafc; padding: 5px 8px; border-radius: 6px; text-align: center;">
+                            <small style="color: #64748b; font-size: 10px; display: block;">Chờ xác nhận</small>
+                            <strong style="color: #ea580c; font-size: 13px;" th:text="${revenueAnalytics.statusCounts.pending}">0</strong>
                         </div>
-                        <div style="background: #f8fafc; padding: 8px 10px; border-radius: 8px; text-align: center;">
-                            <small style="color: #64748b; font-size: 11px; display: block;">Đang giao</small>
-                            <strong style="color: #0284c7; font-size: 14px;" th:text="${revenueAnalytics.statusCounts.shipping}">0</strong>
+                        <div style="background: #f8fafc; padding: 5px 8px; border-radius: 6px; text-align: center;">
+                            <small style="color: #64748b; font-size: 10px; display: block;">Đang giao</small>
+                            <strong style="color: #0284c7; font-size: 13px;" th:text="${revenueAnalytics.statusCounts.shipping}">0</strong>
                         </div>
-                        <div style="background: #f8fafc; padding: 8px 10px; border-radius: 8px; text-align: center;">
-                            <small style="color: #64748b; font-size: 11px; display: block;">Hoàn thành</small>
-                            <strong style="color: #16a34a; font-size: 14px;" th:text="${revenueAnalytics.statusCounts.completed}">0</strong>
+                        <div style="background: #f8fafc; padding: 5px 8px; border-radius: 6px; text-align: center;">
+                            <small style="color: #64748b; font-size: 10px; display: block;">Hoàn thành</small>
+                            <strong style="color: #16a34a; font-size: 13px;" th:text="${revenueAnalytics.statusCounts.completed}">0</strong>
                         </div>
                     </div>
                 </div>
@@ -480,7 +471,7 @@
         </section>
 
         <!-- SECTION: CẢNH BÁO TỒN KHO -->
-        <section class="panel table-panel" style="margin-top: 24px;">
+        <section class="panel table-panel" style="margin-top: 14px;">
             <div class="panel-heading">
                 <div>
                     <h2>📦 Tình hình Tồn kho & Cảnh báo nhập hàng</h2>
@@ -549,7 +540,7 @@
         </section>
 
         <!-- SECTION: KHÁCH HÀNG HAY MUA -->
-        <section class="panel table-panel" style="margin-top: 24px;">
+        <section class="panel table-panel" style="margin-top: 14px;">
             <div class="panel-heading">
                 <div>
                     <h2>👥 Khách hàng hay mua (Frequent Customers)</h2>

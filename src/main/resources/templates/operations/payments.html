@@ -16,93 +16,88 @@
                 ❌ <span th:text="${errorMessage}">Đã xảy ra lỗi!</span>
             </div>
 
-            <!-- Flow Step Banner -->
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <span style="font-size:24px;">3️⃣</span>
+            <!-- Guide Banner -->
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:11px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">💳</span>
                     <div>
-                        <strong style="font-size:14px;color:#1e40af;">Quy trình duyệt: Giai đoạn 3 - Xác minh thanh toán cho Shop Owner</strong>
-                        <div style="font-size:12px;color:#2563eb;margin-top:2px;">
-                            Sau khi Shop đã được phê duyệt mở gian hàng (Giai đoạn 2), đối soát tên chủ tài khoản ngân hàng với họ tên trên CCCD để kích hoạt mở bán (OPEN).
+                        <strong style="font-size:13px;color:#1e40af;">Đối soát thanh toán &amp; Tài khoản ngân hàng</strong>
+                        <div style="font-size:11.5px;color:#2563eb;margin-top:1px;">
+                            Đối soát tên chủ tài khoản ngân hàng của Shop Owner với họ tên trên CCCD đã thẩm định để đảm bảo giao dịch minh bạch.
                         </div>
                     </div>
                 </div>
-                <div style="display:flex;gap:8px;font-size:12px;font-weight:700;">
-                    <span style="background:#e2e8f0;color:#64748b;padding:4px 10px;border-radius:20px;">1. Tài khoản bán hàng</span>
-                    <span style="background:#e2e8f0;color:#64748b;padding:4px 10px;border-radius:20px;">2. Duyệt mở Shop</span>
-                    <span style="background:#2563eb;color:#fff;padding:4px 10px;border-radius:20px;">3. Xác minh thanh toán</span>
+                <div style="display:flex;gap:8px;font-size:11.5px;font-weight:700;">
+                    <span style="background:#2563eb;color:#fff;padding:3px 10px;border-radius:16px;">Xác minh tài khoản thụ hưởng</span>
                 </div>
             </div>
 
             <!-- KPI Summary Cards -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
-                <a th:href="@{/operations/payments(status='PENDING')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #fed7aa;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#ffedd5;color:#c2410c;display:flex;align-items:center;justify-content:center;font-size:20px;">⏳</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#9a3412;text-transform:uppercase;">Chờ đối soát</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.pending}">0</div>
-                        </div>
+            <div class="stats-grid">
+                <a th:href="@{/operations/payments(status='PENDING')}" class="stat-card">
+                    <div class="stat-icon orange">⏳</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Chờ đối soát</div>
+                        <strong style="color: #ea580c;" th:text="${stats.pending}">0</strong>
+                        <p class="stat-sub warning">Cần đối soát</p>
                     </div>
                 </a>
 
-                <a th:href="@{/operations/payments(status='APPROVED')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #bbf7d0;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:20px;">✓</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#166534;text-transform:uppercase;">Đã duyệt</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.approved}">0</div>
-                        </div>
+                <a th:href="@{/operations/payments(status='APPROVED')}" class="stat-card">
+                    <div class="stat-icon green">✓</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Đã duyệt</div>
+                        <strong style="color: #16a34a;" th:text="${stats.approved}">0</strong>
+                        <p class="stat-sub positive">Đã kích hoạt</p>
                     </div>
                 </a>
 
-                <a th:href="@{/operations/payments(status='REJECTED')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #fecaca;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:20px;">✕</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;">Từ chối</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.rejected}">0</div>
-                        </div>
+                <a th:href="@{/operations/payments(status='REJECTED')}" class="stat-card">
+                    <div class="stat-icon red">✕</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Từ chối</div>
+                        <strong style="color: #dc2626;" th:text="${stats.rejected}">0</strong>
+                        <p class="stat-sub danger">Không trùng khớp</p>
                     </div>
                 </a>
 
-                <a th:href="@{/operations/payments(status='ALL')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:20px;">💳</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;">Tổng hồ sơ</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.total}">0</div>
-                        </div>
+                <a th:href="@{/operations/payments(status='ALL')}" class="stat-card">
+                    <div class="stat-icon blue">💳</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Tổng hồ sơ</div>
+                        <strong th:text="${stats.total}">0</strong>
+                        <p class="stat-sub">Toàn bộ hồ sơ</p>
                     </div>
                 </a>
             </div>
 
-            <!-- Filter Tabs -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-                <div style="display:inline-flex;background:#e2e8f0;padding:4px;border-radius:10px;gap:4px;">
+            <!-- Filter Tabs & Toolbar -->
+            <div class="table-toolbar">
+                <div class="filter-tabs">
                     <a th:href="@{/operations/payments(status='PENDING')}" 
-                       th:style="${currentStatus == 'PENDING'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'PENDING'} ? ' active' : ''">
                         Đang chờ duyệt (<span th:text="${stats.pending}">0</span>)
                     </a>
                     <a th:href="@{/operations/payments(status='APPROVED')}" 
-                       th:style="${currentStatus == 'APPROVED'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'APPROVED'} ? ' active' : ''">
                         Đã duyệt (<span th:text="${stats.approved}">0</span>)
                     </a>
                     <a th:href="@{/operations/payments(status='REJECTED')}" 
-                       th:style="${currentStatus == 'REJECTED'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'REJECTED'} ? ' active' : ''">
                         Từ chối (<span th:text="${stats.rejected}">0</span>)
                     </a>
                     <a th:href="@{/operations/payments(status='ALL')}" 
-                       th:style="${currentStatus == 'ALL'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'ALL'} ? ' active' : ''">
                         Tất cả (<span th:text="${stats.total}">0</span>)
                     </a>
                 </div>
 
-                <form th:action="@{/operations/payments}" method="get" style="display:flex;align-items:center;gap:8px;margin:0;">
+                <form th:action="@{/operations/payments}" method="get" class="search-field" style="margin: 0;">
                     <input type="hidden" name="status" th:value="${currentStatus}">
-                    <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, số điện thoại..." style="padding:8px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;min-width:240px;">
-                    <button type="submit" style="padding:8px 14px;background:#28a866;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Tìm kiếm</button>
-                    <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/payments(status=${currentStatus})}" style="font-size:13px;color:#dc2626;text-decoration:none;">Xóa tìm</a>
+                    <span aria-hidden="true">⌕</span>
+                    <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, SĐT...">
+                    <button type="submit" class="button button-primary" style="padding: 4px 10px; font-size: 11px;">Tìm</button>
+                    <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/payments(status=${currentStatus})}" style="font-size: 11.5px; color: #dc2626; margin-left: 4px;">Xóa tìm</a>
                 </form>
             </div>
 

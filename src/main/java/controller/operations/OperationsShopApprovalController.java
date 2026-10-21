@@ -18,9 +18,13 @@ import java.util.Map;
 @Controller
 public class OperationsShopApprovalController {
     private final OperationsShopApprovalService approvals;
+    private final service.operations.OperationsShopManagementService shops;
 
-    public OperationsShopApprovalController(OperationsShopApprovalService approvals) {
+    public OperationsShopApprovalController(
+            OperationsShopApprovalService approvals,
+            service.operations.OperationsShopManagementService shops) {
         this.approvals = approvals;
+        this.shops = shops;
     }
 
     @GetMapping("/operations/sellers")
@@ -110,6 +114,7 @@ public class OperationsShopApprovalController {
     public String shopApprovalDetail(@PathVariable Long id, Model model) {
         ShopApprovalDetailDto shop = approvals.getShopDetail(id);
         model.addAttribute("shop", shop);
+        model.addAttribute("variants", shops.listShopVariants(id));
         model.addAttribute("activeNav", "shops");
         return "operations/shop-detail";
     }
