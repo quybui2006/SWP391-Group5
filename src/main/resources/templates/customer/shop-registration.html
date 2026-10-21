@@ -516,8 +516,11 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="wardName">Phường / Xã / Thị trấn <span class="req">*</span></label>
-                            <input type="text" id="wardName" th:field="*{wardName}" class="form-control" placeholder="Ví dụ: Phường Dịch Vọng Hậu" required>
+                            <label for="wardNameSelect">Phường / Xã / Thị trấn <span class="req">*</span></label>
+                            <select id="wardNameSelect" class="form-control" required disabled>
+                                <option value="">-- Vui lòng chọn Tỉnh / Thành phố trước --</option>
+                            </select>
+                            <input type="text" id="wardName" th:field="*{wardName}" class="form-control" style="display:none; margin-top:8px;" placeholder="Nhập tên Phường / Xã kho hàng">
                             <span class="field-error" th:if="${#fields.hasErrors('wardName')}" th:errors="*{wardName}">Lỗi phường xã</span>
                         </div>
                     </div>
@@ -672,5 +675,6 @@
         </script>
     </main>
 </div>
+<script th:src="@{/js/address-ward-selector.js}"></script>
 </body>
 </html>
