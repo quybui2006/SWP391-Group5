@@ -32,8 +32,15 @@ public class RegisterController {
         this.emailService = emailService;
     }
     @GetMapping("/register")
-    public String showForm(org.springframework.ui.Model model) {
-        model.addAttribute("form", new RegisterRequest());
+    public String showForm(@RequestParam(value = "role", required = false) String role,
+                           org.springframework.ui.Model model) {
+        RegisterRequest form = new RegisterRequest();
+        if (role != null && (role.equalsIgnoreCase("seller") || role.equalsIgnoreCase("shop_owner") || role.equalsIgnoreCase("shopowner") || role.equalsIgnoreCase("ban_hang"))) {
+            form.setRole("SHOP_OWNER");
+        } else {
+            form.setRole("CUSTOMER");
+        }
+        model.addAttribute("form", form);
         return "login/register";
     }
 

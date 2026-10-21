@@ -35,10 +35,7 @@ Ví dụ: feat/shop-registration, feat/delivery-status.
 
 ## Chạy ứng dụng
 
-Yêu cầu JDK 17 và MySQL. Trong MySQL Workbench, chạy file `OnlineFruitShoppingPlatform.sql` để tạo database `freshfruit_v5` và các bảng.
-
-Mở PowerShell tại thư mục dự án, cấu hình thông tin MySQL rồi chạy:
-
+Yêu cầu JDK 17 và MySQL. 
 ```powershell
 $env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
