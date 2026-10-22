@@ -17,10 +17,20 @@ public class DeliveryManagerController {
         this.deliveryOrderService = deliveryOrderService;
     }
 
+    private boolean isDeliveryManager(HttpSession session) {
+        Object roleObj = session.getAttribute("role");
+        if (roleObj == null) return false;
+        String role = roleObj.toString().toUpperCase();
+        return role.contains("DELIVERY") || role.contains("SHIPPER");
+    }
+
     @GetMapping({"", "/", "/orders"})
     public String listOrders(HttpSession session, Model model) {
         if (session.getAttribute("userId") == null) {
             return "redirect:/login";
+        }
+        if (!isDeliveryManager(session)) {
+            return "redirect:/"; // Không phải shipper thì đá về trang chủ
         }
 
         model.addAttribute("orders", deliveryOrderService.getDeliveryOrders());
@@ -33,6 +43,9 @@ public class DeliveryManagerController {
     public String orderDetail(@PathVariable("id") Long orderId, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         if (session.getAttribute("userId") == null) {
             return "redirect:/login";
+        }
+        if (!isDeliveryManager(session)) {
+            return "redirect:/";
         }
 
         try {
@@ -57,6 +70,9 @@ public class DeliveryManagerController {
 
         if (session.getAttribute("userId") == null) {
             return "redirect:/login";
+        }
+        if (!isDeliveryManager(session)) {
+            return "redirect:/";
         }
 
         try {

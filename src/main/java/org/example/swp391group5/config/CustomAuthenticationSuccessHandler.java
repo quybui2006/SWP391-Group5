@@ -5,48 +5,74 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import service.login.CustomerDetailsService;
+import repository.UserRepository;
 
 import java.io.IOException;
+import java.util.Collection;
 
 @Component
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+
+    private final UserRepository userRepository;
+
+    public CustomAuthenticationSuccessHandler(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-        HttpSession session = request.getSession(true);
-        if (authentication.getPrincipal() instanceof CustomerDetailsService userDetails) {
-            session.setAttribute("userId", userDetails.getId());
-            session.setAttribute("fullName", userDetails.getFullname());
-            session.setAttribute("role", userDetails.getPrimaryRole());
+        HttpSession session = request.getSession();
+        String email = authentication.getName();
 
-            String continueTo = request.getParameter("continueTo");
-            if ("CUSTOMER".equals(userDetails.getPrimaryRole())) {
-                if (isValidRedirect(continueTo)) {
-                    response.sendRedirect(continueTo);
-                } else {
-                    response.sendRedirect("/");
-                }
-                return;
-            }
+        userRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("fullName", user.getFullName());
+            session.setAttribute("email", user.getEmail());
+        });
 
-            switch (userDetails.getPrimaryRole()) {
-                case "ADMIN" -> response.sendRedirect("/admin");
-                case "OPERATIONS_MANAGER" -> response.sendRedirect("/operations/dashboard");
-                case "SHOP_OWNER" -> response.sendRedirect("/shopowner/home");
-                case "CS_STAFF" -> response.sendRedirect("/cs/dashboard");
-                default -> response.sendRedirect("/");
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        String targetUrl = "/";
+        String sessionRole = "CUSTOMER";
+
+        for (GrantedAuthority auth : authorities) {
+            String role = auth.getAuthority().toUpperCase();
+            if (role.contains("DELIVERY") || role.contains("SHIPPER")) {
+                sessionRole = "DELIVERY_MANAGER";
+                targetUrl = "/delivery/orders";
+                break;
+            } else if (role.contains("ADMIN")) {
+                sessionRole = "ADMIN";
+                targetUrl = "/admin";
+                break;
+            } else if (role.contains("OPERATIONS")) {
+                sessionRole = "OPERATIONS_MANAGER";
+                targetUrl = "/operations/dashboard";
+                break;
+            } else if (role.contains("SHOP_OWNER")) {
+                sessionRole = "SHOP_OWNER";
+                targetUrl = "/shopowner/home";
+                break;
+            } else if (role.contains("CS_STAFF")) {
+                sessionRole = "CS_STAFF";
+                targetUrl = "/cs/dashboard";
+                break;
             }
-        } else {
-            response.sendRedirect("/");
         }
-    }
 
-    private boolean isValidRedirect(String path) {
-        return path != null && path.startsWith("/") && !path.startsWith("//") && !path.contains("\\") && !"/".equals(path);
+        session.setAttribute("role", sessionRole);
+
+        if ("CUSTOMER".equals(sessionRole)) {
+            String continueTo = request.getParameter("continueTo");
+            if (continueTo != null && continueTo.startsWith("/") && !continueTo.startsWith("//") && !continueTo.equals("/")) {
+                targetUrl = continueTo;
+            }
+        }
+
+        response.sendRedirect(request.getContextPath() + targetUrl);
     }
 }

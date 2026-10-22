@@ -14,35 +14,37 @@ import service.login.LoginService;
 @Controller
 public class LoginController {
     private final LoginService loginService;
+
     public LoginController(LoginService loginService) {
         this.loginService = loginService;
     }
+
     @GetMapping("/login")
     // Tan PTH integration: preserve the requested customer page through login.
-    public String loginPage(@RequestParam(required = false) String continueTo, Model model){
+    public String loginPage(@RequestParam(required = false) String continueTo, Model model) {
         model.addAttribute("continueTo", safeContinueTo(continueTo));
         return "login/login";
     }
+
     @PostMapping("/login")
     public String login(@RequestParam String email,
                         @RequestParam String password,
                         @RequestParam(required = false) String continueTo,
                         HttpServletRequest request,
-                        Model model){
+                        Model model) {
         var result = loginService.login(email, password);
-        if(result.isEmpty()){
+        if (result.isEmpty()) {
             model.addAttribute("error", "Email hoặc mật khẩu không chính xác.");
             model.addAttribute("continueTo", safeContinueTo(continueTo));
             return "login/login";
         }
         HttpSession oldSession = request.getSession(false);
-        if(oldSession!=null) oldSession.invalidate();
-        var account=result.get();
+        if (oldSession != null) oldSession.invalidate();
+        var account = result.get();
         HttpSession session = request.getSession(true);
         session.setAttribute("userId", account.userId());
         session.setAttribute("fullName", account.fullName());
         session.setAttribute("role", account.role());
-
 
         if ("CUSTOMER".equals(account.role())) {
             if (continueTo != null && !continueTo.trim().isEmpty() && !continueTo.trim().equals("/")) {
@@ -56,14 +58,14 @@ public class LoginController {
             return "redirect:/";
         }
 
-        return switch (account.role()){
+        return switch (account.role()) {
             case "ADMIN" -> "redirect:/admin";
             case "OPERATIONS_MANAGER" -> "redirect:/operations/dashboard";
             case "SHOP_OWNER" -> "redirect:/shopowner/home";
             case "CS_STAFF" -> "redirect:/cs/dashboard";
+            case "DELIVERY_MANAGER" -> "redirect:/delivery/orders";
             default -> "redirect:/";
         };
-
     }
 
     public String login(String email, String password, HttpServletRequest request, Model model) {
@@ -78,11 +80,11 @@ public class LoginController {
         }
         return "redirect:/login?logout=true";
     }
+
     @GetMapping("/customer")
-    public String customer(HttpServletRequest request){
+    public String customer(HttpServletRequest request) {
         return "redirect:/";
     }
-
 
     @GetMapping("/shop-owner")
     public String shopOwner(HttpServletRequest request) {
@@ -98,9 +100,9 @@ public class LoginController {
         return pageForRole(request, "ADMIN", "admin/admin");
     }
 
-    private String pageForRole(HttpServletRequest request, String requiredRole, String view){
+    private String pageForRole(HttpServletRequest request, String requiredRole, String view) {
         HttpSession session = request.getSession(false);
-        if(session==null||!requiredRole.equals(session.getAttribute("role"))){
+        if (session == null || !requiredRole.equals(session.getAttribute("role"))) {
             return "redirect:/login";
         }
         return view;
@@ -110,5 +112,4 @@ public class LoginController {
         return path != null && path.startsWith("/") && !path.startsWith("//") && !path.contains("\\")
                 ? path : "/";
     }
-
 }

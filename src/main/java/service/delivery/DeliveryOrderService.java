@@ -18,6 +18,7 @@ import java.util.Map;
 public class DeliveryOrderService {
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final BigDecimal DEFAULT_SHIPPING_FEE = new BigDecimal("20000");
     private final JdbcTemplate jdbc;
 
     public DeliveryOrderService(JdbcTemplate jdbc) {
@@ -25,7 +26,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Lấy danh sách các đơn hàng mà Shop Owner ĐÃ XÁC NHẬN (không lấy đơn PENDING chưa duyệt)
+     * Chỉ lấy các đơn hàng mà Shop Owner ĐÃ XÁC NHẬN (không lấy đơn PENDING chưa duyệt)
      */
     public List<Map<String, Object>> getDeliveryOrders() {
         String sql = """
@@ -33,7 +34,8 @@ public class DeliveryOrderService {
                    s.name AS joined_shop_name
             FROM orders o
             LEFT JOIN shops s ON s.id = o.shop_id
-            WHERE o.status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED')
+            WHERE o.status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPING', 'DELIVERED', 'COMPLETED')
+               OR (o.status = 'CANCELLED' AND o.delivery_status IN ('IN_TRANSIT', 'FAILED'))
             ORDER BY o.id DESC
         """;
 
@@ -41,23 +43,16 @@ public class DeliveryOrderService {
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Map<String, Object> row : rawOrders) {
-            String rawStatus = firstNonNullStr(row, "status", "order_status", "delivery_status", "PENDING").toUpperCase(Locale.ROOT);
-
-            // Khi khách mới đặt (PENDING - Chờ xác nhận), chưa hiện lên cho Delivery Manager.
+            String rawStatus = firstNonNullStr(row, "status", "order_status", "PENDING").toUpperCase(Locale.ROOT);
             if ("PENDING".equals(rawStatus) || "UNCONFIRMED".equals(rawStatus) || "DRAFT".equals(rawStatus)) {
                 continue;
             }
-
-            Map<String, Object> ord = enrichOrderRow(row);
-            result.add(ord);
+            result.add(enrichOrderRow(row));
         }
 
         return result;
     }
 
-    /**
-     * Lấy thông tin 1 đơn hàng cho trang Chi tiết
-     */
     public Map<String, Object> getOrderDetail(Long orderId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
             SELECT o.*, s.name AS joined_shop_name
@@ -72,9 +67,6 @@ public class DeliveryOrderService {
         return enrichOrderRow(rows.get(0));
     }
 
-    /**
-     * Thống kê nhanh số lượng đơn theo trạng thái
-     */
     public Map<String, Object> getOrderCounts() {
         String sql = """
             SELECT 
@@ -82,15 +74,14 @@ public class DeliveryOrderService {
                 SUM(CASE WHEN status = 'CONFIRMED' THEN 1 ELSE 0 END) AS waiting_pickup,
                 SUM(CASE WHEN status = 'SHIPPING' THEN 1 ELSE 0 END) AS shipping_count,
                 SUM(CASE WHEN status IN ('DELIVERED', 'COMPLETED') THEN 1 ELSE 0 END) AS delivered_count,
-                SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_count
+                SUM(CASE WHEN status = 'CANCELLED' AND delivery_status IN ('IN_TRANSIT', 'FAILED') THEN 1 ELSE 0 END) AS cancelled_count
             FROM orders
+            WHERE status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPING', 'DELIVERED', 'COMPLETED')
+               OR (status = 'CANCELLED' AND delivery_status IN ('IN_TRANSIT', 'FAILED'))
         """;
         return jdbc.queryForMap(sql);
     }
 
-    /**
-     * Lấy danh sách từng sản phẩm trong đơn hàng (Phục vụ bảng Chi tiết đơn hàng)
-     */
     public List<Map<String, Object>> getOrderItems(Long orderId) {
         List<Map<String, Object>> rawItems = jdbc.queryForList("""
             SELECT oi.*,
@@ -140,7 +131,7 @@ public class DeliveryOrderService {
         Map<String, Object> ord = new HashMap<>(row);
         Long orderId = ((Number) row.get("id")).longValue();
 
-        String rawStatus = firstNonNullStr(row, "status", "order_status", "delivery_status", "CONFIRMED").toUpperCase(Locale.ROOT);
+        String rawStatus = firstNonNullStr(row, "status", "order_status", "CONFIRMED").toUpperCase(Locale.ROOT);
         String uiStatus = switch (rawStatus) {
             case "CONFIRMED", "PROCESSING", "READY_TO_SHIP", "PACKING" -> "PROCESSING";
             case "SHIPPING", "DELIVERING", "IN_TRANSIT" -> "SHIPPING";
@@ -189,15 +180,32 @@ public class DeliveryOrderService {
         if (!provinceName.isBlank()) addrParts.add(provinceName);
         String fullAddress = addrParts.isEmpty() ? "Chưa cập nhật" : String.join(", ", addrParts);
 
+        String paymentMethod = firstNonNullStr(row, "payment_method", "method",
+                firstNonNullStr(checkoutRow, "payment_method", "COD")).toUpperCase(Locale.ROOT);
+
+        BigDecimal subtotal = firstNonNullDecimal(row, "subtotal", "subtotal_amount");
+        BigDecimal shippingFee = firstNonNullDecimal(row, "shipping_fee");
+        if (shippingFee.compareTo(BigDecimal.ZERO) <= 0) {
+            shippingFee = DEFAULT_SHIPPING_FEE;
+        }
+        BigDecimal fullOrderTotal = firstNonNullDecimal(row, "total_amount", "grand_total", "final_amount", "total");
+
+        // NẾU ĐƠN THANH TOÁN BẰNG VNPAY -> Tiền hàng đã trả qua VNPAY, đơn ship chỉ tính tiền ship
+        boolean isVnpay = "VNPAY".equalsIgnoreCase(paymentMethod);
+        BigDecimal displayTotal = isVnpay ? shippingFee : fullOrderTotal;
+
         ord.put("order_code", firstNonNullStr(row, "order_code", "code", String.valueOf(orderId)));
         ord.put("recipient_name", recipientName);
         ord.put("recipient_phone", recipientPhone);
         ord.put("full_address", fullAddress);
         ord.put("shop_name", firstNonNullStr(row, "joined_shop_name", "shop_name", "FreshFruit"));
-        ord.put("payment_method", firstNonNullStr(row, "payment_method", "method",
-                firstNonNullStr(checkoutRow, "payment_method", "COD")));
+        ord.put("payment_method", paymentMethod);
+        ord.put("is_vnpay", isVnpay);
         ord.put("payment_status", firstNonNullStr(row, "payment_status", "UNPAID"));
-        ord.put("total_amount", firstNonNullDecimal(row, "total_amount", "grand_total", "final_amount", "total"));
+        ord.put("subtotal", subtotal);
+        ord.put("shipping_fee", shippingFee);
+        ord.put("full_order_total", fullOrderTotal);
+        ord.put("total_amount", displayTotal); // Số tiền hiển thị trên bảng Delivery
 
         Object createdObj = row.get("created_at");
         if (createdObj instanceof Timestamp ts) {
@@ -209,9 +217,6 @@ public class DeliveryOrderService {
         return ord;
     }
 
-    /**
-     * Cập nhật trạng thái giao hàng của Delivery Manager
-     */
     @Transactional
     public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason) {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM orders WHERE id = ? FOR UPDATE", orderId);
@@ -281,9 +286,6 @@ public class DeliveryOrderService {
         }
 
         if ("CANCELLED".equals(target)) {
-            if ("PAID".equals(paymentStatus)) {
-                throw new IllegalStateException("Đơn online đã thanh toán phải được giao; không thể hủy tại luồng giao hàng.");
-            }
             String reason = (cancelReason == null || cancelReason.isBlank())
                     ? "Giao hàng không thành công / Khách từ chối nhận"
                     : cancelReason.trim();

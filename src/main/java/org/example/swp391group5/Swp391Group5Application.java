@@ -9,9 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @AutoConfigurationPackage(basePackages = {"org.example.swp391group5", "entity", "repository"})
 @EnableScheduling
 public class  Swp391Group5Application {
-
     public static void main(String[] args) {
         SpringApplication.run(Swp391Group5Application.class, args);
     }
-
 }
