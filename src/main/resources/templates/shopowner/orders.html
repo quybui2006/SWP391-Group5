@@ -6,6 +6,7 @@
     <title>Đơn hàng | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-workflows.css}">
 </head>
 <body>
 <div class="app-shell">
@@ -22,17 +23,37 @@
         <section class="panel">
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>MÃ ĐƠN</th><th>NGƯỜI NHẬN</th><th>TỔNG TIỀN</th><th>TRẠNG THÁI</th><th>THANH TOÁN</th><th>NGÀY TẠO</th></tr></thead>
+                    <thead><tr><th>Mã đơn</th><th>Người nhận</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thanh toán</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="o : ${orders}">
                         <td><a th:href="@{/shopowner/orders/{id}(id=${o.id})}" th:text="${o.order_code}"></a></td>
                         <td th:text="${o.recipient_name}"></td>
                         <td th:text="${#numbers.formatInteger(o.total_amount,1,'COMMA') + ' ₫'}"></td>
-                        <td th:text="${o.status}"></td>
-                        <td th:text="${o.payment_status}"></td>
+                        <td><span class="order-status" th:classappend="${o.status == 'PENDING'} ? ' pending' : (${o.status == 'CONFIRMED'} ? ' confirmed' : (${o.status == 'CANCELLED'} ? ' cancelled' : ''))"
+                                  th:text="${o.status == 'PENDING'} ? 'Chờ xác nhận' : (${o.status == 'CONFIRMED'} ? 'Đã xác nhận' : (${o.status == 'CANCELLED'} ? 'Đã hủy' : (${o.status == 'COMPLETED'} ? 'Hoàn tất' : o.status)))">Chờ xác nhận</span></td>
+                        <td th:text="${o.payment_method == 'COD'} ? 'Khi nhận hàng' : 'Trực tuyến'"></td>
                         <td th:text="${#temporals.format(o.created_at, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td class="order-row-actions">
+                            <a class="order-action-link" th:href="@{/shopowner/orders/{id}(id=${o.id})}">Chi tiết</a>
+                            <th:block th:if="${o.status == 'PENDING' and o.payment_method == 'COD' and o.payment_status == 'UNPAID'}">
+                                <form method="post" th:action="@{/shopowner/orders/{id}/confirm(id=${o.id})}"
+                                      onsubmit="return confirm('Xác nhận đơn này và giữ số lượng hàng?');">
+                                    <input type="hidden" name="token" th:value="${token}">
+                                    <button class="order-action-button confirm" type="submit">Xác nhận</button>
+                                </form>
+                                <details class="order-reject-menu">
+                                    <summary>Từ chối</summary>
+                                    <form method="post" th:action="@{/shopowner/orders/{id}/reject(id=${o.id})}">
+                                        <input type="hidden" name="token" th:value="${token}">
+                                        <label th:for="${'reason-' + o.id}">Lý do</label>
+                                        <input type="text" th:id="${'reason-' + o.id}" name="reason" maxlength="1000" required>
+                                        <button class="order-action-button reject" type="submit">Gửi</button>
+                                    </form>
+                                </details>
+                            </th:block>
+                        </td>
                     </tr>
-                    <tr th:if="${#lists.isEmpty(orders)}"><td colspan="6" class="muted">Chưa có đơn hàng nào.</td></tr>
+                    <tr th:if="${#lists.isEmpty(orders)}"><td colspan="7" class="muted">Chưa có đơn hàng nào.</td></tr>
                     </tbody>
                 </table>
             </div>

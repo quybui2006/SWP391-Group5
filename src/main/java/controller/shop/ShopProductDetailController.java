@@ -32,6 +32,31 @@ public class ShopProductDetailController {
                 shopProductService.getDetail(id, currentUserProvider.requireUserId(request)));
         return "shopowner/shopproductdetail";
     }
+
+    @PostMapping("/shop/product/{id}/hide")
+    public String hideProduct(@PathVariable("id") Long id, HttpServletRequest request,
+                              RedirectAttributes redirect) {
+        try {
+            shopProductService.hideProductFromSale(id, currentUserProvider.requireUserId(request));
+            redirect.addFlashAttribute("success", "Đã ẩn sản phẩm và các biến thể con khỏi khách hàng.");
+        } catch (ProductValidationException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/shop/product/" + id;
+    }
+
+    @PostMapping("/shop/product/{id}/show")
+    public String showProduct(@PathVariable("id") Long id, HttpServletRequest request,
+                              RedirectAttributes redirect) {
+        try {
+            shopProductService.showProductForSale(id, currentUserProvider.requireUserId(request));
+            redirect.addFlashAttribute("success", "Đã hiển thị sản phẩm lại cho khách hàng.");
+        } catch (ProductValidationException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/shop/product/" + id;
+    }
+
     @PostMapping("/shop/product/{id}/archive")
     public String archiveProduct(@PathVariable("id") Long id, HttpServletRequest request,
                                  RedirectAttributes redirect) {

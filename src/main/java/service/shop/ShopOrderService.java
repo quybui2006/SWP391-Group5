@@ -74,12 +74,12 @@ public class ShopOrderService {
             long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
             int quantity = ((Number) item.get("quantity")).intValue();
-            if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
-                throw new IllegalArgumentException("Tồn kho vừa thay đổi. Tải lại đơn rồi thử lại.");
-            jdbc.update("UPDATE order_items SET allocation_status='RESERVED' WHERE id=? AND allocation_status='UNRESERVED'", itemId);
+            if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
+                throw new IllegalArgumentException("Không thể ghi nhận số lượng đã bán cho mặt hàng " + itemId + ".");
+            jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=? AND allocation_status='UNRESERVED'", itemId);
             int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
             int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RESERVE',0,?,?,?,?,?)", inventoryId, itemId, quantity, onHand, reserved, "reserve-" + itemId, ownerId);
+            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'SALE',?,0,?,?,?, ?,?)", inventoryId, itemId, -quantity, onHand, reserved, "sale-confirm-" + itemId, "Bán theo đơn " + order.get("order_code"), ownerId);
         }
         if (jdbc.update("UPDATE orders SET status='CONFIRMED' WHERE id=? AND status='PENDING' AND payment_method='COD'", id) != 1)
             throw new IllegalArgumentException("Đơn vừa được cập nhật ở nơi khác. Tải lại trang.");

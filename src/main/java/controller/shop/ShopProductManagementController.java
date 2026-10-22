@@ -18,7 +18,6 @@ import service.shop.ProductValidationException;
 import service.shop.ShopProductService;
 import repository.CategoryRepository;
 
-import java.time.LocalDate;
 
 @Controller
 public class ShopProductManagementController {
@@ -48,7 +47,6 @@ public class ShopProductManagementController {
     public String addForm(HttpServletRequest request, Model model) {
         if (ownerId(request) == null) return "redirect:/login";
         ProductCreateRequest form = new ProductCreateRequest();
-        form.setReceivedDate(LocalDate.now());
         model.addAttribute("productCreateRequest", form);
         populateActiveCategories(model);
         return "shopowner/product-form";
@@ -62,10 +60,6 @@ public class ShopProductManagementController {
         if (ownerId == null) return "redirect:/login";
         if (form.getImageFile() == null || form.getImageFile().isEmpty()) {
             binding.rejectValue("imageFile", "imageFile.required", "Vui lòng chọn ảnh sản phẩm.");
-        }
-        if (form.getReceivedDate() != null && form.getExpiryDate() != null
-                && !form.getExpiryDate().isAfter(form.getReceivedDate())) {
-            binding.rejectValue("expiryDate", "expiryDate.invalid", "Ngày hết hạn phải sau ngày nhập kho.");
         }
         if (binding.hasErrors()) {
             populateActiveCategories(model);

@@ -46,6 +46,8 @@ public class OperationsDashboardService {
                     "SELECT COALESCE(SUM(shop_revenue_amount), 0) FROM orders WHERE status = 'COMPLETED'", BigDecimal.class);
             Long totalCompletedOrders = jdbc.queryForObject(
                     "SELECT COUNT(*) FROM orders WHERE status = 'COMPLETED'", Long.class);
+            Long pendingPayments = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM shops WHERE payment_approval_status = 'PENDING'", Long.class);
 
             // Top Shops
             List<Map<String, Object>> topShops = jdbc.queryForList("""
@@ -64,6 +66,7 @@ public class OperationsDashboardService {
             metrics.put("totalShops", totalShops != null ? totalShops : 0L);
             metrics.put("activeShops", activeShops != null ? activeShops : 0L);
             metrics.put("pendingShops", pendingShops != null ? pendingShops : 0L);
+            metrics.put("pendingPayments", pendingPayments != null ? pendingPayments : 0L);
             metrics.put("suspendedShops", suspendedShops != null ? suspendedShops : 0L);
             metrics.put("rejectedShops", rejectedShops != null ? rejectedShops : 0L);
             metrics.put("totalRevenue", totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
@@ -73,6 +76,7 @@ public class OperationsDashboardService {
             metrics.put("totalShops", 0L);
             metrics.put("activeShops", 0L);
             metrics.put("pendingShops", 0L);
+            metrics.put("pendingPayments", 0L);
             metrics.put("suspendedShops", 0L);
             metrics.put("rejectedShops", 0L);
             metrics.put("totalRevenue", BigDecimal.ZERO);

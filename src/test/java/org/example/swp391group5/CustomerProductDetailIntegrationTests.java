@@ -11,7 +11,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -42,10 +41,10 @@ class CustomerProductDetailIntegrationTests {
         jdbc.update("INSERT INTO units(code, name) VALUES ('U-HOP', 'Hộp')");
         long unitId = jdbc.queryForObject("SELECT id FROM units WHERE code='U-HOP'", Long.class);
 
-        jdbc.update("INSERT INTO products(name, selling_status, approval_status, shop_id, description, origin, batch_code, received_date, expiry_date) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        jdbc.update("INSERT INTO products(name, selling_status, approval_status, shop_id, description, origin, batch_code) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 "Táo Envy Shopee Cao Cấp", "ACTIVE", "APPROVED", shopId, "Táo Envy nhập khẩu New Zealand tươi ngon, giòn ngọt.",
-                "New Zealand", "BATCH-SHOPEE-01", LocalDate.now(), LocalDate.now().plusDays(10));
+                "New Zealand", "BATCH-SHOPEE-01");
         long productId = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-SHOPEE-01'", Long.class);
 
         jdbc.update("INSERT INTO product_variants(product_id, name, image_url, price, status, approval_status, reviewed_at, base_unit_id, shop_id, sku, specification, min_order_quantity) " +

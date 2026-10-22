@@ -1,7 +1,6 @@
 package dto.operations;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** Thông tin rút gọn của biến thể chờ Operations Manager kiểm duyệt. */
@@ -18,6 +17,5 @@ public record PendingVariantApprovalDto(
         Integer quantityOnHand,
         Integer availableQuantity,
         String batchCode,
-        LocalDate expiryDate,
         LocalDateTime submittedAt
 ) { }

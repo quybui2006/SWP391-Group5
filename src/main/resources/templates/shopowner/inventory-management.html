@@ -29,19 +29,19 @@
             <div class="inventory-intro-icon" aria-hidden="true">▦</div>
             <div>
                 <h2>Số lượng bán trên FreshFruit</h2>
-                <p>FreshFruit chỉ ghi nhận số lượng shop khai báo có thể bán và số lượng đang được giữ cho đơn hàng. Shop tự quản lý nguồn hàng và bảo quản thực tế tại cửa hàng; hãy cập nhật số lượng trên sàn khi có thay đổi.</p>
+                <p>Theo dõi số lượng shop đã cập nhật và số lượng khách có thể mua. Hãy cập nhật khi số hàng có thể bán thay đổi.</p>
             </div>
         </section>
 
         <ul class="nav nav-tabs inventory-tabs" id="inventoryTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock-pane"
+                <button class="nav-link active" id="stock-tab" data-inventory-tab="stock-pane"
                         type="button" role="tab" aria-controls="stock-pane" aria-selected="true">
                     Danh sách tồn kho <span class="inventory-tab-count" th:text="${#lists.size(inventoryRows)}">0</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane"
+                <button class="nav-link" id="history-tab" data-inventory-tab="history-pane"
                         type="button" role="tab" aria-controls="history-pane" aria-selected="false">
                     Lịch sử thay đổi <span class="inventory-tab-count" th:text="${#lists.size(transactionRows)}">0</span>
                 </button>
@@ -50,11 +50,11 @@
 
         <div class="tab-content inventory-tab-content" id="inventoryTabContent">
             <!-- TAB 1: Tồn kho hiện tại -->
-            <section class="tab-pane fade show active" id="stock-pane" role="tabpanel" aria-labelledby="stock-tab" tabindex="0">
+            <section class="tab-pane show active" id="stock-pane" role="tabpanel" aria-labelledby="stock-tab" tabindex="0">
                 <div class="inventory-panel-heading">
                     <div>
                         <h2>Danh sách tồn kho</h2>
-                        <p>Số lượng có thể bán = số lượng shop đã cập nhật − số lượng đang được giữ cho đơn hàng.</p>
+                        <p>Xem số lượng shop đã cập nhật và số lượng hiện có thể bán.</p>
                     </div>
                     <span class="inventory-unit-note">Đơn vị theo từng phân loại</span>
                 </div>
@@ -66,9 +66,7 @@
                             <th scope="col">Sản phẩm</th>
                             <th scope="col">Tên phân loại</th>
                             <th scope="col">Mã lô</th>
-                            <th scope="col">Hạn sử dụng</th>
                             <th scope="col" class="text-end">Số lượng đã cập nhật</th>
-                            <th scope="col" class="text-end">Đang giữ cho đơn</th>
                             <th scope="col" class="text-end">Có thể bán</th>
                             <th scope="col" class="text-end inventory-action-col">Thao tác</th>
                         </tr>
@@ -81,24 +79,17 @@
                             </td>
                             <td th:text="${item.variantName}">Túi 500g</td>
                             <td><span class="inventory-batch-code" th:text="${item.batchCode}">LO-CAM-01</span></td>
-                            <td>
-                                <span th:if="${item.expiryDate != null}" th:text="${#temporals.format(item.expiryDate, 'dd/MM/yyyy')}">17/10/2026</span>
-                                <span th:if="${item.expiryDate == null}" class="text-secondary">Chưa có</span>
-                            </td>
                             <td class="text-end inventory-number" th:text="${item.quantityOnHand}">100</td>
-                            <td class="text-end inventory-number reserved-number" th:text="${item.reservedQuantity}">5</td>
                             <td class="text-end">
                                 <span class="available-quantity" th:classappend="${item.availableQuantity <= 0} ? ' is-empty' : ''"
                                       th:text="${item.availableQuantity}">95</span>
                             </td>
                             <td class="text-end inventory-actions">
                                 <button class="btn btn-sm btn-success restock-trigger" type="button"
-                                        data-bs-toggle="modal" data-bs-target="#restockModal"
                                         th:attr="data-variant-id=${item.variantId},data-variant-label=${item.productName + ' — ' + item.variantName + ' (' + item.sku + ')'}">
                                     <span aria-hidden="true">＋</span> Cập nhật tồn kho
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger adjust-trigger" type="button"
-                                        data-bs-toggle="modal" data-bs-target="#adjustModal"
                                         th:attr="data-variant-id=${item.variantId},data-variant-label=${item.productName + ' — ' + item.variantName + ' (' + item.sku + ')'},data-available=${item.availableQuantity}">
                                     <span aria-hidden="true">✎</span> Báo hỏng
                                 </button>
@@ -117,7 +108,7 @@
             </section>
 
             <!-- TAB 2: Lịch sử sổ cái -->
-            <section class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
+            <section class="tab-pane" id="history-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0" hidden>
                 <div class="inventory-panel-heading">
                     <div>
                         <h2>Lịch sử cập nhật tồn kho</h2>
@@ -178,7 +169,7 @@
 </div>
 
 <!-- Modal cập nhật tăng số lượng bán trên sàn -->
-<div class="modal fade" id="restockModal" tabindex="-1" aria-labelledby="restockModalTitle" aria-hidden="true">
+<div class="modal inventory-dialog-overlay" id="restockModal" tabindex="-1" aria-labelledby="restockModalTitle" aria-hidden="true" hidden>
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content inventory-modal">
             <form method="post" th:action="@{/shop/inventory/action}" id="restockForm">
@@ -187,7 +178,7 @@
                         <span class="modal-eyebrow receive-eyebrow">GHI TĂNG SỐ LƯỢNG BÁN</span>
                         <h2 class="modal-title" id="restockModalTitle">Cập nhật tồn kho</h2>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    <button type="button" class="btn-close" data-close-inventory-modal aria-label="Đóng"></button>
                 </div>
                 <div class="modal-body">
                     <p class="modal-variant-label" id="restockVariantLabel">Biến thể sản phẩm</p>
@@ -206,7 +197,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-light" data-close-inventory-modal>Hủy</button>
                     <button type="submit" class="btn btn-success"><span aria-hidden="true">＋</span> Xác nhận cập nhật</button>
                 </div>
             </form>
@@ -215,7 +206,7 @@
 </div>
 
 <!-- Modal báo hỏng / điều chỉnh số lượng -->
-<div class="modal fade" id="adjustModal" tabindex="-1" aria-labelledby="adjustModalTitle" aria-hidden="true">
+<div class="modal inventory-dialog-overlay" id="adjustModal" tabindex="-1" aria-labelledby="adjustModalTitle" aria-hidden="true" hidden>
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content inventory-modal">
             <form method="post" th:action="@{/shop/inventory/action}" id="adjustForm">
@@ -224,7 +215,7 @@
                         <span class="modal-eyebrow adjust-eyebrow">GHI NHẬN BIẾN ĐỘNG</span>
                         <h2 class="modal-title" id="adjustModalTitle">Báo hỏng / Điều chỉnh tồn kho</h2>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    <button type="button" class="btn-close" data-close-inventory-modal aria-label="Đóng"></button>
                 </div>
                 <div class="modal-body">
                     <p class="modal-variant-label" id="adjustVariantLabel">Biến thể sản phẩm</p>
@@ -261,7 +252,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-light" data-close-inventory-modal>Hủy</button>
                     <button type="submit" class="btn btn-danger" id="adjustSubmitButton">Xác nhận giao dịch</button>
                 </div>
             </form>
@@ -269,56 +260,108 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-(() => {
-    const restockVariantId = document.getElementById('restockVariantId');
-    const restockVariantLabel = document.getElementById('restockVariantLabel');
-    const adjustVariantId = document.getElementById('adjustVariantId');
-    const adjustVariantLabel = document.getElementById('adjustVariantLabel');
-    const adjustAvailableLabel = document.getElementById('adjustAvailableLabel');
-    const actionType = document.getElementById('adjustActionType');
-    const directionGroup = document.getElementById('adjustDirectionGroup');
-    const quantityHelp = document.getElementById('adjustQuantityHelp');
-    const submitButton = document.getElementById('adjustSubmitButton');
+    (() => {
+        const restockVariantId = document.getElementById('restockVariantId');
+        const restockVariantLabel = document.getElementById('restockVariantLabel');
+        const adjustVariantId = document.getElementById('adjustVariantId');
+        const adjustVariantLabel = document.getElementById('adjustVariantLabel');
+        const adjustAvailableLabel = document.getElementById('adjustAvailableLabel');
+        const actionType = document.getElementById('adjustActionType');
+        const directionGroup = document.getElementById('adjustDirectionGroup');
+        const quantityHelp = document.getElementById('adjustQuantityHelp');
+        const submitButton = document.getElementById('adjustSubmitButton');
 
-    document.querySelectorAll('.restock-trigger').forEach(button => {
-        button.addEventListener('click', () => {
-            restockVariantId.value = button.dataset.variantId || '';
-            restockVariantLabel.textContent = button.dataset.variantLabel || 'Biến thể sản phẩm';
-            document.getElementById('restockQuantity').value = '';
-            document.getElementById('restockReason').value = '';
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.hidden = false;
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('inventory-dialog-open');
+            const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
+            if (firstInput) firstInput.focus();
+        }
+
+        function closeModal(modal) {
+            if (!modal) return;
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+            modal.hidden = true;
+            document.body.classList.remove('inventory-dialog-open');
+        }
+
+        document.querySelectorAll('.restock-trigger').forEach(function (button) {
+            button.addEventListener('click', function () {
+                restockVariantId.value = button.dataset.variantId || '';
+                restockVariantLabel.textContent = button.dataset.variantLabel || 'Biến thể sản phẩm';
+                document.getElementById('restockQuantity').value = '';
+                document.getElementById('restockReason').value = '';
+                openModal('restockModal');
+            });
         });
-    });
 
-    document.querySelectorAll('.adjust-trigger').forEach(button => {
-        button.addEventListener('click', () => {
-            adjustVariantId.value = button.dataset.variantId || '';
-            adjustVariantLabel.textContent = button.dataset.variantLabel || 'Biến thể sản phẩm';
-            adjustAvailableLabel.textContent = button.dataset.available || '0';
-            document.getElementById('adjustQuantity').value = '';
-            document.getElementById('adjustReason').value = '';
-            actionType.value = 'DISCARD';
-            updateAdjustmentControls();
+        document.querySelectorAll('.adjust-trigger').forEach(function (button) {
+            button.addEventListener('click', function () {
+                adjustVariantId.value = button.dataset.variantId || '';
+                adjustVariantLabel.textContent = button.dataset.variantLabel || 'Biến thể sản phẩm';
+                adjustAvailableLabel.textContent = button.dataset.available || '0';
+                document.getElementById('adjustQuantity').value = '';
+                document.getElementById('adjustReason').value = '';
+                actionType.value = 'DISCARD';
+                updateAdjustmentControls();
+                openModal('adjustModal');
+            });
         });
-    });
 
-    function updateAdjustmentControls() {
-        const isAdjust = actionType.value === 'ADJUST';
-        directionGroup.hidden = !isAdjust;
-        quantityHelp.textContent = isAdjust
-            ? 'Nhập số lượng chênh lệch; hướng thay đổi quyết định cộng hoặc trừ số lượng trên sàn.'
-            : 'Số lượng hàng hỏng sẽ được trừ khỏi số lượng shop đã khai báo.';
-        submitButton.textContent = isAdjust ? 'Xác nhận điều chỉnh' : 'Xác nhận báo hỏng';
-    }
-    actionType.addEventListener('change', updateAdjustmentControls);
+        document.querySelectorAll('[data-close-inventory-modal]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                closeModal(button.closest('.inventory-dialog-overlay'));
+            });
+        });
+        document.querySelectorAll('.inventory-dialog-overlay').forEach(function (modal) {
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal(modal);
+            });
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeModal(document.querySelector('.inventory-dialog-overlay.is-open'));
+            }
+        });
 
-    const activeTab = new URLSearchParams(window.location.search).get('tab');
-    if (activeTab === 'history') {
-        const historyTab = document.getElementById('history-tab');
-        if (historyTab && window.bootstrap) bootstrap.Tab.getOrCreateInstance(historyTab).show();
-    }
-})();
+        function activateTab(paneId) {
+            document.querySelectorAll('[data-inventory-tab]').forEach(function (tab) {
+                const selected = tab.dataset.inventoryTab === paneId;
+                tab.classList.toggle('active', selected);
+                tab.setAttribute('aria-selected', String(selected));
+            });
+            document.querySelectorAll('#inventoryTabContent .tab-pane').forEach(function (pane) {
+                const selected = pane.id === paneId;
+                pane.hidden = !selected;
+                pane.classList.toggle('active', selected);
+                pane.classList.toggle('show', selected);
+            });
+        }
+        document.getElementById('stock-tab').addEventListener('click', function () {
+            activateTab('stock-pane');
+        });
+        document.getElementById('history-tab').addEventListener('click', function () {
+            activateTab('history-pane');
+        });
+
+        function updateAdjustmentControls() {
+            const isAdjust = actionType.value === 'ADJUST';
+            directionGroup.hidden = !isAdjust;
+            quantityHelp.textContent = isAdjust
+                ? 'Nhập số lượng chênh lệch; hướng thay đổi quyết định cộng hoặc trừ số lượng trên sàn.'
+                : 'Số lượng hàng hỏng sẽ được trừ khỏi số lượng shop đã khai báo.';
+            submitButton.textContent = isAdjust ? 'Xác nhận điều chỉnh' : 'Xác nhận báo hỏng';
+        }
+        actionType.addEventListener('change', updateAdjustmentControls);
+
+        const activeTab = new URLSearchParams(window.location.search).get('tab');
+        activateTab(activeTab === 'history' ? 'history-pane' : 'stock-pane');
+    })();
 </script>
 </body>
 </html>

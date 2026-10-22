@@ -6,6 +6,7 @@
     <title>Quản lý khuyến mãi | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-workflows.css}">
 </head>
 <body>
 <div class="app-shell">
@@ -28,15 +29,15 @@
                 <div><h2>Danh sách chương trình</h2><p class="muted">Chỉ hiển thị khuyến mãi thuộc cửa hàng của bạn.</p></div>
             </div>
             <form class="search-bar" method="get" th:action="@{/shop/promotions}">
-                <label class="sr-only" for="keyword">Tìm sản phẩm, biến thể hoặc SKU</label>
-                <input id="keyword" name="keyword" type="search" th:value="${keyword}" placeholder="Tìm sản phẩm, biến thể hoặc SKU">
+                <label class="sr-only" for="keyword">Tìm sản phẩm, loại hàng hoặc mã</label>
+                <input id="keyword" name="keyword" type="search" th:value="${keyword}" placeholder="Tìm sản phẩm, loại hàng hoặc mã">
                 <button class="primary-action" type="submit">Tìm kiếm</button>
-                <a class="cancel-btn" th:if="${!keyword.isEmpty()}" th:href="@{/shop/promotions}">Xóa lọc</a>
+                <a class="cancel-btn" th:if="${!keyword.isEmpty()}" th:href="@{/shop/promotions}">Bỏ lọc</a>
             </form>
 
             <div class="table-wrap" th:if="${!promotions.empty}">
                 <table>
-                    <thead><tr><th>Sản phẩm / Biến thể</th><th>SKU</th><th>Giá gốc</th><th>Giá khuyến mãi</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                    <thead><tr><th>Sản phẩm / Loại hàng</th><th>Mã hàng</th><th>Giá ban đầu</th><th>Giá ưu đãi</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="promotion : ${promotions}">
                         <td><div class="product-cell"><span class="image-placeholder">🍊</span><div><strong th:text="${promotion.productName}">Sản phẩm</strong><small th:text="${promotion.variantName}">Biến thể</small></div></div></td>
@@ -45,14 +46,14 @@
                         <td><strong th:text="${#numbers.formatDecimal(promotion.promotionalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">80.000 ₫</strong></td>
                         <td><span th:text="${#temporals.format(promotion.startsAt, 'dd/MM/yyyy HH:mm')}">Bắt đầu</span><br><small th:text="${#temporals.format(promotion.endsAt, 'dd/MM/yyyy HH:mm')}">Kết thúc</small></td>
                         <td><span class="status" th:classappend="${promotion.enabled} ? ' active' : ' paused'" th:text="${promotion.enabled} ? 'Đang bật' : 'Đã tắt'">Đang bật</span></td>
-                        <td>
-                            <a class="table-action" th:href="@{/shop/promotions/{id}/edit(id=${promotion.id})}">Sửa</a>
-                            <form method="post" th:action="@{/shop/promotions/{id}/toggle(id=${promotion.id})}" style="display:inline">
-                                <button class="delete-action" type="submit" th:text="${promotion.enabled} ? 'Tắt' : 'Bật'">Tắt</button>
+                        <td class="promotion-actions">
+                            <a class="promotion-action edit" th:href="@{/shop/promotions/{id}/edit(id=${promotion.id})}">Sửa</a>
+                            <form method="post" th:action="@{/shop/promotions/{id}/toggle(id=${promotion.id})}">
+                                <button class="promotion-action toggle" type="submit" th:text="${promotion.enabled} ? 'Tắt' : 'Bật'">Tắt</button>
                             </form>
-                            <form method="post" th:action="@{/shop/promotions/{id}/delete(id=${promotion.id})}" style="display:inline"
-                                  onsubmit="return confirm('Bạn có chắc muốn xóa khuyến mãi này?')">
-                                <button class="delete-action" type="submit">Xóa</button>
+                            <form method="post" th:action="@{/shop/promotions/{id}/delete(id=${promotion.id})}"
+                                  onsubmit="return confirm('Xóa chương trình khuyến mãi này?')">
+                                <button class="promotion-action delete" type="submit">Xóa</button>
                             </form>
                         </td>
                     </tr>

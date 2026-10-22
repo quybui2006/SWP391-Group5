@@ -17,6 +17,9 @@ public class Product {
     @Column(name = "selling_status", nullable = false)
     private String sellingStatus;
 
+    @Column(name = "is_visible", nullable = false)
+    private boolean visible = true;
+
     // Quan hệ 1-Nhiều với ProductVariant
     @OneToMany(mappedBy = "product")
     private List<ProductVariant> variants;
@@ -54,12 +57,6 @@ public class Product {
      */
     @Column(name = "batch_code", nullable = false)
     private String batchCode;
-
-    @Column(name = "received_date", nullable = false)
-    private java.time.LocalDate receivedDate;
-
-    @Column(name = "expiry_date", nullable = false)
-    private java.time.LocalDate expiryDate;
 
     /** DRAFT / PENDING / APPROVED / REJECTED */
     @Column(name = "approval_status", nullable = false)
@@ -102,6 +99,9 @@ public class Product {
         this.sellingStatus = sellingStatus;
     }
 
+    public boolean isVisible() { return visible; }
+    public void setVisible(boolean visible) { this.visible = visible; }
+
     public List<ProductVariant> getVariants() {
         return variants;
     }
@@ -123,10 +123,6 @@ public class Product {
     public void setOrigin(String origin) { this.origin = origin; }
     public String getBatchCode() { return batchCode; }
     public void setBatchCode(String batchCode) { this.batchCode = batchCode; }
-    public java.time.LocalDate getReceivedDate() { return receivedDate; }
-    public void setReceivedDate(java.time.LocalDate receivedDate) { this.receivedDate = receivedDate; }
-    public java.time.LocalDate getExpiryDate() { return expiryDate; }
-    public void setExpiryDate(java.time.LocalDate expiryDate) { this.expiryDate = expiryDate; }
     public String getApprovalStatus() { return approvalStatus; }
     public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
     public java.time.LocalDateTime getSubmittedAt() { return submittedAt; }
