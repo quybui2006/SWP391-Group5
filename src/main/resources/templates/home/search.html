@@ -485,69 +485,30 @@
                         <!-- PRODUCT INFO -->
                         <div class="product-info">
 
-
-                            <!-- CATEGORY & ORIGIN -->
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
-                                <span class="product-category" th:text="${variant.product.name}">Trái cây</span>
-                                <span class="origin-tag" th:if="${variant.product.origin != null and !#strings.isEmpty(variant.product.origin)}" th:text="'📍 ' + ${variant.product.origin}">📍 Đà Lạt</span>
-                            </div>
-
-
-                            <!-- VARIANT -->
-                            <h3
-                                    th:text="${variant.name}">
-
+                            <!-- PRODUCT TITLE -->
+                            <h3 class="product-title"
+                                th:text="${variant.product != null ? variant.product.name : variant.name}"
+                                th:title="${variant.product != null ? variant.product.name : variant.name}">
                                 Tên sản phẩm
-
                             </h3>
 
-
                             <div class="product-bottom">
-
-
                                 <!-- PRICE -->
-                                <div style="display: flex; flex-direction: column;" th:if="${variant.promotionalPrice != null}">
-                                    <strong class="price" style="color: #dc2626;" th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
-                                    <span style="font-size: 11.5px; text-decoration: line-through; color: #94a3b8;" th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                                <div class="price-wrap" th:if="${variant.promotionalPrice != null}">
+                                    <strong class="price price-promo" th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                                    <span class="price-old" th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
                                 </div>
 
-                                <strong
-                                        class="price"
+                                <strong class="price"
                                         th:if="${variant.promotionalPrice == null and variant.price != null}"
-                                        th:text="${#numbers.formatDecimal(
-                                            variant.price,
-                                            0,
-                                            'COMMA',
-                                            0,
-                                            'POINT'
-                                        ) + ' ₫'}">
-
+                                        th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
                                     0 ₫
-
                                 </strong>
 
-
-                                <strong
-                                        class="price"
+                                <strong class="price price-contact"
                                         th:if="${variant.promotionalPrice == null and variant.price == null}">
-
                                     Liên hệ
-
                                 </strong>
-
-
-                                <!-- ADD CART -->
-                                <button
-                                        class="add-btn"
-                                        type="button"
-                                        th:attr="data-variant-id=${variant.id}"
-                                        onclick="addToCart(event, this)"
-                                        aria-label="Thêm sản phẩm vào giỏ hàng">
-
-                                    +
-
-                                </button>
-
                             </div>
 
                         </div>
