@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${variant.name + ' | FreshFruit - Trái cây tươi mỗi ngày'}">Chi tiết sản phẩm | FreshFruit</title>
+    <title th:text="${(variant.product != null ? variant.product.name : variant.name) + ' | FreshFruit - Trái cây tươi mỗi ngày'}">Chi tiết sản phẩm | FreshFruit</title>
 
     <link rel="stylesheet" th:href="@{/css/customerproductdetail.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
@@ -39,10 +39,6 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-            <!-- Kênh Bán hàng -->
-            <a class="seller-channel-btn" th:href="@{/seller/channel}" title="Kênh Bán hàng">
-                🏪 Kênh Bán hàng
-            </a>
 
             <!-- Search Button -->
             <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
@@ -82,7 +78,6 @@
                         <div class="user-dropdown-links">
                             <!-- Customer links -->
                             <th:block th:if="${session.role == 'CUSTOMER'}">
-                                <a th:href="@{/seller/channel}">🏪 Kênh Bán hàng</a>
                                 <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
                                 <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
                                 <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
@@ -133,9 +128,7 @@
             <span class="breadcrumb-arrow">/</span>
             <a th:href="@{/search}">Sản phẩm</a>
             <span class="breadcrumb-arrow">/</span>
-            <a th:href="@{/search}" th:text="${variant.product != null ? variant.product.name : 'Trái Cây'}">Trái Cây</a>
-            <span class="breadcrumb-arrow">/</span>
-            <span class="breadcrumb-current" th:text="${variant.name}">Tên sản phẩm</span>
+            <span class="breadcrumb-current" th:text="${variant.product != null ? variant.product.name : variant.name}">Tên sản phẩm</span>
         </nav>
     </div>
 
@@ -221,7 +214,7 @@
                 <!-- Header: Badge FreshFruit Chọn + Tên sản phẩm -->
                 <div class="product-header-box">
                     <span class="fresh-badge-pick">Yêu thích+</span>
-                    <h1 class="product-title" th:text="${variant.name}">Tên sản phẩm</h1>
+                    <h1 class="product-title" th:text="${variant.product != null ? variant.product.name : variant.name}">Tên sản phẩm</h1>
                 </div>
 
                 <!-- Rating, Reviews & Sold Stats Row -->
@@ -401,11 +394,6 @@
                     </div>
 
                     <div class="shop-buttons-row">
-                        <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-action-btn chat-btn" onclick="alert('Đang kết nối nhân viên tư vấn của ' + (document.querySelector('.shop-title') ? document.querySelector('.shop-title').innerText : 'cửa hàng') + '...'); return false;">
-                            <span class="btn-icon">💬</span>
-                            <span>Chat Ngay</span>
-                        </a>
-
                         <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-action-btn view-shop-btn">
                             <span class="btn-icon">🏬</span>
                             <span>Xem Shop</span>
@@ -765,20 +753,16 @@
                     </div>
 
                     <div class="product-content">
-                        <span class="product-category-name" th:text="${rel.product != null ? rel.product.name : 'Trái Cây'}">Trái Cây</span>
-                        <h4 class="product-card-name" th:text="${rel.name}">Tên sản phẩm</h4>
+                        <h4 class="product-card-name"
+                            th:text="${rel.product != null ? rel.product.name : rel.name}"
+                            th:title="${rel.product != null ? rel.product.name : rel.name}">
+                            Tên sản phẩm
+                        </h4>
                         <div class="product-bottom-row">
                             <strong class="product-card-price" th:if="${rel.price != null}"
                                     th:text="${#numbers.formatDecimal(rel.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
                                 99.000 ₫
                             </strong>
-                            <!-- Chặn sự kiện click của thẻ <a> bao ngoài và gọi đúng hàm thêm giỏ hàng -->
-                            <button type="button" class="add-btn-circle"
-                                    th:attr="data-variant-id=${rel.id}"
-                                    onclick="addRelatedToCart(event, this)"
-                                    aria-label="Thêm vào giỏ hàng">
-                                +
-                            </button>
                         </div>
                     </div>
                 </a>
@@ -792,11 +776,9 @@
                         <div class="image-placeholder">🍎</div>
                     </div>
                     <div class="product-content">
-                        <span class="product-category-name">Táo Nhập Khẩu</span>
                         <h4 class="product-card-name">Táo Envy New Zealand Tươi Giòn</h4>
                         <div class="product-bottom-row">
                             <strong class="product-card-price">180.000 ₫</strong>
-                            <button type="button" class="add-btn-circle" aria-label="Thêm vào giỏ">+</button>
                         </div>
                     </div>
                 </a>

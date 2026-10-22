@@ -1933,14 +1933,15 @@ img {
 .product-bottom-row {
     margin-top: auto;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 8px;
 }
 
 .product-card-price {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 800;
-    color: var(--ink);
+    color: var(--green-dark, #16a34a);
 }
 
 .add-btn-circle {

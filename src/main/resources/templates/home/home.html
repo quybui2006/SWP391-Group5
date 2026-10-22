@@ -327,55 +327,28 @@
                     <!-- Product info -->
                     <div class="product-info">
 
-                        <span class="product-category"
-                              th:text="${variant.product.name}">
-                            Trái cây
-                        </span>
-
-                        <h3 th:text="${variant.name}">
+                        <h3 class="product-title"
+                            th:text="${variant.product != null ? variant.product.name : variant.name}"
+                            th:title="${variant.product != null ? variant.product.name : variant.name}">
                             Tên sản phẩm
                         </h3>
 
                         <div class="product-bottom">
+                            <div class="price-wrap" th:if="${variant.promotionalPrice != null}">
+                                <strong class="price price-promotion"
+                                        th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
+                                <span class="price-old"
+                                      th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
+                            </div>
 
-                            <span class="price-old" th:if="${variant.promotionalPrice != null}"
-                                  th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
-                            <strong class="price price-promotion"
-                                    th:if="${variant.price != null and variant.promotionalPrice != null}"
-                                    th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
                             <strong class="price"
                                     th:if="${variant.price != null and variant.promotionalPrice == null}"
                                     th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</strong>
 
-                            <strong class="price"
+                            <strong class="price price-contact"
                                     th:unless="${variant.price != null}">
                                 Liên hệ
                             </strong>
-
-                            <!-- Add to cart (Đã gắn data-variant-id chuẩn xác) -->
-                            <form th:action="@{/cart/items}"
-                                  method="post"
-                                  class="add-cart-form"
-                                  th:attr="data-variant-id=${variant.id}"
-                                  onclick="event.stopPropagation()"
-                                  onsubmit="addToCart(event, this)">
-
-                                <input type="hidden"
-                                       name="variantId"
-                                       th:value="${variant.id}">
-
-                                <input type="hidden"
-                                       name="quantity"
-                                       value="1">
-
-                                <button class="add-btn"
-                                        type="submit"
-                                        th:attr="data-variant-id=${variant.id}"
-                                        aria-label="Thêm sản phẩm vào giỏ hàng">
-                                    +
-                                </button>
-                            </form>
-
                         </div>
                     </div>
                 </article>
