@@ -1,7 +1,6 @@
 package dto.operations;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** Chi tiết đầy đủ để Operations Manager kiểm tra một biến thể trước khi duyệt. */
@@ -27,8 +26,6 @@ public record OperationsVariantDetailDto(
         String categoryName,
         String origin,
         String batchCode,
-        LocalDate receivedDate,
-        LocalDate expiryDate,
         String shopName,
         String shopPhone,
         String shopAddress,

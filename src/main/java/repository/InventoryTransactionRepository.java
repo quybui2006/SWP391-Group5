@@ -21,7 +21,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             JOIN VariantInventory i ON i.id = t.inventoryId
             JOIN ProductVariant v ON v.id = i.variantId
             JOIN v.product p
-            WHERE v.shopId = :shopId
+            WHERE v.shopId = :shopId AND t.onHandDelta <> 0
             ORDER BY t.createdAt DESC, t.id DESC
             """)
     List<InventoryTransactionRowDto> findHistoryForShop(@Param("shopId") Long shopId);

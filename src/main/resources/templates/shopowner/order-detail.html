@@ -1,13 +1,65 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Chi tiết đơn hàng</title><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}"></head>
-<body><div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside><main class="main-content product-management">
-<header class="topbar"><div><a th:href="@{/shopowner/orders}">← Đơn hàng</a><h1 th:text="${order.order_code}"></h1></div></header>
-<section class="panel"><p th:if="${message}" th:text="${message}" role="status"></p>
-<p>Người nhận: <strong th:text="${order.recipient_name}"></strong> — <span th:text="${order.recipient_phone}"></span></p>
-<p th:text="${order.delivery_address + ', ' + order.delivery_ward_name + ', ' + order.delivery_province_name}"></p>
-<p>Ghi chú: <span th:text="${order.customer_note}"></span></p><p>Trạng thái: <strong th:text="${order.status}"></strong> / <span th:text="${order.payment_status}"></span> / <span th:text="${order.delivery_status}"></span></p>
-<table><thead><tr><th>Sản phẩm</th><th>Biến thể / SKU</th><th>Số lượng</th><th>Thành tiền</th></tr></thead><tbody><tr th:each="item : ${items}"><td th:text="${item.product_name}"></td><td th:text="${item.variant_name + ' / ' + item.sku}"></td><td th:text="${item.quantity}"></td><td th:text="${#numbers.formatInteger(item.line_total,1,'COMMA') + ' ₫'}"></td></tr></tbody></table>
-<p>Tổng tiền (gồm vận chuyển): <strong th:text="${#numbers.formatInteger(order.total_amount,1,'COMMA') + ' ₫'}"></strong></p>
-<form th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}" method="post" th:action="@{/shopowner/orders/{id}/advance(id=${order.id})}"><input type="hidden" name="token" th:value="${token}"><button class="button button-primary" th:text="${order.status == 'PENDING' ? 'Xác nhận đơn hàng' : 'Chuẩn bị hàng'}"></button></form>
-</section></main></div></body></html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chi tiết đơn hàng | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-workflows.css}">
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside>
+    <main class="main-content product-management">
+        <header class="order-detail-heading">
+            <div><a class="back-link" th:href="@{/shopowner/orders}">← Đơn hàng</a><h1 th:text="${order.order_code}">Mã đơn</h1>
+                <div class="order-heading-meta"><span class="order-status" th:classappend="${order.status == 'PENDING'} ? ' pending' : (${order.status == 'CONFIRMED'} ? ' confirmed' : (${order.status == 'CANCELLED'} ? ' cancelled' : ''))"
+                     th:text="${order.status == 'PENDING'} ? 'Chờ xác nhận' : (${order.status == 'CONFIRMED'} ? 'Đã xác nhận' : (${order.status == 'CANCELLED'} ? 'Đã hủy' : (${order.status == 'COMPLETED'} ? 'Hoàn tất' : order.status)))">Chờ xác nhận</span>
+                    <span th:text="${order.payment_method == 'COD'} ? 'Thanh toán khi nhận hàng' : 'Đã chọn thanh toán trực tuyến'"></span>
+                    <span th:text="${order.payment_status == 'PAID'} ? 'Đã thanh toán' : 'Chưa thanh toán'"></span></div>
+            </div>
+        </header>
+        <p th:if="${message}" class="order-notice" th:text="${message}" role="status"></p>
+        <div class="order-detail-grid">
+            <section class="panel order-info-panel">
+                <h2>Thông tin nhận hàng</h2>
+                <dl class="order-info-list">
+                    <div><dt>Người nhận</dt><dd th:text="${order.recipient_name}"></dd></div>
+                    <div><dt>Số điện thoại</dt><dd th:text="${order.recipient_phone}"></dd></div>
+                    <div><dt>Địa chỉ</dt><dd th:text="${order.delivery_address + ', ' + order.delivery_ward_name + ', ' + order.delivery_province_name}"></dd></div>
+                    <div><dt>Ghi chú</dt><dd th:text="${order.customer_note ?: 'Không có'}"></dd></div>
+                    <div th:if="${order.cancellation_reason != null}"><dt>Lý do từ chối</dt><dd th:text="${order.cancellation_reason}"></dd></div>
+                </dl>
+            </section>
+            <section class="panel order-items-panel">
+                <h2>Sản phẩm trong đơn</h2>
+                <div class="table-wrap">
+                <table class="order-items">
+                    <thead><tr><th>Sản phẩm</th><th>Phân loại</th><th>Số lượng</th><th>Có thể bán</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+                    <tbody>
+                    <tr th:each="item : ${items}">
+                        <td th:text="${item.product_name}"></td>
+                        <td th:text="${item.variant_name + ' / ' + item.sku}"></td>
+                        <td th:text="${item.quantity}"></td>
+                        <td th:text="${item.available_quantity}"></td>
+                        <td th:text="${#numbers.formatInteger(item.sale_unit_price,1,'COMMA') + ' ₫'}"></td>
+                        <td th:text="${#numbers.formatInteger(item.line_total,1,'COMMA') + ' ₫'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+                </div>
+                <dl class="order-costs">
+                    <div><dt>Tiền hàng</dt><dd th:text="${#numbers.formatInteger(order.subtotal,1,'COMMA') + ' ₫'}"></dd></div>
+                    <div th:if="${order.voucher_discount != null and order.voucher_discount > 0}"><dt>Giảm giá</dt><dd th:text="${'- ' + #numbers.formatInteger(order.voucher_discount,1,'COMMA') + ' ₫'}"></dd></div>
+                    <div><dt>Phí giao hàng</dt><dd th:text="${#numbers.formatInteger(order.shipping_fee,1,'COMMA') + ' ₫'}"></dd></div>
+                    <div class="order-total"><dt>Khách thanh toán</dt><dd th:text="${#numbers.formatInteger(order.total_amount,1,'COMMA') + ' ₫'}"></dd></div>
+                </dl>
+                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD'}">Đơn thanh toán trực tuyến sẽ được xác nhận tự động khi thanh toán thành công.</p>
+                <p class="order-notice" th:if="${order.status == 'CONFIRMED'}">Đơn đã được xác nhận và chuyển sang bước giao hàng.</p>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

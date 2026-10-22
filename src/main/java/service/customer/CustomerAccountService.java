@@ -23,8 +23,12 @@ public class CustomerAccountService {
     }
 
     private void ensureFavoritesTable() {
-        jdbc.execute("CREATE TABLE IF NOT EXISTS customer_profiles (user_id BIGINT PRIMARY KEY, gender VARCHAR(10), birth_date DATE, avatar MEDIUMBLOB, avatar_type VARCHAR(30), FOREIGN KEY(user_id) REFERENCES users(id))");
-        jdbc.execute("CREATE TABLE IF NOT EXISTS customer_favorites (user_id BIGINT NOT NULL, variant_id BIGINT NOT NULL, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), PRIMARY KEY(user_id, variant_id), FOREIGN KEY(user_id) REFERENCES users(id), FOREIGN KEY(variant_id) REFERENCES product_variants(id))");
+        try {
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_profiles (user_id BIGINT PRIMARY KEY, gender VARCHAR(10), birth_date DATE, avatar MEDIUMBLOB, avatar_type VARCHAR(30), FOREIGN KEY(user_id) REFERENCES users(id))");
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_favorites (user_id BIGINT NOT NULL, variant_id BIGINT NOT NULL, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), PRIMARY KEY(user_id, variant_id), FOREIGN KEY(user_id) REFERENCES users(id), FOREIGN KEY(variant_id) REFERENCES product_variants(id))");
+        } catch (Exception ignored) {
+            // Handled by database migrations V1
+        }
     }
 
     public Map<String,Object> profile(Long userId) {
@@ -122,7 +126,7 @@ public class CustomerAccountService {
     public void updateProfile(Long userId, String fullName, String phone) {
         if (fullName == null || fullName.isBlank() || fullName.trim().length() > 150) throw new IllegalArgumentException("Họ tên không hợp lệ.");
         if (phone != null && phone.trim().length() > 20) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
-        jdbc.update("UPDATE users SET full_name=?, phone=? WHERE id=? AND status='ACTIVE' AND approval_status='APPROVED'", fullName.trim(), phone == null || phone.isBlank() ? null : phone.trim(), userId);
+        jdbc.update("UPDATE users SET full_name=?, phone=? WHERE id=? AND status='ACTIVE'", fullName.trim(), phone == null || phone.isBlank() ? null : phone.trim(), userId);
     }
     @Transactional
     public void saveProfile(Long userId, String fullName, String phone, String gender, String birthDate,

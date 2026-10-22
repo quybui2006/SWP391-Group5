@@ -40,8 +40,17 @@ public class NotificationDto {
             dto.setTargetUrl("/customer/account/orders");
         } else if ("ACCOUNT".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account");
+        } else if ("OP_PAYMENT".equalsIgnoreCase(n.getTargetType()) || "OP_PAYMENT".equalsIgnoreCase(n.getType())
+                || (n.getEventKey() != null && n.getEventKey().startsWith("OP-PAYMENT-"))) {
+            dto.setTargetUrl(n.getTargetId() != null ? "/operations/shops/" + n.getTargetId() : "/operations/payments");
+        } else if ("PAYMENT_VERIFICATION".equalsIgnoreCase(n.getTargetType()) || "PAYMENT".equalsIgnoreCase(n.getTargetType())) {
+            dto.setTargetUrl("/shopowner/payment-verification");
         } else if ("SHOP".equalsIgnoreCase(n.getTargetType())) {
-            dto.setTargetUrl("/shopowner/reopen-request");
+            dto.setTargetUrl("/shopowner/home");
+        } else if ("POST_AUDIT".equalsIgnoreCase(n.getTargetType()) || "POST_AUDIT".equalsIgnoreCase(n.getType())) {
+            dto.setTargetUrl("/operations/post-audit");
+        } else if ("SHOP_APPROVAL".equalsIgnoreCase(n.getTargetType()) || "SHOP_APPROVAL".equalsIgnoreCase(n.getType())) {
+            dto.setTargetUrl(n.getTargetId() != null ? "/operations/shops/" + n.getTargetId() : "/operations/shops");
         } else {
             dto.setTargetUrl("/customer/account/notifications");
         }
@@ -70,6 +79,11 @@ public class NotificationDto {
             case "PRODUCT":
                 dto.setIcon("🍊");
                 dto.setBadgeClass("notif-badge-product");
+                break;
+            case "PAYMENT":
+            case "PAYMENT_VERIFICATION":
+                dto.setIcon("💳");
+                dto.setBadgeClass("notif-badge-shop");
                 break;
             default:
                 dto.setIcon("🔔");

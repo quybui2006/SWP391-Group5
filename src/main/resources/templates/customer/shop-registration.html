@@ -346,8 +346,85 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="idCardPlace">Nơi cấp</label>
-                            <input type="text" id="idCardPlace" th:field="*{idCardPlace}" class="form-control" placeholder="Ví dụ: Cục Cảnh sát QLHC về TTXH">
+                            <label for="idCardPlaceSelect">Nơi cấp</label>
+                            <select id="idCardPlaceSelect" class="form-control">
+                                <option value="">-- Chọn cơ quan cấp theo giấy tờ --</option>
+                                <optgroup label="Cơ quan cấp phổ biến nhất (CCCD / Thẻ Căn cước / Hộ chiếu)">
+                                    <option value="Cục Cảnh sát QLHC về TTXH">Cục Cảnh sát QLHC về TTXH (CCCD gắn chip)</option>
+                                    <option value="Bộ Công an">Bộ Công an (Thẻ Căn cước mới từ 01/07/2024)</option>
+                                    <option value="Cục Cảnh sát ĐKQL cư trú và DLQG về dân cư">Cục Cảnh sát ĐKQL cư trú và DLQG về dân cư (CCCD mã vạch)</option>
+                                    <option value="Cục Quản lý xuất nhập cảnh">Cục Quản lý xuất nhập cảnh (Hộ chiếu / Passport)</option>
+                                </optgroup>
+                                <optgroup label="Công an các Tỉnh / Thành phố (CMND 9 số &amp; 12 số cũ)">
+                                    <option value="Công an TP. Hà Nội">Công an TP. Hà Nội</option>
+                                    <option value="Công an TP. Hồ Chí Minh">Công an TP. Hồ Chí Minh</option>
+                                    <option value="Công an TP. Đà Nẵng">Công an TP. Đà Nẵng</option>
+                                    <option value="Công an TP. Hải Phòng">Công an TP. Hải Phòng</option>
+                                    <option value="Công an TP. Cần Thơ">Công an TP. Cần Thơ</option>
+                                    <option value="Công an tỉnh An Giang">Công an tỉnh An Giang</option>
+                                    <option value="Công an tỉnh Bà Rịa - Vũng Tàu">Công an tỉnh Bà Rịa - Vũng Tàu</option>
+                                    <option value="Công an tỉnh Bắc Giang">Công an tỉnh Bắc Giang</option>
+                                    <option value="Công an tỉnh Bắc Kạn">Công an tỉnh Bắc Kạn</option>
+                                    <option value="Công an tỉnh Bạc Liêu">Công an tỉnh Bạc Liêu</option>
+                                    <option value="Công an tỉnh Bắc Ninh">Công an tỉnh Bắc Ninh</option>
+                                    <option value="Công an tỉnh Bến Tre">Công an tỉnh Bến Tre</option>
+                                    <option value="Công an tỉnh Bình Định">Công an tỉnh Bình Định</option>
+                                    <option value="Công an tỉnh Bình Dương">Công an tỉnh Bình Dương</option>
+                                    <option value="Công an tỉnh Bình Phước">Công an tỉnh Bình Phước</option>
+                                    <option value="Công an tỉnh Bình Thuận">Công an tỉnh Bình Thuận</option>
+                                    <option value="Công an tỉnh Cà Mau">Công an tỉnh Cà Mau</option>
+                                    <option value="Công an tỉnh Cao Bằng">Công an tỉnh Cao Bằng</option>
+                                    <option value="Công an tỉnh Đắk Lắk">Công an tỉnh Đắk Lắk</option>
+                                    <option value="Công an tỉnh Đắk Nông">Công an tỉnh Đắk Nông</option>
+                                    <option value="Công an tỉnh Điện Biên">Công an tỉnh Điện Biên</option>
+                                    <option value="Công an tỉnh Đồng Nai">Công an tỉnh Đồng Nai</option>
+                                    <option value="Công an tỉnh Đồng Tháp">Công an tỉnh Đồng Tháp</option>
+                                    <option value="Công an tỉnh Gia Lai">Công an tỉnh Gia Lai</option>
+                                    <option value="Công an tỉnh Hà Giang">Công an tỉnh Hà Giang</option>
+                                    <option value="Công an tỉnh Hà Nam">Công an tỉnh Hà Nam</option>
+                                    <option value="Công an tỉnh Hà Tĩnh">Công an tỉnh Hà Tĩnh</option>
+                                    <option value="Công an tỉnh Hải Dương">Công an tỉnh Hải Dương</option>
+                                    <option value="Công an tỉnh Hậu Giang">Công an tỉnh Hậu Giang</option>
+                                    <option value="Công an tỉnh Hòa Bình">Công an tỉnh Hòa Bình</option>
+                                    <option value="Công an tỉnh Hưng Yên">Công an tỉnh Hưng Yên</option>
+                                    <option value="Công an tỉnh Khánh Hòa">Công an tỉnh Khánh Hòa</option>
+                                    <option value="Công an tỉnh Kiên Giang">Công an tỉnh Kiên Giang</option>
+                                    <option value="Công an tỉnh Kon Tum">Công an tỉnh Kon Tum</option>
+                                    <option value="Công an tỉnh Lai Châu">Công an tỉnh Lai Châu</option>
+                                    <option value="Công an tỉnh Lâm Đồng">Công an tỉnh Lâm Đồng</option>
+                                    <option value="Công an tỉnh Lạng Sơn">Công an tỉnh Lạng Sơn</option>
+                                    <option value="Công an tỉnh Lào Cai">Công an tỉnh Lào Cai</option>
+                                    <option value="Công an tỉnh Long An">Công an tỉnh Long An</option>
+                                    <option value="Công an tỉnh Nam Định">Công an tỉnh Nam Định</option>
+                                    <option value="Công an tỉnh Nghệ An">Công an tỉnh Nghệ An</option>
+                                    <option value="Công an tỉnh Ninh Bình">Công an tỉnh Ninh Bình</option>
+                                    <option value="Công an tỉnh Ninh Thuận">Công an tỉnh Ninh Thuận</option>
+                                    <option value="Công an tỉnh Phú Thọ">Công an tỉnh Phú Thọ</option>
+                                    <option value="Công an tỉnh Phú Yên">Công an tỉnh Phú Yên</option>
+                                    <option value="Công an tỉnh Quảng Bình">Công an tỉnh Quảng Bình</option>
+                                    <option value="Công an tỉnh Quảng Nam">Công an tỉnh Quảng Nam</option>
+                                    <option value="Công an tỉnh Quảng Ngãi">Công an tỉnh Quảng Ngãi</option>
+                                    <option value="Công an tỉnh Quảng Ninh">Công an tỉnh Quảng Ninh</option>
+                                    <option value="Công an tỉnh Quảng Trị">Công an tỉnh Quảng Trị</option>
+                                    <option value="Công an tỉnh Sóc Trăng">Công an tỉnh Sóc Trăng</option>
+                                    <option value="Công an tỉnh Sơn La">Công an tỉnh Sơn La</option>
+                                    <option value="Công an tỉnh Tây Ninh">Công an tỉnh Tây Ninh</option>
+                                    <option value="Công an tỉnh Thái Bình">Công an tỉnh Thái Bình</option>
+                                    <option value="Công an tỉnh Thái Nguyên">Công an tỉnh Thái Nguyên</option>
+                                    <option value="Công an tỉnh Thanh Hóa">Công an tỉnh Thanh Hóa</option>
+                                    <option value="Công an tỉnh Thừa Thiên Huế">Công an tỉnh Thừa Thiên Huế</option>
+                                    <option value="Công an tỉnh Tiền Giang">Công an tỉnh Tiền Giang</option>
+                                    <option value="Công an tỉnh Trà Vinh">Công an tỉnh Trà Vinh</option>
+                                    <option value="Công an tỉnh Tuyên Quang">Công an tỉnh Tuyên Quang</option>
+                                    <option value="Công an tỉnh Vĩnh Long">Công an tỉnh Vĩnh Long</option>
+                                    <option value="Công an tỉnh Vĩnh Phúc">Công an tỉnh Vĩnh Phúc</option>
+                                    <option value="Công an tỉnh Yên Bái">Công an tỉnh Yên Bái</option>
+                                </optgroup>
+                                <optgroup label="Tùy chọn khác">
+                                    <option value="__OTHER__">Nơi cấp khác (Tự nhập tay)...</option>
+                                </optgroup>
+                            </select>
+                            <input type="text" id="idCardPlace" th:field="*{idCardPlace}" class="form-control" style="display:none; margin-top:8px;" placeholder="Nhập tên cơ quan nơi cấp khác">
                         </div>
                     </div>
 
@@ -439,8 +516,11 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="wardName">Phường / Xã / Thị trấn <span class="req">*</span></label>
-                            <input type="text" id="wardName" th:field="*{wardName}" class="form-control" placeholder="Ví dụ: Phường Dịch Vọng Hậu" required>
+                            <label for="wardNameSelect">Phường / Xã / Thị trấn <span class="req">*</span></label>
+                            <select id="wardNameSelect" class="form-control" required disabled>
+                                <option value="">-- Vui lòng chọn Tỉnh / Thành phố trước --</option>
+                            </select>
+                            <input type="text" id="wardName" th:field="*{wardName}" class="form-control" style="display:none; margin-top:8px;" placeholder="Nhập tên Phường / Xã kho hàng">
                             <span class="field-error" th:if="${#fields.hasErrors('wardName')}" th:errors="*{wardName}">Lỗi phường xã</span>
                         </div>
                     </div>
@@ -540,9 +620,61 @@
                 if (hasErrorsStep2) {
                     switchToStep2();
                 }
+
+                // Đồng bộ Nơi cấp (idCardPlaceSelect <-> idCardPlace)
+                const placeSelect = document.getElementById('idCardPlaceSelect');
+                const placeInput = document.getElementById('idCardPlace');
+                if (placeSelect && placeInput) {
+                    const currentVal = placeInput.value ? placeInput.value.trim() : '';
+                    let found = false;
+
+                    if (currentVal) {
+                        for (let i = 0; i < placeSelect.options.length; i++) {
+                            if (placeSelect.options[i].value === currentVal) {
+                                placeSelect.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            placeSelect.value = '__OTHER__';
+                            placeInput.style.display = 'block';
+                        }
+                    } else {
+                        placeSelect.value = 'Cục Cảnh sát QLHC về TTXH';
+                        placeInput.value = 'Cục Cảnh sát QLHC về TTXH';
+                    }
+
+                    placeSelect.addEventListener('change', function () {
+                        if (this.value === '__OTHER__') {
+                            placeInput.style.display = 'block';
+                            placeInput.value = '';
+                            placeInput.focus();
+                        } else {
+                            placeInput.style.display = 'none';
+                            placeInput.value = this.value;
+                        }
+                    });
+
+                    const form = placeSelect.closest('form');
+                    if (form) {
+                        form.addEventListener('submit', function (e) {
+                            if (placeSelect.value === '__OTHER__') {
+                                if (!placeInput.value.trim()) {
+                                    e.preventDefault();
+                                    alert('Vui lòng nhập cơ quan nơi cấp trên giấy tờ của bạn.');
+                                    placeInput.focus();
+                                }
+                            } else if (placeSelect.value) {
+                                placeInput.value = placeSelect.value;
+                            }
+                        });
+                    }
+                }
             });
         </script>
     </main>
 </div>
+<script th:src="@{/js/address-ward-selector.js}"></script>
 </body>
 </html>

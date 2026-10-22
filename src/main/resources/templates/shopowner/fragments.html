@@ -20,8 +20,15 @@
             <strong th:text="${shopName ?: 'Cửa hàng của tôi'}">
                 Cửa hàng của tôi
             </strong>
-            <small>Cửa hàng của tôi</small>
+            <small th:text="${shop != null && shop.approvalStatus == 'NOT_REGISTERED' ? 'Chưa mở shop' : 'Cửa hàng của tôi'}">Cửa hàng của tôi</small>
         </div>
+    </div>
+
+    <!-- Nút Đăng ký mở Shop nổi bật trong Sidebar nếu chưa có cửa hàng -->
+    <div th:if="${shop != null && shop.approvalStatus == 'NOT_REGISTERED'}" style="margin: 0 5px 20px;">
+        <a th:href="@{/seller/activate}" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #fff; font-weight: 700; font-size: 12px; border-radius: 9px; text-decoration: none; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);">
+            <span>🏪</span> Đăng ký mở Shop
+        </a>
     </div>
 
     <!-- Navigation -->
@@ -77,6 +84,11 @@
             <span>♧</span> Tồn kho
         </a>
 
+        <a th:classappend="${activePage == 'payment-verification'} ? ' active' : ''"
+           th:href="@{/shopowner/payment-verification}">
+            <span>💳</span> Đối soát thanh toán
+        </a>
+
         <span class="nav-label">KHÁC</span>
 
         <a href="#" data-pending>
@@ -87,8 +99,8 @@
             <span>?</span> Trợ giúp
         </a>
 
-        <form th:action="@{/logout}" method="post" style="margin: 10px 10px 0;">
-            <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 10px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        <form th:action="@{/logout}" method="post" style="margin: 8px 4px 0;">
+            <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 8px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
                 <span>🚪</span> Đăng xuất
             </button>
         </form>

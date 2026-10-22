@@ -10,6 +10,12 @@ import repository.ProvinceRepository;
 import repository.ShopRepository;
 import repository.UserRepository;
 
+import dto.seller.SellerAccountActivationDto;
+import dto.seller.SellerCreateShopDto;
+import jakarta.annotation.PostConstruct;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -20,16 +26,127 @@ public class CustomerShopRegistrationService {
     private final ProvinceRepository provinceRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final AddressLocationService addressLocationService;
+    private final JdbcTemplate jdbcTemplate;
 
     public CustomerShopRegistrationService(
             ShopRepository shopRepository,
             ProvinceRepository provinceRepository,
             UserRepository userRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            AddressLocationService addressLocationService,
+            JdbcTemplate jdbcTemplate) {
         this.shopRepository = shopRepository;
         this.provinceRepository = provinceRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.addressLocationService = addressLocationService;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @PostConstruct
+    public void initSellerActivationsTable() {
+        try {
+            jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS seller_activations (
+                    user_id BIGINT PRIMARY KEY,
+                    phone VARCHAR(20) NOT NULL,
+                    email VARCHAR(254) NOT NULL,
+                    id_card_name VARCHAR(150) NOT NULL,
+                    id_card_number VARCHAR(50) NOT NULL,
+                    id_card_date DATE NOT NULL,
+                    id_card_place VARCHAR(150) NOT NULL,
+                    business_type VARCHAR(50) NOT NULL DEFAULT 'INDIVIDUAL',
+                    tax_code VARCHAR(50) NULL,
+                    tax_name VARCHAR(150) NULL,
+                    tax_email VARCHAR(254) NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """);
+        } catch (Exception ignored) {}
+    }
+
+    @Transactional
+    public void saveSellerActivation(Long userId, SellerAccountActivationDto form) {
+        if (userId == null || form == null) return;
+
+        LocalDate cardDate = null;
+        if (form.getIdCardDate() != null && !form.getIdCardDate().isBlank()) {
+            try {
+                cardDate = LocalDate.parse(form.getIdCardDate().trim());
+            } catch (Exception ignored) {}
+        }
+        if (cardDate == null) {
+            cardDate = LocalDate.now();
+        }
+
+        jdbcTemplate.update("""
+            INSERT INTO seller_activations 
+            (user_id, phone, email, id_card_name, id_card_number, id_card_date, id_card_place, business_type, tax_code, tax_name, tax_email, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                phone = VALUES(phone),
+                email = VALUES(email),
+                id_card_name = VALUES(id_card_name),
+                id_card_number = VALUES(id_card_number),
+                id_card_date = VALUES(id_card_date),
+                id_card_place = VALUES(id_card_place),
+                business_type = VALUES(business_type),
+                tax_code = VALUES(tax_code),
+                tax_name = VALUES(tax_name),
+                tax_email = VALUES(tax_email),
+                updated_at = CURRENT_TIMESTAMP
+        """,
+        userId,
+        form.getPhone() != null ? form.getPhone().trim() : "",
+        form.getEmail() != null ? form.getEmail().trim() : "",
+        form.getIdCardName() != null ? form.getIdCardName().trim() : "",
+        form.getIdCardNumber() != null ? form.getIdCardNumber().trim() : "",
+        cardDate,
+        form.getIdCardPlace() != null ? form.getIdCardPlace().trim() : "",
+        form.getBusinessType() != null ? form.getBusinessType() : "INDIVIDUAL",
+        form.getTaxCode() != null ? form.getTaxCode().trim() : null,
+        form.getTaxName() != null ? form.getTaxName().trim() : null,
+        form.getTaxEmail() != null ? form.getTaxEmail().trim() : null
+        );
+
+        if (form.getPhone() != null && !form.getPhone().isBlank()) {
+            userRepository.findById(userId).ifPresent(u -> {
+                u.setPhone(form.getPhone().trim());
+                userRepository.save(u);
+            });
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<SellerAccountActivationDto> getSellerActivation(Long userId) {
+        if (userId == null) return Optional.empty();
+        try {
+            List<SellerAccountActivationDto> results = jdbcTemplate.query(
+                "SELECT phone, email, id_card_name, id_card_number, id_card_date, id_card_place, business_type, tax_code, tax_name, tax_email FROM seller_activations WHERE user_id = ?",
+                (rs, rowNum) -> {
+                    SellerAccountActivationDto dto = new SellerAccountActivationDto();
+                    dto.setPhone(rs.getString("phone"));
+                    dto.setEmail(rs.getString("email"));
+                    dto.setIdCardName(rs.getString("id_card_name"));
+                    dto.setIdCardNumber(rs.getString("id_card_number"));
+                    java.sql.Date d = rs.getDate("id_card_date");
+                    dto.setIdCardDate(d != null ? d.toLocalDate().toString() : null);
+                    dto.setIdCardPlace(rs.getString("id_card_place"));
+                    dto.setBusinessType(rs.getString("business_type"));
+                    dto.setTaxCode(rs.getString("tax_code"));
+                    dto.setTaxName(rs.getString("tax_name"));
+                    dto.setTaxEmail(rs.getString("tax_email"));
+                    return dto;
+                },
+                userId
+            );
+            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
     }
 
     @Transactional(readOnly = true)
@@ -38,12 +155,27 @@ public class CustomerShopRegistrationService {
         return shopRepository.findByOwnerId(userId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Province> getAllActiveProvinces() {
-        return provinceRepository.findAll().stream()
-                .filter(Province::isActive)
+        List<Province> list = provinceRepository.findAll().stream()
+                .filter(p -> p.isActive() && !"DEMO".equalsIgnoreCase(p.getCode()))
                 .sorted(Comparator.comparing(Province::getName))
                 .toList();
+
+        if (list.size() <= 1 && addressLocationService != null) {
+            List<Province> seeded = addressLocationService.getLocations().stream()
+                    .map(loc -> new Province(String.valueOf(loc.code()), loc.name()))
+                    .filter(p -> !provinceRepository.existsById(p.getCode()))
+                    .toList();
+            if (!seeded.isEmpty()) {
+                provinceRepository.saveAll(seeded);
+                list = provinceRepository.findAll().stream()
+                        .filter(p -> p.isActive() && !"DEMO".equalsIgnoreCase(p.getCode()))
+                        .sorted(Comparator.comparing(Province::getName))
+                        .toList();
+            }
+        }
+        return list;
     }
 
     @Transactional

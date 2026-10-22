@@ -126,10 +126,44 @@
             if (reasonInput) {
                 reasonInput.value = '';
                 reasonInput.setCustomValidity('');
+                updateCharCount();
             }
             dialog.showModal();
             reasonInput?.focus();
         }
+    });
+
+    const charCounter = document.querySelector('#rejectionCharCount');
+    function updateCharCount() {
+        if (!charCounter || !reasonInput) return;
+        const len = reasonInput.value.length;
+        charCounter.textContent = `${len} / 1000 ký tự`;
+        if (len > 900) {
+            charCounter.style.color = '#dc2626';
+            charCounter.style.fontWeight = '700';
+        } else {
+            charCounter.style.color = '';
+            charCounter.style.fontWeight = '';
+        }
+    }
+
+    reasonInput?.addEventListener('input', () => {
+        reasonInput.setCustomValidity('');
+        updateCharCount();
+    });
+
+    document.querySelectorAll('.reason-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const reason = chip.dataset.reason || chip.textContent.trim();
+            if (!reasonInput) return;
+            if (reasonInput.value.trim().length > 0) {
+                reasonInput.value = reasonInput.value.trim() + '; ' + reason;
+            } else {
+                reasonInput.value = reason;
+            }
+            reasonInput.dispatchEvent(new Event('input'));
+            reasonInput.focus();
+        });
     });
 
     rejectForm?.addEventListener('submit', event => {
@@ -150,11 +184,14 @@
         sendAction(rejectingId, 'reject', reason.trim());
     });
 
-    reasonInput?.addEventListener('input', () => reasonInput.setCustomValidity(''));
     document.querySelector('#closeDialog')?.addEventListener('click', () => dialog?.close());
     document.querySelector('#cancelDialog')?.addEventListener('click', () => dialog?.close());
     dialog?.addEventListener('close', () => {
         if (!requestInProgress) rejectingId = null;
+        if (reasonInput) {
+            reasonInput.value = '';
+            updateCharCount();
+        }
     });
     searchInput?.addEventListener('input', () => { currentPage = 0; renderTable(); });
     previousButton?.addEventListener('click', () => { currentPage = Math.max(0, currentPage - 1); renderTable(); });

@@ -1,37 +1,173 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Chi tiết biến thể | FreshFruit</title>
-<link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}">
-<style>.variant-detail-hero{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}.variant-detail-image{width:100%;aspect-ratio:1;object-fit:cover;background:#f4faf5;border:1px solid var(--line);border-radius:14px}.variant-approval-panel{margin-top:16px;padding:14px;border-radius:12px;background:#f5faf7;border:1px solid var(--line)}.variant-approval-panel p{margin:7px 0 0}.variant-rejection-box{margin-top:10px;padding:10px;border-radius:8px;background:#fff0ef;color:#a52822}@media(max-width:760px){.variant-detail-hero{grid-template-columns:1fr}.variant-detail-image{max-width:320px}}</style>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết biến thể | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <style>
+        .variant-detail-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr);
+            gap: 18px;
+            align-items: start;
+        }
+        .variant-detail-hero {
+            display: grid;
+            grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+        .variant-detail-image {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            background: #f4faf5;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+        }
+        .variant-approval-panel {
+            margin-top: 16px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f5faf7;
+        }
+        .variant-approval-panel p { margin: 7px 0 0; line-height: 1.5; }
+        .variant-rejection-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #fff0ef;
+            color: #a52822;
+        }
+        .variant-stock-card h2 { margin-bottom: 10px; }
+        .variant-stock-card .detail-list { grid-template-columns: 1fr; }
+        .variant-detail-layout > .form-card { min-width: 0; }
+        .product-management .topbar { align-items: flex-start; }
+        .product-management .topbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+        .variant-detail-layout + .form-card { margin-top: 18px; }
+        @media (max-width: 1050px) {
+            .variant-detail-layout { grid-template-columns: 1fr; }
+            .variant-stock-card .detail-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 720px) {
+            .variant-detail-hero { grid-template-columns: 1fr; }
+            .variant-detail-image { max-width: 300px; }
+            .product-management .topbar-actions { justify-content: flex-start; }
+            .variant-stock-card .detail-list { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body><div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('variants')}"></aside><main class="main-content product-management">
-<header class="topbar"><div><p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Chi tiết</span></p>
-<h1 th:text="${variant.variantName}">Chi tiết biến thể</h1><p class="muted">Hồ sơ sản phẩm: <strong th:text="${variant.productName}">Sản phẩm nhóm</strong></p></div>
-<div class="topbar-actions"><a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách</a><a class="button button-primary" th:if="${variant.approvalStatus != 'PENDING'}" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}" th:text="${variant.approvalStatus == 'REJECTED' ? 'Sửa và gửi hậu kiểm lại' : 'Sửa biến thể'}">Sửa biến thể</a>
-<button class="button button-primary open-variant-complaint" type="button" th:if="${variant.approvalStatus == 'REJECTED'}" th:attr="data-variant-id=${variant.id},data-variant-name=${variant.variantName}">Khiếu nại</button></div></header>
-<p class="alert" id="variantApprovalToast" role="status" aria-live="polite" hidden></p>
-<section class="form-card variant-detail-hero">
-<div><img class="variant-detail-image" th:if="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}" th:src="${variant.imageUrl}" th:alt="${variant.variantName}"><div class="variant-detail-image" th:unless="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}" style="display:grid;place-items:center;font-size:56px">🍊</div></div>
-<div><h2>Thông tin biến thể</h2><div class="detail-list">
-<div><span>Tên biến thể</span><strong th:text="${variant.variantName}">-</strong></div><div><span>SKU</span><strong th:text="${variant.sku}">-</strong></div>
-<div><span>Quy cách</span><strong th:text="${variant.specification ?: '-'}">-</strong></div><div><span>Đơn vị</span><strong th:text="${variant.unitName}">-</strong></div>
-<div><span>Giá bán</span><strong th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">-</strong></div><div><span>Trạng thái mở bán</span><strong th:text="${variant.status}">-</strong></div>
-<div><span>Trạng thái duyệt</span><strong th:text="${variant.approvalStatus}">-</strong></div>
-<div><span>Ngày đăng bán</span><strong th:text="${variant.submittedAt != null ? #temporals.format(variant.submittedAt, 'dd/MM/yyyy HH:mm') : '-'}">-</strong></div>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('variants')}"></aside>
+    <main class="main-content product-management">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Chi tiết</span></p>
+                <h1 th:text="${variant.variantName}">Chi tiết biến thể</h1>
+                <p class="muted">Hồ sơ sản phẩm: <strong th:text="${variant.productName}">Sản phẩm nhóm</strong></p>
+            </div>
+            <div class="topbar-actions">
+                <a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách</a>
+                <form th:if="${variant.status == 'ACTIVE' and variant.approvalStatus != 'REJECTED'}"
+                      method="post"
+                      th:action="@{/shopowner/product-variants/{id}/hide(id=${variant.id})}"
+                      onsubmit="return confirm('Ẩn biến thể này khỏi gian hàng? Đơn đã xác nhận sẽ không bị thay đổi.');">
+                    <button class="button button-primary" type="submit">Ẩn khỏi gian hàng</button>
+                </form>
+                <form th:if="${variant.status == 'INACTIVE' and variant.approvalStatus != 'REJECTED'}"
+                      method="post"
+                      th:action="@{/shopowner/product-variants/{id}/show(id=${variant.id})}"
+                      onsubmit="return confirm('Hiển thị lại biến thể này cho khách hàng?');">
+                    <button class="button button-primary" type="submit">Hiện lại trên gian hàng</button>
+                </form>
+                <button class="button button-primary open-variant-complaint"
+                        type="button"
+                        th:if="${variant.approvalStatus == 'REJECTED'}"
+                        th:attr="data-variant-id=${variant.id},data-variant-name=${variant.variantName}">
+                    Khiếu nại
+                </button>
+            </div>
+        </header>
+
+        <p class="alert" th:if="${success}" th:text="${success}"></p>
+        <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
+        <p class="alert" id="variantApprovalToast" role="status" aria-live="polite" hidden></p>
+
+        <div class="variant-detail-layout">
+            <section class="form-card variant-detail-hero">
+                <div>
+                    <img class="variant-detail-image"
+                         th:if="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}"
+                         th:src="${variant.imageUrl}"
+                         th:alt="${variant.variantName}">
+                    <div class="variant-detail-image"
+                         th:unless="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}"
+                         style="display:grid;place-items:center;font-size:56px">🍊</div>
+                </div>
+                <div>
+                    <h2>Thông tin biến thể</h2>
+                    <div class="detail-list">
+                        <div><span>Tên biến thể</span><strong th:text="${variant.variantName}">-</strong></div>
+                        <div><span>SKU</span><strong th:text="${variant.sku}">-</strong></div>
+                        <div><span>Quy cách</span><strong th:text="${variant.specification ?: '-'}">-</strong></div>
+                        <div><span>Đơn vị</span><strong th:text="${variant.unitName}">-</strong></div>
+                        <div><span>Giá bán</span><strong th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">-</strong></div>
+                        <div><span>Trạng thái mở bán</span><strong th:text="${variant.status}">-</strong></div>
+                        <div><span>Trạng thái duyệt</span><strong th:text="${variant.approvalStatus}">-</strong></div>
+                        <div><span>Ngày đăng bán</span><strong th:text="${variant.submittedAt != null ? #temporals.format(variant.submittedAt, 'dd/MM/yyyy HH:mm') : '-'}">-</strong></div>
+                    </div>
+                    <div class="variant-approval-panel">
+                        <strong th:text="${variant.approvalStatus == 'APPROVED' ? (variant.status == 'ACTIVE' ? 'Đã hậu kiểm · đang bán' : 'Đã hậu kiểm · ngừng bán') : (variant.approvalStatus == 'PENDING' ? (variant.status == 'ACTIVE' ? 'Đang bán · chờ hậu kiểm' : 'Chờ hậu kiểm · chưa mở bán') : (variant.approvalStatus == 'REJECTED' ? 'Biến thể bị từ chối' : 'Biến thể chưa đăng bán'))}">Trạng thái duyệt</strong>
+                        <p th:if="${variant.approvalStatus == 'REJECTED' and variant.rejectionReason != null}"
+                           class="variant-rejection-box"
+                           th:text="${'Lý do từ chối: ' + variant.rejectionReason}">Lý do từ chối</p>
+                        <p th:if="${variant.approvalStatus == 'PENDING' and variant.status == 'ACTIVE'}" class="muted">
+                            Biến thể đang mở bán trong lúc Operations kiểm tra hậu kiểm.
+                        </p>
+                        <p th:if="${variant.approvalStatus == 'PENDING' and variant.status == 'INACTIVE'}" class="muted">
+                            Biến thể đang ẩn khỏi gian hàng trong khi chờ Operations hậu kiểm.
+                        </p>
+                        <p th:if="${variant.approvalStatus == 'REJECTED'}" class="muted">
+                            Biến thể đã ngừng bán. Bạn có thể lưu bản nháp khiếu nại và giải trình.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-card variant-stock-card">
+                <h2>Tồn kho</h2>
+                <div class="detail-list">
+                    <div><span>Hiện có</span><strong th:text="${variant.quantityOnHand + ' ' + variant.unitName}">-</strong></div>
+                    <div><span>Đang giữ</span><strong th:text="${variant.reservedQuantity + ' ' + variant.unitName}">-</strong></div>
+                    <div><span>Có thể bán</span><strong th:text="${variant.availableQuantity + ' ' + variant.unitName}">-</strong></div>
+                    <div><span>Ngưỡng cảnh báo</span><strong th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '-'}">-</strong></div>
+                </div>
+            </section>
+        </div>
+    </main>
 </div>
-<div class="variant-approval-panel"><strong th:text="${variant.approvalStatus == 'APPROVED' ? (variant.status == 'ACTIVE' ? 'Đã hậu kiểm · đang bán' : 'Đã hậu kiểm · ngừng bán') : (variant.approvalStatus == 'PENDING' ? (variant.status == 'ACTIVE' ? 'Đang bán · chờ hậu kiểm' : 'Chờ hậu kiểm · chưa mở bán') : (variant.approvalStatus == 'REJECTED' ? 'Biến thể bị từ chối' : 'Biến thể chưa đăng bán'))}">Trạng thái duyệt</strong>
-<p th:if="${variant.approvalStatus == 'REJECTED' and variant.rejectionReason != null}" class="variant-rejection-box" th:text="${'Lý do từ chối: ' + variant.rejectionReason}">Lý do từ chối</p>
-<p th:if="${variant.approvalStatus == 'PENDING' and variant.status == 'ACTIVE'}" class="muted">Biến thể đang mở bán trong lúc Operations kiểm tra hậu kiểm.</p>
-<p th:if="${variant.approvalStatus == 'PENDING' and variant.status == 'INACTIVE'}" class="muted">Biến thể đã được chỉnh sửa và đang chờ Operations hậu kiểm; chưa mở bán trong thời gian này.</p>
-<p th:if="${variant.approvalStatus == 'REJECTED'}" class="muted">Biến thể đã ngừng bán. Bạn có thể lưu bản nháp khiếu nại và giải trình.</p></div>
-</div></section>
-<section class="form-card"><h2>Tồn kho</h2><div class="detail-list detail-list-single">
-<div><span>Hiện có</span><strong th:text="${variant.quantityOnHand + ' ' + variant.unitName}">-</strong></div><div><span>Đang giữ</span><strong th:text="${variant.reservedQuantity + ' ' + variant.unitName}">-</strong></div>
-<div><span>Có thể bán</span><strong th:text="${variant.availableQuantity + ' ' + variant.unitName}">-</strong></div><div><span>Ngưỡng cảnh báo</span><strong th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '-'}">-</strong></div>
-</div></section></main></div>
+
 <dialog id="variantComplaintDialog" class="rejection-dialog" aria-labelledby="variantComplaintTitle">
-<form id="variantComplaintForm" novalidate><div class="dialog-heading"><div><p class="eyebrow">BIẾN THỂ BỊ TỪ CHỐI</p><h2 id="variantComplaintTitle">Khiếu nại quyết định</h2></div><button type="button" class="icon-button" id="closeVariantComplaint" aria-label="Đóng">×</button></div>
-<p id="variantComplaintName" class="dialog-description"></p><label for="variantComplaintMessage">Nội dung giải trình <span>*</span></label><textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required placeholder="Nhập nội dung giải trình..."></textarea><p class="field-note">Từ 10 đến 1000 ký tự.</p>
-<div class="dialog-actions"><button type="button" class="button button-secondary" id="cancelVariantComplaint">Hủy</button><button type="submit" class="button button-reject">Lưu bản nháp khiếu nại</button></div></form></dialog>
+    <form id="variantComplaintForm" novalidate>
+        <div class="dialog-heading">
+            <div><p class="eyebrow">BIẾN THỂ BỊ TỪ CHỐI</p><h2 id="variantComplaintTitle">Khiếu nại quyết định</h2></div>
+            <button type="button" class="icon-button" id="closeVariantComplaint" aria-label="Đóng">×</button>
+        </div>
+        <p id="variantComplaintName" class="dialog-description"></p>
+        <label for="variantComplaintMessage">Nội dung giải trình <span>*</span></label>
+        <textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required placeholder="Nhập nội dung giải trình..."></textarea>
+        <p class="field-note">Từ 10 đến 1000 ký tự.</p>
+        <div class="dialog-actions">
+            <button type="button" class="button button-secondary" id="cancelVariantComplaint">Hủy</button>
+            <button type="submit" class="button button-reject">Lưu bản nháp khiếu nại</button>
+        </div>
+    </form>
+</dialog>
 <script th:src="@{/js/variant-approval.js}" defer></script>
-</body></html>
+</body>
+</html>

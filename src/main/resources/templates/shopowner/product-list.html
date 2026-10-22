@@ -6,83 +6,91 @@
     <title>Sản phẩm cửa hàng | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-workflows.css}">
 </head>
 <body>
 <div class="app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
     <main class="main-content product-management">
-    <header class="topbar">
-        <div><p class="breadcrumb">Shop Owner / <span>Sản phẩm</span></p><h1>Sản phẩm</h1><p class="muted">Quản lý hồ sơ nhóm và thông tin chung. Việc đăng bán được thực hiện trên từng biến thể.</p></div>
-        <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
-    </header>
-
-    <p class="alert alert-success" th:if="${success}" th:text="${success}">Đã lưu sản phẩm thành công.</p>
-
-    <section class="panel">
-        <form class="search-bar" method="get" th:action="@{/shop/products}">
-            <label class="sr-only" for="keyword">Tìm theo tên hoặc SKU</label>
-            <input id="keyword" name="keyword" type="search" th:value="${keyword}"
-                   placeholder="Tìm theo tên sản phẩm hoặc SKU">
-            <button class="button button-dark" type="submit">Tìm kiếm</button>
-            <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shop/products}">Xóa lọc</a>
-        </form>
-
-        <div class="table-wrap" th:if="${!products.empty}">
-            <table>
-                <thead>
-                <tr>
-                    <th>Sản phẩm</th>
-                    <th>Danh mục</th>
-                    <th>Biến thể</th>
-                    <th>Tồn kho</th>
-                    <th>Phân loại</th>
-                    <th>Ngày tạo</th>
-                    <th>Thao tác</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="product : ${products.content}">
-                    <td>
-                        <div class="product-cell">
-                            <img th:if="${product.imageUrl != null}" th:src="${product.imageUrl}"
-                                 th:alt="${product.name}" onerror="this.hidden=true">
-                            <span class="image-placeholder" th:unless="${product.imageUrl != null}">🍊</span>
-                            <a th:href="@{/shop/product/{id}(id=${product.id})}" th:text="${product.name}">Tên sản phẩm</a>
-                        </div>
-                    </td>
-                    <td th:text="${product.categoryName}">Danh mục</td>
-                    <td th:text="${product.variantCount + ' biến thể'}">0 biến thể</td>
-                    <td th:text="${product.stockQuantity}">0</td>
-                    <td><span class="badge badge-draft">Hồ sơ quản lý biến thể</span></td>
-                    <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
-                    <td class="product-actions">
-                        <a th:href="@{/shop/product/{id}(id=${product.id})}">Chi tiết</a>
-                        <a th:href="@{/shop/product/{id}/edit(id=${product.id})}">Sửa</a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="empty-state" th:if="${products.empty}">
-            <span>🍐</span>
-            <h2 th:text="${keyword.isEmpty()} ? 'Chưa có sản phẩm nào' : 'Không tìm thấy sản phẩm phù hợp'">Chưa có sản phẩm nào</h2>
-            <p th:text="${keyword.isEmpty()} ? 'Hãy thêm sản phẩm đầu tiên cho cửa hàng của bạn.' : 'Thử tìm với từ khóa khác.'"></p>
+        <header class="topbar">
+            <div><p class="breadcrumb">Shop Owner / <span>Sản phẩm</span></p><h1>Sản phẩm</h1><p class="muted">Quản lý hồ sơ nhóm và thông tin chung. Việc đăng bán được thực hiện trên từng biến thể.</p></div>
             <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
-        </div>
+        </header>
 
-        <nav class="pagination" th:if="${products.totalPages > 1}" aria-label="Phân trang">
-            <a th:classappend="${products.first} ? ' disabled'"
-               th:href="@{/shop/products(page=${products.number - 1}, keyword=${keyword})}">← Trước</a>
-            <a th:each="page : ${#numbers.sequence(0, products.totalPages - 1)}"
-               th:classappend="${page == products.number} ? ' current'"
-               th:href="@{/shop/products(page=${page}, keyword=${keyword})}"
-               th:text="${page + 1}">1</a>
-            <a th:classappend="${products.last} ? ' disabled'"
-               th:href="@{/shop/products(page=${products.number + 1}, keyword=${keyword})}">Sau →</a>
-        </nav>
-    </section>
-</main>
+        <p class="alert alert-success" th:if="${success}" th:text="${success}">Đã lưu sản phẩm thành công.</p>
+
+        <section class="panel">
+            <form class="search-bar" method="get" th:action="@{/shop/products}">
+                <label class="sr-only" for="keyword">Tìm sản phẩm hoặc mã hàng</label>
+                <input id="keyword" name="keyword" type="search" th:value="${keyword}"
+                       placeholder="Tìm theo tên sản phẩm hoặc mã hàng">
+                <button class="button button-dark" type="submit">Tìm kiếm</button>
+                <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shop/products}">Bỏ lọc</a>
+            </form>
+
+            <div class="table-wrap" th:if="${!products.empty}">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Danh mục</th>
+                        <th>Loại hàng</th>
+                        <th>Tồn kho</th>
+                        <th>Hiển thị</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="product : ${products.content}">
+                        <td>
+                            <div class="product-cell">
+                                <img th:if="${product.imageUrl != null}" th:src="${product.imageUrl}"
+                                     th:alt="${product.name}" onerror="this.hidden=true">
+                                <span class="image-placeholder" th:unless="${product.imageUrl != null}">🍊</span>
+                                <a th:href="@{/shop/product/{id}(id=${product.id})}" th:text="${product.name}">Tên sản phẩm</a>
+                            </div>
+                        </td>
+                        <td th:text="${product.categoryName}">Danh mục</td>
+                        <td th:text="${product.variantCount + ' biến thể'}">0 biến thể</td>
+                        <td th:text="${product.stockQuantity}">0</td>
+                        <td><span class="visibility-state" th:classappend="${product.visible} ? ' is-visible' : ' is-hidden'" th:text="${product.visible} ? 'Đang hiện' : 'Đang ẩn'">Đang hiện</span></td>
+                        <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
+                        <td class="product-actions">
+                            <a class="row-link" th:href="@{/shop/product/{id}(id=${product.id})}">Chi tiết</a>
+                            <a class="row-link" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Sửa</a>
+                            <form th:if="${product.visible}" method="post" th:action="@{/shop/product/{id}/hide(id=${product.id})}"
+                                  onsubmit="return confirm('Ẩn sản phẩm khỏi khách hàng? Bạn có thể hiện lại sau.');">
+                                <button class="visibility-toggle is-visible" type="submit" title="Ẩn với khách hàng"><span aria-hidden="true">◉</span> Ẩn</button>
+                            </form>
+                            <form th:unless="${product.visible}" method="post" th:action="@{/shop/product/{id}/show(id=${product.id})}">
+                                <button class="visibility-toggle is-hidden" type="submit" title="Hiện cho khách hàng"><span aria-hidden="true">○</span> Hiện</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" th:if="${products.empty}">
+                <span></span>
+                <h2 th:text="${keyword.isEmpty()} ? 'Chưa có sản phẩm nào' : 'Không tìm thấy sản phẩm phù hợp'">Chưa có sản phẩm nào</h2>
+                <p th:text="${keyword.isEmpty()} ? 'Hãy thêm sản phẩm đầu tiên cho cửa hàng của bạn.' : 'Thử tìm với từ khóa khác.'"></p>
+                <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
+            </div>
+
+            <nav class="pagination" th:if="${products.totalPages > 1}" aria-label="Phân trang">
+                <a th:classappend="${products.first} ? ' disabled'"
+                   th:href="@{/shop/products(page=${products.number - 1}, keyword=${keyword})}">← Trước</a>
+                <a th:each="page : ${#numbers.sequence(0, products.totalPages - 1)}"
+                   th:classappend="${page == products.number} ? ' current'"
+                   th:href="@{/shop/products(page=${page}, keyword=${keyword})}"
+                   th:text="${page + 1}">1</a>
+                <a th:classappend="${products.last} ? ' disabled'"
+                   th:href="@{/shop/products(page=${products.number + 1}, keyword=${keyword})}">Sau →</a>
+            </nav>
+        </section>
+    </main>
 </div>
 </body>
 </html>

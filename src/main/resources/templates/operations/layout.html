@@ -1,49 +1,134 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head th:fragment="head(pageTitle)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle + ' | FreshFruit Operations'}">FreshFruit Operations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/operations.css}">
 </head>
+
 <body>
-<aside th:fragment="sidebar(activePage)" class="operations-sidebar">
-    <a class="operations-brand" th:href="@{/operations/shops}" aria-label="FreshFruit Operations">
-        <span class="brand-mark">F</span>
-        <span><strong>FreshFruit</strong><small>OPERATIONS</small></span>
-    </a>
-    <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
-    <nav aria-label="Điều hướng quản lý vận hành">
-        <a th:href="@{/operations/shop-list}"
-           th:classappend="${activePage == 'shop-list'} ? ' is-active' : ''">
-            <span class="nav-icon" aria-hidden="true">▦</span><span>Danh sách Shop</span>
+
+    <!-- SIDEBAR -->
+    <aside th:fragment="sidebar(activePage)" class="sidebar">
+
+        <!-- Brand -->
+        <a class="brand" th:href="@{/operations/dashboard}" aria-label="FreshFruit Operations">
+            <span class="brand-mark">F</span>
+            <span>
+                Fresh<span>Fruit</span>
+                <small>QUẢN TRỊ VẬN HÀNH</small>
+            </span>
         </a>
-        <a th:href="@{/operations/shops}"
-           th:classappend="${activePage == 'shops'} ? ' is-active' : ''">
-            <span class="nav-icon" aria-hidden="true">＋</span><span>Duyệt mở Shop</span>
-        </a>
-        <a th:href="@{/operations/reopen-requests}"
-           th:classappend="${activePage == 'reopen-requests'} ? ' is-active' : ''">
-            <span class="nav-icon" aria-hidden="true">↻</span><span>Yêu cầu mở lại Shop</span>
-        </a>
-        <a th:href="@{/operations/variants}"
-           th:classappend="${activePage == 'variants'} ? ' is-active' : ''">
-            <span class="nav-icon" aria-hidden="true">▤</span><span>Hậu kiểm biến thể</span>
-        </a>
-    </nav>
-    <div class="sidebar-bottom">
-        <span class="operator-dot"></span>
-        <span><strong>Operations Manager</strong><small>Khu vực nội bộ sàn</small></span>
+
+        <!-- Role Switcher / Badge -->
+        <div class="shop-switcher">
+            <div class="shop-avatar">OM</div>
+            <div>
+                <strong>Ban Vận Hành</strong>
+                <small>Operations Manager</small>
+            </div>
+            <span>●</span>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="side-nav" aria-label="Điều hướng quản lý vận hành">
+
+            <span class="nav-label">TỔNG QUAN</span>
+
+            <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/operations/dashboard}">
+                <span>⌂</span> Tổng quan Dashboard
+            </a>
+
+            <span class="nav-label">THẨM ĐỊNH & KIỂM DUYỆT</span>
+
+            <a th:classappend="${activePage == 'shops'} ? ' active' : ''" th:href="@{/operations/shops}">
+                <span>＋</span> Duyệt mở Shop
+            </a>
+
+            <a th:classappend="${activePage == 'payments'} ? ' active' : ''" th:href="@{/operations/payments}">
+                <span>💳</span> Đối soát thanh toán
+            </a>
+
+            <a th:classappend="${activePage == 'reopen-requests'} ? ' active' : ''"
+                th:href="@{/operations/reopen-requests}">
+                <span>↻</span> Yêu cầu mở lại Shop
+            </a>
+
+            <span class="nav-label">GIÁM SÁT & HẬU KIỂM</span>
+
+            <a th:classappend="${activePage == 'shop-list'} ? ' active' : ''" th:href="@{/operations/shop-list}">
+                <span>▦</span> Danh sách Cửa hàng
+            </a>
+
+            <span class="nav-label">HỆ THỐNG</span>
+
+            <a th:classappend="${activePage == 'notifications'} ? ' active' : ''"
+                th:href="@{/operations/notifications}">
+                <span>🔔</span> Trung tâm thông báo
+            </a>
+
+            <!-- Logout button inside sidebar -->
+            <form th:action="@{/logout}" method="post" style="margin: 8px 4px 0;">
+                <button type="submit"
+                    style="width: 100%; display: flex; align-items: center; gap: 8px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                    <span>🚪</span> Đăng xuất
+                </button>
+            </form>
+
+        </nav>
+
+        <!-- Current Operator Info -->
+        <div class="sidebar-footer">
+            <div class="mini-user">
+                <div class="avatar">OM</div>
+                <div>
+                    <strong>Operations Manager</strong>
+                    <small>Khu vực quản trị nội bộ</small>
+                </div>
+                <span>⋮</span>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- TOPBAR -->
+    <header th:fragment="pageHeader(title, subtitle)" class="topbar">
+        <div>
+            <p class="breadcrumb">FreshFruit / <span>Quản trị vận hành</span></p>
+            <h1>
+                <span th:text="${title}">Quản trị vận hành</span>
+                <span class="highlight">✦</span>
+            </h1>
+            <p class="muted" th:text="${subtitle}">Xử lý các yêu cầu đang chờ duyệt.</p>
+        </div>
+        <div class="top-actions">
+            <a th:href="@{/operations/notifications}" class="button button-secondary" style="padding: 6px 10px;"
+                title="Thông báo vận hành">
+                <span>🔔</span>
+            </a>
+            <div class="top-user">
+                <div class="avatar" style="width: 26px; height: 26px; font-size: 10px;">OM</div>
+                <span>Operations Manager</span>
+            </div>
+            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                <button type="submit" class="topbar-logout-btn">
+                    <span>🚪</span> Đăng xuất
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <!-- Toast host container -->
+    <div th:fragment="toastHost" id="toastHost" class="toast-host" role="status" aria-live="polite" aria-atomic="true">
     </div>
-</aside>
-<header th:fragment="pageHeader(title, subtitle)" class="operations-topbar">
-    <div>
-        <p class="eyebrow">FRESHFRUIT / OPERATIONS</p>
-        <h1 th:text="${title}">Duyệt yêu cầu</h1>
-        <p class="page-subtitle" th:text="${subtitle}">Xử lý các yêu cầu đang chờ duyệt.</p>
-    </div>
-    <div class="secure-label"><span aria-hidden="true">●</span> Khu vực quản trị nội bộ</div>
-</header>
-<div th:fragment="toastHost" id="toastHost" class="toast-host" role="status" aria-live="polite" aria-atomic="true"></div>
+
 </body>
+
 </html>

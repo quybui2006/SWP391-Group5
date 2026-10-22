@@ -128,13 +128,26 @@ class SellerChannelFlowIntegrationTests {
         SellerAccountActivationDto activation = (SellerAccountActivationDto) session.getAttribute("sellerActivation");
         assertEquals("PHẠM VĂN ĐỒNG", activation.getIdCardName());
 
-        // 4. View /seller/create-shop -> 200 OK
-        mvc.perform(get("/seller/create-shop").session(session))
+        // Test: Giả lập đăng xuất và đăng nhập lại (session mới hoàn toàn không có sellerActivation)
+        MockHttpSession newSession = new MockHttpSession();
+        newSession.setAttribute("userId", userId);
+        newSession.setAttribute("user", "complete-seller@example.com");
+
+        // Đăng xuất xong truy cập /seller/channel vẫn nhớ đã kích hoạt và chuyển thẳng sang /seller/create-shop
+        mvc.perform(get("/seller/channel").session(newSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seller/create-shop"));
+
+        // 4. View /seller/create-shop -> 200 OK (tự khôi phục activation từ database)
+        mvc.perform(get("/seller/create-shop").session(newSession))
                 .andExpect(status().isOk())
                 .andExpect(view().name("seller/create-shop"))
                 .andExpect(model().attribute("activeStep", 2))
                 .andExpect(model().attributeExists("activation"))
                 .andExpect(model().attributeExists("provinces"));
+
+        // Tiếp tục dùng newSession cho bước tiếp theo
+        session = newSession;
 
         // 5. Submit /seller/create-shop -> Step 2 success, creates Shop, redirects to /seller/status
         mvc.perform(post("/seller/create-shop").session(session)

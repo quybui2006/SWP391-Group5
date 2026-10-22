@@ -1,7 +1,6 @@
 package dto.shop;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 public class ProductDetailView {
@@ -25,12 +24,6 @@ public class ProductDetailView {
     private String sellingStatus;
 
     private String rejectionReason;
-
-    private LocalDate receivedDate;
-    private LocalDate expiryDate;
-
-    private long daysUntilExpiry;
-    private boolean expiringSoon;
 
     private List<VariantRow> variants;
 
@@ -62,14 +55,6 @@ public class ProductDetailView {
     public void setSellingStatus(String sellingStatus) { this.sellingStatus = sellingStatus; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
-    public LocalDate getReceivedDate() { return receivedDate; }
-    public void setReceivedDate(LocalDate receivedDate) { this.receivedDate = receivedDate; }
-    public LocalDate getExpiryDate() { return expiryDate; }
-    public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
-    public long getDaysUntilExpiry() { return daysUntilExpiry; }
-    public void setDaysUntilExpiry(long daysUntilExpiry) { this.daysUntilExpiry = daysUntilExpiry; }
-    public boolean isExpiringSoon() { return expiringSoon; }
-    public void setExpiringSoon(boolean expiringSoon) { this.expiringSoon = expiringSoon; }
     public List<VariantRow> getVariants() { return variants; }
     public void setVariants(List<VariantRow> variants) { this.variants = variants; }
 

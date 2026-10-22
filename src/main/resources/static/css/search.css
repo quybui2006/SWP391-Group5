@@ -185,16 +185,46 @@ input {
 
 .login-btn {
     margin-left: 4px;
-    padding: 10px 16px;
+    padding: 8px 14px;
     border-radius: 11px;
-    background: var(--green);
-    color: white;
+    background: transparent;
+    color: var(--green-dark);
+    border: 1.5px solid var(--green);
     font-size: 13px;
     font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .login-btn:hover {
+    background: var(--green-light);
+    color: var(--green-dark);
+    border-color: var(--green-dark);
+}
+
+.register-btn {
+    margin-left: 4px;
+    padding: 9px 16px;
+    border-radius: 11px;
+    background: var(--green);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(47, 143, 70, 0.25);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.register-btn:hover {
     background: var(--green-dark);
+    box-shadow: 0 4px 12px rgba(47, 143, 70, 0.35);
+    color: #ffffff;
 }
 
 /* USER MENU & DROPDOWN */

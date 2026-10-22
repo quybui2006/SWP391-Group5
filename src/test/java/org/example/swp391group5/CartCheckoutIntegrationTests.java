@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import service.shop.ShopOrderService;
+import service.delivery.DeliveryOrderService;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -28,9 +29,10 @@ class CartCheckoutIntegrationTests {
     @Autowired OrderCheckoutService checkout;
     @Autowired MockMvc mvc;
     @Autowired service.shop.ShopOrderService shopOrders;
+    @Autowired DeliveryOrderService deliveryOrders;
 
     @Test
-    void shopOwnerReadsAndAdvancesOnlyTheirOwnOrders() throws Exception {
+    void shopOwnerConfirmsOnlyTheirOwnCodOrders() throws Exception {
         long owner = seed();
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, owner);
@@ -41,17 +43,21 @@ class CartCheckoutIntegrationTests {
         session.setAttribute("userId", owner);
         session.setAttribute("role", "SHOP_OWNER");
         mvc.perform(get("/shopowner/orders").session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(code)));
+        mvc.perform(get("/shopowner/orders/export.xlsx").session(session)).andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", org.hamcrest.Matchers.containsString("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("shop-orders.xlsx")));
         mvc.perform(get("/shopowner/orders/" + id).session(session)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("SKU-CHECKOUT")));
         String token = (String) session.getAttribute("shopOrderToken");
-        for (String expected : List.of("CONFIRMED", "PREPARING")) {
-            mvc.perform(post("/shopowner/orders/" + id + "/advance").session(session).param("token", token))
-                    .andExpect(redirectedUrl("/shopowner/orders/" + id));
-            assertEquals(expected, shopOrders.detail(owner, id).get("status"));
-        }
-        assertThrows(IllegalArgumentException.class, () -> shopOrders.advance(owner, id));
+        mvc.perform(post("/shopowner/orders/" + id + "/confirm").session(session).param("token", token))
+                .andExpect(redirectedUrl("/shopowner/orders/" + id));
+        mvc.perform(post("/shopowner/orders/" + id + "/advance").session(session).param("token", token))
+                .andExpect(status().isNotFound());
+        assertEquals("CONFIRMED", shopOrders.detail(owner, id).get("status"));
+        assertEquals(1, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertThrows(IllegalArgumentException.class, () -> shopOrders.confirmCod(owner, id));
         assertTrue(shopOrders.list(-1L).isEmpty());
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.detail(-1L, id));
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.advance(-1L, id));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.confirmCod(-1L, id));
     }
 
     private long seed() {
@@ -62,11 +68,11 @@ class CartCheckoutIntegrationTests {
         long shop = jdbc.queryForObject("SELECT id FROM shops WHERE province_code='P-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO units(code,name) VALUES ('UNIT-CHECKOUT','kg')");
         long unit = jdbc.queryForObject("SELECT id FROM units WHERE code='UNIT-CHECKOUT'", Long.class);
-        jdbc.update("INSERT INTO products(shop_id,name,batch_code,received_date,expiry_date,approval_status,selling_status) VALUES (?,?,?,?,?,'APPROVED','ACTIVE')", shop, "Apple", "BATCH-CHECKOUT", java.time.LocalDate.now(), java.time.LocalDate.now().plusDays(10));
+        jdbc.update("INSERT INTO products(shop_id,name,batch_code,approval_status,selling_status) VALUES (?,?,?,'APPROVED','ACTIVE')", shop, "Apple", "BATCH-CHECKOUT");
         long product = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status,approval_status,reviewed_at) VALUES (?,?,?,?,?,?,'ACTIVE','APPROVED',CURRENT_TIMESTAMP)", product, shop, "SKU-CHECKOUT", "1kg", unit, 50000);
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
-        jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,available_quantity,created_by) VALUES (?,?,?, ?,?)", variant, 20, 20, 20, user);
+        jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,created_by) VALUES (?,?,?,?)", variant, 20, 20, user);
         jdbc.update("INSERT INTO user_addresses(user_id,recipient_name,recipient_phone,province_code,ward_name,address_detail,is_default) VALUES (?,?,?,?,?,?,TRUE)", user, "Recipient", "0912345678", "P-CHECKOUT", "Ward", "1 Test St");
         return user;
     }
@@ -126,7 +132,7 @@ class CartCheckoutIntegrationTests {
     }
 
     @Test
-    void persistsCartAndCreatesOrderWhileReservingStockAtomically() {
+    void codCheckoutWaitsForShopConfirmationBeforeReservingStock() {
         long user = seed();
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, user);
@@ -136,8 +142,17 @@ class CartCheckoutIntegrationTests {
         assertTrue(code.startsWith("FF-"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM orders WHERE order_code=?", Integer.class, code));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM order_items", Integer.class));
-        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("UNRESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items", String.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions", Integer.class));
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
+        shopOrders.confirmCod(user, orderId);
+        assertEquals("CONFIRMED", shopOrders.detail(user, orderId).get("status"));
+        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items", String.class));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions", Integer.class));
+        assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
         assertTrue(cart.items(user).isEmpty());
     }
 
@@ -147,10 +162,116 @@ class CartCheckoutIntegrationTests {
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, user);
         cart.add(user, variant, 2);
-        jdbc.update("UPDATE variant_inventory SET available_quantity=1 WHERE variant_id=?", variant);
+        jdbc.update("UPDATE variant_inventory SET quantity_on_hand=1 WHERE variant_id=?", variant);
         assertThrows(IllegalArgumentException.class, () -> checkout.placeOrder(user, List.of(variant), address, null, null, null, null, null, null));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class));
         assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+    }
+
+    @Test
+    void shopRejectionCancelsCodAndNotifiesCustomerWithoutTakingStock() {
+        long owner = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, owner);
+        cart.add(owner, variant, 2);
+        String code = checkout.placeOrder(owner, List.of(variant), address, null, null, null, null, null, null);
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
+
+        shopOrders.rejectCod(owner, orderId, "Tồn thực tế không đủ");
+
+        assertEquals("CANCELLED", shopOrders.detail(owner, orderId).get("status"));
+        assertEquals("Tồn thực tế không đủ", shopOrders.detail(owner, orderId).get("cancellation_reason"));
+        assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM notifications WHERE user_id=? AND target_id=? AND title='Shop từ chối đơn hàng'", Integer.class, owner, orderId));
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM payments WHERE order_id=?", String.class, orderId));
+    }
+
+    @Test
+    void successfulVnPayOrderIsRecordedAsSaleAtPaymentConfirmation() {
+        long customer = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
+        cart.add(customer, variant, 2);
+        var result = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null, "VNPAY");
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, result.orderCodes().get(0));
+        String checkoutCode = result.checkoutCode();
+
+        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        checkout.handleVnPayCallback(checkoutCode, true);
+        checkout.handleVnPayCallback(checkoutCode, true);
+        assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("PAID", jdbc.queryForObject("SELECT payment_status FROM orders WHERE id=?", String.class, orderId));
+        assertThrows(IllegalArgumentException.class, () -> shopOrders.rejectCod(customer, orderId, "Không thể từ chối đơn online đã trả tiền"));
+        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+
+        deliveryOrders.updateDeliveryStatus(orderId, "SHIPPING", null);
+        deliveryOrders.updateDeliveryStatus(orderId, "COMPLETED", null);
+        assertEquals("COMPLETED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
+    }
+
+    @Test
+    void failedCodDeliveryRestoresStockAndRecordsTheReturn() {
+        long owner = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, owner);
+        cart.add(owner, variant, 2);
+        String code = checkout.placeOrder(owner, List.of(variant), address, null, null, null, null, null, null);
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
+        shopOrders.confirmCod(owner, orderId);
+
+        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        deliveryOrders.updateDeliveryStatus(orderId, "SHIPPING", null);
+        deliveryOrders.updateDeliveryStatus(orderId, "CANCELLED", "Khách không nhận hàng");
+
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("ADJUST", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE event_key LIKE 'return-delivery-%'", String.class));
+    }
+
+    @Test
+    void failedOnlinePaymentReleasesReservationAndCannotBeReversedByLateSuccess() {
+        long customer = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
+        cart.add(customer, variant, 2);
+        var result = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null, "VNPAY");
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, result.orderCodes().get(0));
+
+        checkout.handleVnPayCallback(result.checkoutCode(), false);
+
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertThrows(IllegalArgumentException.class, () -> checkout.handleVnPayCallback(result.checkoutCode(), true));
+        assertEquals("UNPAID", jdbc.queryForObject("SELECT payment_status FROM orders WHERE id=?", String.class, orderId));
+    }
+
+    @Test
+    void unconfirmedCodOrderExpiresAfterThreeDaysAndReturnsToCustomer() {
+        long customer = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
+        cart.add(customer, variant, 1);
+        String code = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null);
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
+        jdbc.update("UPDATE orders SET created_at=DATEADD('DAY',-4,CURRENT_TIMESTAMP) WHERE id=?", orderId);
+
+        checkout.expirePendingOrders();
+
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM payments WHERE order_id=?", String.class, orderId));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM notifications WHERE user_id=? AND target_id=? AND title='Đơn hàng đã tự hủy'", Integer.class, customer, orderId));
     }
 
     @Test
@@ -239,11 +360,11 @@ class CartCheckoutIntegrationTests {
         long owner = seedOwnerForSecondShop();
         long secondShop = jdbc.queryForObject("SELECT id FROM shops WHERE owner_id=?", Long.class, owner);
         long unit = jdbc.queryForObject("SELECT id FROM units WHERE code='UNIT-CHECKOUT'", Long.class);
-        jdbc.update("INSERT INTO products(shop_id,name,batch_code,received_date,expiry_date,approval_status,selling_status) VALUES (?,?,?,?,?,'APPROVED','ACTIVE')", secondShop, "Pear", "BATCH-CHECKOUT-2", java.time.LocalDate.now(), java.time.LocalDate.now().plusDays(10));
+        jdbc.update("INSERT INTO products(shop_id,name,batch_code,approval_status,selling_status) VALUES (?,?,?,'APPROVED','ACTIVE')", secondShop, "Pear", "BATCH-CHECKOUT-2");
         long product = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-CHECKOUT-2'", Long.class);
         jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status,approval_status,reviewed_at) VALUES (?,?,?,?,?,?,'ACTIVE','APPROVED',CURRENT_TIMESTAMP)", product, secondShop, "SKU-CHECKOUT-2", "500g", unit, 30000);
         long secondVariant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT-2'", Long.class);
-        jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,available_quantity,created_by) VALUES (?,?,?, ?,?)", secondVariant, 20, 20, 20, owner);
+        jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,created_by) VALUES (?,?,?,?)", secondVariant, 20, 20, owner);
         long firstVariant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         cart.add(user, firstVariant, 1);
         cart.add(user, secondVariant, 1);

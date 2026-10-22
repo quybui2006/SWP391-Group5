@@ -27,8 +27,8 @@ public interface VariantInventoryRepository extends JpaRepository<VariantInvento
 
     @Query("""
             SELECT new dto.shop.InventoryRowDto(
-                i.id, v.id, p.name, v.name, v.sku, p.batchCode, p.expiryDate,
-                i.quantityOnHand, i.reservedQuantity,
+                i.id, v.id, p.name, v.name, v.sku, p.batchCode,
+                i.quantityOnHand,
                 (i.quantityOnHand - i.reservedQuantity)
             )
             FROM VariantInventory i
