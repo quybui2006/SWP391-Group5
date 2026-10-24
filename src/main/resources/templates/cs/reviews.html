@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{cs/layout :: head('Đánh giá & Phản hồi')}"></head>
+<head th:replace="~{cs/layout :: head('Kiểm duyệt Đánh giá & Nội dung')}"></head>
 <body>
 
 <aside th:replace="~{cs/layout :: sidebar('reviews')}"></aside>
@@ -8,31 +8,88 @@
 <div class="cs-main-wrapper">
     <header class="cs-topbar">
         <div>
-            <h1>Đánh giá & Phản hồi từ người mua</h1>
-            <p class="cs-topbar-subtitle">Theo dõi sự hài lòng của khách hàng đối với chất lượng trái cây trên toàn sàn.</p>
+            <h1>Kiểm duyệt Đánh giá & Nội dung</h1>
+            <p class="cs-topbar-subtitle">Thống kê kiểm duyệt nội dung (Content Moderation Metrics) và giám sát đánh giá người mua trên toàn sàn.</p>
         </div>
-        <div style="display: flex; gap: 8px;">
-            <a th:href="@{/cs/reviews}" class="btn-cs-sm" th:style="${selectedRating == null} ? 'background:#0284c7; color:#fff;' : ''">Tất cả</a>
-            <a th:href="@{/cs/reviews(rating=1)}" class="btn-cs-sm" th:style="${selectedRating == 1} ? 'background:#dc2626; color:#fff;' : ''">★ 1 Sao</a>
-            <a th:href="@{/cs/reviews(rating=2)}" class="btn-cs-sm" th:style="${selectedRating == 2} ? 'background:#ea580c; color:#fff;' : ''">★ 2 Sao</a>
-            <a th:href="@{/cs/reviews(rating=3)}" class="btn-cs-sm" th:style="${selectedRating == 3} ? 'background:#eab308; color:#fff;' : ''">★ 3 Sao</a>
-            <a th:href="@{/cs/reviews(rating=4)}" class="btn-cs-sm" th:style="${selectedRating == 4} ? 'background:#16a34a; color:#fff;' : ''">★ 4 Sao</a>
-            <a th:href="@{/cs/reviews(rating=5)}" class="btn-cs-sm" th:style="${selectedRating == 5} ? 'background:#16a34a; color:#fff;' : ''">★ 5 Sao</a>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <a th:href="@{/cs/reviews(modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == null} ? 'background:#0284c7; color:#fff;' : ''">Tất cả sao</a>
+            <a th:href="@{/cs/reviews(rating=1, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 1} ? 'background:#dc2626; color:#fff;' : ''">★ 1 Sao</a>
+            <a th:href="@{/cs/reviews(rating=2, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 2} ? 'background:#ea580c; color:#fff;' : ''">★ 2 Sao</a>
+            <a th:href="@{/cs/reviews(rating=3, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 3} ? 'background:#eab308; color:#fff;' : ''">★ 3 Sao</a>
+            <a th:href="@{/cs/reviews(rating=4, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 4} ? 'background:#16a34a; color:#fff;' : ''">★ 4 Sao</a>
+            <a th:href="@{/cs/reviews(rating=5, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 5} ? 'background:#16a34a; color:#fff;' : ''">★ 5 Sao</a>
         </div>
     </header>
 
     <main class="cs-content">
+        <!-- Flash Messages -->
+        <div th:if="${msg}" style="margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-weight: 600;">
+            ✅ <span th:text="${msg}">Thành công</span>
+        </div>
+
+        <!-- CONTENT MODERATION METRICS -->
+        <div class="cs-stats-grid" th:if="${moderationMetrics != null}">
+            <div class="cs-stat-card">
+                <div>
+                    <div class="cs-stat-label">Tổng đánh giá trên sàn</div>
+                    <div class="cs-stat-value" th:text="${moderationMetrics.totalReviews}">0</div>
+                    <small style="color: #64748b; font-size: 12px;">Điểm TB: <strong th:text="${moderationMetrics.avgRating + ' ★'}">0.0 ★</strong></small>
+                </div>
+                <div class="cs-stat-icon" style="background: #e0f2fe; color: #0284c7;">💬</div>
+            </div>
+            <div class="cs-stat-card">
+                <div>
+                    <div class="cs-stat-label">Đã duyệt hiển thị (APPROVED)</div>
+                    <div class="cs-stat-value" style="color: #16a34a;" th:text="${moderationMetrics.approvedReviews}">0</div>
+                    <small style="color: #16a34a; font-size: 12px;">Tỷ lệ kiểm duyệt: <strong th:text="${moderationMetrics.reviewModerationRate + '%'}">100%</strong></small>
+                </div>
+                <div class="cs-stat-icon" style="background: #dcfce7; color: #16a34a;">✅</div>
+            </div>
+            <div class="cs-stat-card">
+                <div>
+                    <div class="cs-stat-label">Chờ duyệt / Gắn cờ (PENDING/REJECTED)</div>
+                    <div class="cs-stat-value" style="color: #ea580c;" th:text="${moderationMetrics.pendingReviews + moderationMetrics.rejectedReviews}">0</div>
+                    <small style="color: #9a3412; font-size: 12px;">Chờ duyệt: <strong th:text="${moderationMetrics.pendingReviews}">0</strong> | Ẩn: <strong th:text="${moderationMetrics.rejectedReviews}">0</strong></small>
+                </div>
+                <div class="cs-stat-icon" style="background: #ffedd5; color: #ea580c;">🛡️</div>
+            </div>
+            <div class="cs-stat-card">
+                <div>
+                    <div class="cs-stat-label">Đánh giá tiêu cực (≤ 2 Sao)</div>
+                    <div class="cs-stat-value" style="color: #dc2626;" th:text="${moderationMetrics.lowRatingReviews}">0</div>
+                    <small style="color: #dc2626; font-size: 12px;">Cần đối chiếu chất lượng Shop</small>
+                </div>
+                <div class="cs-stat-icon" style="background: #fee2e2; color: #dc2626;">⚠️</div>
+            </div>
+        </div>
+
+        <!-- Moderation Status Filter Bar -->
+        <div class="cs-card" style="padding: 14px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="font-weight: 700; font-size: 13.5px; color: #334155;">Bộ lọc trạng thái kiểm duyệt (Moderation Status):</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a th:href="@{/cs/reviews(rating=${selectedRating}, modStatus='ALL')}" class="btn-cs-sm"
+                   th:style="${selectedModStatus == 'ALL' or selectedModStatus == null} ? 'background:#0f172a; color:#fff;' : 'background:#f1f5f9; color:#334155;'">Tất cả trạng thái</a>
+                <a th:href="@{/cs/reviews(rating=${selectedRating}, modStatus='PENDING')}" class="btn-cs-sm"
+                   th:style="${selectedModStatus == 'PENDING'} ? 'background:#ea580c; color:#fff;' : 'background:#fff7ed; color:#9a3412;'">⏳ Chờ kiểm duyệt (PENDING)</a>
+                <a th:href="@{/cs/reviews(rating=${selectedRating}, modStatus='APPROVED')}" class="btn-cs-sm"
+                   th:style="${selectedModStatus == 'APPROVED'} ? 'background:#16a34a; color:#fff;' : 'background:#f0fdf4; color:#166534;'">✅ Đã duyệt (APPROVED)</a>
+                <a th:href="@{/cs/reviews(rating=${selectedRating}, modStatus='REJECTED')}" class="btn-cs-sm"
+                   th:style="${selectedModStatus == 'REJECTED'} ? 'background:#dc2626; color:#fff;' : 'background:#fef2f2; color:#991b1b;'">🚫 Đã từ chối / Ẩn (REJECTED)</a>
+            </div>
+        </div>
+
         <div class="cs-card">
             <div style="overflow-x: auto;">
                 <table class="cs-table">
                     <thead>
                     <tr>
                         <th>Khách hàng</th>
-                        <th>Sản phẩm</th>
+                        <th>Cửa hàng & Sản phẩm</th>
                         <th>Số sao</th>
                         <th>Nội dung đánh giá</th>
+                        <th>Trạng thái kiểm duyệt</th>
                         <th>Thời gian</th>
-                        <th>Thao tác</th>
+                        <th>Thao tác kiểm duyệt</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -42,25 +99,48 @@
                             <small style="display: block; color: var(--cs-text-sub);" th:text="${rev['customer_email']}">user@gmail.com</small>
                         </td>
                         <td>
+                            <div style="font-weight: 700; color: #0284c7; font-size: 12px;" th:text="${rev['shop_name'] ?: 'Gian hàng FreshFruit'}">Shop</div>
                             <div style="font-weight: 600;" th:text="${rev['product_name']}">Táo Envy</div>
                             <small style="color: var(--cs-text-sub);" th:text="${rev['variant_name']}">Hộp 1kg</small>
                         </td>
                         <td>
-                            <span style="color: #eab308; font-weight: 800; font-size: 14.5px;" th:text="${'★ ' + rev['rating'] + '/5'}">★ 5/5</span>
+                            <span th:style="${rev['rating'] <= 2} ? 'color: #dc2626; font-weight: 800; font-size: 14.5px;' : 'color: #eab308; font-weight: 800; font-size: 14.5px;'"
+                                  th:text="${'★ ' + rev['rating'] + '/5'}">★ 5/5</span>
                         </td>
                         <td>
-                            <div style="max-width: 450px; line-height: 1.4;" th:text="${rev['content'] ?: 'Không có nội dung'}">Hàng tươi ngon, giao nhanh.</div>
+                            <div style="max-width: 380px; line-height: 1.4;" th:text="${rev['content'] ?: 'Không có nội dung'}">Hàng tươi ngon, giao nhanh.</div>
+                            <small th:if="${rev['moderation_reason'] != null}" style="display:block; margin-top:4px; color:#dc2626; font-size:11.5px;"
+                                   th:text="${'Ghi chú kiểm duyệt: ' + rev['moderation_reason']}">Lý do</small>
                         </td>
-                        <td style="color: var(--cs-text-sub); font-size: 13px;" th:text="${rev['created_at']}">19/10/2026</td>
                         <td>
-                            <form th:action="@{/cs/reviews/{id}/remove(id=${rev['id']})}" method="post" style="display:inline;"
-                                  onsubmit="return confirm('Xóa đánh giá này?')">
-                                <button type="submit" class="btn-cs-sm" style="background:#dc2626; color:#fff;">Xóa đánh giá</button>
-                            </form>
+                            <span th:if="${rev['moderation_status'] == 'APPROVED' or rev['moderation_status'] == null}"
+                                  style="padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #166534;">APPROVED</span>
+                            <span th:if="${rev['moderation_status'] == 'PENDING'}"
+                                  style="padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #fef3c7; color: #92400e;">PENDING</span>
+                            <span th:if="${rev['moderation_status'] == 'REJECTED'}"
+                                  style="padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #991b1b;">REJECTED</span>
+                        </td>
+                        <td style="color: var(--cs-text-sub); font-size: 12.5px;" th:text="${rev['created_at']}">19/10/2026</td>
+                        <td>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <form th:if="${rev['moderation_status'] != 'APPROVED'}"
+                                      th:action="@{/cs/reviews/{id}/approve(id=${rev['id']})}" method="post" style="display:inline;">
+                                    <button type="submit" class="btn-cs-sm" style="background:#16a34a; color:#fff; font-size: 11.5px;">✓ Duyệt</button>
+                                </form>
+                                <form th:if="${rev['moderation_status'] != 'REJECTED'}"
+                                      th:action="@{/cs/reviews/{id}/reject(id=${rev['id']})}" method="post" style="display:inline;">
+                                    <input type="hidden" name="reason" value="Vi phạm tiêu chuẩn cộng đồng / Spam"/>
+                                    <button type="submit" class="btn-cs-sm" style="background:#ea580c; color:#fff; font-size: 11.5px;">Ẩn / Từ chối</button>
+                                </form>
+                                <form th:action="@{/cs/reviews/{id}/remove(id=${rev['id']})}" method="post" style="display:inline;"
+                                      onsubmit="return confirm('Xóa vĩnh viễn đánh giá này?')">
+                                    <button type="submit" class="btn-cs-sm" style="background:#dc2626; color:#fff; font-size: 11.5px;">Xóa</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(reviews)}">
-                        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 40px;">
+                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 40px;">
                             Không có đánh giá nào phù hợp với bộ lọc.
                         </td>
                     </tr>
