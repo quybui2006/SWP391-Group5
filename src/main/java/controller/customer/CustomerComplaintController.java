@@ -81,10 +81,13 @@ public class CustomerComplaintController {
         try {
             Long complaintId = complaintService.submitCustomerComplaint(
                     customerId, orderId, orderItemId, reasonType, title, description, evidenceImage);
-            redirect.addFlashAttribute("message", "Đã gửi yêu cầu khiếu nại thành công! Bộ phận CSKH sẽ phản hồi trong thời gian cam kết SLA.");
+            redirect.addFlashAttribute("message", "Đã gửi yêu cầu khiếu nại thành công! Bộ phận Chăm sóc khách hàng sẽ sớm kiểm tra và phản hồi cho bạn.");
             return "redirect:/customer/account/complaints/" + complaintId;
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/customer/account/orders/" + orderId;
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Không thể gửi yêu cầu khiếu nại lúc này. Vui lòng kiểm tra lại thông tin và thử lại.");
             return "redirect:/customer/account/orders/" + orderId;
         }
     }
@@ -101,7 +104,7 @@ public class CustomerComplaintController {
         try {
             complaintService.cancelCustomerComplaint(customerId, id);
             redirect.addFlashAttribute("message", "Đã rút lại yêu cầu khiếu nại.");
-        } catch (IllegalArgumentException ex) {
+        } catch (Exception ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
         return "redirect:/customer/account/complaints/" + id;

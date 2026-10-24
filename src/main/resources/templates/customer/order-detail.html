@@ -35,8 +35,9 @@
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <a th:if="${!hasActiveComplaint and (order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED' or order['status'] == 'SHIPPING' or order['status'] == 'CANCELLED')}"
                        href="#complaint-section"
+                       onclick="setTimeout(() => { const el = document.getElementById('complaintDescInput'); if(el) el.focus(); }, 150);"
                        style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #dc2626; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none;">
-                        ⚠️ Gửi khiếu nại đơn hàng
+                        ⚠️ Gửi khiếu nại
                     </a>
                     <a th:if="${hasActiveComplaint}"
                        href="#complaint-section"
@@ -171,7 +172,7 @@
                                 <a th:if="${!hasActiveComplaint and (order['status'] == 'COMPLETED' or order['status'] == 'DELIVERED' or order['status'] == 'SHIPPING')}"
                                    href="#complaint-section"
                                    th:attr="data-item-id=${item['order_item_id']}"
-                                   onclick="const sel = document.getElementById('complaintOrderItemSelect'); if(sel) sel.value = this.getAttribute('data-item-id');"
+                                   onclick="const sel = document.getElementById('complaintOrderItemSelect'); if(sel) sel.value = this.getAttribute('data-item-id'); setTimeout(() => { const el = document.getElementById('complaintDescInput'); if(el) el.focus(); }, 150);"
                                    style="display: inline-block; font-size: 12px; font-weight: 700; color: #dc2626; border: 1px solid #fca5a5; background: #fef2f2; border-radius: 6px; padding: 4px 12px; text-decoration: none;">
                                     ⚠️ Khiếu nại món này
                                 </a>
@@ -206,84 +207,76 @@
         </div>
 
         <!-- KHU VỰC KHIẾU NẠI & HỖ TRỢ ĐƠN HÀNG -->
-        <div id="complaint-section" class="detail-card" style="margin-top: 20px; border: 1.5px solid #fecaca; border-radius: 14px; padding: 22px; background: #ffffff;">
+        <div id="complaint-section" class="detail-card" style="margin-top: 20px; border: 1.5px solid #fecaca; border-radius: 14px; padding: 20px; background: #ffffff;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
                 <div>
-                    <h3 style="margin: 0; font-size: 17px; color: #0f172a;">🎫 Yêu cầu Khiếu nại &amp; Hỗ trợ chất lượng</h3>
-                    <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
-                        Nếu trái cây bị dập hỏng, giao thiếu cân, sai quy cách hoặc sự cố vận chuyển, bạn có thể gửi khiếu nại để CSKH hỗ trợ đổi bù hoặc tặng Điểm thưởng.
+                    <h3 style="margin: 0; font-size: 16.5px; color: #0f172a;">🎫 Hỗ trợ &amp; Khiếu nại đơn hàng</h3>
+                    <p style="margin: 3px 0 0; font-size: 13px; color: #64748b;">
+                        Gửi phản ánh nếu sản phẩm bị dập hỏng, giao thiếu cân hoặc sai phân loại.
                     </p>
                 </div>
                 <a th:href="@{/customer/account/complaints}" style="font-size: 13px; font-weight: 700; color: #16a34a; text-decoration: none;">
-                    Danh sách khiếu nại của tôi →
+                    Lịch sử khiếu nại →
                 </a>
             </div>
 
             <!-- Danh sách khiếu nại đã gửi cho đơn này -->
-            <div th:if="${orderComplaints != null and !#lists.isEmpty(orderComplaints)}" style="margin-bottom: 18px;">
-                <div th:each="cp : ${orderComplaints}" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 12px; background: #f8fafc;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <div th:if="${orderComplaints != null and !#lists.isEmpty(orderComplaints)}" style="margin-bottom: 16px;">
+                <div th:each="cp : ${orderComplaints}" style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: #f8fafc;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
                         <div>
-                            <strong style="color: #0284c7; font-size: 15px;" th:text="${cp['complaint_code']}">KN-001</strong>
-                            <span style="margin-left: 8px; font-size: 13px; color: #475569;" th:text="${'• ' + cp['reason_label']}">Lý do</span>
+                            <strong style="color: #0284c7; font-size: 14.5px;" th:text="${cp['complaint_code']}">KN-001</strong>
+                            <span style="margin-left: 6px; font-size: 13px; font-weight: 600; color: #dc2626;" th:text="${'• ' + cp['reason_label']}">Lý do</span>
                         </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <span style="font-size: 12px; padding: 3px 10px; border-radius: 99px; font-weight: 600; background: #e0f2fe; color: #0369a1;"
-                                  th:text="${cp['sla_badge_text']}">SLA</span>
-                            <span style="font-size: 12px; padding: 4px 10px; border-radius: 99px; font-weight: 700;"
-                                  th:styleappend="${cp['status'] == 'RESOLVED'} ? 'background:#dcfce7;color:#15803d;' : (${cp['status'] == 'REJECTED'} ? 'background:#fee2e2;color:#b91c1c;' : 'background:#fef3c7;color:#b45309;')"
-                                  th:text="${cp['status_label']}">Trạng thái</span>
-                        </div>
+                        <span style="font-size: 12px; padding: 4px 10px; border-radius: 99px; font-weight: 700;"
+                              th:styleappend="${cp['status'] == 'RESOLVED'} ? 'background:#dcfce7;color:#15803d;' : (${cp['status'] == 'REJECTED'} ? 'background:#fee2e2;color:#b91c1c;' : 'background:#fef3c7;color:#b45309;')"
+                              th:text="${cp['status_label']}">Trạng thái</span>
                     </div>
-                    <div style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px;" th:text="${cp['title']}">Tiêu đề</div>
-                    <p style="font-size: 13.5px; color: #334155; margin: 0 0 10px;" th:text="${cp['description']}">Mô tả</p>
+                    <p style="font-size: 13.5px; color: #334155; margin: 0 0 8px;" th:text="${cp['description']}">Mô tả</p>
 
                     <div th:if="${cp['shop_response'] != null}" style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; border-radius: 4px;">
-                        <strong>🏪 Phản hồi từ Cửa hàng:</strong> <span th:text="${cp['shop_response']}"></span>
+                        <strong>🏪 Cửa hàng phản hồi:</strong> <span th:text="${cp['shop_response']}"></span>
                     </div>
 
                     <div th:if="${cp['resolution_note'] != null}" style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; border-radius: 4px;">
-                        <strong>🎧 Kết luận từ CSKH (<span th:text="${cp['resolution_label']}"></span>):</strong>
+                        <strong>🎧 Kết quả hỗ trợ (<span th:text="${cp['resolution_label']}"></span>):</strong>
                         <span th:text="${cp['resolution_note']}"></span>
                         <span th:if="${cp['compensated_points'] != null and cp['compensated_points'] > 0}"
                               style="display: block; color: #15803d; font-weight: 700; margin-top: 4px;"
                               th:text="${'🎁 Đã cộng +' + #numbers.formatInteger(cp['compensated_points'], 1, 'COMMA') + ' điểm thưởng vào tài khoản của bạn.'}"></span>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12.5px; color: #64748b;">
-                        <span th:text="${'Gửi lúc: ' + cp['created_at_fmt'] + ' | Cam kết xử lý trước: ' + cp['sla_due_at_fmt']}"></span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12.5px; color: #64748b;">
+                        <span th:text="${'Ngày gửi: ' + cp['created_at_fmt']}"></span>
                         <a th:href="@{/customer/account/complaints/{cid}(cid=${cp['id']})}"
-                           style="font-weight: 700; color: #0284c7; text-decoration: none;">Xem chi tiết phiếu →</a>
+                           style="font-weight: 700; color: #0284c7; text-decoration: none;">Xem chi tiết →</a>
                     </div>
                 </div>
             </div>
 
             <!-- Thông báo nếu đơn chưa bàn giao vận chuyển -->
             <div th:if="${order['status'] == 'PENDING' or order['status'] == 'CONFIRMED' or order['status'] == 'PREPARING'}"
-                 style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px 16px; color: #64748b; font-size: 13.5px;">
-                ℹ️ Đơn hàng đang ở giai đoạn chuẩn bị, chưa bàn giao vận chuyển nên chưa thể gửi khiếu nại chất lượng sản phẩm.
+                 style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px 16px; color: #64748b; font-size: 13.5px;">
+                ℹ️ Đơn hàng đang chuẩn bị, chưa giao nên chưa thể gửi khiếu nại sản phẩm.
             </div>
 
-            <!-- Form gửi khiếu nại mới (Hiển thị trực tiếp khi đơn đang giao/đã giao/hoàn thành/hủy và chưa có khiếu nại đang mở) -->
+            <!-- Form gửi khiếu nại mới rút gọn -->
             <div th:if="${!hasActiveComplaint and (order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED' or order['status'] == 'SHIPPING' or order['status'] == 'CANCELLED')}"
-                 style="background: #fffafa; border: 1px solid #fecaca; border-radius: 12px; padding: 18px 20px;">
-                <div style="font-weight: 700; color: #dc2626; font-size: 15px; margin-bottom: 14px;">
-                    ✍️ Điền thông tin gửi yêu cầu khiếu nại cho đơn hàng <span th:text="${order['order_code']}"></span>
-                </div>
+                 style="background: #fffafa; border: 1px solid #fecaca; border-radius: 12px; padding: 16px 18px;">
                 <form th:action="@{/customer/account/complaints}" method="post" enctype="multipart/form-data"
-                      style="display: grid; gap: 14px;">
+                      style="display: grid; gap: 12px;">
                     <input type="hidden" name="orderId" th:value="${order['id']}">
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
                         <div>
-                            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155;">Nhóm lý do khiếu nại *</label>
-                            <select name="reasonType" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155;">Vấn đề bạn gặp phải *</label>
+                            <select name="reasonType" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: #fff;">
                                 <option th:each="entry : ${reasonLabels}" th:value="${entry.key}" th:text="${entry.value}"></option>
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155;">Sản phẩm gặp sự cố (Tùy chọn)</label>
-                            <select id="complaintOrderItemSelect" name="orderItemId" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155;">Sản phẩm cần hỗ trợ</label>
+                            <select id="complaintOrderItemSelect" name="orderItemId" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: #fff;">
                                 <option value="">-- Toàn bộ đơn hàng --</option>
                                 <option th:each="item : ${order['items']}"
                                         th:value="${item['order_item_id']}"
@@ -293,29 +286,17 @@
                     </div>
 
                     <div>
-                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155;">Tiêu đề tóm tắt</label>
-                        <input type="text" name="title" maxlength="200"
-                               placeholder="Ví dụ: Hộp nho mẫu đơn bị dập khoảng 30% khi nhận hàng..."
-                               style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fff;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155;">Mô tả tình trạng sản phẩm *</label>
+                        <textarea id="complaintDescInput" name="description" rows="3" required minlength="5" maxlength="2000"
+                                  placeholder="Mô tả ngắn gọn tình trạng khi nhận hàng (ví dụ: Hộp dâu bị dập khoảng 30%, mong shop đổi bù hoặc tặng điểm)..."
+                                  style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; background: #fff;"></textarea>
                     </div>
 
-                    <div>
-                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155;">Mô tả chi tiết tình trạng &amp; mong muốn hỗ trợ (10 - 2000 ký tự) *</label>
-                        <textarea name="description" rows="4" required minlength="10" maxlength="2000"
-                                  placeholder="Mô tả rõ tình trạng trái cây khi mở hộp, trọng lượng thiếu hoặc sự cố giao hàng. Bạn mong muốn Shop gửi bù sản phẩm hay nhận Điểm thưởng tích lũy?"
-                                  style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fff;"></textarea>
-                    </div>
-
-                    <div>
-                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155;">Ảnh chụp minh chứng thực tế (JPG/PNG, tối đa 5MB - Khuyên dùng)</label>
-                        <input type="file" name="evidenceImage" accept="image/jpeg,image/png"
-                               style="font-size: 13.5px; color: #475569;">
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 6px;">
-                        <small style="color: #64748b; font-size: 12.5px;">
-                            ⏱️ Cam kết SLA: Khiếu nại chất lượng trái cây tươi được ưu tiên xử lý trong vòng <strong>12 giờ</strong>.
-                        </small>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 4px;">
+                        <div>
+                            <label style="font-size: 12.5px; font-weight: 600; color: #475569; margin-right: 8px;">📷 Ảnh chụp thực tế (JPG/PNG):</label>
+                            <input type="file" name="evidenceImage" accept="image/jpeg,image/png" style="font-size: 12.5px; color: #475569;">
+                        </div>
                         <button type="submit"
                                 style="background: #dc2626; color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;">
                             Gửi yêu cầu khiếu nại
