@@ -4,54 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm người dùng mới | FreshFruit Admin</title>
-    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .admin-container { max-width: 600px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
-        .error-msg { color: #dc3545; font-size: 13px; margin-top: 4px; display: block; }
-        .btn-submit { width: 100%; background: #2e7d32; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;max-width:640px}
+        .form-group{margin-bottom:16px}
+        .form-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+        .form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+        .error-msg{color:#dc3545;font-size:13px;margin-top:4px;display:block}
+        .btn-submit{width:100%;background:#2e7d32;color:#fff;padding:12px;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+        .back-link{text-decoration:none;color:#666;font-size:13px}
     </style>
 </head>
 <body>
-<div class="admin-container">
-    <a th:href="@{/admin/users}" style="text-decoration: none; color: #666; font-size: 13px;">← Quay lại danh sách người dùng</a>
-    <h1 style="margin: 12px 0 20px; font-size: 24px;">Thêm người dùng mới</h1>
+<div class="app-shell">
+    <aside th:replace="~{admin/fragments :: sidebar('users')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Quản trị / Người dùng / <span>Thêm mới</span></p>
+                <h1>Thêm người dùng mới</h1>
+            </div>
+            <a class="back-link" th:href="@{/admin/users}">← Quay lại danh sách người dùng</a>
+        </header>
 
-    <div class="card">
-        <p class="error-msg" th:if="${error}" th:text="${error}" style="margin-bottom: 14px;"></p>
-        <form method="post" th:action="@{/admin/users/create}" th:object="${form}">
-            <div class="form-group">
-                <label for="fullName">Họ và tên *</label>
-                <input id="fullName" th:field="*{fullName}" required placeholder="VD: Nguyễn Văn A">
-                <span class="error-msg" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
+        <section class="panel">
+            <div class="card">
+                <p class="error-msg" th:if="${error}" th:text="${error}" style="margin-bottom:14px"></p>
+                <form method="post" th:action="@{/admin/users/create}" th:object="${form}">
+                    <div class="form-group">
+                        <label for="fullName">Họ và tên *</label>
+                        <input id="fullName" th:field="*{fullName}" required placeholder="VD: Nguyễn Văn A">
+                        <span class="error-msg" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input id="email" type="email" th:field="*{email}" required placeholder="VD: user@freshfruit.com">
+                        <span class="error-msg" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Mật khẩu khởi tạo *</label>
+                        <input id="password" type="password" th:field="*{password}" required placeholder="Ít nhất 6 ký tự">
+                        <span class="error-msg" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Số điện thoại</label>
+                        <input id="phone" th:field="*{phone}" placeholder="VD: 0912345678">
+                    </div>
+                    <div class="form-group">
+                        <label for="initialRole">Vai trò khởi tạo *</label>
+                        <select id="initialRole" th:field="*{initialRole}">
+                            <option th:each="r : ${allRoles}" th:value="${r.code}" th:text="${r.name + ' (' + r.code + ')'}"></option>
+                        </select>
+                    </div>
+                    <button class="btn-submit" type="submit">Tạo tài khoản</button>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="email">Email *</label>
-                <input id="email" type="email" th:field="*{email}" required placeholder="VD: user@freshfruit.com">
-                <span class="error-msg" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
-            </div>
-            <div class="form-group">
-                <label for="password">Mật khẩu khởi tạo *</label>
-                <input id="password" type="password" th:field="*{password}" required placeholder="Ít nhất 6 ký tự">
-                <span class="error-msg" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
-            </div>
-            <div class="form-group">
-                <label for="phone">Số điện thoại</label>
-                <input id="phone" th:field="*{phone}" placeholder="VD: 0912345678">
-            </div>
-            <div class="form-group">
-                <label for="initialRole">Vai trò khởi tạo *</label>
-                <select id="initialRole" th:field="*{initialRole}">
-                    <option th:each="r : ${allRoles}" th:value="${r.code}" th:text="${r.name + ' (' + r.code + ')'}"></option>
-                </select>
-            </div>
-            <button class="btn-submit" type="submit">Tạo tài khoản</button>
-        </form>
-    </div>
+        </section>
+    </main>
 </div>
 </body>
 </html>

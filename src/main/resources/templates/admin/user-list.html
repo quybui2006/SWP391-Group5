@@ -4,80 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh sách người dùng | FreshFruit Admin</title>
-    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .admin-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-bar input { flex: 1; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; }
-        .table-card { background: white; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 14px; }
-        th { background: #fafafa; font-weight: 600; }
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-right: 4px; }
-        .badge-role { background: #e3f2fd; color: #1976d2; }
-        .badge-active { background: #e8f5e9; color: #2e7d32; }
-        .badge-locked { background: #ffebee; color: #c62828; }
-        .btn-sm { padding: 6px 12px; border-radius: 6px; font-size: 13px; text-decoration: none; font-weight: 600; display: inline-block; }
-        .btn-primary { background: #2e7d32; color: white; border: none; }
-        .btn-outline { border: 1px solid var(--line); color: #333; }
+        .search-bar{display:flex;gap:10px;margin-bottom:20px}
+        .search-bar input{flex:1;padding:10px 14px;border:1px solid var(--line);border-radius:8px}
+        .table-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+        table{width:100%;border-collapse:collapse;text-align:left}
+        th,td{padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px}
+        th{background:#fafafa;font-weight:600}
+        .badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;margin-right:4px}
+        .badge-role{background:#e3f2fd;color:#1976d2}
+        .badge-active{background:#e8f5e9;color:#2e7d32}
+        .badge-locked{background:#ffebee;color:#c62828}
+        .btn-sm{padding:6px 12px;border-radius:6px;font-size:13px;text-decoration:none;font-weight:600;display:inline-block;cursor:pointer}
+        .btn-primary{background:#2e7d32;color:#fff;border:none}
+        .btn-lock{background:#fff0f0;color:#b42318;border:1px solid rgba(220,53,69,.3);cursor:pointer}
+        .btn-outline{border:1px solid var(--line);color:#333;background:#fff;cursor:pointer}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .success-msg{color:#2e7d32;font-weight:600}
     </style>
 </head>
 <body>
-<div class="admin-container">
-    <div class="page-header">
-        <div>
-            <a th:href="@{/admin}" style="text-decoration: none; color: #666; font-size: 13px;">← Quay lại Bảng điều khiển</a>
-            <h1 style="margin: 6px 0 0; font-size: 24px;">Danh sách người dùng</h1>
-        </div>
-        <a class="btn-sm btn-primary" th:href="@{/admin/users/create}">+ Thêm người dùng</a>
-    </div>
+<div class="app-shell">
+    <aside th:replace="~{admin/fragments :: sidebar('users')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Quản trị / <span>Quản lý người dùng</span></p>
+                <h1>Danh sách người dùng</h1>
+                <p class="muted">Xem danh sách, chi tiết và thêm mới tài khoản.</p>
+            </div>
+            <a class="btn-sm btn-primary" th:href="@{/admin/users/create}" style="padding:10px 18px">+ Thêm người dùng</a>
+        </header>
 
-    <p style="color: #2e7d32; font-weight: 600;" th:if="${message}" th:text="${message}"></p>
+        <section class="panel">
+            <p class="success-msg" th:if="${message}" th:text="${message}"></p>
 
-    <form class="search-bar" method="get" th:action="@{/admin/users}">
-        <input name="keyword" th:value="${keyword}" placeholder="Tìm theo tên, email hoặc số điện thoại...">
-        <button class="btn-sm btn-outline" type="submit">Tìm kiếm</button>
-        <a class="btn-sm btn-outline" th:if="${keyword}" th:href="@{/admin/users}">Đặt lại</a>
-    </form>
+            <form class="search-bar" method="get" th:action="@{/admin/users}">
+                <input name="keyword" th:value="${keyword}" placeholder="Tìm theo tên, email hoặc số điện thoại...">
+                <button class="btn-sm btn-outline" type="submit">Tìm kiếm</button>
+                <a class="btn-sm btn-outline" th:if="${keyword}" th:href="@{/admin/users}">Đặt lại</a>
+            </form>
 
-    <div class="table-card">
-        <table>
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Họ và tên</th>
-                <th>Email</th>
-                <th>Số điện thoại</th>
-                <th>Vai trò</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="u : ${users}">
-                <td th:text="${u.id}">1</td>
-                <td style="font-weight: 600;" th:text="${u.fullName}">Nguyen Van A</td>
-                <td th:text="${u.email}">a@example.com</td>
-                <td th:text="${u.phone ?: '-'}">0901234567</td>
-                <td>
-                    <span class="badge badge-role" th:each="r : ${u.roleCodes}" th:text="${r}">CUSTOMER</span>
-                </td>
-                <td>
-                        <span th:class="'badge ' + (${u.status == 'ACTIVE'} ? 'badge-active' : 'badge-locked')"
-                              th:text="${u.status == 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}">Hoạt động</span>
-                </td>
-                <td>
-                    <a class="btn-sm btn-outline" th:href="@{/admin/users/{id}(id=${u.id})}">Chi tiết</a>
-                </td>
-            </tr>
-            <tr th:if="${#lists.isEmpty(users)}">
-                <td colspan="7" style="text-align: center; color: #888; padding: 30px;">Không tìm thấy người dùng nào.</td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="u : ${users}">
+                        <td th:text="${u.id}">1</td>
+                        <td style="font-weight:600" th:text="${u.fullName}">Nguyen Van A</td>
+                        <td th:text="${u.email}">a@example.com</td>
+                        <td th:text="${u.phone ?: '-'}">0901234567</td>
+                        <td>
+                            <span class="badge badge-role" th:each="r : ${u.roleCodes}" th:text="${r}">CUSTOMER</span>
+                        </td>
+                        <td>
+                            <span th:class="'badge ' + (${u.status == 'ACTIVE'} ? 'badge-active' : 'badge-locked')"
+                                  th:text="${u.status == 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}">Hoạt động</span>
+                        </td>
+                        <td>
+                            <a class="btn-sm btn-outline" th:href="@{/admin/users/{id}(id=${u.id})}">Chi tiết</a>
+                            <form method="post" th:action="@{/admin/users/{id}/toggle-status(id=${u.id})}"
+                                  style="display:inline;margin:0 0 0 6px"
+                                  onsubmit="return confirm('Bạn có chắc muốn thay đổi trạng thái tài khoản này?');">
+                                <button type="submit" class="btn-sm"
+                                        th:classappend="${u.status == 'ACTIVE'} ? ' btn-lock' : ' btn-primary'"
+                                        th:text="${u.status == 'ACTIVE' ? 'Khóa' : 'Mở khóa'}">Khóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(users)}">
+                        <td colspan="7" style="text-align:center;color:#888;padding:30px">Không tìm thấy người dùng nào.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 </div>
 </body>
 </html>

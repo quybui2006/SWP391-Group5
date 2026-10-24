@@ -41,10 +41,10 @@ public class AdminShopPaymentController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<String> exportCsv(@RequestParam String month,
-                                             HttpSession session) {
+    public ResponseEntity<byte[]> exportCsv(@RequestParam String month,
+                                            HttpSession session) {
         if (!checkAdmin(session)) return ResponseEntity.status(401).build();
-        String csv = payments.exportPayoutsCsv(month);
+        byte[] csv = payments.exportPayoutsCsv(month).getBytes(java.nio.charset.StandardCharsets.UTF_8);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("text/csv;charset=UTF-8"));
         headers.setContentDispositionFormData("attachment", "shop-payouts-" + month + ".csv");

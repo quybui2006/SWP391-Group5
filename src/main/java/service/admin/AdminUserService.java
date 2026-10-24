@@ -120,4 +120,19 @@ public class AdminUserService {
 
         return savedUser.getId();
     }
+
+    @Transactional
+    public String toggleUserStatus(Long userId, Long adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng ID: " + userId));
+
+        if (adminId != null && adminId.equals(user.getId())) {
+            throw new IllegalArgumentException("Không thể tự khóa tài khoản của chính mình.");
+        }
+
+        String newStatus = "ACTIVE".equals(user.getStatus()) ? "LOCKED" : "ACTIVE";
+        user.setStatus(newStatus);
+        userRepository.save(user);
+        return newStatus;
+    }
 }

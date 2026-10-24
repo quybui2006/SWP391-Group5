@@ -54,17 +54,55 @@ public class AdminShopPaymentService {
 
     public String exportPayoutsCsv(String month) {
         List<Map<String, Object>> rows = calculateShopPayouts(month);
-        StringBuilder sb = new StringBuilder();
-        sb.append("shop_id,shop_name,owner_id,revenue,fee_amount,payout_amount\r\n");
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal totalFee = BigDecimal.ZERO;
+        BigDecimal totalPayout = BigDecimal.ZERO;
+
+        // UTF-8 BOM so Excel opens Vietnamese correctly.
+        StringBuilder sb = new StringBuilder("﻿");
+        sb.append("BÁO CÁO CHI TRẢ SHOP OWNER\r\n");
+        sb.append("Kỳ: ").append(month).append("\r\n\r\n");
+
+        sb.append("STT;Tên Shop;Mã Shop;Mã Chủ Shop;Doanh thu (VNĐ);Phí sàn (VNĐ);Cần trả (VNĐ)\r\n");
+
+        int stt = 1;
         for (Map<String, Object> r : rows) {
-            sb.append(r.get("shop_id")).append(",")
-              .append('"').append(escapeCsv(r.get("shop_name"))).append('"').append(",")
-              .append(r.get("owner_id")).append(",")
-              .append(r.get("revenue")).append(",")
-              .append(r.get("fee_amount")).append(",")
-              .append(r.get("payout_amount")).append("\r\n");
+            BigDecimal revenue = toDecimal(r.get("revenue"));
+            BigDecimal fee = toDecimal(r.get("fee_amount"));
+            BigDecimal payout = toDecimal(r.get("payout_amount"));
+
+            totalRevenue = totalRevenue.add(revenue);
+            totalFee = totalFee.add(fee);
+            totalPayout = totalPayout.add(payout);
+
+            sb.append(stt++).append(";")
+              .append('"').append(escapeCsv(r.get("shop_name"))).append('"').append(";")
+              .append(r.get("shop_id")).append(";")
+              .append(r.get("owner_id")).append(";")
+              .append(formatMoney(revenue)).append(";")
+              .append(formatMoney(fee)).append(";")
+              .append(formatMoney(payout)).append("\r\n");
         }
+
+        sb.append("\r\n");
+        sb.append("TỔNG KẾT;;;;")
+          .append(formatMoney(totalRevenue)).append(";")
+          .append(formatMoney(totalFee)).append(";")
+          .append(formatMoney(totalPayout)).append("\r\n");
+        sb.append("Số shop:").append(rows.size()).append("\r\n");
+
         return sb.toString();
+    }
+
+    private BigDecimal toDecimal(Object v) {
+        if (v == null) return BigDecimal.ZERO;
+        if (v instanceof BigDecimal bd) return bd;
+        return new BigDecimal(v.toString());
+    }
+
+    private String formatMoney(BigDecimal v) {
+        return String.format("%,d", v == null ? 0 : v.longValue());
     }
 
     private String escapeCsv(Object v) {
