@@ -77,7 +77,8 @@ public class CustomerShopRegistrationController {
             return "redirect:/seller/status";
         }
 
-        if (session.getAttribute(SESSION_ACTIVATION_KEY) != null) {
+        if (session.getAttribute(SESSION_ACTIVATION_KEY) != null
+                || shopRegistrationService.getSellerActivation(userId).isPresent()) {
             return "redirect:/seller/create-shop";
         }
 
@@ -118,6 +119,8 @@ public class CustomerShopRegistrationController {
 
             if (sessionActivation != null) {
                 form = sessionActivation;
+            } else if (shopRegistrationService.getSellerActivation(userId).isPresent()) {
+                form = shopRegistrationService.getSellerActivation(userId).get();
             } else if (existingShopOpt.isPresent()) {
                 Shop s = existingShopOpt.get();
                 form.setPhone(s.getPhone());
@@ -171,7 +174,8 @@ public class CustomerShopRegistrationController {
             return "seller/activate";
         }
 
-        // Lưu thông tin kích hoạt vào session
+        // Lưu thông tin kích hoạt vào database và session
+        shopRegistrationService.saveSellerActivation(userId, form);
         session.setAttribute(SESSION_ACTIVATION_KEY, form);
         redirectAttributes.addFlashAttribute("successMessage",
                 "Kích hoạt tài khoản Người bán thành công! Mời bạn tiếp tục hoàn tất thông tin tạo Shop.");
@@ -209,6 +213,13 @@ public class CustomerShopRegistrationController {
         }
 
         SellerAccountActivationDto activation = (SellerAccountActivationDto) session.getAttribute(SESSION_ACTIVATION_KEY);
+        if (activation == null) {
+            activation = shopRegistrationService.getSellerActivation(userId).orElse(null);
+            if (activation != null) {
+                session.setAttribute(SESSION_ACTIVATION_KEY, activation);
+            }
+        }
+
         if (activation == null && existingShopOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Vui lòng kích hoạt tài khoản Shop Owner (Định danh CCCD & Thuế) trước khi tạo Shop.");
@@ -251,6 +262,12 @@ public class CustomerShopRegistrationController {
         }
 
         SellerAccountActivationDto activation = (SellerAccountActivationDto) session.getAttribute(SESSION_ACTIVATION_KEY);
+        if (activation == null) {
+            activation = shopRegistrationService.getSellerActivation(userId).orElse(null);
+            if (activation != null) {
+                session.setAttribute(SESSION_ACTIVATION_KEY, activation);
+            }
+        }
         Optional<Shop> existingShopOpt = shopRegistrationService.getShopByOwnerId(userId);
 
         if (activation == null && existingShopOpt.isEmpty()) {

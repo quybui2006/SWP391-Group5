@@ -76,6 +76,23 @@
 .available-hint { margin: 0 0 17px; color: #78877e; font-size: .8rem; }
 .available-hint strong { color: #227d4e; }
 .inventory-warning-note { margin-top: 17px; padding: 12px 13px; border-left: 3px solid #e1a54a; border-radius: 7px; background: #fff9ee; color: #87652f; font-size: .78rem; line-height: 1.55; }
+.inventory-dialog-overlay { display: none !important; position: fixed; inset: 0; z-index: 1080; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; background: rgba(20, 36, 27, .52); }
+.inventory-dialog-overlay.is-open { display: flex !important; }
+.inventory-dialog-overlay[hidden] { display: none !important; }
+.inventory-dialog-overlay .modal-dialog { width: min(100%, 560px); max-width: 560px; margin: auto; }
+.inventory-dialog-overlay .modal-content { width: 100%; background: #fff; }
+.inventory-dialog-open { overflow: hidden; }
+.inventory-tabs { display: flex; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+.inventory-tabs .nav-item { display: block; }
+.inventory-tabs .nav-link { border: 0; background: transparent; cursor: pointer; }
+.inventory-tab-content .tab-pane[hidden] { display: none !important; }
+.inventory-tab-content .tab-pane:not([hidden]) { display: block; }
+.inventory-modal .form-control, .inventory-modal .form-select { width: 100%; padding: 10px 12px; color: #2d4136; background: #fff; }
+.inventory-modal textarea.form-control { resize: vertical; }
+.inventory-modal .modal-header, .inventory-modal .modal-footer { display: flex; justify-content: space-between; gap: 12px; }
+.inventory-modal .modal-footer { justify-content: flex-end; }
+.inventory-modal .btn-close { width: 32px; height: 32px; border: 0; background: transparent; cursor: pointer; }
+body.inventory-dialog-open { overflow: hidden; }
 @media (max-width: 900px) {
     .inventory-topbar { flex-direction: column; }
     .inventory-ledger-badge { margin-top: 0; }

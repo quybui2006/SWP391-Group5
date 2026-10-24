@@ -11,7 +11,6 @@ import service.customer.NotificationService;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -63,7 +62,7 @@ public class OperationsShopManagementService {
                        pv.price, u.name AS unit_name, pv.status AS variant_status, pv.approval_status,
                        COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
                        COALESCE(vi.available_quantity, 0) AS available_quantity,
-                       p.batch_code, p.expiry_date
+                       p.batch_code
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 JOIN units u ON u.id = pv.base_unit_id
@@ -75,7 +74,7 @@ public class OperationsShopManagementService {
                 rs.getString("sku"), rs.getString("image_url"), rs.getBigDecimal("price"),
                 rs.getString("unit_name"), rs.getString("variant_status"), rs.getString("approval_status"),
                 nullableInt(rs, "quantity_on_hand"), nullableInt(rs, "available_quantity"),
-                rs.getString("batch_code"), localDate(rs, "expiry_date")), shopId);
+                rs.getString("batch_code")), shopId);
     }
 
     @Transactional
@@ -120,11 +119,6 @@ public class OperationsShopManagementService {
     private static Integer nullableInt(ResultSet rs, String column) throws SQLException {
         Object value = rs.getObject(column);
         return value == null ? null : ((Number) value).intValue();
-    }
-
-    private static LocalDate localDate(ResultSet rs, String column) throws SQLException {
-        java.sql.Date value = rs.getDate(column);
-        return value == null ? null : value.toLocalDate();
     }
 
     private static LocalDateTime localDateTime(ResultSet rs, String column) throws SQLException {

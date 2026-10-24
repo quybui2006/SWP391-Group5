@@ -28,23 +28,23 @@
                 <h1>Biến thể sản phẩm</h1>
                 <p class="muted">Quản lý từng biến thể, hình ảnh, tồn kho và trạng thái duyệt trước khi mở bán.</p>
             </div>
-            <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm biến thể và tồn kho</a>
+            <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm loại hàng</a>
         </header>
 
         <section class="variant-summary" aria-label="Tổng quan biến thể">
             <article class="variant-stat"><strong th:text="${variantSummary.total}">0</strong><span>Tổng biến thể</span></article>
             <article class="variant-stat"><strong th:text="${variantSummary.active}">0</strong><span>Đang bán</span></article>
-            <article class="variant-stat"><strong th:text="${variantSummary.draft}">0</strong><span>Bản nháp / chờ duyệt</span></article>
-            <article class="variant-stat"><strong th:text="${variantSummary.paused}">0</strong><span>Tạm dừng / lưu trữ</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.draft}">0</strong><span>Bản nháp / chờ kiểm tra</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.paused}">0</strong><span>Đang ẩn / ngừng bán</span></article>
         </section>
 
         <section class="panel">
             <form class="search-bar" method="get" th:action="@{/shopowner/product-variants}">
-                <label class="sr-only" for="keyword">Tìm theo sản phẩm, biến thể hoặc SKU</label>
+                <label class="sr-only" for="keyword">Tìm sản phẩm hoặc loại hàng</label>
                 <input id="keyword" name="keyword" type="search" th:value="${keyword}"
-                       placeholder="Tìm theo tên sản phẩm, biến thể hoặc SKU">
+                       placeholder="Tìm theo sản phẩm, loại hàng hoặc mã">
                 <button class="button button-dark" type="submit">Tìm kiếm</button>
-                <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shopowner/product-variants}">Xóa lọc</a>
+                <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shopowner/product-variants}">Bỏ lọc</a>
             </form>
 
             <div class="table-wrap" th:if="${!variants.isEmpty()}">
@@ -93,7 +93,7 @@
                         </td>
                         <td class="product-actions">
                             <a th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}">Chi tiết</a>
-                            <a th:if="${variant.approval_status != 'PENDING'}" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}" th:text="${variant.approval_status == 'REJECTED' ? 'Sửa và gửi hậu kiểm lại' : 'Sửa biến thể'}">Sửa biến thể</a>
+                            <a th:if="${variant.approval_status != 'PENDING'}" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}" th:text="${variant.approval_status == 'REJECTED' ? 'Sửa và gửi lại' : 'Sửa'}">Sửa</a>
                             <button class="button button-ghost open-variant-complaint" type="button"
                                     th:if="${variant.approval_status == 'REJECTED'}"
                                     th:attr="data-variant-id=${variant.variant_id},data-variant-name=${variant.variant_name}">Khiếu nại</button>
@@ -107,8 +107,8 @@
         <div class="empty-state" th:if="${variants.isEmpty()}">
                 <span>🍐</span>
                 <h2 th:text="${keyword.isEmpty()} ? 'Chưa có biến thể nào' : 'Không tìm thấy biến thể phù hợp'">Chưa có biến thể nào</h2>
-                <p th:text="${keyword.isEmpty()} ? 'Hãy thêm biến thể và thiết lập tồn kho cho sản phẩm đã tạo.' : 'Thử tìm bằng tên sản phẩm, tên biến thể hoặc SKU khác.'"></p>
-                <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm biến thể và tồn kho</a>
+                <p th:text="${keyword.isEmpty()} ? 'Thêm loại hàng và số lượng bán cho sản phẩm đã tạo.' : 'Thử tìm bằng tên sản phẩm hoặc loại hàng khác.'"></p>
+                <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm loại hàng</a>
             </div>
         </section>
     </main>

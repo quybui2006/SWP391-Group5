@@ -8,14 +8,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
+import service.operations.OperationsShopApprovalService;
 import service.operations.OperationsShopManagementService;
 
 @Controller
 public class OperationsShopManagementController {
     private final OperationsShopManagementService shops;
+    private final OperationsShopApprovalService approvals;
 
-    public OperationsShopManagementController(OperationsShopManagementService shops) {
+    public OperationsShopManagementController(
+            OperationsShopManagementService shops,
+            OperationsShopApprovalService approvals) {
         this.shops = shops;
+        this.approvals = approvals;
     }
 
     @GetMapping("/operations/shop-list")
@@ -27,8 +32,9 @@ public class OperationsShopManagementController {
 
     @GetMapping("/operations/shop-list/{shopId}")
     public String detail(@PathVariable Long shopId, Model model) {
-        model.addAttribute("shop", shops.getShop(shopId));
+        model.addAttribute("shop", approvals.getShopDetail(shopId));
         model.addAttribute("variants", shops.listShopVariants(shopId));
+        model.addAttribute("activeNav", "shop-list");
         return "operations/shop-detail";
     }
 

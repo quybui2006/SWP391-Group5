@@ -131,84 +131,72 @@ public class NotificationService {
                 currentNotifs = List.of();
             }
 
-            if (!currentNotifs.isEmpty()) {
-                return;
-            }
-
             LocalDateTime now = LocalDateTime.now();
 
-            // 1. Nhóm thông báo: Yêu cầu duyệt mở Shop
+            // 1. Luôn đồng bộ các hồ sơ Chờ đối soát thanh toán thực tế nếu có
+            List<dto.operations.ShopApprovalItemDto> pendingPayments = shopRepository.findByPaymentApprovalStatusWithOwners("PENDING");
+            if (pendingPayments != null) {
+                for (dto.operations.ShopApprovalItemDto p : pendingPayments) {
+                    String eventKey = "OP-PAYMENT-PENDING-" + p.getId() + "-" + userId;
+                    boolean exists = currentNotifs.stream().anyMatch(n -> eventKey.equals(n.getEventKey()));
+                    if (!exists) {
+                        Notification n = new Notification(
+                                user,
+                                eventKey,
+                                "OP_PAYMENT",
+                                "Yêu cầu đối soát thanh toán: " + p.getName(),
+                                "Chủ shop " + (p.getOwnerName() != null ? p.getOwnerName() : "Đối tác") +
+                                        " vừa gửi thông tin tài khoản ngân hàng để đối soát cho shop '" + p.getName() + "'. Vui lòng kiểm tra và thẩm định hồ sơ.",
+                                "OP_PAYMENT",
+                                p.getId()
+                        );
+                        n.setCreatedAt(now.minusMinutes(5));
+                        n.setRead(false);
+                        notificationRepository.save(n);
+                    }
+                }
+            }
+
+            // 2. Đồng bộ các hồ sơ Chờ duyệt mở Shop thực tế nếu có
             List<dto.operations.PendingShopApprovalDto> pending = shopRepository.findPendingApprovals();
             if (pending != null && !pending.isEmpty()) {
                 for (dto.operations.PendingShopApprovalDto p : pending) {
-                    Notification n = new Notification(
-                            user,
-                            "OP-PENDING-" + p.getId() + "-" + userId,
-                            "SHOP_APPROVAL",
-                            "Yêu cầu duyệt mở Shop: " + p.getName(),
-                            "Chủ cửa hàng " + (p.getOwnerName() != null ? p.getOwnerName() : "Đối tác") +
-                                    " vừa nộp hồ sơ xin mở shop '" + p.getName() + "'. Vui lòng kiểm tra giấy tờ pháp lý và thẩm định phê duyệt.",
-                            "SHOP_APPROVAL",
-                            p.getId()
-                    );
-                    n.setCreatedAt(p.getCreatedAt() != null ? p.getCreatedAt() : now.minusMinutes(20));
-                    n.setRead(false);
-                    notificationRepository.save(n);
+                    String eventKey = "OP-PENDING-" + p.getId() + "-" + userId;
+                    boolean exists = currentNotifs.stream().anyMatch(n -> eventKey.equals(n.getEventKey()));
+                    if (!exists) {
+                        Notification n = new Notification(
+                                user,
+                                eventKey,
+                                "SHOP_APPROVAL",
+                                "Yêu cầu duyệt mở Shop: " + p.getName(),
+                                "Chủ cửa hàng " + (p.getOwnerName() != null ? p.getOwnerName() : "Đối tác") +
+                                        " vừa nộp hồ sơ xin mở shop '" + p.getName() + "'. Vui lòng kiểm tra giấy tờ pháp lý và thẩm định phê duyệt.",
+                                "SHOP_APPROVAL",
+                                p.getId()
+                        );
+                        n.setCreatedAt(p.getCreatedAt() != null ? p.getCreatedAt() : now.minusMinutes(20));
+                        n.setRead(false);
+                        notificationRepository.save(n);
+                    }
                 }
-            } else {
-                Notification n1 = new Notification(
-                        user,
-                        "OP-PENDING-DEMO1-" + userId,
-                        "SHOP_APPROVAL",
-                        "Yêu cầu duyệt mở Shop: Nông Trại Xanh Đà Lạt",
-                        "Chủ cửa hàng Trần Văn Hưng vừa nộp hồ sơ xin cấp phép kinh doanh gian hàng hoa quả tươi sạch. Hồ sơ đang chờ thẩm định thông tin pháp lý.",
-                        "SHOP_APPROVAL",
-                        1L
-                );
-                n1.setCreatedAt(now.minusMinutes(35));
-                n1.setRead(false);
-                notificationRepository.save(n1);
-
-                Notification n2 = new Notification(
-                        user,
-                        "OP-PENDING-DEMO2-" + userId,
-                        "SHOP_APPROVAL",
-                        "Hồ sơ mở Shop chờ duyệt: Hoa Quả Nhập Khẩu GreenLife",
-                        "Hồ sơ mở shop mới đã chờ thẩm định hơn 16 giờ (SLA chuẩn < 24h). Vui lòng ưu tiên xử lý hồ sơ sớm.",
-                        "SHOP_APPROVAL",
-                        2L
-                );
-                n2.setCreatedAt(now.minusHours(4));
-                n2.setRead(false);
-                notificationRepository.save(n2);
             }
 
-            // 2. Nhóm thông báo: Giải trình hậu kiểm Cửa hàng (Post-audit)
-            Notification n3 = new Notification(
-                    user,
-                    "OP-POST-AUDIT-1-" + userId,
-                    "POST_AUDIT",
-                    "Tiếp nhận giải trình hậu kiểm: Siêu Thị Trái Cây Tươi",
-                    "Cửa hàng 'Siêu Thị Trái Cây Tươi' đã nộp biên bản giải trình và tài liệu kiểm định chất lượng lô hàng cam sành theo thông báo hậu kiểm của sàn.",
-                    "POST_AUDIT",
-                    null
-            );
-            n3.setCreatedAt(now.minusHours(8));
-            n3.setRead(false);
-            notificationRepository.save(n3);
-
-            Notification n4 = new Notification(
-                    user,
-                    "OP-POST-AUDIT-2-" + userId,
-                    "POST_AUDIT",
-                    "Cập nhật hồ sơ giải trình hậu kiểm định kỳ",
-                    "Hệ thống ghi nhận đối tác Shop Vựa Hoa Quả Miền Tây đã cập nhật giấy chứng nhận kiểm dịch thực vật và hóa đơn nguồn gốc hoa quả nhập khẩu.",
-                    "POST_AUDIT",
-                    null
-            );
-            n4.setCreatedAt(now.minusDays(1));
-            n4.setRead(true);
-            notificationRepository.save(n4);
+            // 3. Nếu chưa có thông báo giải trình hậu kiểm nào thì tạo mẫu
+            boolean hasAudit = currentNotifs.stream().anyMatch(n -> "POST_AUDIT".equalsIgnoreCase(n.getType()));
+            if (!hasAudit) {
+                Notification n3 = new Notification(
+                        user,
+                        "OP-POST-AUDIT-1-" + userId,
+                        "POST_AUDIT",
+                        "Tiếp nhận giải trình hậu kiểm: Siêu Thị Trái Cây Tươi",
+                        "Cửa hàng 'Siêu Thị Trái Cây Tươi' đã nộp biên bản giải trình và tài liệu kiểm định chất lượng lô hàng cam sành theo thông báo hậu kiểm của sàn.",
+                        "POST_AUDIT",
+                        null
+                );
+                n3.setCreatedAt(now.minusHours(8));
+                n3.setRead(false);
+                notificationRepository.save(n3);
+            }
 
             return;
         }
@@ -328,8 +316,20 @@ public class NotificationService {
                 userId,
                 "SHOP",
                 "Chúc mừng! Shop '" + shopName + "' đã được phê duyệt 🎉",
-                "Cửa hàng của bạn đã được kiểm duyệt và kích hoạt thành công trên hệ thống. Bây giờ bạn có thể truy cập Kênh người bán để bắt đầu đăng sản phẩm!",
-                "SHOP",
+                "Cửa hàng của bạn đã được kiểm duyệt hồ sơ thành công trên FreshFruit! Vui lòng hoàn tất gửi Yêu cầu Đối soát thanh toán để kích hoạt trạng thái mở bán (OPEN).",
+                "PAYMENT_VERIFICATION",
+                shopId
+        );
+    }
+
+    @Transactional
+    public void notifyPaymentVerificationRequired(Long userId, Long shopId, String shopName) {
+        createNotification(
+                userId,
+                "PAYMENT",
+                "Yêu cầu đối soát thanh toán để kích hoạt Mở bán (OPEN) 💳",
+                "Shop '" + shopName + "' đã được phê duyệt mở shop! Vui lòng khai báo thông tin tài khoản ngân hàng thụ hưởng để Ban vận hành đối soát và kích hoạt trạng thái mở bán.",
+                "PAYMENT_VERIFICATION",
                 shopId
         );
     }
@@ -350,10 +350,10 @@ public class NotificationService {
     public void notifyPaymentApproved(Long userId, Long shopId, String shopName) {
         createNotification(
                 userId,
-                "SHOP",
+                "PAYMENT",
                 "Thông tin thanh toán đã được duyệt thành công! 🎉",
-                "Tài khoản ngân hàng của cửa hàng '" + shopName + "' đã được Ban vận hành đối chiếu khớp với CCCD và phê duyệt. Cửa hàng của bạn hiện đã MỞ BÁN chính thức!",
-                "SHOP",
+                "Tài khoản ngân hàng của cửa hàng '" + shopName + "' đã được Ban vận hành đối chiếu khớp với CCCD và phê duyệt. Cửa hàng của bạn hiện đã MỞ BÁN (OPEN) chính thức!",
+                "PAYMENT_VERIFICATION",
                 shopId
         );
     }
@@ -362,10 +362,10 @@ public class NotificationService {
     public void notifyPaymentRejected(Long userId, Long shopId, String shopName, String reason) {
         createNotification(
                 userId,
-                "SHOP",
+                "PAYMENT",
                 "Thông tin thanh toán cần chỉnh sửa lại ⚠️",
-                "Thông tin tài khoản ngân hàng của cửa hàng '" + shopName + "' chưa được phê duyệt. Lý do: " + (reason != null ? reason : "Tên chủ tài khoản không khớp với CCCD.") + ". Vui lòng kiểm tra và cập nhật lại.",
-                "SHOP",
+                "Thông tin tài khoản ngân hàng của cửa hàng '" + shopName + "' chưa được phê duyệt. Lý do: " + (reason != null ? reason : "Tên chủ tài khoản không khớp với CCCD.") + ". Vui lòng kiểm tra và gửi lại yêu cầu.",
+                "PAYMENT_VERIFICATION",
                 shopId
         );
     }
@@ -380,5 +380,43 @@ public class NotificationService {
                 "ORDER",
                 orderId
         );
+    }
+
+    @Transactional
+    public void notifyOperationsPaymentVerificationSubmitted(Long shopId, String shopName, String ownerName) {
+        List<User> opUsers = userRoleRepository.findUsersByRoleCode("OPERATIONS_MANAGER");
+        if (opUsers == null || opUsers.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String title = "Yêu cầu đối soát thanh toán: " + (shopName != null ? shopName : "Cửa hàng");
+        String content = "Chủ shop " + (ownerName != null && !ownerName.isBlank() ? ownerName : "Đối tác") +
+                " vừa gửi thông tin tài khoản ngân hàng để đối soát cho shop '" + shopName + "'. Vui lòng kiểm tra và thẩm định hồ sơ.";
+
+        for (User opUser : opUsers) {
+            String eventKey = "OP-PAYMENT-" + shopId + "-" + opUser.getId();
+            Optional<Notification> existing = notificationRepository.findByEventKey(eventKey);
+            if (existing.isPresent()) {
+                Notification n = existing.get();
+                n.setContent(content);
+                n.setRead(false);
+                n.setCreatedAt(now);
+                notificationRepository.save(n);
+            } else {
+                Notification n = new Notification(
+                        opUser,
+                        eventKey,
+                        "OP_PAYMENT",
+                        title,
+                        content,
+                        "OP_PAYMENT",
+                        shopId
+                );
+                n.setCreatedAt(now);
+                n.setRead(false);
+                notificationRepository.save(n);
+            }
+        }
     }
 }

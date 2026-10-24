@@ -43,10 +43,6 @@
 
         <!-- Actions -->
         <div class="header-actions">
-            <!-- Kênh Bán hàng -->
-            <a class="seller-channel-btn" th:href="@{/seller/channel}" title="Kênh Bán hàng">
-                🏪 Kênh Bán hàng
-            </a>
 
             <!-- Search -->
             <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
@@ -83,7 +79,6 @@
                         </div>
                         <div class="user-dropdown-links">
                             <th:block th:if="${session.role == 'CUSTOMER'}">
-                                <a th:href="@{/seller/channel}">🏪 Kênh Bán hàng</a>
                                 <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
                                 <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
                                 <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
@@ -308,7 +303,6 @@
                 <div class="voucher-ticket-right">
                     <div class="voucher-terms">
                         <span class="term-condition" th:text="${v.condition}">Đơn Tối Thiểu 150k</span>
-                        <span class="term-expiry" th:text="${v.expiry}">HSD: 31.12.2026</span>
                     </div>
                     <button type="button" class="btn-save-voucher" th:attr="data-code=${v.code}" onclick="saveVoucher(this)">
                         Lưu
@@ -411,42 +405,33 @@
 
                 <!-- Product info -->
                 <div class="product-info">
-                    <span class="product-category"
-                          th:text="${variant.product != null ? variant.product.name : 'Trái cây'}">
-                        Trái cây
-                    </span>
-
-                    <h3 th:text="${variant.name}">
+                    <h3 class="product-title"
+                        th:text="${variant.product != null ? variant.product.name : variant.name}"
+                        th:title="${variant.product != null ? variant.product.name : variant.name}">
                         Tên sản phẩm
                     </h3>
 
                     <div class="product-bottom">
+                        <div class="price-wrap" th:if="${variant.promotionalPrice != null}">
+                            <strong class="price price-promotion"
+                                    th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                0 ₫
+                            </strong>
+                            <span class="price-old"
+                                  th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                0 ₫
+                            </span>
+                        </div>
+
                         <strong class="price"
-                                th:if="${variant.price != null}"
+                                th:if="${variant.promotionalPrice == null and variant.price != null}"
                                 th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
                             0 ₫
                         </strong>
 
-                        <strong class="price" th:unless="${variant.price != null}">
+                        <strong class="price price-contact" th:if="${variant.promotionalPrice == null and variant.price == null}">
                             Liên hệ
                         </strong>
-
-                        <!-- Add to cart -->
-                        <form th:action="@{/cart/items}"
-                              method="post"
-                              class="add-cart-form"
-                              onclick="event.stopPropagation()"
-                              onsubmit="addToCart(event, this)">
-
-                            <input type="hidden" name="variantId" th:value="${variant.id}">
-                            <input type="hidden" name="quantity" value="1">
-
-                            <button class="add-btn"
-                                    type="submit"
-                                    aria-label="Thêm sản phẩm vào giỏ hàng">
-                                +
-                            </button>
-                        </form>
                     </div>
                 </div>
             </article>

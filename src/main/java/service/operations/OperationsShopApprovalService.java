@@ -327,6 +327,7 @@ public class OperationsShopApprovalService {
         // Send Notification
         try {
             notifications.notifyShopApproved(shop.getOwnerId(), shop.getId(), shop.getName());
+            notifications.notifyPaymentVerificationRequired(shop.getOwnerId(), shop.getId(), shop.getName());
         } catch (Exception ignored) {}
     }
 
@@ -390,7 +391,7 @@ public class OperationsShopApprovalService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Shop chưa được phê duyệt mở shop.");
         }
 
-        if (!"PENDING".equals(shop.getPaymentApprovalStatus())) {
+        if (!"PENDING".equals(shop.getPaymentApprovalStatus()) && !"REJECTED".equals(shop.getPaymentApprovalStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Thông tin thanh toán không ở trạng thái chờ duyệt.");
         }
 

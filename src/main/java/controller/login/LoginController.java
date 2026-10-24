@@ -61,6 +61,7 @@ public class LoginController {
             case "OPERATIONS_MANAGER" -> "redirect:/operations/dashboard";
             case "SHOP_OWNER" -> "redirect:/shopowner/home";
             case "CS_STAFF" -> "redirect:/cs/dashboard";
+            case "DELIVERY_MANAGER" -> "redirect:/delivery/orders";
             default -> "redirect:/";
         };
 

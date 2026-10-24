@@ -3,6 +3,7 @@ package service.operations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import service.complaint.ComplaintService;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -11,9 +12,11 @@ import java.util.*;
 public class OperationsDashboardService {
 
     private final JdbcTemplate jdbc;
+    private final ComplaintService complaintService;
 
-    public OperationsDashboardService(JdbcTemplate jdbc) {
+    public OperationsDashboardService(JdbcTemplate jdbc, ComplaintService complaintService) {
         this.jdbc = jdbc;
+        this.complaintService = complaintService;
     }
 
     @Transactional(readOnly = true)
@@ -28,6 +31,9 @@ public class OperationsDashboardService {
 
         // 3. SLA giao hàng
         data.put("deliverySla", getDeliverySlaMetrics());
+
+        // 4. Dispute Reports, Customer Service SLA Reports, Content Moderation Metrics & Violation Alerts
+        data.putAll(complaintService.getAnalyticsAndReports());
 
         return data;
     }
@@ -46,6 +52,8 @@ public class OperationsDashboardService {
                     "SELECT COALESCE(SUM(shop_revenue_amount), 0) FROM orders WHERE status = 'COMPLETED'", BigDecimal.class);
             Long totalCompletedOrders = jdbc.queryForObject(
                     "SELECT COUNT(*) FROM orders WHERE status = 'COMPLETED'", Long.class);
+            Long pendingPayments = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM shops WHERE payment_approval_status = 'PENDING'", Long.class);
 
             // Top Shops
             List<Map<String, Object>> topShops = jdbc.queryForList("""
@@ -64,6 +72,7 @@ public class OperationsDashboardService {
             metrics.put("totalShops", totalShops != null ? totalShops : 0L);
             metrics.put("activeShops", activeShops != null ? activeShops : 0L);
             metrics.put("pendingShops", pendingShops != null ? pendingShops : 0L);
+            metrics.put("pendingPayments", pendingPayments != null ? pendingPayments : 0L);
             metrics.put("suspendedShops", suspendedShops != null ? suspendedShops : 0L);
             metrics.put("rejectedShops", rejectedShops != null ? rejectedShops : 0L);
             metrics.put("totalRevenue", totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
@@ -73,6 +82,7 @@ public class OperationsDashboardService {
             metrics.put("totalShops", 0L);
             metrics.put("activeShops", 0L);
             metrics.put("pendingShops", 0L);
+            metrics.put("pendingPayments", 0L);
             metrics.put("suspendedShops", 0L);
             metrics.put("rejectedShops", 0L);
             metrics.put("totalRevenue", BigDecimal.ZERO);

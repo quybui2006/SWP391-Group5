@@ -43,7 +43,7 @@ class ShopOwnerIntegrationTests {
         assertEquals(0L, products.shopDashboardStats(owner).get("variants"));
         assertTrue(orders.list(owner).isEmpty());
         mvc.perform(get("/shopowner/orders/999999").session(session)).andExpect(status().isNotFound());
-        mvc.perform(post("/shopowner/orders/999999/advance").session(session)).andExpect(status().isForbidden());
+        mvc.perform(post("/shopowner/orders/999999/confirm").session(session)).andExpect(status().isForbidden());
         session.setAttribute("role", "CUSTOMER");
         mvc.perform(get("/shop/products").session(session)).andExpect(status().isForbidden());
     }

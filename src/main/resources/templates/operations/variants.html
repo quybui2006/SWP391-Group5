@@ -25,11 +25,11 @@
                         <tbody id="approvalRows">
                         <tr th:each="variant : ${variants}" data-approval-row th:attr="data-record-id=${variant.id}">
                             <td><div class="primary-cell" style="display:flex;align-items:center;gap:12px">
-                                <img th:if="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}" th:src="${variant.imageUrl}" th:alt="${variant.variantName}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid #dfe9e3" loading="lazy" onerror="this.hidden=true">
+                                <img th:if="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}" th:src="${variant.imageUrl}" th:alt="${variant.variantName}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid #dfe9e3" loading="lazy" onerror="this.hidden=true">
                                 <span><strong th:text="${variant.variantName}">Tên biến thể</strong><span class="secondary-cell" th:text="${variant.productName}">Hồ sơ sản phẩm</span><span class="secondary-cell" th:text="${'SKU: ' + variant.sku}">SKU</span></span>
                             </div></td>
                             <td><div class="primary-cell" th:text="${variant.shopName}">Tên cửa hàng</div><div class="secondary-cell" th:text="${variant.categoryName}">Danh mục</div></td>
-                            <td><div class="primary-cell" th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫ / ' + variant.unitName}">0 ₫</div><div class="secondary-cell" th:text="${'Tồn: ' + variant.quantityOnHand + ' · Có thể bán: ' + variant.availableQuantity}">Tồn kho</div><div class="secondary-cell" th:text="${'Lô: ' + variant.batchCode + ' · HSD: ' + (variant.expiryDate != null ? #temporals.format(variant.expiryDate, 'dd/MM/yyyy') : '—')}">Thông tin lô</div></td>
+                            <td><div class="primary-cell" th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫ / ' + variant.unitName}">0 ₫</div><div class="secondary-cell" th:text="${'Tồn: ' + variant.quantityOnHand + ' · Có thể bán: ' + variant.availableQuantity}">Tồn kho</div><div class="secondary-cell" th:text="${'Mã lô: ' + variant.batchCode}">Thông tin lô</div></td>
                             <td class="date-cell" th:text="${variant.submittedAt != null ? #temporals.format(variant.submittedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
                             <td class="row-actions"><a class="button button-secondary" th:href="@{/operations/variants/{id}(id=${variant.id})}">Chi tiết</a><button type="button" class="button button-approve" data-approval-action="approve">Duyệt</button><button type="button" class="button button-reject" data-approval-action="reject">Từ chối</button></td>
                         </tr>
@@ -44,12 +44,74 @@
 </div>
 <dialog id="rejectionDialog" class="rejection-dialog" aria-labelledby="rejectionTitle">
     <form id="rejectForm" novalidate>
-        <div class="dialog-heading"><div><p class="eyebrow">THAO TÁC DUYỆT</p><h2 id="rejectionTitle">Từ chối biến thể sản phẩm</h2></div><button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">×</button></div>
-        <p class="dialog-description">Lý do sẽ được lưu lại để Shop Owner biết nội dung cần khắc phục.</p>
-        <label for="rejectionReason">Lý do từ chối <span aria-hidden="true">*</span></label>
-        <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể..."></textarea>
-        <p class="field-note">Tối đa 1000 ký tự.</p>
-        <div class="dialog-actions"><button type="button" class="button button-secondary" id="cancelDialog">Hủy</button><button type="submit" class="button button-reject" id="confirmReject">Xác nhận từ chối</button></div>
+        <div class="dialog-heading">
+            <div class="dialog-heading-content">
+                <div class="dialog-icon-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="dialog-title-group">
+                    <p class="eyebrow">THAO TÁC DUYỆT</p>
+                    <h2 id="rejectionTitle">Từ chối biến thể sản phẩm</h2>
+                </div>
+            </div>
+            <button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">✕</button>
+        </div>
+
+        <div class="dialog-body">
+            <div class="dialog-alert">
+                <div class="dialog-alert-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="dialog-alert-text">
+                    Lý do sẽ được lưu lại và gửi thông báo để Shop Owner biết nội dung cần khắc phục trước khi gửi duyệt lại.
+                </div>
+            </div>
+
+            <div class="dialog-form-group">
+                <div class="dialog-label-row">
+                    <label for="rejectionReason" class="dialog-label">Lý do từ chối <span class="required" aria-hidden="true">*</span></label>
+                    <span id="rejectionCharCount" class="dialog-counter">0 / 1000 ký tự</span>
+                </div>
+
+                <div class="quick-reasons-wrap">
+                    <div class="quick-reasons-label">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        Gợi ý lý do nhanh:
+                    </div>
+                    <div class="quick-reasons-chips">
+                        <button type="button" class="reason-chip" data-reason="Ảnh biến thể bị mờ, chứa logo ngoài hoặc vi phạm bản quyền hình ảnh.">📸 Ảnh mờ / vi phạm bản quyền</button>
+                        <button type="button" class="reason-chip" data-reason="Giá bán hoặc số lượng tồn kho của biến thể thiết lập bất thường.">💰 Giá bán / Tồn kho bất thường</button>
+                        <button type="button" class="reason-chip" data-reason="Tên thuộc tính hoặc quy cách phân loại chưa chuẩn xác theo quy định.">🏷️ Quy cách / Phân loại sai</button>
+                        <button type="button" class="reason-chip" data-reason="Mô tả phân loại không khớp với hình ảnh hoặc sản phẩm thực tế.">⚠️ Thông tin không khớp mô tả</button>
+                    </div>
+                </div>
+
+                <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể để Shop Owner sửa đổi..."></textarea>
+                
+                <div class="dialog-hint">
+                    <span>💡</span> Gợi ý: Hãy ghi chi tiết thuộc tính hoặc hình ảnh cần sửa để chủ Shop cập nhật chính xác.
+                </div>
+            </div>
+        </div>
+
+        <div class="dialog-actions">
+            <button type="button" class="button button-secondary" id="cancelDialog">Hủy</button>
+            <button type="submit" class="button button-reject" id="confirmReject">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Xác nhận từ chối
+            </button>
+        </div>
     </form>
 </dialog>
 <div th:replace="~{operations/layout :: toastHost}"></div>

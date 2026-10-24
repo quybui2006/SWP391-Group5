@@ -82,7 +82,7 @@ function saveVoucher(btn) {
         localStorage.setItem("freshfruit_saved_vouchers", JSON.stringify(savedCodes));
     }
 
-    showShopToast(`Đã lưu mã giảm giá ${code} thành công! Áp dụng tự động khi đặt hàng.`);
+    showShopToast(`Đã lưu mã ${code}. Nhập mã này tại bước xác nhận đơn hàng.`);
 }
 
 /* =========================================================

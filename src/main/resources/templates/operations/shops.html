@@ -11,74 +11,71 @@
 
 
             <!-- KPI Summary Cards -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
-                <a th:href="@{/operations/shops(status='PENDING')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #fed7aa;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#ffedd5;color:#c2410c;display:flex;align-items:center;justify-content:center;font-size:20px;">⏳</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#9a3412;text-transform:uppercase;">Chờ duyệt</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.pending}">0</div>
-                        </div>
+            <div class="stats-grid">
+                <a th:href="@{/operations/shops(status='PENDING')}" class="stat-card">
+                    <div class="stat-icon orange">⏳</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Chờ duyệt</div>
+                        <strong style="color: #ea580c;" th:text="${stats.pending}">0</strong>
+                        <p class="stat-sub warning">Cần xử lý sớm</p>
                     </div>
                 </a>
 
-                <a th:href="@{/operations/shops(status='APPROVED')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #bbf7d0;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:20px;">✓</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#166534;text-transform:uppercase;">Đã duyệt</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.approved}">0</div>
-                        </div>
+                <a th:href="@{/operations/shops(status='APPROVED')}" class="stat-card">
+                    <div class="stat-icon green">✓</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Đã duyệt</div>
+                        <strong style="color: #16a34a;" th:text="${stats.approved}">0</strong>
+                        <p class="stat-sub positive">Đủ điều kiện</p>
                     </div>
                 </a>
 
-                <a th:href="@{/operations/shops(status='REJECTED')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #fecaca;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-size:20px;">✕</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;">Từ chối</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.rejected}">0</div>
-                        </div>
+                <a th:href="@{/operations/shops(status='REJECTED')}" class="stat-card">
+                    <div class="stat-icon red">✕</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Từ chối</div>
+                        <strong style="color: #dc2626;" th:text="${stats.rejected}">0</strong>
+                        <p class="stat-sub danger">Không đạt chuẩn</p>
                     </div>
                 </a>
 
-                <a th:href="@{/operations/shops(status='ALL')}" style="text-decoration:none;">
-                    <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                        <div style="width:44px;height:44px;border-radius:10px;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:20px;">🏪</div>
-                        <div>
-                            <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;">Tổng hồ sơ</div>
-                            <div style="font-size:24px;font-weight:800;color:#1e293b;" th:text="${stats.total}">0</div>
-                        </div>
+                <a th:href="@{/operations/shops(status='ALL')}" class="stat-card">
+                    <div class="stat-icon blue">🏪</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Tổng hồ sơ</div>
+                        <strong th:text="${stats.total}">0</strong>
+                        <p class="stat-sub">Toàn bộ hồ sơ</p>
                     </div>
                 </a>
             </div>
 
-            <!-- Filter Tabs -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-                <div style="display:inline-flex;background:#e2e8f0;padding:4px;border-radius:10px;gap:4px;">
+            <!-- Filter Tabs & Toolbar -->
+            <div class="table-toolbar">
+                <div class="filter-tabs">
                     <a th:href="@{/operations/shops(status='PENDING')}" 
-                       th:style="${currentStatus == 'PENDING'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'PENDING'} ? ' active' : ''">
                         Đang chờ duyệt (<span th:text="${stats.pending}">0</span>)
                     </a>
                     <a th:href="@{/operations/shops(status='APPROVED')}" 
-                       th:style="${currentStatus == 'APPROVED'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'APPROVED'} ? ' active' : ''">
                         Đã duyệt (<span th:text="${stats.approved}">0</span>)
                     </a>
                     <a th:href="@{/operations/shops(status='REJECTED')}" 
-                       th:style="${currentStatus == 'REJECTED'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'REJECTED'} ? ' active' : ''">
                         Từ chối (<span th:text="${stats.rejected}">0</span>)
                     </a>
                     <a th:href="@{/operations/shops(status='ALL')}" 
-                       th:style="${currentStatus == 'ALL'} ? 'background:#fff;color:#1e293b;font-weight:700;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.06);' : 'color:#64748b;font-weight:600;padding:7px 16px;border-radius:8px;font-size:13px;text-decoration:none;'">
+                       class="filter-tab" th:classappend="${currentStatus == 'ALL'} ? ' active' : ''">
                         Tất cả (<span th:text="${stats.total}">0</span>)
                     </a>
                 </div>
 
-                <form th:action="@{/operations/shops}" method="get" style="display:flex;align-items:center;gap:8px;margin:0;">
+                <form th:action="@{/operations/shops}" method="get" class="search-field" style="margin: 0;">
                     <input type="hidden" name="status" th:value="${currentStatus}">
-                    <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, email..." style="padding:8px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;min-width:240px;">
-                    <button type="submit" style="padding:8px 14px;background:#28a866;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Tìm kiếm</button>
-                    <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/shops(status=${currentStatus})}" style="font-size:13px;color:#dc2626;text-decoration:none;">Xóa tìm</a>
+                    <span aria-hidden="true">⌕</span>
+                    <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, email...">
+                    <button type="submit" class="button button-primary" style="padding: 4px 10px; font-size: 11px;">Tìm</button>
+                    <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/shops(status=${currentStatus})}" style="font-size: 11.5px; color: #dc2626; margin-left: 4px;">Xóa tìm</a>
                 </form>
             </div>
 
@@ -152,16 +149,72 @@
 <dialog id="rejectionDialog" class="rejection-dialog" aria-labelledby="rejectionTitle">
     <form id="rejectForm" novalidate>
         <div class="dialog-heading">
-            <div><p class="eyebrow">THAO TÁC DUYỆT</p><h2 id="rejectionTitle">Từ chối yêu cầu mở Shop</h2></div>
-            <button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">×</button>
+            <div class="dialog-heading-content">
+                <div class="dialog-icon-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="dialog-title-group">
+                    <p class="eyebrow">THAO TÁC DUYỆT</p>
+                    <h2 id="rejectionTitle">Từ chối yêu cầu mở Shop</h2>
+                </div>
+            </div>
+            <button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">✕</button>
         </div>
-        <p class="dialog-description">Lý do sẽ được gửi thông báo in-web đến người đăng ký để hoàn thiện lại hồ sơ.</p>
-        <label for="rejectionReason">Lý do từ chối <span aria-hidden="true">*</span></label>
-        <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể (vd: Giấy tờ chưa rõ ràng, địa chỉ không có thật...)..."></textarea>
-        <p class="field-note">Tối đa 1000 ký tự.</p>
+
+        <div class="dialog-body">
+            <div class="dialog-alert">
+                <div class="dialog-alert-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="dialog-alert-text">
+                    Lý do sẽ được gửi thông báo in-web đến tài khoản đăng ký để chủ Shop nắm rõ và hoàn thiện lại hồ sơ.
+                </div>
+            </div>
+
+            <div class="dialog-form-group">
+                <div class="dialog-label-row">
+                    <label for="rejectionReason" class="dialog-label">Lý do từ chối <span class="required" aria-hidden="true">*</span></label>
+                    <span id="rejectionCharCount" class="dialog-counter">0 / 1000 ký tự</span>
+                </div>
+
+                <div class="quick-reasons-wrap">
+                    <div class="quick-reasons-label">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        Gợi ý lý do nhanh:
+                    </div>
+                    <div class="quick-reasons-chips">
+                        <button type="button" class="reason-chip" data-reason="Giấy tờ định danh (CCCD) bị mờ, mất góc hoặc thông tin không trùng khớp.">📋 CCCD không rõ / chưa hợp lệ</button>
+                        <button type="button" class="reason-chip" data-reason="Địa chỉ kho hàng không rõ ràng, thiếu số nhà/tên đường hoặc không xác thực được.">📍 Địa chỉ kho hàng chưa xác thực</button>
+                        <button type="button" class="reason-chip" data-reason="Số điện thoại liên hệ không thể kết nối để xác minh mở Shop.">📞 SĐT không liên lạc được</button>
+                        <button type="button" class="reason-chip" data-reason="Tên Shop hoặc mô tả kinh doanh chưa phù hợp với quy định của sàn.">🏷️ Tên Shop / Mô tả chưa phù hợp</button>
+                    </div>
+                </div>
+
+                <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể (vd: Giấy tờ chưa rõ ràng, địa chỉ không có thật...)..."></textarea>
+                
+                <div class="dialog-hint">
+                    <span>💡</span> Gợi ý: Hãy ghi chi tiết mục cần sửa đổi để giảm thời gian xử lý khi người bán nộp lại hồ sơ.
+                </div>
+            </div>
+        </div>
+
         <div class="dialog-actions">
             <button type="button" class="button button-secondary" id="cancelDialog">Hủy</button>
-            <button type="submit" class="button button-reject" id="confirmReject">Xác nhận từ chối</button>
+            <button type="submit" class="button button-reject" id="confirmReject">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Xác nhận từ chối
+            </button>
         </div>
     </form>
 </dialog>

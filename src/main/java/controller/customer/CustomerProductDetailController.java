@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Controller
 public class CustomerProductDetailController {
@@ -41,6 +44,9 @@ public class CustomerProductDetailController {
 
     @Autowired
     private ReviewService reviewService;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @GetMapping("/product/{id}")
     public String productDetail(@PathVariable("id") Long id,
@@ -99,6 +105,12 @@ public class CustomerProductDetailController {
         model.addAttribute("isCustomer", isCustomer);
         model.addAttribute("currentUserId", currentUserId);
         model.addAttribute("canReview", isCustomer && reviewService.canReview(id, currentUserId));
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        model.addAttribute("shopVouchers", jdbc.queryForList(
+                "SELECT code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
+                        "FROM vouchers WHERE shop_id=? AND is_public=1 AND status='ACTIVE' " +
+                        "AND starts_at<=? AND ends_at>? AND used_count<max_usages ORDER BY starts_at,id",
+                shopId, now, now));
         // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)
         List<ProductVariant> allActiveVariants = productVariantRepository.findApprovedActiveForCatalog();
         List<ProductVariant> relatedProducts = allActiveVariants.stream()

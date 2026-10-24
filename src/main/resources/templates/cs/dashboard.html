@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{cs/layout :: head('Tổng quan hỗ trợ')}"></head>
+<head th:replace="~{cs/layout :: head('Tổng quan Hỗ trợ')}"></head>
 <body>
 
 <aside th:replace="~{cs/layout :: sidebar('dashboard')}"></aside>
@@ -8,131 +8,174 @@
 <div class="cs-main-wrapper">
     <header class="cs-topbar">
         <div>
-            <h1>Trung tâm hỗ trợ khách hàng</h1>
-            <p class="cs-topbar-subtitle">Theo dõi trạng thái hỗ trợ, khiếu nại đơn hàng và phản hồi của người mua.</p>
+            <h1>Bàn làm việc Chăm sóc Khách hàng</h1>
+            <p class="cs-topbar-subtitle">Tiếp nhận khiếu nại, hỗ trợ đơn lỗi và duyệt đánh giá sản phẩm.</p>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a th:href="@{/cs/reviews?rating=1}" class="btn-cs-sm" style="color: #dc2626; border-color: #fecaca; background: #fef2f2;">
-                ⚠️ Đánh giá xấu cần xử lý
+            <a th:href="@{/cs/tickets}" class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; border-color: var(--cs-primary);">
+                🎫 Khiếu nại cần xử lý (<span th:text="${disputeReport['activeDisputes']}">0</span>)
             </a>
-            <a th:href="@{/cs/customers}" class="btn-cs-sm">
-                🔍 Tra cứu người mua
+            <a th:href="@{/cs/reviews}" class="btn-cs-sm" style="color: #d97706; border-color: #fde68a; background: #fffbeb;">
+                ⭐ Duyệt đánh giá (<span th:text="${moderationMetrics['pendingReviews']}">0</span>)
             </a>
         </div>
     </header>
 
     <main class="cs-content">
-        <!-- KPI METRICS -->
-        <div class="cs-stat-grid">
-            <div class="cs-stat-card">
-                <div class="cs-stat-header">
-                    <span class="cs-stat-title">Khách hàng hệ thống</span>
-                    <span class="cs-stat-icon" style="background: #e0f2fe; color: #0284c7;">👥</span>
-                </div>
-                <div class="cs-stat-value" th:text="${totalCustomers}">0</div>
-                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Tài khoản người mua</small>
-            </div>
+        <div th:if="${message}" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; padding:12px 16px; border-radius:10px; margin-bottom:18px; font-weight:600;" th:text="${message}"></div>
+        <div th:if="${error}" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:12px 16px; border-radius:10px; margin-bottom:18px; font-weight:600;" th:text="${error}"></div>
 
-            <div class="cs-stat-card">
+        <!-- 1. 4 THẺ CHỈ SỐ TÁC NGHIỆP NGẮN GỌN -->
+        <div class="cs-stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+            <a th:href="@{/cs/tickets(status='PENDING')}" class="cs-stat-card" style="text-decoration: none; color: inherit;">
                 <div class="cs-stat-header">
-                    <span class="cs-stat-title">Tổng đơn hàng sàn</span>
-                    <span class="cs-stat-icon" style="background: #f0fdf4; color: #16a34a;">📦</span>
+                    <span class="cs-stat-title">Chờ tiếp nhận</span>
+                    <span class="cs-stat-icon" style="background: #fffbeb; color: #d97706;">⏳</span>
                 </div>
-                <div class="cs-stat-value" th:text="${totalOrders}">0</div>
-                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Đơn phát sinh toàn sàn</small>
-            </div>
+                <div class="cs-stat-value" style="color: #d97706;" th:text="${disputeReport['pendingDisputes']}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
+                    Phiếu mới khách vừa gửi
+                </small>
+            </a>
 
-            <div class="cs-stat-card">
+            <a th:href="@{/cs/tickets(status='IN_PROGRESS')}" class="cs-stat-card" style="text-decoration: none; color: inherit;">
                 <div class="cs-stat-header">
-                    <span class="cs-stat-title">Đơn hủy / Thất bại</span>
+                    <span class="cs-stat-title">Đang xử lý</span>
+                    <span class="cs-stat-icon" style="background: #e0f2fe; color: #0284c7;">🎫</span>
+                </div>
+                <div class="cs-stat-value" style="color: #0284c7;" th:text="${disputeReport['inProgressDisputes']}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
+                    Đã giải quyết: <strong th:text="${disputeReport['resolvedDisputes']}">0</strong> phiếu
+                </small>
+            </a>
+
+            <a th:href="@{/cs/tickets(overdue=true)}" class="cs-stat-card" style="text-decoration: none; color: inherit;">
+                <div class="cs-stat-header">
+                    <span class="cs-stat-title">Quá hạn xử lý</span>
                     <span class="cs-stat-icon" style="background: #fef2f2; color: #dc2626;">🚨</span>
                 </div>
-                <div class="cs-stat-value" style="color: #dc2626;" th:text="${cancelledOrders}">0</div>
-                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Cần hỗ trợ chăm sóc lại</small>
-            </div>
+                <div class="cs-stat-value" style="color: #dc2626;" th:text="${csSlaReport['overdueActiveTickets']}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
+                    Đúng hạn: <strong style="color:#16a34a;" th:text="${csSlaReport['slaComplianceRate'] + '%'}">100%</strong>
+                </small>
+            </a>
 
-            <div class="cs-stat-card">
+            <a th:href="@{/cs/reviews}" class="cs-stat-card" style="text-decoration: none; color: inherit;">
                 <div class="cs-stat-header">
-                    <span class="cs-stat-title">Đánh giá kém (≤ 2 sao)</span>
-                    <span class="cs-stat-icon" style="background: #fffbeb; color: #d97706;">⭐</span>
+                    <span class="cs-stat-title">Đánh giá chờ duyệt</span>
+                    <span class="cs-stat-icon" style="background: #f0fdf4; color: #16a34a;">⭐</span>
                 </div>
-                <div class="cs-stat-value" style="color: #d97706;" th:text="${lowRatingReviews}">0</div>
-                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">Nguy cơ mất khách hàng</small>
-            </div>
+                <div class="cs-stat-value" style="color: #16a34a;" th:text="${moderationMetrics['pendingReviews']}">0</div>
+                <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
+                    Đánh giá 1-2★: <strong style="color:#dc2626;" th:text="${moderationMetrics['lowRatingReviews']}">0</strong>
+                </small>
+            </a>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start;">
-            <!-- CỘT 1: ĐƠN HÀNG HỦY / KHIẾU NẠI CẦN CSKH CAN THIỆP -->
-            <div class="cs-card">
-                <div class="cs-card-header">
-                    <h2 class="cs-card-title">
-                        <span>📦</span> Đơn hàng gặp sự cố gần đây
-                    </h2>
-                    <span style="font-size: 12px; color: var(--cs-text-sub);">Hủy đơn & Giao thất bại</span>
-                </div>
+        <!-- 2. KHIẾU NẠI MỚI NHẤT & GỢI Ý TẠO PHIẾU NHANH -->
+        <div style="display: grid; grid-template-columns: 1.45fr 1fr; gap: 22px; align-items: start;">
 
+            <!-- Khiếu nại gần đây -->
+            <div class="cs-card" style="margin-bottom: 0;">
+                <div class="cs-card-header">
+                    <h2 class="cs-card-title"><span>🎫</span> Khiếu nại gần đây</h2>
+                    <a th:href="@{/cs/tickets}" style="font-size: 13px; color: #0284c7; text-decoration: none; font-weight: 600;">Xem tất cả →</a>
+                </div>
                 <div style="overflow-x: auto;">
                     <table class="cs-table">
                         <thead>
                         <tr>
-                            <th>Mã đơn</th>
+                            <th>Mã phiếu</th>
                             <th>Khách hàng</th>
                             <th>Cửa hàng</th>
-                            <th>Lý do hủy / ghi chú</th>
+                            <th>Thời hạn</th>
                             <th>Trạng thái</th>
+                            <th></th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="order : ${disputeOrders}">
+                        <tr th:each="cp : ${recentComplaints}">
                             <td>
-                                <strong style="color: #0284c7;" th:text="${order['order_code']}">FF-123</strong>
+                                <strong style="color: #0284c7;" th:text="${cp['complaint_code']}">KN-001</strong>
+                                <small style="display:block;color:#64748b;" th:text="${cp['order_code']}"></small>
+                            </td>
+                            <td th:text="${cp['customer_name']}">Khách</td>
+                            <td th:text="${cp['shop_name']}">Shop</td>
+                            <td>
+                                <span style="font-size: 12px; font-weight: 700;"
+                                      th:styleappend="${cp['sla_state'] == 'OVERDUE'} ? 'color:#dc2626;' : 'color:#15803d;'"
+                                      th:text="${cp['sla_badge_text']}"></span>
                             </td>
                             <td>
-                                <div style="font-weight: 600;" th:text="${order['recipient_name']}">Nguyễn Văn A</div>
-                                <small style="color: var(--cs-text-sub);" th:text="${order['recipient_phone']}">0901234567</small>
+                                <span th:if="${cp['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ tiếp nhận</span>
+                                <span th:if="${cp['status'] == 'IN_PROGRESS'}" class="badge-status badge-info">Đang xử lý</span>
+                                <span th:if="${cp['status'] == 'RESOLVED'}" class="badge-status badge-success">Đã giải quyết</span>
+                                <span th:if="${cp['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
                             </td>
-                            <td th:text="${order['shop_name']}">Nông sản Đà Lạt</td>
-                            <td>
-                                <span style="font-size: 13px; color: #64748b;" th:text="${order['cancellation_reason'] ?: 'Không có ghi chú'}">Lý do</span>
-                            </td>
-                            <td>
-                                <span th:if="${order['status'] == 'CANCELLED'}" class="badge-status badge-danger">Đã hủy</span>
-                                <span th:unless="${order['status'] == 'CANCELLED'}" class="badge-status badge-warning">Cần xử lý</span>
+                            <td style="text-align: right;">
+                                <a th:href="@{/cs/tickets/{id}(id=${cp['id']})}" class="btn-cs-sm">Xử lý →</a>
                             </td>
                         </tr>
-                        <tr th:if="${#lists.isEmpty(disputeOrders)}">
-                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                ✨ Không có đơn hàng nào gặp sự cố.
-                            </td>
+                        <tr th:if="${#lists.isEmpty(recentComplaints)}">
+                            <td colspan="6" style="text-align: center; color: #94a3b8; padding: 24px;">Chưa có yêu cầu khiếu nại nào.</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- CỘT 2: ĐÁNH GIÁ KÉM CẦN HỖ TRỢ / BỒI HOÀN -->
-            <div class="cs-card">
-                <div class="cs-card-header">
-                    <h2 class="cs-card-title">
-                        <span>⭐</span> Phản ánh chất lượng sản phẩm
-                    </h2>
-                    <a th:href="@{/cs/reviews}" style="font-size: 13px; color: #0284c7; text-decoration: none; font-weight: 600;">Xem tất cả →</a>
-                </div>
-
-                <div th:each="rev : ${recentLowReviews}" style="padding: 14px 0; border-bottom: 1px solid #f1f5f9;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div>
-                            <strong th:text="${rev['customer_name']}">Khách hàng</strong>
-                            <small style="color: #64748b; margin-left: 6px;" th:text="${rev['customer_phone'] ?: ''}">0901234567</small>
-                        </div>
-                        <span style="color: #eab308; font-weight: 700; font-size: 14px;" th:text="${'★ ' + rev['rating'] + '/5'}">★ 2/5</span>
+            <!-- Cột phải: Đơn lỗi cần tạo phiếu + Cảnh báo Shop vi phạm -->
+            <div style="display: grid; gap: 20px;">
+                <!-- Đơn gặp sự cố gợi ý tạo phiếu -->
+                <div class="cs-card" style="margin-bottom: 0;">
+                    <div class="cs-card-header" style="margin-bottom: 10px;">
+                        <h2 class="cs-card-title" style="font-size: 15.5px;"><span>⚡</span> Đơn gặp sự cố chưa có phiếu</h2>
+                        <span style="font-size: 11.5px; color: #64748b;">Tạo nhanh 1 chạm</span>
                     </div>
-                    <div style="font-size: 12.5px; color: #0284c7; margin-bottom: 4px;" th:text="${rev['product_name'] + ' - ' + rev['variant_name']}">Cam Sành</div>
-                    <p style="margin: 0; font-size: 13.5px; color: #334155; line-height: 1.4;" th:text="${rev['content'] ?: 'Khách hàng không để lại nhận xét'}">Trái cây bị dập nát khi nhận hàng...</p>
+
+                    <div th:each="iss : ${autoSuggestIssues}" style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div>
+                            <strong style="color: #0284c7; font-size: 13.5px;" th:text="${iss['order_code']}">FF-123</strong>
+                            <span style="font-size: 12.5px; color: #334155;" th:text="${'• ' + iss['recipient_name']}"></span>
+                            <div style="font-size: 12px; color: #dc2626; margin-top: 2px;"
+                                 th:text="${iss['delivery_failure_reason'] ?: (iss['cancellation_reason'] ?: 'Giao thất bại / Hủy đơn')}"></div>
+                        </div>
+                        <form th:action="@{/cs/tickets/create}" method="post" style="margin: 0; flex-shrink: 0;">
+                            <input type="hidden" name="orderCode" th:value="${iss['order_code']}">
+                            <input type="hidden" name="reasonType" value="DELIVERY_OR_SERVICE">
+                            <input type="hidden" name="sourceType" value="AUTO_SYSTEM">
+                            <input type="hidden" name="title" th:value="${'Hỗ trợ sự cố đơn hàng ' + iss['order_code']}">
+                            <input type="hidden" name="description" th:value="${'Hỗ trợ sự cố: ' + (iss['delivery_failure_reason'] ?: (iss['cancellation_reason'] ?: 'Giao hàng không thành công'))}">
+                            <button type="submit" class="btn-cs-sm" style="background: #f0fdf4; color: #15803d; border-color: #bbf7d0; cursor: pointer;">
+                                + Tạo phiếu
+                            </button>
+                        </form>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(autoSuggestIssues)}" style="text-align: center; color: #94a3b8; padding: 18px 0; font-size: 13px;">
+                        ✨ Tất cả đơn sự cố đều đã có phiếu hỗ trợ.
+                    </div>
                 </div>
 
-                <div th:if="${#lists.isEmpty(recentLowReviews)}" style="text-align: center; color: #94a3b8; padding: 30px;">
-                    🎉 Chưa có phản ánh tiêu cực nào từ khách hàng!
+                <!-- Cảnh báo gian hàng nhiều khiếu nại -->
+                <div class="cs-card" style="margin-bottom: 0; border-left: 4px solid #dc2626;" th:if="${!#lists.isEmpty(violationAlerts)}">
+                    <div class="cs-card-header" style="margin-bottom: 10px;">
+                        <h2 class="cs-card-title" style="font-size: 15.5px;"><span>🚨</span> Gian hàng bị khiếu nại nhiều</h2>
+                        <span class="badge-status badge-danger" th:text="${#lists.size(violationAlerts)}">0</span>
+                    </div>
+
+                    <div th:each="al : ${violationAlerts}" style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div>
+                            <strong style="font-size: 13.5px;" th:text="${al['shop_name']}">Tên Shop</strong>
+                            <div style="font-size: 12px; color: #dc2626; margin-top: 2px;" th:text="${al['violationSummary']}"></div>
+                        </div>
+                        <form th:action="@{/cs/violations/{sid}/escalate(sid=${al['shop_id']})}" method="post" style="margin: 0; flex-shrink: 0;">
+                            <input type="hidden" name="reason" th:value="${al['violationSummary']}">
+                            <button type="submit" class="btn-cs-sm" style="color: #dc2626; border-color: #fecaca; background: #fef2f2; cursor: pointer;">
+                                Báo Vận hành
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

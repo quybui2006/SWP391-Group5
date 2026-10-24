@@ -25,7 +25,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
      */
     @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
             "WHERE pv.shopId = :shopId AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
-            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
+            "AND p.visible = true AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "ORDER BY pv.name ASC")
     List<ProductVariant> findPromotionEligibleVariants(@Param("shopId") Long shopId);
 
@@ -34,19 +34,19 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
      */
     @Query("SELECT DISTINCT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
             "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
-            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
+            "AND p.visible = true AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
     List<ProductVariant> findApprovedActiveForCatalog();
 
     @Query("SELECT pv FROM ProductVariant pv JOIN FETCH pv.product p JOIN Shop s ON s.id = pv.shopId " +
             "WHERE pv.id = :variantId AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
-            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
+            "AND p.visible = true AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING')")
     java.util.Optional<ProductVariant> findSellableById(@Param("variantId") Long variantId);
 
     // Câu Query kết hợp Tìm kiếm đa trường (Tên biến thể, Tên sản phẩm, Xuất xứ, Mô tả, SKU, Lô hàng) + Lọc giá + Danh mục + Xuất xứ
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
             "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
-            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
+            "AND p.visible = true AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "AND (:keyword = '' OR (" +
             "   LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "   LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -73,7 +73,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
             "WHERE s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
-            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
+            "AND p.visible = true AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:minPrice IS NULL OR pv.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR pv.price <= :maxPrice) " +
@@ -90,9 +90,9 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
      */
     @Query("SELECT DISTINCT pv FROM ProductVariant pv " +
             "JOIN pv.product p JOIN Shop s ON s.id = pv.shopId LEFT JOIN p.categories c " +
-            "WHERE (pv.shopId = :shopId OR p.shopId = :shopId) " +
+            "WHERE pv.shopId = :shopId AND p.shopId = :shopId " +
             "AND s.approvalStatus = 'APPROVED' AND s.operatingStatus = 'OPEN' " +
-            "AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
+            "AND p.visible = true AND pv.status = 'ACTIVE' AND pv.approvalStatus IN ('APPROVED','PENDING') " +
             "AND (:categoryId IS NULL OR c.id = :categoryId) " +
             "AND (:keyword = '' OR LOWER(pv.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<ProductVariant> findByShopAndCategoryAndKeyword(

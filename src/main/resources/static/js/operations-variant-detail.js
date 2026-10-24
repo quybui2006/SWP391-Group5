@@ -39,12 +39,55 @@
         }
     }
 
+    const charCounter = document.getElementById('rejectionCharCount');
+    function updateCharCount() {
+        if (!charCounter || !reasonInput) return;
+        const len = reasonInput.value.length;
+        charCounter.textContent = `${len} / 1000 ký tự`;
+        if (len > 900) {
+            charCounter.style.color = '#dc2626';
+            charCounter.style.fontWeight = '700';
+        } else {
+            charCounter.style.color = '';
+            charCounter.style.fontWeight = '';
+        }
+    }
+
+    document.querySelectorAll('.reason-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const reason = chip.dataset.reason || chip.textContent.trim();
+            if (!reasonInput) return;
+            if (reasonInput.value.trim().length > 0) {
+                reasonInput.value = reasonInput.value.trim() + '; ' + reason;
+            } else {
+                reasonInput.value = reason;
+            }
+            reasonInput.dispatchEvent(new Event('input'));
+            reasonInput.focus();
+        });
+    });
+
     document.getElementById('approveVariant')?.addEventListener('click', () => {
         if (window.confirm('Duyệt biến thể này và cho phép mở bán?')) submitAction(config.approveUrl);
     });
-    document.getElementById('openRejectDialog')?.addEventListener('click', () => dialog?.showModal());
+    document.getElementById('openRejectDialog')?.addEventListener('click', () => {
+        if (reasonInput) {
+            reasonInput.value = '';
+            reasonInput.setCustomValidity('');
+            updateCharCount();
+        }
+        dialog?.showModal();
+        reasonInput?.focus();
+    });
     document.getElementById('closeDialog')?.addEventListener('click', () => dialog?.close());
     document.getElementById('cancelDialog')?.addEventListener('click', () => dialog?.close());
+    dialog?.addEventListener('close', () => {
+        if (!busy && reasonInput) {
+            reasonInput.value = '';
+            updateCharCount();
+        }
+    });
+
     rejectForm?.addEventListener('submit', event => {
         event.preventDefault();
         const reason = (reasonInput?.value || '').trim();
@@ -61,5 +104,8 @@
         reasonInput.setCustomValidity('');
         submitAction(config.rejectUrl, { rejectionReason: reason });
     });
-    reasonInput?.addEventListener('input', () => reasonInput.setCustomValidity(''));
+    reasonInput?.addEventListener('input', () => {
+        reasonInput.setCustomValidity('');
+        updateCharCount();
+    });
 })();

@@ -10,7 +10,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -29,14 +28,14 @@ public class OperationsVariantApprovalService {
     public List<PendingVariantApprovalDto> findPendingVariants() {
         return jdbc.query("""
                 SELECT pv.id AS variant_id, pv.name AS variant_name, pv.sku,
-                       COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                       pv.image_url AS image_url,
                        p.name AS product_name, s.name AS shop_name,
                        COALESCE((SELECT c.name FROM product_categories pc JOIN categories c ON c.id = pc.category_id
                                  WHERE pc.product_id = p.id ORDER BY c.name LIMIT 1), 'Chưa phân loại') AS category_name,
                        pv.price, u.name AS unit_name,
                        COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
                        COALESCE(vi.available_quantity, 0) AS available_quantity,
-                       p.batch_code, p.expiry_date, pv.submitted_at
+                       p.batch_code, pv.submitted_at
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 JOIN shops s ON s.id = pv.shop_id
@@ -49,7 +48,7 @@ public class OperationsVariantApprovalService {
                 rs.getString("image_url"), rs.getString("product_name"), rs.getString("shop_name"),
                 rs.getString("category_name"), rs.getBigDecimal("price"), rs.getString("unit_name"),
                 nullableInt(rs, "quantity_on_hand"), nullableInt(rs, "available_quantity"),
-                rs.getString("batch_code"), localDate(rs, "expiry_date"), localDateTime(rs, "submitted_at")));
+                rs.getString("batch_code"), localDateTime(rs, "submitted_at")));
     }
 
     @Transactional(readOnly = true)
@@ -57,12 +56,11 @@ public class OperationsVariantApprovalService {
         List<OperationsVariantDetailDto> rows = jdbc.query("""
                 SELECT pv.id AS variant_id, pv.product_id, pv.name AS variant_name, pv.sku,
                        pv.specification,
-                       COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                       pv.image_url AS image_url,
                        pv.price, pv.min_order_quantity,
                        pv.status AS variant_status, pv.approval_status, pv.rejection_reason,
                        pv.submitted_at, pv.reviewed_at, pv.created_at AS variant_created_at, pv.updated_at AS variant_updated_at,
                        p.name AS product_name, p.description AS product_description, p.origin, p.batch_code,
-                       p.received_date, p.expiry_date,
                        COALESCE((SELECT c.name FROM product_categories pc JOIN categories c ON c.id = pc.category_id
                                  WHERE pc.product_id = p.id ORDER BY c.name LIMIT 1), 'Chưa phân loại') AS category_name,
                        s.name AS shop_name, s.phone AS shop_phone,
@@ -84,7 +82,7 @@ public class OperationsVariantApprovalService {
                 localDateTime(rs, "submitted_at"), localDateTime(rs, "reviewed_at"),
                 localDateTime(rs, "variant_created_at"), localDateTime(rs, "variant_updated_at"),
                 rs.getString("product_name"), rs.getString("product_description"), rs.getString("category_name"),
-                rs.getString("origin"), rs.getString("batch_code"), localDate(rs, "received_date"), localDate(rs, "expiry_date"),
+                rs.getString("origin"), rs.getString("batch_code"),
                 rs.getString("shop_name"), rs.getString("shop_phone"), rs.getString("shop_address"),
                 nullableInt(rs, "initial_quantity"), nullableInt(rs, "quantity_on_hand"),
                 nullableInt(rs, "reserved_quantity"), nullableInt(rs, "available_quantity"),
@@ -140,11 +138,6 @@ public class OperationsVariantApprovalService {
     private static Integer nullableInt(ResultSet rs, String column) throws SQLException {
         Object value = rs.getObject(column);
         return value == null ? null : ((Number) value).intValue();
-    }
-
-    private static LocalDate localDate(ResultSet rs, String column) throws SQLException {
-        java.sql.Date value = rs.getDate(column);
-        return value == null ? null : value.toLocalDate();
     }
 
     private static LocalDateTime localDateTime(ResultSet rs, String column) throws SQLException {

@@ -1,0 +1,59 @@
+.visibility-state { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 750; white-space: nowrap; }
+.visibility-state.is-visible { background: #e8f7ed; color: #187347; }
+.visibility-state.is-hidden { background: #f1f3f2; color: #68766e; }
+.product-management .product-actions { display: flex; align-items: center; gap: 8px; }
+.product-management .product-actions form { display: inline-flex; margin: 0; }
+.product-management .product-actions .row-link { margin: 0; padding: 7px 9px; border: 1px solid transparent; border-radius: 7px; color: #247348; font-size: 12px; }
+.visibility-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 76px; min-height: 32px; padding: 5px 10px; border: 1px solid; border-radius: 7px; background: #fff; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.visibility-toggle.is-visible { border-color: #e6c9c6; color: #a8443a; background: #fff9f8; }
+.visibility-toggle.is-hidden { border-color: #bfe2ca; color: #187347; background: #f3fbf5; }
+.visibility-toggle:hover { filter: brightness(.97); }
+.promotion-actions { display: flex; align-items: center; gap: 7px; }
+.promotion-actions form { display: inline-flex; margin: 0; }
+.promotion-action { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 31px; padding: 5px 9px; border: 1px solid #dce8df; border-radius: 7px; background: #fff; color: #42604d; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.promotion-action:hover { background: #f6faf7; border-color: #b9d7c2; }
+.promotion-action.toggle { border-color: #bfe2ca; background: #f3fbf5; color: #187347; }
+.promotion-action.delete { border-color: #efd0cd; color: #a8443a; }
+.order-status { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; background: #f0f3f1; color: #5a6b60; font-size: 11px; font-weight: 750; white-space: nowrap; }
+.order-status.pending { background: #fff4df; color: #8b5a08; }
+.order-status.confirmed { background: #e8f7ed; color: #187347; }
+.order-status.cancelled { background: #fff0ee; color: #a8443a; }
+.order-row-actions { min-width: 285px; white-space: nowrap; }
+.order-row-actions > * { margin-right: 5px; }
+.order-row-actions form { display: inline-flex; }
+.order-action-link, .order-action-button, .order-reject-menu summary { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 5px 9px; border: 1px solid #dce8df; border-radius: 7px; background: #fff; color: #42604d; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.order-action-button.confirm { border-color: #bfe2ca; background: #f3fbf5; color: #187347; }
+.order-action-button.reject, .order-reject-menu summary { border-color: #efd0cd; background: #fff9f8; color: #a8443a; }
+.order-reject-menu { position: relative; display: inline-block; }
+.order-reject-menu summary { list-style: none; }
+.order-reject-menu summary::-webkit-details-marker { display: none; }
+.order-reject-menu form { position: absolute; z-index: 5; top: calc(100% + 6px); right: 0; display: grid; grid-template-columns: minmax(170px, 230px) auto; align-items: end; gap: 7px; width: max-content; padding: 11px; border: 1px solid #e2e9e4; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(26, 55, 37, .13); }
+.order-reject-menu label { grid-column: 1 / -1; color: #5e6c63; font-size: 11px; font-weight: 700; }
+.order-reject-menu input { min-width: 0; height: 32px; padding: 5px 8px; border: 1px solid #dce5df; border-radius: 6px; font: inherit; font-size: 12px; }
+.order-detail-heading { margin-bottom: 20px; }
+.order-detail-heading h1 { margin: 6px 0 10px; color: #20372a; font-size: 24px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.back-link { color: #247348; font-size: 13px; font-weight: 700; text-decoration: none; }
+.order-heading-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #66756b; font-size: 12px; }
+.order-heading-meta > span:not(.order-status) { padding-left: 9px; border-left: 1px solid #dce5df; }
+.order-detail-grid { display: grid; grid-template-columns: minmax(230px, .75fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.order-info-panel, .order-items-panel { min-width: 0; padding: 20px; }
+.order-info-panel h2, .order-items-panel h2 { margin: 0 0 16px; color: #20372a; font-size: 16px; }
+.order-info-list { margin: 0; }
+.order-info-list > div { padding: 10px 0; border-bottom: 1px solid #edf1ee; }
+.order-info-list > div:last-child { border-bottom: 0; }
+.order-info-list dt { margin-bottom: 4px; color: #7a887f; font-size: 11px; font-weight: 650; }
+.order-info-list dd { margin: 0; color: #2e4235; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.order-items { width: 100%; min-width: 650px; border-collapse: collapse; }
+.order-items th, .order-items td { padding: 11px 9px; border-bottom: 1px solid #edf1ee; text-align: left; font-size: 12px; }
+.order-items th { color: #718077; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.order-items td:nth-last-child(-n+3) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.order-costs { max-width: 420px; margin: 16px 0 0 auto; }
+.order-costs > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0; }
+.order-costs dt { color: #68776d; font-size: 12px; font-weight: 500; }
+.order-costs dd { margin: 0; color: #34483a; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.order-costs .order-total { margin-top: 5px; padding-top: 12px; border-top: 1px solid #e4ebe6; }
+.order-costs .order-total dt { color: #304538; font-size: 13px; font-weight: 750; }
+.order-costs .order-total dd { color: #20372a; font-size: 19px; font-weight: 800; }
+.order-notice { padding: 11px 13px; border-left: 3px solid #23834f; background: #f1f7f3; color: #456252; font-size: 12px; line-height: 1.5; }
+@media (max-width: 850px) { .order-detail-grid { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .product-management .product-actions { align-items: flex-start; flex-direction: column; } .order-row-actions { min-width: 240px; } .order-detail-heading h1 { font-size: 20px; } .order-info-panel, .order-items-panel { padding: 15px; } }
