@@ -34,7 +34,7 @@ public class CsStaffController {
         long totalOrders = queryCount("SELECT COUNT(*) FROM orders");
         long cancelledOrders = queryCount("SELECT COUNT(*) FROM orders WHERE status = 'CANCELLED'");
         long totalReviews = queryCount("SELECT COUNT(*) FROM reviews");
-        long lowRatingReviews = queryCount("SELECT COUNT(*) FROM reviews WHERE rating <= 2");
+        long lowRatingReviews = queryCount("SELECT COUNT(*) FROM reviews WHERE rating <= 2 AND COALESCE(moderation_status, 'PENDING') = 'PENDING'");
 
         model.addAttribute("totalCustomers", totalCustomers);
         model.addAttribute("totalOrders", totalOrders);
@@ -60,7 +60,7 @@ public class CsStaffController {
                         "JOIN users u ON u.id = r.user_id " +
                         "JOIN product_variants pv ON pv.id = r.variant_id " +
                         "JOIN products p ON p.id = pv.product_id " +
-                        "WHERE r.rating <= 3 " +
+                        "WHERE r.rating <= 3 AND COALESCE(r.moderation_status, 'PENDING') = 'PENDING' " +
                         "ORDER BY r.created_at DESC LIMIT 5"
         );
         model.addAttribute("recentLowReviews", recentLowReviews);
@@ -75,9 +75,19 @@ public class CsStaffController {
     }
 
     @GetMapping("/reviews")
-    public String reviews(@RequestParam(required = false) Integer rating, Model model) {
+    public String reviews(@RequestParam(required = false) Integer rating,
+                          @RequestParam(required = false, defaultValue = "pending") String status,
+                          Model model) {
         model.addAttribute("activePage", "reviews");
         model.addAttribute("selectedRating", rating);
+
+        String selectedStatus = switch (status.toUpperCase()) {
+            case "REVIEWED", "APPROVED" -> "REVIEWED";
+            case "REMOVED" -> "REMOVED";
+            case "ALL" -> "ALL";
+            default -> "PENDING";
+        };
+        model.addAttribute("selectedStatus", selectedStatus);
 
         String sql = "SELECT r.id, r.rating, r.content, r.created_at, u.full_name AS customer_name, u.email AS customer_email, " +
                 "p.name AS product_name, pv.name AS variant_name, pv.image_url, " +
@@ -86,23 +96,32 @@ public class CsStaffController {
                 "JOIN users u ON u.id = r.user_id " +
                 "JOIN product_variants pv ON pv.id = r.variant_id " +
                 "JOIN products p ON p.id = pv.product_id ";
-        
+
         List<Map<String, Object>> reviews;
+        String statusClause = "COALESCE(r.moderation_status, 'PENDING') = ?";
         if (rating != null && rating >= 1 && rating <= 5) {
-            sql += "WHERE r.rating = ? ORDER BY r.created_at DESC LIMIT 50";
-            reviews = safeQueryList(sql, rating);
-        } else {
+            if ("ALL".equals(selectedStatus)) {
+                sql += "WHERE r.rating = ? ORDER BY r.created_at DESC LIMIT 50";
+                reviews = safeQueryList(sql, rating);
+            } else {
+                sql += "WHERE r.rating = ? AND " + statusClause + " ORDER BY r.created_at DESC LIMIT 50";
+                reviews = safeQueryList(sql, rating, selectedStatus);
+            }
+        } else if ("ALL".equals(selectedStatus)) {
             sql += "ORDER BY r.created_at DESC LIMIT 50";
             reviews = safeQueryList(sql);
+        } else {
+            sql += "WHERE " + statusClause + " ORDER BY r.created_at DESC LIMIT 50";
+            reviews = safeQueryList(sql, selectedStatus);
         }
-        
+
         model.addAttribute("reviews", reviews);
         return "cs/reviews";
     }
 
     @PostMapping("/reviews/{id}/approve")
     public String approveReview(@PathVariable Long id, HttpSession session, RedirectAttributes redirect) {
-        return updateReviewStatus(id, "APPROVED", session, redirect);
+        return updateReviewStatus(id, "REVIEWED", session, redirect);
     }
 
     @PostMapping("/reviews/{id}/reject")
@@ -129,7 +148,10 @@ public class CsStaffController {
             Object uid = session != null ? session.getAttribute("userId") : null;
             jdbc.update("UPDATE reviews SET moderation_status=?, moderation_reason=?, moderated_by=?, moderated_at=CURRENT_TIMESTAMP(3) WHERE id=?",
                     status, reason, uid instanceof Number n ? n.longValue() : null, id);
-            redirect.addFlashAttribute("message", "Đã " + status.toLowerCase() + " đánh giá #" + id + ".");
+            String message = "REVIEWED".equals(status)
+                    ? "Đã đánh dấu review #" + id + " là đã kiểm tra."
+                    : "Đã cập nhật trạng thái review #" + id + ".";
+            redirect.addFlashAttribute("message", message);
         } catch (Exception e) {
             redirect.addFlashAttribute("error", "Không thể cập nhật đánh giá: " + e.getMessage());
         }
