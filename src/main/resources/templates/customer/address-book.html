@@ -7,16 +7,16 @@
     <link rel="stylesheet" th:href="@{/css/customer-account.css}">
     <link rel="stylesheet" th:href="@{/css/address-book-forms.css}">
     <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="customer-shell">
     <aside th:replace="~{customer/account-fragments :: sidebar('address')}"></aside>
     <main class="customer-main">
-        <header class="customer-topbar">
-            <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><span>Tài khoản</span><span>/</span><strong>Sổ địa chỉ</strong></div>
-            <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
-        </header>
+        <header th:replace="~{customer/account-fragments :: topbar('Sổ địa chỉ')}"></header>
         <section class="page-intro"><div><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Sổ địa chỉ</h1><p>Lưu địa chỉ nhận hàng để thanh toán thuận tiện hơn.</p></div><button class="primary-button" type="button" onclick="openAddressModal()">＋ Thêm địa chỉ mới</button></section>
         <p class="feedback success" th:if="${message}" th:text="${message}" role="status"></p>
         <p class="feedback error" th:if="${error}" th:text="${error}" role="alert"></p>
