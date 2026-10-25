@@ -803,9 +803,9 @@ img {
 }
 
 .cashback-voucher-chip {
-    background: #fff7ed;
-    border-color: #fed7aa;
-    color: #c2410c;
+    background: var(--green-light);
+    border-color: #c2e8ca;
+    color: var(--green-dark);
 }
 
 

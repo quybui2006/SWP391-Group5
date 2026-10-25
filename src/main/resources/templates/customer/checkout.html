@@ -185,10 +185,10 @@
                             <label style="font-size:13px;font-weight:700;display:block;margin:12px 0 6px;">Mã hoàn xu của shop</label>
                             <div style="display:flex;gap:8px;">
                                 <input class="form-control" type="text" maxlength="50" autocomplete="off" th:name="'cashbackCode_' + ${shop.shopId}" th:value="${shop.cashbackCode}" placeholder="Nhập mã hoàn xu của shop">
-                                <button class="form-control" type="submit" formaction="/checkout" formmethod="post" formnovalidate style="width:auto;white-space:nowrap;background:#fff7ed;color:#c2410c;font-weight:700;cursor:pointer;">Áp dụng</button>
+                                <button class="form-control" type="submit" formaction="/checkout" formmethod="post" formnovalidate style="width:auto;white-space:nowrap;background:#eef6f0;color:#14532d;font-weight:700;cursor:pointer;">Áp dụng</button>
                             </div>
                             <small th:if="${shop.cashbackError != null}" th:text="${shop.cashbackError}" style="color:#b42318;"></small>
-                            <small th:if="${shop.cashbackPoints > 0}" th:text="'Dự kiến hoàn ' + ${shop.cashbackPoints} + ' xu sau khi đơn hoàn tất'" style="color:#c2410c;"></small>
+                            <small th:if="${shop.cashbackPoints > 0}" th:text="'Dự kiến hoàn ' + ${shop.cashbackPoints} + ' xu sau khi đơn hoàn tất'" style="color:#16803c;"></small>
                         </div>
 
                         <!-- Phần tính tiền đã đổi tên theo đúng yêu cầu -->
@@ -205,7 +205,7 @@
                             </div>
                             <div class="summary-line" th:if="${cashbackPoints > 0}">
                                 <span>Xu hoàn dự kiến</span>
-                                <strong style="color:#c2410c;" th:text="'+' + ${cashbackPoints} + ' xu'">+ 0 xu</strong>
+                                <strong style="color:#16803c;" th:text="'+' + ${cashbackPoints} + ' xu'">+ 0 xu</strong>
                             </div>
                             <div class="summary-line" th:if="${voucherDiscount > 0}">
                                 <span>Giảm giá voucher</span>
