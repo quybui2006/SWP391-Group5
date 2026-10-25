@@ -20,12 +20,13 @@ public class VoucherService {
     private final ShopRepository shops;
     public VoucherService(VoucherRepository vouchers, ShopRepository shops){this.vouchers=vouchers;this.shops=shops;}
 
-    public List<Voucher> list(Long ownerId,String keyword,String status){
+    public List<Voucher> list(Long ownerId,String keyword,String status){ return list(ownerId, keyword, status, "DISCOUNT"); }
+    public List<Voucher> list(Long ownerId,String keyword,String status,String voucherType){
         Long shopId=requireShop(ownerId).getId();
         String normalizedStatus=status==null?"":status.trim().toUpperCase(java.util.Locale.ROOT);
         if(!normalizedStatus.isEmpty()&&!List.of("ACTIVE","PAUSED","EXPIRED").contains(normalizedStatus)) normalizedStatus="";
         refreshExpired(shopId);
-        return vouchers.searchByShop(shopId,keyword==null?"":keyword.trim(),normalizedStatus);
+        return vouchers.searchByShop(shopId,keyword==null?"":keyword.trim(),normalizedStatus, voucherType);
     }
     public Voucher getForEdit(Long ownerId,Long id){return vouchers.findByIdAndShopId(id,requireShop(ownerId).getId()).orElseThrow(()->new IllegalArgumentException("Không tìm thấy voucher thuộc cửa hàng của bạn."));}
 
@@ -42,6 +43,12 @@ public class VoucherService {
         }
         if (vouchers.existsByShopIdAndCodeAndIdNot(shop.getId(), code, id == null ? -1L : id)) {
             throw new IllegalArgumentException("Mã voucher này đã tồn tại trong cửa hàng của bạn.");
+        }
+        if (!"CASHBACK".equals(form.getVoucherType()) && !"DISCOUNT".equals(form.getVoucherType())) {
+            throw new IllegalArgumentException("Loại voucher không hợp lệ.");
+        }
+        if ("CASHBACK".equals(form.getVoucherType()) && !"PERCENTAGE".equals(form.getDiscountType())) {
+            throw new IllegalArgumentException("Voucher hoàn xu chỉ hỗ trợ giảm theo phần trăm.");
         }
         if (!"PERCENTAGE".equals(form.getDiscountType()) && !"FIXED_AMOUNT".equals(form.getDiscountType())) {
             throw new IllegalArgumentException("Loại giảm giá không hợp lệ.");
@@ -75,7 +82,7 @@ public class VoucherService {
         Voucher v;
         if(id==null){v=new Voucher();v.setShopId(shop.getId());v.setUsedCount(0);v.setStatus("ACTIVE");}
         else {v=getForEdit(ownerId,id); if(v.getUsedCount()!=null&&form.getMaxUsages()<v.getUsedCount()) throw new IllegalArgumentException("Số lượt tối đa không thể nhỏ hơn số lượt đã sử dụng ("+v.getUsedCount()+").");}
-        v.setCode(code);v.setName(name);v.setDiscountType(form.getDiscountType());v.setDiscountValue(discountValue);
+        v.setCode(code);v.setName(name);v.setVoucherType(form.getVoucherType());v.setDiscountType(form.getDiscountType());v.setDiscountValue(discountValue);
         v.setMaxDiscountAmount("PERCENTAGE".equals(form.getDiscountType())?form.getMaxDiscountAmount():null);
         v.setMinOrderValue(minOrderValue);v.setMaxUsages(form.getMaxUsages());v.setIsPublic(Boolean.TRUE.equals(form.getIsPublic()));
         v.setStartsAt(form.getStartsAt());v.setEndsAt(form.getEndsAt());
@@ -113,6 +120,6 @@ public class VoucherService {
         return normalized.scale() <= 0 && integerDigits <= 19;
     }
 
-    private void refreshExpired(Long shopId){List<Voucher> expired=vouchers.searchByShop(shopId,"","").stream().filter(v->!"EXPIRED".equals(v.getStatus())&&v.getEndsAt()!=null&&!v.getEndsAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))).toList();expired.forEach(v->v.setStatus("EXPIRED"));if(!expired.isEmpty())vouchers.saveAll(expired);}
+    private void refreshExpired(Long shopId){List<Voucher> expired=vouchers.searchByShop(shopId,"","","DISCOUNT"); expired = new java.util.ArrayList<>(expired); expired.addAll(vouchers.searchByShop(shopId,"","","CASHBACK")); expired.stream().filter(v->!"EXPIRED".equals(v.getStatus())&&v.getEndsAt()!=null&&!v.getEndsAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))).forEach(v->v.setStatus("EXPIRED"));if(!expired.isEmpty())vouchers.saveAll(expired);}
     private Shop requireShop(Long ownerId){Shop s=shops.findByOwnerId(ownerId).orElseThrow(()->new IllegalArgumentException("Tài khoản chưa có cửa hàng."));if(!"APPROVED".equals(s.getApprovalStatus()))throw new IllegalArgumentException("Cửa hàng cần được duyệt trước khi quản lý voucher.");return s;}
 }

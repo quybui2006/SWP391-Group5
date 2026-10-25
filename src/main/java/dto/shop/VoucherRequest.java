@@ -21,6 +21,13 @@ public class VoucherRequest {
     @NotNull(message="Vui lòng chọn thời gian bắt đầu.") private LocalDateTime startsAt;
     @NotNull(message="Vui lòng chọn thời gian kết thúc.") private LocalDateTime endsAt;
     private String status="ACTIVE";
+    private String voucherType="DISCOUNT";
+    @AssertTrue(message="Voucher hoàn xu chỉ hỗ trợ giảm theo phần trăm.")
+    public boolean isCashbackTypeValid() {
+        return !"CASHBACK".equals(voucherType) || "PERCENTAGE".equals(discountType);
+    }
+
+    public String getVoucherType(){return voucherType;} public void setVoucherType(String v){voucherType=v;}
     @AssertTrue(message="Ngày kết thúc phải sau ngày bắt đầu.")
     public boolean isDateRangeValid() {
         return startsAt == null || endsAt == null || endsAt.isAfter(startsAt);

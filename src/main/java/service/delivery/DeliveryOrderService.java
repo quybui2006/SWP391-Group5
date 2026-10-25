@@ -12,15 +12,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import service.customer.OrderCheckoutService;
 
 @Service
 public class DeliveryOrderService {
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
+    private final OrderCheckoutService checkout;
 
-    public DeliveryOrderService(JdbcTemplate jdbc) {
+    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout) {
         this.jdbc = jdbc;
+        this.checkout = checkout;
     }
 
     /**
@@ -221,6 +224,7 @@ public class DeliveryOrderService {
             } else {
                 jdbc.update("UPDATE orders SET status='COMPLETED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),completed_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
             }
+            checkout.creditCashbackPoints(orderId);
             return;
         }
         if ("CANCELLED".equals(target)) {
