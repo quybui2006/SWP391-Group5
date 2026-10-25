@@ -148,6 +148,32 @@ public class CustomerAccountHomeController {
         return Map.of("favorite", account.setFavorite(requireCustomer(session), variantId, favorite));
     }
 
+    @GetMapping("/wallet/coins")
+    public String coins(@RequestParam(defaultValue="all") String filter, Model model, HttpSession session) {
+        Long id = requireCustomer(session);
+        if (!java.util.Set.of("all","received","used").contains(filter)) filter = "all";
+        model.addAttribute("profile", account.profile(id)); model.addAttribute("coinBalance", account.coinBalance(id));
+        model.addAttribute("coinHistory", account.coinHistory(id, filter)); model.addAttribute("coinFilter", filter); model.addAttribute("activePage", "wallet-coins");
+        return "customer/wallet-coins";
+    }
+
+    @GetMapping("/wallet/money")
+    public String money(Model model, HttpSession session) {
+        Long id = requireCustomer(session); model.addAttribute("profile", account.profile(id)); model.addAttribute("wallet", account.wallet(id)); model.addAttribute("activePage", "wallet-money"); return "customer/wallet-money";
+    }
+
+    @GetMapping("/wallet/vouchers")
+    public String vouchers(Model model, HttpSession session) {
+        Long id = requireCustomer(session); model.addAttribute("profile", account.profile(id)); model.addAttribute("savedVouchers", account.savedVouchers(id)); model.addAttribute("activePage", "wallet-vouchers"); return "customer/wallet-vouchers";
+    }
+
+    @PostMapping("/wallet/vouchers/save")
+    @ResponseBody
+    public Map<String,Object> saveVoucher(@RequestParam String voucherCode, HttpSession session) {
+        account.saveVoucher(requireCustomer(session), voucherCode); return Map.of("saved", true);
+    }
+
+
     @GetMapping("/notifications")
     public String notifications(Model model, HttpSession session) {
         Long id = current(session);

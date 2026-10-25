@@ -33,6 +33,17 @@
         <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
         <a th:classappend="${active == 'complaints'} ? 'active'" th:href="@{/customer/account/complaints}">🎫 Khiếu nại &amp; Hỗ trợ</a>
         <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
+        <div class="nav-expandable" th:classappend="${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'} ? ' expanded' : ''">
+            <a class="nav-expandable-toggle" th:classappend="${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'} ? ' active' : ''"
+               href="#wallet-submenu" aria-controls="wallet-submenu" th:attr="aria-expanded=${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'}" onclick="this.parentElement.classList.toggle('expanded'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('expanded')); return false;">
+                <span aria-hidden="true">▣</span> Ví của tôi <b class="nav-chevron" aria-hidden="true">⌄</b>
+            </a>
+            <div id="wallet-submenu" class="nav-submenu">
+                <a th:classappend="${active == 'wallet-coins'} ? ' active' : ''" th:href="@{/customer/account/wallet/coins}">Ví xu</a>
+                <a th:classappend="${active == 'wallet-money'} ? ' active' : ''" th:href="@{/customer/account/wallet/money}">Ví tiền</a>
+                <a th:classappend="${active == 'wallet-vouchers'} ? ' active' : ''" th:href="@{/customer/account/wallet/vouchers}">Ví voucher</a>
+            </div>
+        </div>
         <span class="nav-caption second">KHÁC</span>
         <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
         <a th:classappend="${active == 'changePassword'} ? 'active'" th:href="@{/customer/account/change-password}">Đổi mật khẩu</a>
@@ -81,5 +92,6 @@
         </button>
     </form>
 </div>
+
 </body>
 </html>
