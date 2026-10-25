@@ -61,6 +61,7 @@ public class LoginController {
             case "OPERATIONS_MANAGER" -> "redirect:/operations/dashboard";
             case "SHOP_OWNER" -> "redirect:/shopowner/home";
             case "CS_STAFF" -> "redirect:/cs/dashboard";
+            case "DELIVERY_MANAGER" -> "redirect:/delivery/orders";
             default -> "redirect:/";
         };
 
@@ -95,7 +96,11 @@ public class LoginController {
 
     @GetMapping("/admin")
     public String admin(HttpServletRequest request) {
-        return pageForRole(request, "ADMIN", "admin/admin");
+        HttpSession session = request.getSession(false);
+        if (session == null || !"ADMIN".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+        return "redirect:/admin/dashboard";
     }
 
     private String pageForRole(HttpServletRequest request, String requiredRole, String view){

@@ -40,6 +40,7 @@ public class LoginService {
         String role = roles.contains("ADMIN") ? "ADMIN"
                 : roles.contains("OPERATIONS_MANAGER") ? "OPERATIONS_MANAGER"
                 : roles.contains("CS_STAFF") ? "CS_STAFF"
+                : roles.contains("DELIVERY_MANAGER") ? "DELIVERY_MANAGER"
                 : roles.contains("SHOP_OWNER") ? "SHOP_OWNER"
                 : roles.contains("CUSTOMER") ? "CUSTOMER" : null;
         if(role==null) return Optional.empty();

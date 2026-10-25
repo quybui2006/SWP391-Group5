@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.customer.CustomerAccountService;
 import service.customer.NotificationService;
+import service.complaint.ComplaintService;
 import java.util.Map;
 import dto.customer.ChangePasswordRequest;
 import jakarta.validation.Valid;
@@ -18,10 +19,12 @@ import org.springframework.validation.BindingResult;
 public class CustomerAccountHomeController {
     private final CustomerAccountService account;
     private final NotificationService notificationService;
+    private final ComplaintService complaintService;
 
-    public CustomerAccountHomeController(CustomerAccountService account, NotificationService notificationService) {
+    public CustomerAccountHomeController(CustomerAccountService account, NotificationService notificationService, ComplaintService complaintService) {
         this.account = account;
         this.notificationService = notificationService;
+        this.complaintService = complaintService;
     }
 
     private Long current(HttpSession s) {
@@ -104,6 +107,12 @@ public class CustomerAccountHomeController {
         if (r != null) return r;
         model.addAttribute("profile", account.profile(customerId));
         model.addAttribute("order", account.orderDetail(customerId, id));
+        var orderComplaints = complaintService.listComplaintsByOrder(id);
+        boolean hasActiveComplaint = orderComplaints.stream()
+                .anyMatch(c -> "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
+        model.addAttribute("orderComplaints", orderComplaints);
+        model.addAttribute("hasActiveComplaint", hasActiveComplaint);
+        model.addAttribute("reasonLabels", complaintService.getReasonLabels());
         model.addAttribute("activePage", "orders");
         return "customer/order-detail";
     }

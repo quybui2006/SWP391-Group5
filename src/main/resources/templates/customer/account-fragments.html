@@ -31,6 +31,7 @@
         <a th:classappend="${active == 'profile'} ? 'active'" th:href="@{/customer/account}">Thông tin cá nhân</a>
         <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
         <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
+        <a th:classappend="${active == 'complaints'} ? 'active'" th:href="@{/customer/account/complaints}">🎫 Khiếu nại &amp; Hỗ trợ</a>
         <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
         <span class="nav-caption second">KHÁC</span>
         <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
@@ -43,7 +44,7 @@
     </nav>
     <div th:replace="~{customer/account-fragments :: help}"></div>
 </aside>
-<div class="sidebar-help" th:fragment="help"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Liên hệ với FreshFruit</small></div><b>→</b></div>
+<a class="sidebar-help" th:fragment="help" th:href="@{/customer/account/complaints}" style="text-decoration:none; color:inherit;"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Gửi &amp; theo dõi khiếu nại</small></div><b>→</b></a>
 <header class="customer-topbar" th:fragment="topbar(title)">
     <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><a th:href="@{/customer/account}">Tài khoản</a><span>/</span><strong th:text="${title}"></strong></div>
     <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
