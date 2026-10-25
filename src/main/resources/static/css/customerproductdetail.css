@@ -802,7 +802,13 @@ img {
     border-color: var(--green);
 }
 
-/* Insurance */
+.cashback-voucher-chip {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #c2410c;
+}
+
+
 .insurance-badge {
     color: var(--green-dark);
     font-weight: 600;

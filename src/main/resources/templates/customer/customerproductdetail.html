@@ -270,6 +270,15 @@
                         </div>
                     </div>
 
+                    <div class="detail-line">
+                        <span class="detail-label">Mã Hoàn Xu Shop</span>
+                        <div class="detail-content vouchers-wrap">
+                            <span class="fresh-voucher-chip cashback-voucher-chip" th:each="voucher : ${shopCashbackVouchers}"
+                                  th:text="${voucher.name + ' · ' + voucher.code}">Voucher hoàn xu của cửa hàng</span>
+                            <span th:if="${shopCashbackVouchers == null or #lists.isEmpty(shopCashbackVouchers)}">Hiện shop chưa có voucher hoàn xu.</span>
+                        </div>
+                    </div>
+
                     <!-- Bảo hiểm -->
                     <div class="detail-line">
                         <span class="detail-label">Bảo Hiểm</span>
