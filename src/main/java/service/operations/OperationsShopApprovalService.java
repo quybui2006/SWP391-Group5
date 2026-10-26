@@ -21,6 +21,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * ==============================================================================================
+ * SERVICE: OperationsShopApprovalService
+ * ==============================================================================================
+ * Mục đích: Xử lý toàn bộ logic nghiệp vụ (Business Logic) liên quan đến chu trình duyệt mở Shop:
+ * 
+ * Các chức năng chính:
+ * 1. Truy vấn & thống kê danh sách hồ sơ shop, người bán và tài khoản thanh toán.
+ * 2. Lấy chi tiết hồ sơ thẩm định và TỰ ĐỘNG ĐỐI SOÁT Họ tên CCCD vs Tên chủ TK ngân hàng (bỏ dấu tiếng Việt).
+ * 3. Phê duyệt hồ sơ mở Shop (approveShop):
+ *    - Đổi trạng thái: approval_status = 'APPROVED'.
+ *    - Phân quyền: Thăng cấp User thành 'SHOP_OWNER' trong bảng `user_roles`.
+ *    - Bắn Notification: Yêu cầu chủ shop tiếp tục cài đặt tài khoản nhận tiền.
+ * 4. Từ chối hồ sơ mở Shop (rejectShop):
+ *    - Đổi trạng thái: approval_status = 'REJECTED' và lưu lý do từ chối.
+ *    - Bắn Notification kèm lý do chi tiết tới Người bán.
+ * 5. Quản lý trạng thái vận hành (updateOperatingStatus): OPEN / CLOSED / SUSPENDED.
+ * 6. Đối soát thanh toán (approvePayment): Phê duyệt TK ngân hàng và tự động mở bán (operating_status='OPEN').
+ * ==============================================================================================
+ */
 @Service
 public class OperationsShopApprovalService {
     private final ShopRepository shops;
@@ -42,6 +62,9 @@ public class OperationsShopApprovalService {
         this.jdbc = jdbc;
     }
 
+    /**
+     * Tự động kiểm tra và thêm các cột cần thiết cho việc xét duyệt hồ sơ người bán nếu chưa có trong DB.
+     */
     @jakarta.annotation.PostConstruct
     public void initDb() {
         try {
@@ -55,6 +78,9 @@ public class OperationsShopApprovalService {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * Tìm kiếm và lọc danh sách tài khoản định danh người bán theo trạng thái và từ khóa.
+     */
     @Transactional(readOnly = true)
     public List<ShopApprovalItemDto> findSellers(String status, String keyword) {
         List<ShopApprovalItemDto> list;
@@ -77,6 +103,9 @@ public class OperationsShopApprovalService {
         return list;
     }
 
+    /**
+     * Thống kê số lượng hồ sơ định danh người bán (Chờ duyệt, Đã duyệt, Bị từ chối).
+     */
     @Transactional(readOnly = true)
     public Map<String, Long> getSellerApprovalStats() {
         Map<String, Long> stats = new HashMap<>();
@@ -92,6 +121,9 @@ public class OperationsShopApprovalService {
         return stats;
     }
 
+    /**
+     * Lấy danh sách tài khoản ngân hàng chờ đối soát (Bỏ qua các shop chưa cấu hình UNCONFIGURED).
+     */
     @Transactional(readOnly = true)
     public List<ShopApprovalItemDto> findPayments(String status, String keyword) {
         List<ShopApprovalItemDto> list;
@@ -116,6 +148,9 @@ public class OperationsShopApprovalService {
         return list;
     }
 
+    /**
+     * Thống kê số lượng tài khoản ngân hàng theo trạng thái đối soát.
+     */
     @Transactional(readOnly = true)
     public Map<String, Long> getPaymentApprovalStats() {
         Map<String, Long> stats = new HashMap<>();
@@ -133,11 +168,17 @@ public class OperationsShopApprovalService {
         return stats;
     }
 
+    /**
+     * Truy vấn danh sách shop đang PENDING (dành cho các tác vụ cần thông tin tóm tắt).
+     */
     @Transactional(readOnly = true)
     public List<PendingShopApprovalDto> findPendingShops() {
         return shops.findPendingApprovals();
     }
 
+    /**
+     * Truy vấn danh sách Shop theo trạng thái duyệt (PENDING, APPROVED, REJECTED, ALL) và từ khóa tìm kiếm.
+     */
     @Transactional(readOnly = true)
     public List<ShopApprovalItemDto> findShops(String status, String keyword) {
         List<ShopApprovalItemDto> list;
@@ -147,6 +188,7 @@ public class OperationsShopApprovalService {
             list = shops.findByApprovalStatusWithOwners(status.toUpperCase().trim());
         }
 
+        // Lọc theo từ khóa: Tên shop, Tên chủ shop, Email, SĐT
         if (keyword != null && !keyword.isBlank()) {
             String kw = keyword.toLowerCase().trim();
             list = list.stream().filter(s ->
@@ -160,6 +202,9 @@ public class OperationsShopApprovalService {
         return list;
     }
 
+    /**
+     * Đếm số lượng Shop theo từng nhóm trạng thái để hiển thị lên 4 Badge thống kê ở giao diện.
+     */
     @Transactional(readOnly = true)
     public Map<String, Long> getApprovalStats() {
         Map<String, Long> stats = new HashMap<>();
@@ -175,6 +220,14 @@ public class OperationsShopApprovalService {
         return stats;
     }
 
+    /**
+     * ==========================================================================================
+     * LẤY CHI TIẾT HỒ SƠ THẨM ĐỊNH & ĐỐI SOÁT TỰ ĐỘNG
+     * ==========================================================================================
+     * - Tổng hợp: Thông tin shop, chủ sở hữu, địa chỉ kho, pháp lý CCCD, MST.
+     * - TỰ ĐỘNG ĐỐI SOÁT: Chuẩn hóa họ tên trên CCCD và tên chủ tài khoản ngân hàng để so sánh.
+     * - Tích hợp số liệu kinh doanh: Đếm số sản phẩm cha, số đơn hàng và tổng doanh thu đã giao dịch.
+     */
     @Transactional(readOnly = true)
     public ShopApprovalDetailDto getShopDetail(Long shopId) {
         Shop shop = shops.findById(shopId)
@@ -215,7 +268,7 @@ public class OperationsShopApprovalService {
         dto.setSellerRejectionReason(shop.getSellerRejectionReason());
         dto.setSellerReviewedAt(shop.getSellerReviewedAt());
 
-        // Đối chiếu Tên chủ tài khoản ngân hàng với Họ tên trên CCCD
+        // LOGIC ĐỐI SOÁT: So sánh Tên chủ TK ngân hàng với Họ tên CCCD (bỏ dấu tiếng Việt và chữ hoa/thường)
         boolean matches = false;
         if (shop.getIdCardName() != null && shop.getBankAccountName() != null) {
             String cccdClean = removeAccents(shop.getIdCardName().trim().toLowerCase());
@@ -224,12 +277,14 @@ public class OperationsShopApprovalService {
         }
         dto.setBankAccountMatchesIdCard(matches);
 
+        // Nối tên địa chỉ đầy đủ (Xã/Phường, Tỉnh/Thành phố)
         String provinceName = provinces.findById(shop.getProvinceCode())
                 .map(Province::getName)
                 .orElse(shop.getProvinceCode());
         dto.setProvinceName(provinceName);
         dto.setFullAddress(shop.getAddressDetail() + ", " + shop.getWardName() + ", " + provinceName);
 
+        // Gắn thông tin tài khoản Người bán (User)
         if (owner != null) {
             dto.setOwnerId(owner.getId());
             dto.setOwnerName(owner.getFullName());
@@ -239,7 +294,7 @@ public class OperationsShopApprovalService {
             dto.setOwnerStatus(owner.getStatus());
         }
 
-        // Query product count & orders count
+        // Truy vấn số lượng sản phẩm, đơn hàng và doanh thu tích lũy của Shop
         try {
             Integer prodCount = jdbc.queryForObject(
                     "SELECT COUNT(*) FROM products WHERE shop_id = ?", Integer.class, shopId);
@@ -257,6 +312,9 @@ public class OperationsShopApprovalService {
         return dto;
     }
 
+    /**
+     * Phê duyệt hồ sơ định danh người bán.
+     */
     @Transactional
     public void approveSellerAccount(Long shopId) {
         Shop shop = shops.findById(shopId)
@@ -277,6 +335,9 @@ public class OperationsShopApprovalService {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * Từ chối hồ sơ định danh người bán (kèm lý do).
+     */
     @Transactional
     public void rejectSellerAccount(Long shopId, String rejectionReason) {
         String reason = normalizeReason(rejectionReason);
@@ -298,22 +359,34 @@ public class OperationsShopApprovalService {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * ==========================================================================================
+     * NGHIỆP VỤ CỐT LÕI: PHÊ DUYỆT MỞ SHOP (approveShop)
+     * ==========================================================================================
+     * Các bước thực thi nguyên tử (Atomic Transaction):
+     * 1. Cập nhật bảng `shops`: approval_status='APPROVED', operating_status='CLOSED' (chờ đối soát TK ngân hàng).
+     * 2. Phân quyền: Cấp quyền 'SHOP_OWNER' vào bảng `user_roles` cho User sở hữu shop.
+     * 3. Gửi 2 Notification:
+     *    - Thông báo chúc mừng hồ sơ mở Shop đã được duyệt.
+     *    - Yêu cầu người bán hoàn tất khai báo STK ngân hàng để được mở bán (OPEN).
+     */
     @Transactional
     public void approveShop(Long shopId) {
         Shop shop = shops.findById(shopId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu mở Shop."));
 
+        // 1. Cập nhật trạng thái mở Shop trong DB (chỉ cập nhật nếu shop đang ở trạng thái PENDING)
         if (shops.approvePending(shopId) == 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Yêu cầu mở Shop không còn ở trạng thái chờ duyệt.");
         }
 
-        // Tự động đồng bộ trạng thái tài khoản nếu có cột seller_approval_status
+        // Tự động đồng bộ trạng thái tài khoản định danh sang APPROVED
         try {
             jdbc.update("UPDATE shops SET seller_approval_status = 'APPROVED' WHERE id = ?", shopId);
         } catch (Exception ignored) {}
 
-        // Assign SHOP_OWNER role in user_roles
+        // 2. Thăng cấp quyền người dùng thành SHOP_OWNER trong bảng liên kết user_roles
         try {
             jdbc.update("""
                 INSERT INTO user_roles (user_id, role_id)
@@ -321,16 +394,25 @@ public class OperationsShopApprovalService {
                 ON DUPLICATE KEY UPDATE user_id = user_id
             """, shop.getOwnerId());
         } catch (Exception ex) {
-            // Role may already exist
+            // Quyền có thể đã tồn tại từ trước
         }
 
-        // Send Notification
+        // 3. Gửi thông báo hệ thống đến chuông thông báo của Người bán
         try {
             notifications.notifyShopApproved(shop.getOwnerId(), shop.getId(), shop.getName());
             notifications.notifyPaymentVerificationRequired(shop.getOwnerId(), shop.getId(), shop.getName());
         } catch (Exception ignored) {}
     }
 
+    /**
+     * ==========================================================================================
+     * NGHIỆP VỤ CỐT LÕI: TỪ CHỐI MỞ SHOP (rejectShop)
+     * ==========================================================================================
+     * Các bước thực thi:
+     * 1. Validate lý do từ chối: Bắt buộc không để trống, tối đa 1000 ký tự.
+     * 2. Cập nhật bảng `shops`: approval_status='REJECTED', lưu `rejection_reason`.
+     * 3. Gửi Notification đến Người bán kèm lý do chi tiết để họ chỉnh sửa và nộp lại hồ sơ.
+     */
     @Transactional
     public void rejectShop(Long shopId, String rejectionReason) {
         String reason = normalizeReason(rejectionReason);
@@ -342,17 +424,23 @@ public class OperationsShopApprovalService {
                     "Yêu cầu mở Shop không còn ở trạng thái chờ duyệt.");
         }
 
-        // Send Notification
+        // Gửi thông báo giải thích lý do từ chối tới chủ shop
         try {
             notifications.notifyShopRejected(shop.getOwnerId(), shop.getId(), shop.getName(), reason);
         } catch (Exception ignored) {}
     }
 
+    /**
+     * Điều chỉnh trạng thái vận hành của Shop: OPEN (Mở bán), CLOSED (Đóng cửa), SUSPENDED (Đình chỉ).
+     * - Chỉ áp dụng cho Shop ĐÃ ĐƯỢC DUYỆT (approval_status == 'APPROVED').
+     * - Nếu SUSPENDED: Bắt buộc có lý do và gửi thông báo kỷ luật tới người bán.
+     */
     @Transactional
     public void updateOperatingStatus(Long shopId, String operatingStatus, String reason) {
         Shop shop = shops.findById(shopId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Shop."));
 
+        // Ràng buộc nghiệp vụ: Chưa duyệt thì tuyệt đối không được điều chỉnh trạng thái hoạt động
         if (!"APPROVED".equals(shop.getApprovalStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ có thể điều chỉnh trạng thái hoạt động của Shop đã được duyệt.");
         }
@@ -368,6 +456,7 @@ public class OperationsShopApprovalService {
 
         shops.updateOperatingStatus(shopId, status, reason != null ? reason.trim() : null);
 
+        // Bắn thông báo khi shop bị đình chỉ hoạt động
         if ("SUSPENDED".equals(status)) {
             try {
                 notifications.createNotification(
@@ -382,6 +471,14 @@ public class OperationsShopApprovalService {
         }
     }
 
+    /**
+     * ==========================================================================================
+     * ĐỐI SOÁT TÀI CHÍNH: PHÊ DUYỆT TÀI KHOẢN NGÂN HÀNG (approvePayment)
+     * ==========================================================================================
+     * - Cập nhật payment_approval_status = 'APPROVED'.
+     * - TỰ ĐỘNG KÍCH HOẠT operating_status = 'OPEN' (Cho phép nông sản của gian hàng xuất hiện trên sàn).
+     * - Gửi thông báo chúc mừng tới Shop Owner.
+     */
     @Transactional
     public void approvePayment(Long shopId) {
         Shop shop = shops.findById(shopId)
@@ -400,12 +497,15 @@ public class OperationsShopApprovalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể phê duyệt thông tin thanh toán.");
         }
 
-        // Notify owner
+        // Gửi thông báo gian hàng đã chính thức mở bán
         try {
             notifications.notifyPaymentApproved(shop.getOwnerId(), shop.getId(), shop.getName());
         } catch (Exception ignored) {}
     }
 
+    /**
+     * Từ chối tài khoản ngân hàng thụ hưởng (kèm lý do không trùng khớp CCCD).
+     */
     @Transactional
     public void rejectPayment(Long shopId, String reason) {
         Shop shop = shops.findById(shopId)
@@ -421,12 +521,15 @@ public class OperationsShopApprovalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể từ chối thông tin thanh toán.");
         }
 
-        // Notify owner
+        // Gửi thông báo yêu cầu người bán sửa lại tài khoản chính chủ
         try {
             notifications.notifyPaymentRejected(shop.getOwnerId(), shop.getId(), shop.getName(), validReason);
         } catch (Exception ignored) {}
     }
 
+    /**
+     * Hàm tiện ích kiểm tra và chuẩn hóa lý do từ chối (cắt khoảng trắng, kiểm tra rỗng, giới hạn độ dài).
+     */
     private String normalizeReason(String reason) {
         if (reason == null || reason.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng nhập lý do từ chối.");
@@ -439,6 +542,10 @@ public class OperationsShopApprovalService {
         return trimmed;
     }
 
+    /**
+     * Hàm tiện ích loại bỏ dấu tiếng Việt (Normalizer NFD) để đối soát tên chính xác:
+     * Ví dụ: "Nguyễn Văn Ánh" -> "nguyen van anh" so khớp với "NGUYEN VAN ANH" của ngân hàng.
+     */
     private String removeAccents(String str) {
         if (str == null) return "";
         String normalized = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
