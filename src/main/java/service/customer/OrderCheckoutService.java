@@ -581,6 +581,119 @@ public class OrderCheckoutService {
         }
     }
 
+    /**
+     * Scheduled Job tự động chuyển đơn hàng từ DELIVERED sang COMPLETED sau 24h.
+     * Bắt buộc bỏ qua (skip) các đơn hàng đang có khiếu nại ở trạng thái PENDING_SHOP hoặc ESCALATED.
+     */
+    @Scheduled(fixedDelayString = "${orders.auto-complete-scan-ms:300000}")
+    @Transactional
+    public int autoCompleteDeliveredOrders() {
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        LocalDateTime deliveredCutoff = now.minusHours(24);
+        List<Long> candidateIds = jdbc.queryForList("""
+            SELECT o.id
+            FROM orders o
+            WHERE o.status = 'DELIVERED'
+              AND COALESCE(o.delivered_at, o.created_at) <= ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM complaints c
+                  WHERE c.order_id = o.id AND c.status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+              )
+            ORDER BY o.id
+        """, Long.class, deliveredCutoff);
+
+        int completedCount = 0;
+        for (Long orderId : candidateIds) {
+            List<Map<String, Object>> locked = jdbc.queryForList("""
+                SELECT id, order_code, status
+                FROM orders
+                WHERE id = ? AND status = 'DELIVERED' AND COALESCE(delivered_at, created_at) <= ?
+                FOR UPDATE
+            """, orderId, deliveredCutoff);
+            if (locked.isEmpty()) {
+                continue;
+            }
+            Integer activeComplaints = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM complaints
+                WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+            """, Integer.class, orderId);
+            if (activeComplaints != null && activeComplaints > 0) {
+                continue;
+            }
+            int updated = jdbc.update("""
+                UPDATE orders
+                SET status = 'COMPLETED',
+                    payment_status = 'PAID',
+                    paid_at = COALESCE(paid_at, ?),
+                    delivery_status = 'DELIVERED',
+                    completed_at = ?
+                WHERE id = ? AND status = 'DELIVERED'
+            """, now, now, orderId);
+            if (updated == 1) {
+                completedCount++;
+                try {
+                    creditCashbackPoints(orderId);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return completedCount;
+    }
+
+    /**
+     * Khách hàng bấm "Đã nhận hàng / Hoàn tất đơn hàng" khi đơn đang ở trạng thái DELIVERED.
+     * Chặn hoàn tất nếu đơn đang có khiếu nại ở trạng thái PENDING_SHOP hoặc ESCALATED.
+     */
+    @Transactional
+    public void completeOrderByCustomer(Long userId, Long orderId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT o.id, o.order_code, o.status, o.payment_status, o.delivery_status
+            FROM orders o
+            JOIN checkouts c ON c.id = o.checkout_id
+            WHERE o.id = ? AND c.user_id = ?
+            FOR UPDATE
+        """, orderId, userId);
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
+        }
+        Map<String, Object> order = rows.get(0);
+        String currentStatus = String.valueOf(order.get("status"));
+        if (!"DELIVERED".equals(currentStatus)) {
+            throw new IllegalArgumentException("Chỉ có thể xác nhận hoàn tất khi đơn hàng đang ở trạng thái Đã giao (DELIVERED).");
+        }
+
+        Integer activeComplaints = jdbc.queryForObject("""
+            SELECT COUNT(*) FROM complaints
+            WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+        """, Integer.class, orderId);
+        if (activeComplaints != null && activeComplaints > 0) {
+            throw new IllegalArgumentException("Đơn hàng đang có khiếu nại chờ xử lý (PENDING_SHOP / ESCALATED). Vui lòng chờ giải quyết xong hoặc hủy khiếu nại trước khi hoàn tất đơn hàng.");
+        }
+
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        int updated = jdbc.update("""
+            UPDATE orders
+            SET status = 'COMPLETED',
+                payment_status = 'PAID',
+                paid_at = COALESCE(paid_at, ?),
+                delivery_status = 'DELIVERED',
+                completed_at = ?
+            WHERE id = ? AND status = 'DELIVERED'
+        """, now, now, orderId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("Trạng thái đơn hàng vừa thay đổi, vui lòng tải lại trang.");
+        }
+        try {
+            jdbc.update("UPDATE orders SET customer_confirmed_at = ? WHERE id = ?", now, orderId);
+        } catch (Exception ignored) {
+        }
+        try {
+            creditCashbackPoints(orderId);
+        } catch (Exception ignored) {
+        }
+    }
+
     private void releaseReservedItems(Long orderId, String eventPrefix) {
         List<Map<String, Object>> items = jdbc.queryForList("SELECT id,inventory_id,quantity FROM order_items WHERE order_id=? AND allocation_status='RESERVED' ORDER BY inventory_id FOR UPDATE", orderId);
         for (Map<String, Object> item : items) {

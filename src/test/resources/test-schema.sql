@@ -283,6 +283,7 @@ CREATE TABLE orders (
     paid_at TIMESTAMP NULL,
     shipped_at TIMESTAMP NULL,
     delivered_at TIMESTAMP NULL,
+    customer_confirmed_at TIMESTAMP NULL,
     auto_complete_at TIMESTAMP NULL,
     completed_at TIMESTAMP NULL,
     cancelled_at TIMESTAMP NULL,
@@ -311,7 +312,6 @@ CREATE TABLE order_items (
     line_total DECIMAL(19,0) NOT NULL,
     allocation_status VARCHAR(20) NOT NULL,
     reviewed_at TIMESTAMP NULL
-
 );
 
 CREATE TABLE inventory_transactions (
@@ -381,10 +381,15 @@ CREATE TABLE complaints (
     description VARCHAR(2000) NOT NULL,
     evidence_image_url VARCHAR(1000),
     priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
-    status VARCHAR(25) NOT NULL DEFAULT 'PENDING',
+    status VARCHAR(25) NOT NULL DEFAULT 'PENDING_SHOP',
     source_type VARCHAR(25) NOT NULL DEFAULT 'CUSTOMER',
+    requested_refund_amount BIGINT NOT NULL DEFAULT 0,
+    final_refund_amount BIGINT NOT NULL DEFAULT 0,
+    shop_decision VARCHAR(25),
     shop_response VARCHAR(1500),
+    shop_evidence_image_url VARCHAR(1000),
     shop_responded_at TIMESTAMP,
+    escalated_at TIMESTAMP,
     resolution_type VARCHAR(40),
     resolution_note VARCHAR(1500),
     compensated_points BIGINT NOT NULL DEFAULT 0,

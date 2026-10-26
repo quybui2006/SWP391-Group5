@@ -40,21 +40,13 @@
         <!-- Navigation -->
         <nav class="side-nav" aria-label="Điều hướng quản lý vận hành">
 
-            <span class="nav-label">TỔNG QUAN &amp; BÁO CÁO</span>
+            <span class="nav-label">TỔNG QUAN</span>
 
             <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''" th:href="@{/operations/dashboard}">
-                <span>⌂</span> Operations Dashboard
+                <span>⌂</span> Tổng quan Dashboard
             </a>
 
-            <a th:href="@{/operations/dashboard#dispute-sla-section}">
-                <span>⚖️</span> Báo cáo Tranh chấp &amp; SLA CSKH
-            </a>
-
-            <a th:href="@{/operations/dashboard#violation-alerts-section}">
-                <span>🚨</span> Cảnh báo Vi phạm &amp; Kiểm duyệt
-            </a>
-
-            <span class="nav-label">THẨM ĐỊNH &amp; KIỂM DUYỆT</span>
+            <span class="nav-label">THẨM ĐỊNH & KIỂM DUYỆT</span>
 
             <a th:classappend="${activePage == 'shops'} ? ' active' : ''" th:href="@{/operations/shops}">
                 <span>＋</span> Duyệt mở Shop
@@ -69,18 +61,10 @@
                 <span>↻</span> Yêu cầu mở lại Shop
             </a>
 
-            <span class="nav-label">GIÁM SÁT &amp; HẬU KIỂM</span>
+            <span class="nav-label">GIÁM SÁT & HẬU KIỂM</span>
 
             <a th:classappend="${activePage == 'shop-list'} ? ' active' : ''" th:href="@{/operations/shop-list}">
                 <span>▦</span> Danh sách Cửa hàng
-            </a>
-
-            <a th:href="@{/cs/tickets}">
-                <span>🎫</span> Hồ sơ Khiếu nại (CSKH)
-            </a>
-
-            <a th:href="@{/cs/reviews}">
-                <span>🛡️</span> Kiểm duyệt Đánh giá
             </a>
 
             <span class="nav-label">HỆ THỐNG</span>

@@ -8,30 +8,30 @@
 <div class="cs-main-wrapper">
     <header class="cs-topbar">
         <div>
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <a th:href="@{/cs/tickets}" style="color: #0284c7; text-decoration: none; font-weight: 700; font-size: 14px;">← Quay lại</a>
                 <span style="color: #cbd5e1;">/</span>
                 <h1 th:text="${'Phiếu ' + complaint['complaint_code']}">Phiếu KN-001</h1>
-                <span th:if="${complaint['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ tiếp nhận</span>
-                <span th:if="${complaint['status'] == 'IN_PROGRESS'}" class="badge-status badge-info">Đang xử lý</span>
+                <span th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ Shop phản hồi (6h)</span>
+                <span th:if="${complaint['status'] == 'ESCALATED' or complaint['status'] == 'IN_PROGRESS'}" class="badge-status badge-info">CSKH phân xử</span>
                 <span th:if="${complaint['status'] == 'RESOLVED'}" class="badge-status badge-success">Đã giải quyết</span>
                 <span th:if="${complaint['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
+                <span th:if="${complaint['status'] == 'CANCELLED'}" class="badge-status">Đã hủy</span>
             </div>
             <p class="cs-topbar-subtitle">
                 Gửi lúc: <strong th:text="${complaint['created_at_fmt']}"></strong> •
-                Hạn xử lý: <strong th:text="${complaint['sla_due_at_fmt']}"></strong>
+                Hạn phản hồi Shop: <strong th:text="${complaint['sla_due_at_fmt']}"></strong>
                 (<span style="font-weight: 700;"
                        th:styleappend="${complaint['sla_state'] == 'OVERDUE' or complaint['sla_state'] == 'BREACHED_SLA'} ? 'color:#dc2626;' : 'color:#15803d;'"
                        th:text="${complaint['sla_badge_text']}"></span>)
             </p>
         </div>
 
-        <form th:if="${complaint['status'] == 'PENDING'}"
-              th:action="@{/cs/tickets/{id}/start(id=${complaint['id']})}" method="post" style="margin: 0;">
-            <button type="submit" class="btn-cs-sm" style="background: #0284c7; color: #fff; border-color: #0284c7; cursor: pointer; padding: 9px 16px;">
-                ✋ Tiếp nhận xử lý
-            </button>
-        </form>
+        <div th:if="${complaint['status'] == 'ESCALATED' or complaint['status'] == 'IN_PROGRESS'}" style="margin: 0;">
+            <span style="background: #e0f2fe; color: #0369a1; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;">
+                ⚖️ Đang chờ CSKH ra phán quyết
+            </span>
+        </div>
     </header>
 
     <main class="cs-content">
@@ -56,10 +56,23 @@
                             <span style="display: block; color: #475569;" th:text="${complaint['customer_phone'] ?: complaint['customer_email']}"></span>
                         </div>
                         <div>
-                            <span style="color: #64748b; display: block; font-size: 11.5px;">Sản phẩm gặp sự cố</span>
+                            <span style="color: #64748b; display: block; font-size: 11.5px;">Sản phẩm khiếu nại</span>
                             <strong th:if="${complaint['item_product_name'] != null}" style="color: #0284c7;"
                                     th:text="${complaint['item_product_name'] + ' (' + complaint['item_variant_name'] + ')'}"></strong>
                             <strong th:if="${complaint['item_product_name'] == null}" style="color: #334155;">Toàn bộ đơn hàng</strong>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; background: #f1f5f9; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;">
+                        <div>
+                            <span style="color: #64748b; display: block; font-size: 11.5px;">Khách yêu cầu hoàn:</span>
+                            <strong style="color: #dc2626; font-size: 14.5px;"
+                                    th:text="${#numbers.formatDecimal(complaint['requested_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                        </div>
+                        <div>
+                            <span style="color: #64748b; display: block; font-size: 11.5px;">Giới hạn thực trả tối đa:</span>
+                            <strong style="color: #16a34a; font-size: 14.5px;"
+                                    th:text="${#numbers.formatDecimal(complaint['actual_paid_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
                         </div>
                     </div>
 
@@ -74,19 +87,55 @@
                         </a>
                     </div>
 
-                    <!-- Giải trình từ Cửa hàng -->
+                    <!-- Giải trình từ Cửa hàng & Nút CSKH Yêu cầu Shop phản hồi -->
                     <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
                             <strong style="font-size: 13px; color: #92400e;">🏪 Phản hồi từ Shop (<span th:text="${complaint['shop_name']}"></span>):</strong>
-                            <small style="color: #64748b;" th:text="${complaint['shop_phone']}"></small>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span th:if="${complaint['shop_remind_count'] != null and complaint['shop_remind_count'] > 0}"
+                                      style="font-size: 11.5px; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 99px; font-weight: 700;"
+                                      th:text="${'🔔 Đã nhắc Shop ' + complaint['shop_remind_count'] + ' lần (' + complaint['last_reminded_at_fmt'] + ')'}"></span>
+                                <small style="color: #64748b;" th:text="${complaint['shop_phone']}"></small>
+                            </div>
                         </div>
-                        <div th:if="${complaint['shop_response'] != null}" style="background: #fffbeb; padding: 10px 12px; border-radius: 8px; border: 1px solid #fde68a; font-size: 13.5px; color: #78350f;">
+
+                        <div th:if="${complaint['shop_response'] != null}"
+                             style="padding: 10px 12px; border-radius: 8px; font-size: 13.5px; margin-bottom: 8px;"
+                             th:styleappend="${complaint['shop_decision'] == 'ACCEPT'} ? 'background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;' : 'background:#fef2f2;border:1px solid #fecaca;color:#991b1b;'">
+                            <strong style="display: block; font-size: 12px; margin-bottom: 3px;"
+                                    th:text="${complaint['shop_decision'] == 'ACCEPT' ? '✓ Shop đã ĐỒNG Ý đền bù:' : '✕ Shop TỪ CHỐI khiếu nại (Chuyển CSKH):'}"></strong>
                             <span th:text="${complaint['shop_response']}"></span>
-                            <small style="display: block; color: #b45309; margin-top: 4px;" th:text="${complaint['shop_responded_at_fmt']}"></small>
+                            <div th:if="${complaint['shop_evidence_image_url'] != null}" style="margin-top: 6px;">
+                                <a th:href="${complaint['shop_evidence_image_url']}" target="_blank" style="font-size: 12px; color: #0284c7; font-weight: 600;">📷 Xem ảnh đối chứng của Shop →</a>
+                            </div>
+                            <small style="display: block; color: #64748b; margin-top: 4px;" th:text="${'Thời gian phản hồi: ' + complaint['shop_responded_at_fmt']}"></small>
                         </div>
-                        <div th:if="${complaint['shop_response'] == null}" style="color: #94a3b8; font-size: 13px;">
-                            Shop chưa gửi phản hồi giải trình.
+
+                        <div th:if="${complaint['shop_response'] == null}" style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 12px; border-radius: 8px; color: #92400e; font-size: 13px; margin-bottom: 8px;">
+                            ⏳ Shop chưa gửi phản hồi giải trình (Hạn SLA 6h: <span th:text="${complaint['sla_due_at_fmt']}"></span>).
+                            <span th:if="${complaint['cs_shop_request_note'] != null}" style="display: block; margin-top: 4px; font-size: 12.5px; color: #b45309;">
+                                <strong>Nội dung CSKH đã nhắc:</strong> "<span th:text="${complaint['cs_shop_request_note']}"></span>"
+                            </span>
                         </div>
+
+                        <!-- Form CSKH gửi thông báo yêu cầu Shop giải trình -->
+                        <form th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}"
+                              th:action="@{/cs/tickets/{id}/remind-shop(id=${complaint['id']})}" method="post"
+                              style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+                            <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                                🔔 Gửi nhắc nhở Chủ Shop giải trình / đối chứng:
+                            </label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <input type="text" name="requestNote" maxlength="1000"
+                                       th:value="${complaint['cs_shop_request_note']}"
+                                       placeholder="Nhập yêu cầu nhắc Shop (ví dụ: Đề nghị Shop gửi ảnh xuất kho hoặc phản hồi về tình trạng dập)..."
+                                       style="flex: 1; min-width: 220px; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+                                <button type="submit" class="btn-cs-sm"
+                                        style="background: #d97706; color: #fff; border-color: #d97706; cursor: pointer; font-weight: 700; padding: 7px 14px;">
+                                    📨 Nhắc Shop
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -121,9 +170,9 @@
                 </div>
             </div>
 
-            <!-- CỘT PHẢI: LỊCH SỬ SHOP + QUYẾT ĐỊNH XỬ LÝ -->
+            <!-- CỘT PHẢI: LỊCH SỬ SHOP + PHÁN QUYẾT CSKH -->
             <div>
-                <!-- Lịch sử vi phạm của Shop (gọn 1 dòng 3 ô) -->
+                <!-- Lịch sử Shop -->
                 <div class="cs-card" style="padding: 16px 20px; margin-bottom: 18px;"
                      th:styleappend="${complaint['shopHighRisk']} ? 'border: 1.5px solid #fca5a5; background: #fff5f5;' : ''">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -146,71 +195,85 @@
                     </div>
                 </div>
 
-                <!-- FORM PHÁN QUYẾT -->
+                <!-- FORM PHÁN QUYẾT CỦA CSKH -->
                 <div class="cs-card" style="padding: 20px; margin-bottom: 0;">
                     <div class="cs-card-header" style="margin-bottom: 14px;">
-                        <h2 class="cs-card-title"><span>⚖️</span> Kết luận xử lý</h2>
+                        <h2 class="cs-card-title"><span>⚖️</span> Phán quyết phân xử</h2>
                     </div>
 
-                    <!-- Nếu đã đóng -->
+                    <!-- Trường hợp 1: Khiếu nại đã hoàn tất/kết thúc -->
                     <div th:if="${complaint['status'] == 'RESOLVED' or complaint['status'] == 'REJECTED' or complaint['status'] == 'CANCELLED'}"
                          style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; font-size: 13.5px;">
                         <div style="margin-bottom: 8px;">
-                            <span style="color: #64748b; font-size: 12px; display: block;">Phương án xử lý</span>
+                            <span style="color: #64748b; font-size: 12px; display: block;">Kết luận</span>
                             <strong style="font-size: 14.5px; color: #0f172a;" th:text="${complaint['status_label'] + ' — ' + complaint['resolution_label']}"></strong>
                         </div>
-                        <div th:if="${complaint['compensated_points'] != null and complaint['compensated_points'] > 0}" style="margin-bottom: 8px;">
+                        <div th:if="${complaint['final_refund_amount'] != null and complaint['final_refund_amount'] > 0}" style="margin-bottom: 8px;">
                             <span style="color: #64748b; font-size: 12px; display: block;">Điểm thưởng đền bù</span>
-                            <strong style="color: #16a34a;" th:text="${'+' + #numbers.formatInteger(complaint['compensated_points'], 1, 'COMMA') + ' điểm'}"></strong>
+                            <strong style="color: #16a34a;" th:text="${'+' + #numbers.formatInteger(complaint['final_refund_amount'], 1, 'COMMA') + ' điểm'}"></strong>
                         </div>
                         <div style="margin-bottom: 8px;">
-                            <span style="color: #64748b; font-size: 12px; display: block;">Phản hồi gửi khách hàng</span>
+                            <span style="color: #64748b; font-size: 12px; display: block;">Nội dung phản hồi</span>
                             <p style="margin: 4px 0 0; color: #1e293b; line-height: 1.5;" th:text="${complaint['resolution_note']}"></p>
                         </div>
                         <small style="color: #64748b;" th:text="${'Người xử lý: ' + (complaint['resolved_by_name'] ?: 'CSKH') + ' • ' + complaint['resolved_at_fmt']}"></small>
                     </div>
 
-                    <!-- Nếu đang mở -->
-                    <form th:if="${complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}"
+                    <!-- Trường hợp 2: Khiếu nại còn ở Tầng 1 (PENDING_SHOP) -->
+                    <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'PENDING'}"
+                         style="background: #fffdf5; border: 1px solid #fde68a; border-radius: 10px; padding: 14px; font-size: 13px; color: #92400e; line-height: 1.5;">
+                        <strong style="display: block; font-size: 14px; margin-bottom: 6px;">⏳ Đang ở Tầng 1 (Chờ Shop xử lý)</strong>
+                        Theo quy trình 2 tầng, Shop có quyền tiếp nhận và chủ động đồng ý hoàn trả trong thời hạn 6 giờ.
+                        <br><br>
+                        Nếu Shop bấm "Từ chối" hoặc quá hạn SLA 6h, hồ sơ sẽ tự động chuyển sang trạng thái <strong>CSKH phân xử</strong> (ESCALATED).
+                    </div>
+
+                    <!-- Trường hợp 3: Khiếu nại đã ESCALATED sang CSKH phân xử -->
+                    <form th:if="${complaint['status'] == 'ESCALATED' or complaint['status'] == 'IN_PROGRESS'}"
                           th:action="@{/cs/tickets/{id}/resolve(id=${complaint['id']})}" method="post"
                           style="display: grid; gap: 13px;">
 
                         <div>
-                            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">1. Quyết định *</label>
+                            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">1. Quyết định của CSKH *</label>
                             <select name="decisionStatus" id="decisionStatusSelect" onchange="toggleResolutionFields()"
                                     style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; font-size: 13.5px;">
-                                <option value="RESOLVED">✅ Chấp nhận &amp; Giải quyết cho khách</option>
-                                <option value="REJECTED">❌ Từ chối khiếu nại</option>
+                                <option value="RESOLVED">✅ Chấp nhận khiếu nại (Đền bù)</option>
+                                <option value="REJECTED">❌ Bác bỏ khiếu nại (Không đền bù)</option>
                             </select>
                         </div>
 
                         <div id="resolutionMethodGroup">
-                            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">2. Hình thức hỗ trợ *</label>
-                            <select name="resolutionType" id="resolutionTypeSelect" onchange="togglePointsField()"
+                            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">2. Phương thức xử lý *</label>
+                            <select name="resolutionType" id="resolutionTypeSelect"
                                     style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px;">
-                                <option value="REPLACEMENT_OR_RESEND">🔄 Yêu cầu Shop giao bù / đổi sản phẩm</option>
-                                <option value="COMPENSATE_POINTS">🎁 Tặng Điểm thưởng đền bù cho khách</option>
+                                <option value="COMPENSATE_POINTS">🎁 Đền bù Điểm thưởng cho khách</option>
+                                <option value="EXPLANATION_ONLY">💬 Giải thích thỏa đáng &amp; Đóng hồ sơ</option>
                                 <option value="SHOP_WARNING_ESCALATE">⚠️ Cảnh cáo Shop &amp; Báo Vận hành</option>
-                                <option value="EXPLANATION_ONLY">💬 Giải thích &amp; Đóng hồ sơ</option>
                             </select>
                         </div>
 
-                        <div id="pointsCompensationGroup" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 12px; border-radius: 8px;">
-                            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #166534; margin-bottom: 6px;">
-                                🎁 Số điểm tặng khách (1 điểm = 1 ₫)
-                            </label>
-                            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                <input type="number" name="compensatedPoints" id="compensatedPointsInput" value="15000" min="1000" max="500000" step="1000"
-                                       style="width: 120px; padding: 7px 10px; border: 1px solid #86efac; border-radius: 6px; font-weight: 700;">
-                                <button type="button" class="btn-cs-sm" onclick="document.getElementById('compensatedPointsInput').value=10000" style="cursor:pointer;">10k</button>
-                                <button type="button" class="btn-cs-sm" onclick="document.getElementById('compensatedPointsInput').value=20000" style="cursor:pointer;">20k</button>
-                                <button type="button" class="btn-cs-sm" onclick="document.getElementById('compensatedPointsInput').value=50000" style="cursor:pointer;">50k</button>
+                        <!-- Ô nhập số điểm/tiền đền bù thực tế do CSKH phán quyết -->
+                        <div id="refundAmountGroup" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 12px; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-size: 12.5px; font-weight: 700; color: #166534;">
+                                    🎁 Số tiền/điểm đền bù duyệt (₫)
+                                </label>
+                                <span style="font-size: 11.5px; color: #15803d;">
+                                    Tối đa: <strong th:text="${#numbers.formatDecimal(complaint['actual_paid_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
+                                </span>
                             </div>
+                            <input type="number" name="finalRefundAmount" id="finalRefundAmountInput"
+                                   th:value="${complaint['requested_refund_amount'] != null and complaint['requested_refund_amount'] > 0 ? complaint['requested_refund_amount'] : complaint['actual_paid_amount']}"
+                                   min="0" th:max="${complaint['actual_paid_amount']}"
+                                   style="width: 100%; padding: 8px 12px; border: 1px solid #86efac; border-radius: 6px; font-weight: 700; font-size: 14px; box-sizing: border-box;">
+                            <small style="display: block; color: #166534; font-size: 11.5px; margin-top: 4px;">
+                                CSKH có thể duyệt đúng mức khách yêu cầu hoặc điều chỉnh theo thẩm định (1 điểm = 1 ₫).
+                            </small>
                         </div>
 
                         <div id="shopFaultGroup" style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 12px; border-radius: 8px; display: grid; gap: 6px;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #92400e; cursor: pointer;">
-                                <input type="checkbox" name="isShopFault" value="true" checked>
+                                <input type="checkbox" name="isShopFault" id="isShopFaultCheckbox" value="true" checked>
                                 Ghi nhận lỗi thuộc về Cửa hàng
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #dc2626; cursor: pointer;">
@@ -225,26 +288,22 @@
                             </label>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;">
                                 <button type="button" class="btn-cs-sm" style="font-size: 11.5px; cursor: pointer;"
-                                        onclick="setQuickNote('CSKH đã xác nhận sản phẩm bị hư hỏng qua ảnh minh chứng. Cửa hàng sẽ liên hệ gửi bù sản phẩm mới cho quý khách trong 24h.')">
-                                    Mẫu: Giao bù SP
+                                        onclick="setQuickNote('FreshFruit CSKH xác nhận khiếu nại hợp lệ qua hình ảnh minh chứng và đã cộng Điểm thưởng đền bù vào ví của quý khách.')">
+                                    Mẫu: Duyệt đền bù
                                 </button>
                                 <button type="button" class="btn-cs-sm" style="font-size: 11.5px; cursor: pointer;"
-                                        onclick="setQuickNote('FreshFruit xin lỗi quý khách vì trải nghiệm chưa tốt và đã cộng Điểm thưởng đền bù vào tài khoản của quý khách.')">
-                                    Mẫu: Tặng điểm
-                                </button>
-                                <button type="button" class="btn-cs-sm" style="font-size: 11.5px; cursor: pointer;"
-                                        onclick="setQuickNote('Yêu cầu khiếu nại chưa đủ hình ảnh minh chứng hợp lệ nên CSKH xin phép đóng hồ sơ. Mong quý khách thông cảm.')">
-                                    Mẫu: Từ chối
+                                        onclick="setQuickNote('Qua đối chiếu ảnh đóng gói từ Shop và ảnh nhận hàng, sản phẩm không có lỗi từ bên bán. CSKH xin phép từ chối khiếu nại.')">
+                                    Mẫu: Bác bỏ
                                 </button>
                             </div>
                             <textarea name="resolutionNote" id="resolutionNoteInput" rows="3" required minlength="5" maxlength="1500"
-                                      placeholder="Nhập nội dung kết luận..."
+                                      placeholder="Nhập nội dung phán quyết giải quyết hoặc lý do bác bỏ khiếu nại..."
                                       style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box;"></textarea>
                         </div>
 
                         <button type="submit"
                                 style="background: #16a34a; color: #ffffff; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; width: 100%;">
-                            ✓ Hoàn tất xử lý
+                            ✓ Hoàn tất phán quyết
                         </button>
                     </form>
                 </div>
@@ -257,25 +316,22 @@
     function toggleResolutionFields() {
         var decision = document.getElementById('decisionStatusSelect').value;
         var methodGroup = document.getElementById('resolutionMethodGroup');
+        var refundGroup = document.getElementById('refundAmountGroup');
         var faultGroup = document.getElementById('shopFaultGroup');
-        var pointsGroup = document.getElementById('pointsCompensationGroup');
+        var refundInput = document.getElementById('finalRefundAmountInput');
+
         if (decision === 'REJECTED') {
             if (methodGroup) methodGroup.style.display = 'none';
+            if (refundGroup) refundGroup.style.display = 'none';
             if (faultGroup) faultGroup.style.display = 'none';
-            if (pointsGroup) pointsGroup.style.display = 'none';
+            if (refundInput) refundInput.value = '0';
         } else {
             if (methodGroup) methodGroup.style.display = 'block';
+            if (refundGroup) refundGroup.style.display = 'block';
             if (faultGroup) faultGroup.style.display = 'grid';
-            togglePointsField();
         }
     }
-    function togglePointsField() {
-        var resType = document.getElementById('resolutionTypeSelect').value;
-        var pointsGroup = document.getElementById('pointsCompensationGroup');
-        if (pointsGroup) {
-            pointsGroup.style.display = (resType === 'COMPENSATE_POINTS') ? 'block' : 'none';
-        }
-    }
+
     function setQuickNote(text) {
         var input = document.getElementById('resolutionNoteInput');
         if (input) input.value = text;
