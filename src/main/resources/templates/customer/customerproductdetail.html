@@ -272,8 +272,10 @@
                     <div class="detail-line">
                         <span class="detail-label">Mã Hoàn Xu Shop</span>
                         <div class="detail-content vouchers-wrap">
-                            <span class="fresh-voucher-chip cashback-voucher-chip" th:each="voucher : ${shopCashbackVouchers}"
-                                  th:text="${voucher.name + ' · ' + voucher.code}">Voucher hoàn xu của cửa hàng</span><button type="button" class="save-voucher-button" th:attr="data-voucher-code=${voucher.code}" onclick="saveCustomerVoucher(this)">Lưu</button>
+                            <span class="fresh-voucher-chip cashback-voucher-chip" th:each="voucher : ${shopCashbackVouchers}">
+                                <span th:text="${voucher.name + ' · ' + voucher.code}">Voucher hoàn xu của cửa hàng</span>
+                                <button type="button" class="save-voucher-button" th:attr="data-voucher-code=${voucher.code}" onclick="saveCustomerVoucher(this)">Lưu</button>
+                            </span>
                             <span th:if="${shopCashbackVouchers == null or #lists.isEmpty(shopCashbackVouchers)}">Hiện shop chưa có voucher hoàn xu.</span>
                         </div>
                     </div>
