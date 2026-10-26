@@ -434,7 +434,6 @@
 </head>
 <body>
 
-<!-- THANH NAVBAR -->
 <nav class="navbar">
     <div class="nav-left">
         <a class="brand-box" th:href="@{/delivery/orders}">
@@ -450,7 +449,7 @@
             <button type="button" class="nav-link" onclick="filterByStatus('PROCESSING', this)">Chờ nhận giao</button>
             <button type="button" class="nav-link" onclick="filterByStatus('SHIPPING', this)">Đang giao hàng</button>
             <button type="button" class="nav-link" onclick="filterByStatus('COMPLETED', this)">Đã hoàn tất</button>
-            <button type="button" class="nav-link" onclick="filterByStatus('CANCELLED', this)">Đã hủy</button>
+            <button type="button" class="nav-link" onclick="filterByStatus('CANCELLED', this)">Giao thất bại</button>
         </div>
     </div>
 
@@ -516,8 +515,9 @@
                 <td th:text="${#temporals.format(ord['created_at'], 'dd/MM/yyyy HH:mm')}">22/10/2026</td>
                 <td style="max-width: 280px;" th:text="${ord['full_address']}">Hà Nội</td>
                 <td>
-                    <span class="price-amount" th:text="${#numbers.formatDecimal(ord['total_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">20,000 ₫</span>
-                    <span class="pay-badge pay-vnpay" th:if="${ord['is_vnpay'] == true}">VNPAY • Chỉ thu phí ship</span>
+                    <!-- Cập nhật lại nhãn Cần thu: Chỉ báo Không thu tiền đối với VNPAY -->
+                    <span class="price-amount" th:text="${#numbers.formatDecimal(ord['total_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                    <span class="pay-badge pay-vnpay" th:if="${ord['is_vnpay'] == true}">VNPAY • Không thu tiền</span>
                     <span class="pay-badge pay-cod" th:if="${ord['is_vnpay'] != true}">COD • Thu tiền mặt</span>
                 </td>
                 <td>
@@ -537,7 +537,7 @@
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="CANCELLED">
                             <input type="hidden" name="cancelReason" value="">
-                            <button type="submit" class="btn-action btn-cancel">✕ Hủy</button>
+                            <button type="submit" class="btn-action btn-cancel">✕ Giao thất bại</button>
                         </form>
                     </div>
 
@@ -552,7 +552,7 @@
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="CANCELLED">
                             <input type="hidden" name="cancelReason" value="">
-                            <button type="submit" class="btn-action btn-cancel">✕ Hủy</button>
+                            <button type="submit" class="btn-action btn-cancel">✕ Giao thất bại</button>
                         </form>
                     </div>
 
@@ -561,9 +561,9 @@
                         ✔ Đã hoàn tất
                     </span>
 
-                    <!-- Đã hủy -->
+                    <!-- Đã hủy (Chỉ hiện trạng thái hủy, không hiện text hoàn tiền) -->
                     <span class="status-pill status-cancelled" th:if="${ord['ui_status'] == 'CANCELLED'}">
-                        ✕ Đã hủy đơn
+                        ✕ Giao thất bại
                     </span>
                 </td>
             </tr>
@@ -583,7 +583,7 @@
     let currentStatusFilter = 'ALL';
 
     function promptCancel(form) {
-        const reason = prompt('Nhập lý do hủy đơn hàng:', 'Khách không nghe máy / Từ chối nhận hàng');
+        const reason = prompt('Nhập lý do giao hàng thất bại:', 'Khách không nghe máy / Khách từ chối nhận');
         if (reason === null) return false;
         form.querySelector('input[name="cancelReason"]').value = reason;
         return true;

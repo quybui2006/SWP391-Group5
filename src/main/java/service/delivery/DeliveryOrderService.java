@@ -4,11 +4,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import service.customer.OrderCheckoutService;
+import service.vnpay.VNPayService;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,12 +22,16 @@ public class DeliveryOrderService {
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final BigDecimal DEFAULT_SHIPPING_FEE = new BigDecimal("20000");
+    private static final DateTimeFormatter VNP_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
     private final JdbcTemplate jdbc;
     private final OrderCheckoutService checkout;
+    private final VNPayService vnPayService;
 
-    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout) {
+    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout, VNPayService vnPayService) {
         this.jdbc = jdbc;
         this.checkout = checkout;
+        this.vnPayService = vnPayService;
     }
 
     /**
@@ -196,6 +202,7 @@ public class DeliveryOrderService {
         }
         BigDecimal fullOrderTotal = firstNonNullDecimal(row, "total_amount", "grand_total", "final_amount", "total");
 
+        // Nếu đơn thanh toán VNPAY -> Khách đã thanh toán 100% online, số tiền thu hộ = 0 ₫
         boolean isVnpay = "VNPAY".equalsIgnoreCase(paymentMethod);
         BigDecimal displayTotal = isVnpay ? BigDecimal.ZERO : fullOrderTotal;
 
@@ -210,7 +217,7 @@ public class DeliveryOrderService {
         ord.put("subtotal", subtotal);
         ord.put("shipping_fee", shippingFee);
         ord.put("full_order_total", fullOrderTotal);
-        ord.put("total_amount", displayTotal); // Số tiền hiển thị trên bảng Delivery
+        ord.put("total_amount", displayTotal);
 
         Object createdObj = row.get("created_at");
         if (createdObj instanceof Timestamp ts) {
@@ -223,7 +230,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Cập nhật trạng thái giao hàng của đơn hàng
+     * Cập nhật trạng thái giao hàng của đơn hàng (Hỗ trợ hoàn tiền tự động VNPAY khi hủy đơn)
      */
     @Transactional
     public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason) {
@@ -290,22 +297,110 @@ public class DeliveryOrderService {
                     WHERE id = ? AND status = 'SHIPPING'
                 """, now, now, now, now, orderId);
             }
-            // Cộng điểm tích lũy / hoàn tiền cho khách hàng (từ nhánh develop)
             checkout.creditCashbackPoints(orderId);
             return;
         }
 
         if ("CANCELLED".equals(target)) {
-            if ("PAID".equals(paymentStatus)) {
-                throw new IllegalStateException("Đơn online đã thanh toán phải được giao; không thể hủy tại luồng giao hàng.");
-            }
             String reason = (cancelReason == null || cancelReason.isBlank())
                     ? "Giao hàng không thành công / Khách từ chối nhận"
                     : cancelReason.trim();
             if (reason.length() > 1000) {
                 throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
             }
+
+            // 1. Hoàn trả tồn kho về kệ
             releaseReservedItems(orderId);
+
+            // 2. Nếu đơn VNPAY đã thanh toán (PAID) -> Gọi API Refund VNPAY
+            if ("VNPAY".equalsIgnoreCase(paymentMethod) && "PAID".equalsIgnoreCase(paymentStatus)) {
+                BigDecimal refundAmount = firstNonNullDecimal(order, "total_amount", "grand_total");
+                String orderCode = firstNonNullStr(order, "order_code", String.valueOf(orderId));
+
+                String txnRef = orderCode;
+                String transactionNo = "";
+                String transDateStr = now.format(VNP_DATE_FMT);
+                boolean isFullRefund = true;
+
+                Object checkoutIdObj = order.get("checkout_id");
+                if (checkoutIdObj instanceof Number cid) {
+                    try {
+                        List<Map<String, Object>> ckRows = jdbc.queryForList("SELECT * FROM checkouts WHERE id = ?", cid.longValue());
+                        if (!ckRows.isEmpty()) {
+                            txnRef = firstNonNullStr(ckRows.get(0), "checkout_code", "code", txnRef);
+                        }
+                        Integer orderCount = jdbc.queryForObject(
+                                "SELECT COUNT(*) FROM orders WHERE checkout_id = ?", Integer.class, cid.longValue());
+                        if (orderCount != null && orderCount > 1) {
+                            isFullRefund = false;
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                try {
+                    List<Map<String, Object>> payRows = jdbc.queryForList(
+                            "SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC LIMIT 1", orderId);
+                    if (!payRows.isEmpty()) {
+                        Map<String, Object> pay = payRows.get(0);
+                        txnRef = firstNonNullStr(pay, "provider_txn_ref", "txn_ref", "transaction_code", txnRef);
+                        transactionNo = firstNonNullStr(pay, "provider_transaction_no", "transaction_no", "vnp_transaction_no", "");
+                        Object paidAtObj = pay.get("paid_at");
+                        if (paidAtObj instanceof Timestamp ts) {
+                            transDateStr = ts.toLocalDateTime().format(VNP_DATE_FMT);
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                VNPayService.RefundResult refundRes = vnPayService.refundTransaction(
+                        txnRef,
+                        transactionNo,
+                        refundAmount,
+                        isFullRefund,
+                        transDateStr,
+                        "DeliveryManager",
+                        "127.0.0.1",
+                        "Hoan tien don hang #" + orderCode + " - " + reason
+                );
+
+                String refundNote = reason + " [Đã hoàn tiền VNPAY: "
+                        + refundAmount.toPlainString() + "đ - Mã GD: "
+                        + (refundRes.refundTransactionNo() != null ? refundRes.refundTransactionNo() : "SANDBOX") + "]";
+
+                try {
+                    jdbc.update("""
+                        UPDATE orders 
+                        SET status = 'CANCELLED', 
+                            payment_status = 'REFUNDED',
+                            delivery_status = 'FAILED', 
+                            delivery_failure_reason = ?, 
+                            delivery_updated_at = ?, 
+                            cancelled_at = ?, 
+                            cancellation_reason = ? 
+                        WHERE id = ?
+                    """, refundNote, now, now, refundNote, orderId);
+                } catch (Exception ex) {
+                    // Fallback nếu bảng orders giới hạn CHECK CONSTRAINT trên cột payment_status
+                    jdbc.update("""
+                        UPDATE orders 
+                        SET status = 'CANCELLED', 
+                            delivery_status = 'FAILED', 
+                            delivery_failure_reason = ?, 
+                            delivery_updated_at = ?, 
+                            cancelled_at = ?, 
+                            cancellation_reason = ? 
+                        WHERE id = ?
+                    """, refundNote, now, now, refundNote, orderId);
+                }
+
+                try {
+                    jdbc.update("UPDATE payments SET status = 'REFUNDED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
+                } catch (Exception ex) {
+                    jdbc.update("UPDATE payments SET status = 'CANCELLED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
+                }
+                return;
+            }
+
+            // 3. Nếu là đơn COD bình thường -> Hủy đơn và cập nhật trạng thái
             jdbc.update("""
                 UPDATE orders 
                 SET status = 'CANCELLED', 

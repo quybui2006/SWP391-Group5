@@ -78,8 +78,13 @@ public class ShopOrderController {
         Long owner = currentUser.requireUserId(request);
         if (token == null || !token.equals(request.getSession(false).getAttribute("shopOrderToken")))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
-        try { orders.confirmCod(owner, id); redirect.addFlashAttribute("message", "Đã xác nhận đơn hàng và ghi nhận số lượng đã bán."); }
-        catch (IllegalArgumentException ex) { redirect.addFlashAttribute("message", ex.getMessage()); }
+        try {
+            orders.confirmOrder(owner, id);
+            redirect.addFlashAttribute("message", "Đã xác nhận đơn hàng và trừ tồn kho thành công.");
+        }
+        catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("message", ex.getMessage());
+        }
         return "redirect:/shopowner/orders/" + id;
     }
 
@@ -91,8 +96,13 @@ public class ShopOrderController {
         Long owner = currentUser.requireUserId(request);
         if (token == null || !token.equals(request.getSession(false).getAttribute("shopOrderToken")))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
-        try { orders.rejectCod(owner, id, reason); redirect.addFlashAttribute("message", "Đã từ chối đơn và thông báo cho khách."); }
-        catch (IllegalArgumentException ex) { redirect.addFlashAttribute("message", ex.getMessage()); }
+        try {
+            orders.rejectOrder(owner, id, reason);
+            redirect.addFlashAttribute("message", "Đã từ chối đơn hàng thành công.");
+        }
+        catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("message", ex.getMessage());
+        }
         return "redirect:/shopowner/orders/" + id;
     }
 }
