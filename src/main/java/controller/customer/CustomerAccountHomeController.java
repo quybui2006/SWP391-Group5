@@ -1,7 +1,9 @@
 package controller.customer;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -188,8 +190,15 @@ public class CustomerAccountHomeController {
 
     @PostMapping("/wallet/vouchers/save")
     @ResponseBody
-    public Map<String,Object> saveVoucher(@RequestParam String voucherCode, HttpSession session) {
-        account.saveVoucher(requireCustomer(session), voucherCode); return Map.of("saved", true);
+    public ResponseEntity<Map<String,Object>> saveVoucher(@RequestParam Long voucherId, HttpSession session) {
+        try {
+            account.saveVoucher(requireCustomer(session), voucherId);
+            return ResponseEntity.ok(Map.of("saved", true));
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode()).body(Map.of("saved", false, "message", "Vui lòng đăng nhập để lưu voucher."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("saved", false, "message", ex.getMessage()));
+        }
     }
 
 
