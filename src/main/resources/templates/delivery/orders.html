@@ -359,7 +359,7 @@
 
                         <form th:if="${ord['status'] == 'SHIPPING'}" th:action="@{/delivery/orders/update-status}" method="post">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
-                            <input type="hidden" name="newStatus" value="COMPLETED">
+                            <input type="hidden" name="newStatus" value="DELIVERED">
                             <input type="hidden" name="currentStatus" th:value="${currentStatus}">
                             <button type="submit" class="btn-action btn-complete"
                                     onclick="return confirm('Xác nhận đã giao đơn hàng này thành công cho khách?');">

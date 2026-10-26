@@ -215,14 +215,25 @@ public class DeliveryOrderService {
             jdbc.update("UPDATE orders SET status='SHIPPING',delivery_status='IN_TRANSIT',shipped_at=?,delivery_updated_at=? WHERE id=? AND status='CONFIRMED'", now, now, orderId);
             return;
         }
-        if ("COMPLETED".equals(target)) {
-            if (!"SHIPPING".equals(currentStatus)) throw new IllegalStateException("Chỉ hoàn tất đơn đang được giao.");
+        if ("DELIVERED".equals(target)) {
+            if (!"SHIPPING".equals(currentStatus)) throw new IllegalStateException("Chỉ xác nhận đã giao đối với đơn đang vận chuyển.");
             consumeReservedItems(orderId);
             if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
                 jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
-                jdbc.update("UPDATE orders SET status='COMPLETED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),completed_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
             } else {
-                jdbc.update("UPDATE orders SET status='COMPLETED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),completed_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, orderId);
+            }
+            return;
+        }
+        if ("COMPLETED".equals(target)) {
+            if (!"SHIPPING".equals(currentStatus) && !"DELIVERED".equals(currentStatus)) throw new IllegalStateException("Chỉ hoàn tất đơn đang được giao.");
+            consumeReservedItems(orderId);
+            if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
+                jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
+                jdbc.update("UPDATE orders SET status='COMPLETED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),auto_complete_at=COALESCE(auto_complete_at,DATE_ADD(?,INTERVAL 3 DAY)),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, now, orderId);
+            } else {
+                jdbc.update("UPDATE orders SET status='COMPLETED',delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),auto_complete_at=COALESCE(auto_complete_at,DATE_ADD(?,INTERVAL 3 DAY)),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, orderId);
             }
             checkout.creditCashbackPoints(orderId);
             return;

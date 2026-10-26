@@ -58,13 +58,19 @@ public class ShopOrderController {
     @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/respond")
     public String respondComplaint(@org.springframework.web.bind.annotation.PathVariable Long orderId,
                                    @org.springframework.web.bind.annotation.PathVariable Long complaintId,
-                                   @RequestParam String shopResponse,
+                                   @RequestParam(defaultValue = "REJECT") String decision,
+                                   @RequestParam(required = false) String shopResponse,
+                                   @RequestParam(required = false) org.springframework.web.multipart.MultipartFile shopEvidenceImage,
                                    HttpServletRequest request,
                                    org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
         Long owner = currentUser.requireUserId(request);
         try {
-            complaintService.submitShopResponse(owner, complaintId, shopResponse);
-            redirect.addFlashAttribute("message", "Đã gửi giải trình / phản hồi của Shop tới bộ phận CSKH.");
+            complaintService.submitShopDecision(owner, complaintId, decision, shopResponse, shopEvidenceImage);
+            if ("ACCEPT".equalsIgnoreCase(decision)) {
+                redirect.addFlashAttribute("message", "Đã đồng ý giải quyết khiếu nại và tự động hoàn trả điểm cho khách hàng!");
+            } else {
+                redirect.addFlashAttribute("message", "Đã gửi giải trình từ chối khiếu nại và chuyển hồ sơ lên CSKH phân xử.");
+            }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("message", ex.getMessage());
         }

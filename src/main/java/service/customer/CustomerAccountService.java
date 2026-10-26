@@ -34,9 +34,16 @@ public class CustomerAccountService {
     }
 
     @Transactional
-    public void saveVoucher(Long userId, String voucherCode) {
-        int inserted = jdbc.update("INSERT IGNORE INTO customer_saved_vouchers(user_id,voucher_id) SELECT ?,v.id FROM vouchers v WHERE v.code=? AND v.is_public=1 AND v.status='ACTIVE' AND v.starts_at<=CURRENT_TIMESTAMP(3) AND v.ends_at>CURRENT_TIMESTAMP(3) AND v.used_count<v.max_usages", userId, voucherCode == null ? "" : voucherCode.trim().toUpperCase(java.util.Locale.ROOT));
-        if (inserted == 0) throw new IllegalArgumentException("Voucher không còn khả dụng để lưu.");
+    public void saveVoucher(Long userId, Long voucherId) {
+        int inserted = jdbc.update("INSERT IGNORE INTO customer_saved_vouchers(user_id,voucher_id) SELECT ?,v.id FROM vouchers v WHERE v.id=? AND v.is_public=1 AND v.status='ACTIVE' AND v.starts_at<=CURRENT_TIMESTAMP(3) AND v.ends_at>CURRENT_TIMESTAMP(3) AND v.used_count<v.max_usages", userId, voucherId);
+        if (inserted == 0) {
+            Integer alreadySaved = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM customer_saved_vouchers WHERE user_id=? AND voucher_id=?",
+                    Integer.class, userId, voucherId);
+            if (alreadySaved == null || alreadySaved == 0) {
+                throw new IllegalArgumentException("Voucher không còn khả dụng để lưu.");
+            }
+        }
     }
 
     public List<Map<String,Object>> savedVouchers(Long userId) {

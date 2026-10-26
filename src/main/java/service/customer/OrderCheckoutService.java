@@ -54,7 +54,6 @@ public class OrderCheckoutService {
     }
 
     public record VoucherQuote(Long voucherId, String code, BigDecimal discount, String error) {}
-    public record CashbackQuote(Long voucherId, String code, long points, String error) {}
 
     public VoucherQuote previewVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal) {
         if (rawCode == null || rawCode.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
@@ -65,21 +64,12 @@ public class OrderCheckoutService {
         }
     }
 
-    public CashbackQuote previewCashback(Long shopId, String rawCode, BigDecimal shopSubtotal) {
-        if (rawCode == null || rawCode.isBlank()) return new CashbackQuote(null, "", 0L, null);
-        try {
-            return quoteCashback(shopId, rawCode, shopSubtotal, false);
-        } catch (IllegalArgumentException ex) {
-            return new CashbackQuote(null, rawCode.trim().toUpperCase(java.util.Locale.ROOT), 0L, ex.getMessage());
-        }
-    }
-
     private VoucherQuote quoteVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
         String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
         if (code.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
         String lockClause = lock ? " FOR UPDATE" : "";
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at " +
-                "FROM vouchers WHERE shop_id=? AND code=? AND is_public=1 AND voucher_type='DISCOUNT'" + lockClause, shopId, code);
+                "FROM vouchers WHERE shop_id=? AND code=? AND is_public=1" + lockClause, shopId, code);
         if (rows.isEmpty()) throw new IllegalArgumentException("Mã voucher không thuộc cửa hàng này.");
         Map<String, Object> v = rows.get(0);
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
@@ -100,24 +90,6 @@ public class OrderCheckoutService {
         if (maxDiscount != null) discount = discount.min(maxDiscount);
         discount = discount.min(shopSubtotal).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN);
         return new VoucherQuote(((Number) v.get("id")).longValue(), code, discount, null);
-    }
-
-    private CashbackQuote quoteCashback(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
-        String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
-        if (code.isBlank()) return new CashbackQuote(null, "", 0L, null);
-        String lockClause = lock ? " FOR UPDATE" : "";
-        List<Map<String, Object>> rows = jdbc.queryForList("SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at FROM vouchers WHERE shop_id=? AND code=? AND is_public=1 AND voucher_type='CASHBACK'" + lockClause, shopId, code);
-        if (rows.isEmpty()) throw new IllegalArgumentException("Mã hoàn xu không thuộc cửa hàng này.");
-        Map<String, Object> v = rows.get(0);
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        LocalDateTime startsAt = toLocalDateTime(v.get("starts_at"));
-        LocalDateTime endsAt = toLocalDateTime(v.get("ends_at"));
-        if (!"ACTIVE".equals(v.get("status")) || startsAt.isAfter(now) || !endsAt.isAfter(now)) throw new IllegalArgumentException("Voucher hoàn xu chưa có hiệu lực hoặc đã hết hạn.");
-        if (((Number) v.get("used_count")).intValue() >= ((Number) v.get("max_usages")).intValue()) throw new IllegalArgumentException("Voucher hoàn xu đã hết lượt sử dụng.");
-        if (shopSubtotal.compareTo((BigDecimal) v.get("min_order_value")) < 0) throw new IllegalArgumentException("Đơn hàng của shop chưa đạt giá trị tối thiểu của voucher hoàn xu.");
-        BigDecimal points = shopSubtotal.multiply((BigDecimal) v.get("discount_value")).divide(new BigDecimal("100"), 0, RoundingMode.DOWN);
-        if (v.get("max_discount_amount") != null) points = points.min((BigDecimal) v.get("max_discount_amount"));
-        return new CashbackQuote(((Number) v.get("id")).longValue(), code, points.max(BigDecimal.ZERO).longValue(), null);
     }
 
     public List<Map<String, Object>> addresses(Long userId) {
@@ -261,22 +233,16 @@ public class OrderCheckoutService {
                                      String recipientPhone, String provinceCode, String wardName, String addressDetail,
                                      String note, String paymentMethod) {
         return placeOrder(userId, variantIds, addressId, recipientName, recipientPhone,
-                provinceCode, wardName, addressDetail, note, paymentMethod, Map.of(), Map.of());
+                provinceCode, wardName, addressDetail, note, paymentMethod, Map.of());
     }
 
     @Transactional
     public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                                      String recipientPhone, String provinceCode, String wardName, String addressDetail,
                                      String note, String paymentMethod, Map<Long, String> voucherCodes) {
-        return placeOrder(userId, variantIds, addressId, recipientName, recipientPhone, provinceCode,
-                wardName, addressDetail, note, paymentMethod, voucherCodes, Map.of());
-    }
+        if (variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
 
-    @Transactional
-    public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
-                                     String recipientPhone, String provinceCode, String wardName, String addressDetail,
-                                     String note, String paymentMethod, Map<Long, String> voucherCodes,
-                                     Map<Long, String> cashbackCodes) {
+        // Chuẩn hóa phương thức thanh toán
         String method = ("VNPAY".equalsIgnoreCase(paymentMethod)) ? "VNPAY" : "COD";
 
         Map<String, Object> address;
@@ -319,14 +285,11 @@ public class OrderCheckoutService {
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
                 line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
-        Map<Long, CashbackQuote> cashbackQuotes = new java.util.LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
         for (var entry : shopLines.entrySet()) {
             BigDecimal shopSubtotal = sumLines(entry.getValue());
             VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
             voucherQuotes.put(entry.getKey(), quote);
-            CashbackQuote cashback = quoteCashback(entry.getKey(), cashbackCodes == null ? null : cashbackCodes.get(entry.getKey()), shopSubtotal, true);
-            cashbackQuotes.put(entry.getKey(), cashback);
             total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
         }
 
@@ -335,7 +298,7 @@ public class OrderCheckoutService {
         Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status) VALUES(?,?,?,?,?,?,?)",
                 checkoutCode, UUID.randomUUID().toString(), userId, user.get("email"), method, total, checkoutStatus);
 
-        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,cashback_voucher_id,cashback_voucher_code,cashback_points,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,?,?,?,?, ?,?,?,?,CASE WHEN ? IN ('VNPAY','MOCK_ONLINE') THEN TIMESTAMPADD(MINUTE,15,CURRENT_TIMESTAMP(3)) ELSE NULL END,?,'PENDING','UNPAID','NOT_STARTED')";
+        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,0,?,0,?,?,?,?,?,?,?,CASE WHEN ? IN ('VNPAY','MOCK_ONLINE') THEN DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 15 MINUTE) ELSE NULL END,?,'PENDING','UNPAID','NOT_STARTED')";
 
         java.util.List<String> orderCodes = new java.util.ArrayList<>();
         for (var shopEntry : shopLines.entrySet()) {
@@ -343,13 +306,11 @@ public class OrderCheckoutService {
             List<Map<String, Object>> shopItems = shopEntry.getValue();
             BigDecimal shopSubtotal = sumLines(shopItems);
             VoucherQuote voucher = voucherQuotes.get(shopId);
-            CashbackQuote cashback = cashbackQuotes.get(shopId);
             BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
             String orderCode = code("FF-");
 
-            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), cashback.voucherId(), cashback.voucherId() == null ? null : cashback.code(), cashback.points(), method, method, code("DL-"));
+            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), method, method, code("DL-"));
             countVoucherUse(voucher);
-            countCashbackUse(cashback);
             orderCodes.add(orderCode);
 
             jdbc.update("INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,?,?,'PENDING')",
@@ -388,15 +349,6 @@ public class OrderCheckoutService {
                                                 String recipientName, String recipientPhone, String provinceCode,
                                                 String wardName, String addressDetail, String note,
                                                 Map<Long, String> voucherCodes) {
-        return placeGuestOrder(guestCart, variantIds, email, recipientName, recipientPhone, provinceCode,
-                wardName, addressDetail, note, voucherCodes, Map.of());
-    }
-
-    @Transactional
-    public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
-                                                String recipientName, String recipientPhone, String provinceCode,
-                                                String wardName, String addressDetail, String note,
-                                                Map<Long, String> voucherCodes, Map<Long, String> cashbackCodes) {
         if (guestCart == null || variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
         String contactEmail = required(email, 254, "Email").toLowerCase(java.util.Locale.ROOT);
         if (!contactEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) throw new IllegalArgumentException("Email không hợp lệ.");
@@ -429,14 +381,11 @@ public class OrderCheckoutService {
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
                 line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
-        Map<Long, CashbackQuote> cashbackQuotes = new java.util.LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
         for (var entry : shopLines.entrySet()) {
             BigDecimal shopSubtotal = sumLines(entry.getValue());
             VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
             voucherQuotes.put(entry.getKey(), quote);
-            CashbackQuote cashback = quoteCashback(entry.getKey(), cashbackCodes == null ? null : cashbackCodes.get(entry.getKey()), shopSubtotal, true);
-            cashbackQuotes.put(entry.getKey(), cashback);
             total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
         }
 
@@ -445,22 +394,21 @@ public class OrderCheckoutService {
         Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status,guest_access_token_hash,guest_access_expires_at) " +
                 "VALUES(?,?,NULL,?,'COD',?,'CONFIRMED',UNHEX(SHA2(?,256)),DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 7 DAY))",
                 checkoutCode, UUID.randomUUID().toString(), contactEmail, total, accessToken);
-        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,cashback_voucher_id,cashback_voucher_code,cashback_points,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) " +
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,?,?, ?,?,?,?,'COD',NULL,?,'PENDING','UNPAID','NOT_STARTED')";
+        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,?,?,?,'COD',NULL,?,'PENDING','UNPAID','NOT_STARTED')";
         List<String> orderCodes = new java.util.ArrayList<>();
         for (var entry : shopLines.entrySet()) {
             long shopId = entry.getKey();
             List<Map<String, Object>> shopItems = entry.getValue();
             BigDecimal shopSubtotal = sumLines(shopItems);
             VoucherQuote voucher = voucherQuotes.get(shopId);
-            CashbackQuote cashback = cashbackQuotes.get(shopId);
             BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
             String orderCode = code("FF-");
             Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, name, phone, province.get("code"), province.get("name"), ward,
                     detail, shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal,
-                    shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), cashback.voucherId(), cashback.voucherId() == null ? null : cashback.code(), cashback.points(), code("DL-"));
+                    shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(),
+                    voucher.discount(), code("DL-"));
             countVoucherUse(voucher);
-            countCashbackUse(cashback);
             orderCodes.add(orderCode);
             jdbc.update("INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,'COD',?,'PENDING')",
                     code("PAY-"), orderId, UUID.randomUUID().toString(), shopTotal);
@@ -497,24 +445,28 @@ public class OrderCheckoutService {
         }
     }
 
-    private void countCashbackUse(CashbackQuote quote) {
-        if (quote.voucherId() != null && jdbc.update("UPDATE vouchers SET used_count=used_count+1 WHERE id=? AND status='ACTIVE' AND used_count<max_usages", quote.voucherId()) != 1) {
-            throw new IllegalArgumentException("Voucher hoàn xu vừa hết lượt sử dụng. Hãy thử mã khác.");
-        }
-    }
-
     @Transactional
     public void creditCashbackPoints(Long orderId) {
-        List<Map<String, Object>> rows = jdbc.queryForList("SELECT cashback_points FROM orders WHERE id=? AND status='COMPLETED' AND cashback_points>0 AND cashback_credited_at IS NULL FOR UPDATE", orderId);
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT cashback_points FROM orders WHERE id=? AND status='COMPLETED' AND cashback_points>0 AND cashback_credited_at IS NULL FOR UPDATE",
+                orderId);
         if (rows.isEmpty()) return;
+
         long points = ((Number) rows.get(0).get("cashback_points")).longValue();
-        Long userId = jdbc.queryForObject("SELECT c.user_id FROM orders o JOIN checkouts c ON c.id=o.checkout_id WHERE o.id=? AND c.user_id IS NOT NULL", Long.class, orderId);
+        Long userId = jdbc.queryForObject(
+                "SELECT c.user_id FROM orders o JOIN checkouts c ON c.id=o.checkout_id WHERE o.id=? AND c.user_id IS NOT NULL",
+                Long.class, orderId);
         if (userId != null) {
             jdbc.update("UPDATE users SET points_balance=COALESCE(points_balance,0)+? WHERE id=?", points, userId);
-            jdbc.update("INSERT INTO customer_coin_transactions(user_id,amount,type,status,source_type,source_id,event_key,description,expires_at) VALUES(?,?, 'RECEIVED','ACTIVE','CASHBACK_VOUCHER',?,?,?,DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 1 MONTH))", userId, points, orderId, "cashback-order-" + orderId, "Hoàn xu từ đơn hàng " + orderId);
+            jdbc.update("INSERT INTO customer_coin_transactions(user_id,amount,type,status,source_type,source_id,event_key,description,expires_at) VALUES(?,?,'RECEIVED','ACTIVE','CASHBACK_VOUCHER',?,?,?,DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 1 MONTH))",
+                    userId, points, orderId, "cashback-order-" + orderId, "Hoàn xu từ đơn hàng " + orderId);
             jdbc.update("UPDATE orders SET cashback_credited_at=CURRENT_TIMESTAMP(3) WHERE id=? AND cashback_credited_at IS NULL", orderId);
         }
     }
+
+    /**
+     * Hàm xử lý khi VNPay redirect kết quả về
+     */
     @Transactional
     public List<String> handleVnPayCallback(String checkoutCode, boolean isSuccess) {
         List<Map<String, Object>> checkouts = jdbc.queryForList("SELECT id,payment_method FROM checkouts WHERE checkout_code=? FOR UPDATE", checkoutCode);
@@ -578,6 +530,119 @@ public class OrderCheckoutService {
             jdbc.update("UPDATE payments SET status='EXPIRED',failure_reason='Phiên thanh toán hết hạn' WHERE order_id=? AND status='PENDING'", orderId);
             updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
             notifyOrderCustomer(orderId, "ORDER_PAYMENT_EXPIRED", "Đơn hàng đã hết hạn thanh toán", "Phiên thanh toán của đơn " + order.get("order_code") + " đã hết hạn; tồn kho được trả lại.");
+        }
+    }
+
+    /**
+     * Scheduled Job tự động chuyển đơn hàng từ DELIVERED sang COMPLETED sau 24h.
+     * Bắt buộc bỏ qua (skip) các đơn hàng đang có khiếu nại ở trạng thái PENDING_SHOP hoặc ESCALATED.
+     */
+    @Scheduled(fixedDelayString = "${orders.auto-complete-scan-ms:300000}")
+    @Transactional
+    public int autoCompleteDeliveredOrders() {
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        LocalDateTime deliveredCutoff = now.minusHours(24);
+        List<Long> candidateIds = jdbc.queryForList("""
+            SELECT o.id
+            FROM orders o
+            WHERE o.status = 'DELIVERED'
+              AND COALESCE(o.delivered_at, o.created_at) <= ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM complaints c
+                  WHERE c.order_id = o.id AND c.status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+              )
+            ORDER BY o.id
+        """, Long.class, deliveredCutoff);
+
+        int completedCount = 0;
+        for (Long orderId : candidateIds) {
+            List<Map<String, Object>> locked = jdbc.queryForList("""
+                SELECT id, order_code, status
+                FROM orders
+                WHERE id = ? AND status = 'DELIVERED' AND COALESCE(delivered_at, created_at) <= ?
+                FOR UPDATE
+            """, orderId, deliveredCutoff);
+            if (locked.isEmpty()) {
+                continue;
+            }
+            Integer activeComplaints = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM complaints
+                WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+            """, Integer.class, orderId);
+            if (activeComplaints != null && activeComplaints > 0) {
+                continue;
+            }
+            int updated = jdbc.update("""
+                UPDATE orders
+                SET status = 'COMPLETED',
+                    payment_status = 'PAID',
+                    paid_at = COALESCE(paid_at, ?),
+                    delivery_status = 'DELIVERED',
+                    completed_at = ?
+                WHERE id = ? AND status = 'DELIVERED'
+            """, now, now, orderId);
+            if (updated == 1) {
+                completedCount++;
+                try {
+                    creditCashbackPoints(orderId);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return completedCount;
+    }
+
+    /**
+     * Khách hàng bấm "Đã nhận hàng / Hoàn tất đơn hàng" khi đơn đang ở trạng thái DELIVERED.
+     * Chặn hoàn tất nếu đơn đang có khiếu nại ở trạng thái PENDING_SHOP hoặc ESCALATED.
+     */
+    @Transactional
+    public void completeOrderByCustomer(Long userId, Long orderId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT o.id, o.order_code, o.status, o.payment_status, o.delivery_status
+            FROM orders o
+            JOIN checkouts c ON c.id = o.checkout_id
+            WHERE o.id = ? AND c.user_id = ?
+            FOR UPDATE
+        """, orderId, userId);
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
+        }
+        Map<String, Object> order = rows.get(0);
+        String currentStatus = String.valueOf(order.get("status"));
+        if (!"DELIVERED".equals(currentStatus)) {
+            throw new IllegalArgumentException("Chỉ có thể xác nhận hoàn tất khi đơn hàng đang ở trạng thái Đã giao (DELIVERED).");
+        }
+
+        Integer activeComplaints = jdbc.queryForObject("""
+            SELECT COUNT(*) FROM complaints
+            WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+        """, Integer.class, orderId);
+        if (activeComplaints != null && activeComplaints > 0) {
+            throw new IllegalArgumentException("Đơn hàng đang có khiếu nại chờ xử lý (PENDING_SHOP / ESCALATED). Vui lòng chờ giải quyết xong hoặc hủy khiếu nại trước khi hoàn tất đơn hàng.");
+        }
+
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        int updated = jdbc.update("""
+            UPDATE orders
+            SET status = 'COMPLETED',
+                payment_status = 'PAID',
+                paid_at = COALESCE(paid_at, ?),
+                delivery_status = 'DELIVERED',
+                completed_at = ?
+            WHERE id = ? AND status = 'DELIVERED'
+        """, now, now, orderId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("Trạng thái đơn hàng vừa thay đổi, vui lòng tải lại trang.");
+        }
+        try {
+            jdbc.update("UPDATE orders SET customer_confirmed_at = ? WHERE id = ?", now, orderId);
+        } catch (Exception ignored) {
+        }
+        try {
+            creditCashbackPoints(orderId);
+        } catch (Exception ignored) {
         }
     }
 

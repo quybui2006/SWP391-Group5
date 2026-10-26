@@ -172,25 +172,42 @@ public class CsStaffController {
         return "redirect:/cs/tickets/" + id;
     }
 
+    @PostMapping("/tickets/{id}/remind-shop")
+    public String remindShopResponse(
+            @PathVariable Long id,
+            @RequestParam(required = false) String requestNote,
+            HttpSession session,
+            RedirectAttributes redirect) {
+        try {
+            complaintService.requestShopResponse(id, currentStaffId(session), requestNote);
+            redirect.addFlashAttribute("message", "Đã gửi thông báo yêu cầu Chủ Shop phản hồi / giải trình khiếu nại!");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/cs/tickets/" + id;
+    }
+
     @PostMapping("/tickets/{id}/resolve")
     public String resolveTicket(
             @PathVariable Long id,
             @RequestParam String decisionStatus,
             @RequestParam(required = false) String resolutionType,
             @RequestParam String resolutionNote,
+            @RequestParam(required = false) Long finalRefundAmount,
             @RequestParam(required = false) Long compensatedPoints,
             @RequestParam(defaultValue = "false") boolean isShopFault,
             @RequestParam(defaultValue = "false") boolean escalateToOps,
             HttpSession session,
             RedirectAttributes redirect) {
         try {
+            Long refundAmount = finalRefundAmount != null ? finalRefundAmount : compensatedPoints;
             complaintService.resolveComplaint(
                     id,
                     currentStaffId(session),
                     decisionStatus,
                     resolutionType,
                     resolutionNote,
-                    compensatedPoints,
+                    refundAmount,
                     isShopFault,
                     escalateToOps);
             redirect.addFlashAttribute("message", "Đã lưu quyết định xử lý khiếu nại và gửi thông báo tới các bên liên quan!");
