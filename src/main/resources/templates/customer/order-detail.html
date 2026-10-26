@@ -185,7 +185,7 @@
                             <div class="detail-item-qty" th:text="'x' + ${item['quantity'] + ' ' + (item['base_unit_name'] != null ? item['base_unit_name'] : '')}">x1</div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 7px;">
                                 <a class="review-btn" style="margin-top: 0;"
-                                   th:if="${(order['status'] == 'COMPLETED' or order['status'] == 'DELIVERED') and item['reviewed_at'] == null}"
+                                   th:if="${order['status'] == 'COMPLETED' and item['reviewed_at'] == null}"
                                    th:href="@{'/product/' + ${item['variant_id']} + '#reviews-section'}">Đánh giá sản phẩm</a>
                                 <span class="reviewed-label" th:if="${item['reviewed_at'] != null}">Đã đánh giá</span>
                                 <a th:if="${eligibility != null and eligibility['canCreateComplaint']}"

@@ -32,7 +32,7 @@ public class AdminShopPaymentController {
                            Model model, HttpSession session) {
         if (!checkAdmin(session)) return "redirect:/login";
         String effectiveMonth = month == null || month.isBlank()
-                ? LocalDate.now().minusMonths(1).toString().substring(0, 7)
+                ? LocalDate.now().toString().substring(0, 7)
                 : month;
         model.addAttribute("month", effectiveMonth);
         model.addAttribute("payouts", payments.calculateShopPayouts(effectiveMonth));
@@ -41,13 +41,14 @@ public class AdminShopPaymentController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> exportCsv(@RequestParam String month,
-                                            HttpSession session) {
+    public ResponseEntity<byte[]> exportExcel(@RequestParam String month,
+                                              HttpSession session) {
         if (!checkAdmin(session)) return ResponseEntity.status(401).build();
-        byte[] csv = payments.exportPayoutsCsv(month).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] excel = payments.exportPayoutsXlsx(month);
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/csv;charset=UTF-8"));
-        headers.setContentDispositionFormData("attachment", "shop-payouts-" + month + ".csv");
-        return ResponseEntity.ok().headers(headers).body(csv);
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "shop-payouts-" + month + ".xlsx");
+        return ResponseEntity.ok().headers(headers).body(excel);
     }
 }

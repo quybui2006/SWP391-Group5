@@ -39,7 +39,7 @@ public class ReviewService {
                 SELECT oi.id FROM order_items oi
                 JOIN orders o ON o.id = oi.order_id
                 WHERE oi.variant_id = ? AND o.checkout_id IN (SELECT id FROM checkouts WHERE user_id = ?)
-                  AND o.status IN ('DELIVERED', 'COMPLETED')
+                  AND o.status = 'COMPLETED'
                   AND oi.reviewed_at IS NULL AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.order_item_id = oi.id)
                 ORDER BY o.completed_at DESC, oi.id DESC LIMIT 1
                 """, (rs, row) -> rs.getLong(1), variantId, userId);
@@ -57,7 +57,7 @@ public class ReviewService {
             throw new IllegalArgumentException("Số sao phải từ 1 đến 5.");
         }
         if (orderItemId == null || userId == null || variantId == null) {
-            throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm đã mua và giao thành công.");
+            throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm trong đơn hàng đã hoàn tất.");
         }
 
         String safeContent = content == null ? "" : content.trim();
@@ -72,13 +72,13 @@ public class ReviewService {
                 WHERE oi.id = ?
                   AND oi.variant_id = ?
                   AND c.user_id = ?
-                  AND o.status IN ('DELIVERED', 'COMPLETED')
+                  AND o.status = 'COMPLETED'
                   AND oi.reviewed_at IS NULL
                   AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.order_item_id = oi.id)
                 """, Long.class, orderItemId, variantId, userId);
 
         if (eligibleCount == null || eligibleCount == 0) {
-            throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm đã mua và giao thành công.");
+            throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm trong đơn hàng đã hoàn tất.");
         }
 
         Review review = new Review(variantId, userId, rating, safeContent);

@@ -102,7 +102,7 @@
                 <div class="order-actions">
                     <a class="btn-outline" th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Chi tiết</a>
                     <a class="btn-primary-sm"
-                       th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
+                       th:if="${o['status'] == 'COMPLETED'}"
                        th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Đánh giá</a>
                     <a th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
                        th:href="@{'/customer/account/orders/' + ${o['id']} + '#complaint-section'}"

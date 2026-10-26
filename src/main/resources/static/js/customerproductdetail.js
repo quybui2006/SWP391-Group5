@@ -243,18 +243,6 @@ function filterReviews(ratingVal, button) {
     }
 }
 
-function toggleHelpful(button) {
-    if (!button) return;
-    const isVoted = button.classList.contains("voted");
-    if (isVoted) {
-        button.classList.remove("voted");
-        button.innerHTML = '<span class="thumb-icon">👍</span> <span>Hữu ích (12)</span>';
-    } else {
-        button.classList.add("voted");
-        button.innerHTML = '<span class="thumb-icon">👍</span> <span style="color:#ee4d2d;font-weight:600">Đã cảm ơn (13)</span>';
-    }
-}
-
 // AJAX review form submission
 document.addEventListener("DOMContentLoaded", function () {
     const reviewForm = document.getElementById("reviewForm");

@@ -11,17 +11,27 @@ import java.util.List;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    @Query("SELECT r FROM Review r LEFT JOIN FETCH r.user WHERE r.variantId = :variantId ORDER BY r.createdAt DESC")
+    @Query(value = "SELECT r.* FROM reviews r " +
+            "LEFT JOIN users u ON u.id = r.user_id " +
+            "WHERE r.variant_id = :variantId " +
+            "AND COALESCE(r.moderation_status, 'APPROVED') NOT IN ('REJECTED', 'REMOVED') " +
+            "ORDER BY r.created_at DESC", nativeQuery = true)
     List<Review> findByVariantIdOrderByCreatedAtDesc(@Param("variantId") Long variantId);
 
-    long countByVariantId(Long variantId);
+    @Query(value = "SELECT COUNT(*) FROM reviews r WHERE r.variant_id = :variantId " +
+            "AND COALESCE(r.moderation_status, 'APPROVED') NOT IN ('REJECTED', 'REMOVED')", nativeQuery = true)
+    long countByVariantId(@Param("variantId") Long variantId);
 
-    long countByVariantIdAndRating(Long variantId, Integer rating);
+    @Query(value = "SELECT COUNT(*) FROM reviews r WHERE r.variant_id = :variantId " +
+            "AND r.rating = :rating " +
+            "AND COALESCE(r.moderation_status, 'APPROVED') NOT IN ('REJECTED', 'REMOVED')", nativeQuery = true)
+    long countByVariantIdAndRating(@Param("variantId") Long variantId, @Param("rating") Integer rating);
 
     java.util.Optional<Review> findByIdAndVariantIdAndUserId(Long id, Long variantId, Long userId);
 
     boolean existsByOrderItemId(Long orderItemId);
 
-    @Query("SELECT AVG(CAST(r.rating as double)) FROM Review r WHERE r.variantId = :variantId")
+    @Query(value = "SELECT AVG(r.rating) FROM reviews r WHERE r.variant_id = :variantId " +
+            "AND COALESCE(r.moderation_status, 'APPROVED') NOT IN ('REJECTED', 'REMOVED')", nativeQuery = true)
     Double getAverageRatingByVariantId(@Param("variantId") Long variantId);
 }
