@@ -264,9 +264,17 @@
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
                         <div class="detail-content vouchers-wrap">
-                            <span class="fresh-voucher-chip" th:each="voucher : ${shopVouchers}"
-                                  th:text="${voucher.name + ' · ' + voucher.code}">Voucher cửa hàng</span>
+                            <span class="fresh-voucher-chip" th:each="voucher : ${shopVouchers}"><span th:text="${voucher.name + ' · ' + voucher.code}">Voucher cửa hàng</span><button type="button" class="save-voucher-button" th:attr="data-voucher-code=${voucher.code}" onclick="saveCustomerVoucher(this)">Lưu</button></span>
                             <span th:if="${shopVouchers == null or #lists.isEmpty(shopVouchers)}">Hiện shop chưa có voucher.</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-line">
+                        <span class="detail-label">Mã Hoàn Xu Shop</span>
+                        <div class="detail-content vouchers-wrap">
+                            <span class="fresh-voucher-chip cashback-voucher-chip" th:each="voucher : ${shopCashbackVouchers}"
+                                  th:text="${voucher.name + ' · ' + voucher.code}">Voucher hoàn xu của cửa hàng</span><button type="button" class="save-voucher-button" th:attr="data-voucher-code=${voucher.code}" onclick="saveCustomerVoucher(this)">Lưu</button>
+                            <span th:if="${shopCashbackVouchers == null or #lists.isEmpty(shopCashbackVouchers)}">Hiện shop chưa có voucher hoàn xu.</span>
                         </div>
                     </div>
 
@@ -608,7 +616,7 @@
             </div>
 
             <!-- Review Writer (Customer Form) -->
-            <div class="review-compose-box" th:if="${isCustomer}">
+            <div class="review-compose-box" th:if="${isCustomer and canReview}">
                 <div class="compose-header">
                     <div class="compose-avatar" th:text="${currentFullName != null && !currentFullName.isEmpty() ? #strings.substring(currentFullName, 0, 1).toUpperCase() : 'C'}">
                         C
@@ -650,14 +658,20 @@
 
             <!-- Guest Login Prompt -->
             <div class="guest-prompt-banner" th:unless="${isCustomer}">
-                <div class="prompt-icon">🔒</div>
                 <div class="prompt-text">
                     <h4>Bạn muốn chia sẻ trải nghiệm về sản phẩm?</h4>
-                    <p>Khách vãng lai chỉ có thể xem đánh giá. Vui lòng <strong>đăng nhập tài khoản Khách Hàng</strong> để gửi đánh giá và tích điểm cùng FreshFruit.</p>
+                    <p>Vui lòng đăng nhập tài khoản Khách Hàng. Chỉ khách hàng đã mua và nhận sản phẩm mới có thể đánh giá.</p>
                 </div>
                 <a class="guest-login-button" th:href="@{/login(continueTo=@{/product/{id}(id=${variant.id})})}">
-                    Đăng Nhập Ngay
+                    Đăng nhập
                 </a>
+            </div>
+
+            <div class="guest-prompt-banner" th:if="${isCustomer and !canReview}">
+                <div class="prompt-text">
+                    <h4>Chưa thể đánh giá sản phẩm này</h4>
+                    <p>Bạn chỉ có thể đánh giá sau khi mua và nhận sản phẩm. Mỗi sản phẩm trong đơn hàng chỉ được đánh giá một lần.</p>
+                </div>
             </div>
 
             <!-- Reviews List -->
@@ -821,7 +835,18 @@
 <!-- =========================================================
      JAVASCRIPT
 ========================================================= -->
-<!-- JavaScript trang chi tiết sản phẩm -->
+<script>
+async function saveCustomerVoucher(button) {
+    const code = button.dataset.voucherCode;
+    try {
+        const response = await fetch('/customer/account/wallet/vouchers/save', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'voucherCode=' + encodeURIComponent(code)});
+        if (!response.ok) throw new Error();
+        button.textContent = 'Đã lưu'; button.disabled = true;
+    } catch (e) { alert('Vui lòng đăng nhập để lưu voucher.'); }
+}
+</script>
+
+
 <script th:src="@{/js/customerproductdetail.js}"></script>
 <script th:src="@{/js/favorites-integration.js}"></script>
 

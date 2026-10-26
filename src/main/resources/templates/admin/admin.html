@@ -4,135 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản trị hệ thống | FreshFruit</title>
-    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .admin-main {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
-            min-height: 60vh;
-        }
-        .admin-card {
-            background: white;
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 32px;
-            box-shadow: 0 4px 20px rgba(24, 57, 30, 0.05);
-        }
-        .admin-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--line);
-            margin-bottom: 24px;
-        }
-        .admin-badge {
-            display: inline-block;
-            background: #fff0ef;
-            color: #d32f2f;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 6px;
-            letter-spacing: 0.1em;
-        }
-        .logout-btn-danger {
-            background: #fff0ef;
-            color: #dc3545;
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-        .logout-btn-danger:hover {
-            background: #dc3545;
-            color: white;
-            transform: translateY(-1px);
-        }
+        .admin-badge{display:inline-block;background:#fff0ef;color:#d32f2f;font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;letter-spacing:0.1em}
+        .menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:24px}
+        .menu-card{border:1px solid var(--line);border-radius:12px;padding:20px;background:#fafdfa;cursor:pointer;transition:all .2s ease}
+        .menu-card:hover{border-color:#cfe4d2;transform:translateY(-2px);box-shadow:0 6px 18px rgba(24,57,30,.08)}
+        .menu-card h3{margin:0 0 8px;font-size:16px;color:var(--ink)}
+        .menu-card p{color:var(--muted);font-size:13px;margin:0}
+        a.menu-link{text-decoration:none;color:inherit}
     </style>
 </head>
 <body>
-
-<header class="site-header">
-    <div class="container header-inner">
-        <a class="brand" th:href="@{/}" aria-label="FreshFruit - Trang chủ">
-            <span class="brand-mark">F</span>
-            <span>
-                <strong>FreshFruit</strong>
-                <small>HỆ THỐNG QUẢN TRỊ</small>
-            </span>
-        </a>
-
-        <div class="header-actions">
-            <a class="secondary-btn" th:href="@{/}" style="min-height: 38px; padding: 0 16px;">Về trang bán hàng</a>
-            <form th:action="@{/logout}" method="post" style="margin: 0;">
-                <button type="submit" class="logout-btn-danger">
-                    <span>🚪</span> Đăng xuất
-                </button>
-            </form>
-        </div>
-    </div>
-</header>
-
-<main class="admin-main">
-    <div class="admin-card">
-        <div class="admin-header">
+<div class="app-shell">
+    <aside th:replace="~{admin/fragments :: sidebar('home')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
             <div>
-                <span class="admin-badge">QUẢN TRỊ VIÊN (ADMIN)</span>
-                <h1 style="font-size: 26px; margin: 10px 0 4px;">Bảng điều khiển Quản trị viên</h1>
-                <p style="color: var(--muted); margin: 0; font-size: 14px;">Quản lý hệ thống, kiểm duyệt cửa hàng và tài khoản người dùng.</p>
+                <p class="breadcrumb">Quản trị / <span>Bảng điều khiển</span></p>
+                <h1>Bảng điều khiển Quản trị viên</h1>
+                <p class="muted">Quản lý hệ thống, kiểm duyệt cửa hàng và tài khoản người dùng.</p>
             </div>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="logout-btn-danger">
-                    <span>🚪</span> Đăng xuất
-                </button>
-            </form>
-        </div>
+        </header>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 24px;">
-            <a th:href="@{/admin/users}" style="text-decoration: none; color: inherit;">
-                <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa; cursor: pointer;">
-                    <h3 style="margin: 0 0 8px; font-size: 16px;">👥 Quản lý người dùng</h3>
-                    <p style="color: var(--muted); font-size: 13px; margin: 0;">Xem danh sách, chi tiết & thêm mới</p>
-                </div>
-            </a>
-            <a th:href="@{/admin/commission}" style="text-decoration: none; color: inherit;">
-                <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa; cursor: pointer;">
-                    <h3 style="margin: 0 0 8px; font-size: 16px;">💰 Cấu hình phí sàn</h3>
-                    <p style="color: var(--muted); font-size: 13px; margin: 0;">Đặt tỷ lệ hoa hồng và theo dõi phí thu</p>
-                </div>
-            </a>
-            <a th:href="@{/admin/categories}" style="text-decoration: none; color: inherit;">
-                <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa; cursor: pointer;">
-                    <h3 style="margin: 0 0 8px; font-size: 16px;">🍎 Cấu hình danh mục</h3>
-                    <p style="color: var(--muted); font-size: 13px; margin: 0;">Thêm và bật/tắt danh mục sản phẩm</p>
-                </div>
-            </a>
-            <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
-                <h3 style="margin: 0 0 8px; font-size: 16px;">👤 Tài khoản</h3>
-                <p style="color: var(--muted); font-size: 13px; margin: 0;" th:text="${session.fullName ?: 'Admin'}">Admin</p>
-            </div>
-            <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
-                <h3 style="margin: 0 0 8px; font-size: 16px;">🛡️ Vai trò</h3>
-                <p style="color: var(--muted); font-size: 13px; margin: 0;">ADMINISTRATOR</p>
-            </div>
-            <div style="border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fafdfa;">
-                <h3 style="margin: 0 0 8px; font-size: 16px;">⚡ Phiên làm việc</h3>
-                <p style="color: var(--green-dark); font-size: 13px; font-weight: 600; margin: 0;">Đang hoạt động</p>
-            </div>
-        </div>
-    </div>
-</main>
+        <section class="panel">
+            <span class="admin-badge">QUẢN TRỊ VIÊN</span>
 
+            <div class="menu-grid">
+                <a class="menu-link" th:href="@{/admin/users}">
+                    <div class="menu-card">
+                        <h3>Quản lý người dùng</h3>
+                        <p>Xem danh sách, chi tiết và thêm mới tài khoản</p>
+                    </div>
+                </a>
+                <a class="menu-link" th:href="@{/admin/commission}">
+                    <div class="menu-card">
+                        <h3>Cấu hình phí sàn</h3>
+                        <p>Đặt tỷ lệ hoa hồng và theo dõi phí thu</p>
+                    </div>
+                </a>
+                <a class="menu-link" th:href="@{/admin/categories}">
+                    <div class="menu-card">
+                        <h3>Cấu hình danh mục</h3>
+                        <p>Thêm và bật/tắt danh mục sản phẩm</p>
+                    </div>
+                </a>
+                <a class="menu-link" th:href="@{/admin/shop-payouts}">
+                    <div class="menu-card">
+                        <h3>Chi trả Shop Owner</h3>
+                        <p>Tính chi phí trả và xuất file theo tháng</p>
+                    </div>
+                </a>
+                <a class="menu-link" th:href="@{/admin/dashboard}">
+                    <div class="menu-card">
+                        <h3>Bảng điều khiển sàn</h3>
+                        <p>Tổng quan GMV, doanh thu và phí sàn</p>
+                    </div>
+                </a>
+                <div class="menu-card">
+                    <h3>Tài khoản</h3>
+                    <p th:text="${session.fullName ?: 'Admin'}">Admin</p>
+                </div>
+                <div class="menu-card">
+                    <h3>Vai trò</h3>
+                    <p>ADMINISTRATOR</p>
+                </div>
+                <div class="menu-card">
+                    <h3>Phiên làm việc</h3>
+                    <p style="color:var(--green-dark);font-weight:600">Đang hoạt động</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
 </body>
 </html>

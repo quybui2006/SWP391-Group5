@@ -31,7 +31,19 @@
         <a th:classappend="${active == 'profile'} ? 'active'" th:href="@{/customer/account}">Thông tin cá nhân</a>
         <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
         <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
+        <a th:classappend="${active == 'complaints'} ? 'active'" th:href="@{/customer/account/complaints}">🎫 Khiếu nại &amp; Hỗ trợ</a>
         <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
+        <div class="nav-expandable" th:classappend="${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'} ? ' expanded' : ''">
+            <a class="nav-expandable-toggle" th:classappend="${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'} ? ' active' : ''"
+               href="#wallet-submenu" aria-controls="wallet-submenu" th:attr="aria-expanded=${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'}" onclick="this.parentElement.classList.toggle('expanded'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('expanded')); return false;">
+                <span aria-hidden="true">▣</span> Ví của tôi <b class="nav-chevron" aria-hidden="true">⌄</b>
+            </a>
+            <div id="wallet-submenu" class="nav-submenu">
+                <a th:classappend="${active == 'wallet-coins'} ? ' active' : ''" th:href="@{/customer/account/wallet/coins}">Ví xu</a>
+                <a th:classappend="${active == 'wallet-money'} ? ' active' : ''" th:href="@{/customer/account/wallet/money}">Ví tiền</a>
+                <a th:classappend="${active == 'wallet-vouchers'} ? ' active' : ''" th:href="@{/customer/account/wallet/vouchers}">Ví voucher</a>
+            </div>
+        </div>
         <span class="nav-caption second">KHÁC</span>
         <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
         <a th:classappend="${active == 'changePassword'} ? 'active'" th:href="@{/customer/account/change-password}">Đổi mật khẩu</a>
@@ -43,7 +55,7 @@
     </nav>
     <div th:replace="~{customer/account-fragments :: help}"></div>
 </aside>
-<div class="sidebar-help" th:fragment="help"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Liên hệ với FreshFruit</small></div><b>→</b></div>
+<a class="sidebar-help" th:fragment="help" th:href="@{/customer/account/complaints}" style="text-decoration:none; color:inherit;"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Gửi &amp; theo dõi khiếu nại</small></div><b>→</b></a>
 <header class="customer-topbar" th:fragment="topbar(title)">
     <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><a th:href="@{/customer/account}">Tài khoản</a><span>/</span><strong th:text="${title}"></strong></div>
     <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
@@ -80,5 +92,6 @@
         </button>
     </form>
 </div>
+
 </body>
 </html>

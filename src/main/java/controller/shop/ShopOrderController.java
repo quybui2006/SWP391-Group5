@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import service.customer.CurrentUserProvider;
+import service.complaint.ComplaintService;
 import service.shop.ShopOrderExcelExporter;
 import service.shop.ShopOrderService;
 
@@ -17,8 +18,9 @@ public class ShopOrderController {
     private final CurrentUserProvider currentUser;
     private final ShopOrderService orders;
     private final ShopOrderExcelExporter excelExporter;
-    public ShopOrderController(CurrentUserProvider currentUser, ShopOrderService orders, ShopOrderExcelExporter excelExporter) {
-        this.currentUser = currentUser; this.orders = orders; this.excelExporter = excelExporter;
+    private final ComplaintService complaintService;
+    public ShopOrderController(CurrentUserProvider currentUser, ShopOrderService orders, ShopOrderExcelExporter excelExporter, ComplaintService complaintService) {
+        this.currentUser = currentUser; this.orders = orders; this.excelExporter = excelExporter; this.complaintService = complaintService;
     }
     @GetMapping("/shopowner/orders")
     public String orders(HttpServletRequest request, Model model) {
@@ -46,10 +48,27 @@ public class ShopOrderController {
         Long owner = currentUser.requireUserId(request);
         model.addAttribute("order", orders.detail(owner, id));
         model.addAttribute("items", orders.items(owner, id));
+        model.addAttribute("orderComplaints", complaintService.listComplaintsByOrder(id));
         var session = request.getSession(false);
         if (session.getAttribute("shopOrderToken") == null) session.setAttribute("shopOrderToken", java.util.UUID.randomUUID().toString());
         model.addAttribute("token", session.getAttribute("shopOrderToken"));
         return "shopowner/order-detail";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/respond")
+    public String respondComplaint(@org.springframework.web.bind.annotation.PathVariable Long orderId,
+                                   @org.springframework.web.bind.annotation.PathVariable Long complaintId,
+                                   @RequestParam String shopResponse,
+                                   HttpServletRequest request,
+                                   org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
+        Long owner = currentUser.requireUserId(request);
+        try {
+            complaintService.submitShopResponse(owner, complaintId, shopResponse);
+            redirect.addFlashAttribute("message", "Đã gửi giải trình / phản hồi của Shop tới bộ phận CSKH.");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("message", ex.getMessage());
+        }
+        return "redirect:/shopowner/orders/" + orderId;
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{id}/confirm")

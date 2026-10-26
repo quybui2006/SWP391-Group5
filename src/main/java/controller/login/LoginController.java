@@ -97,7 +97,11 @@ public class LoginController {
 
     @GetMapping("/admin")
     public String admin(HttpServletRequest request) {
-        return pageForRole(request, "ADMIN", "admin/admin");
+        HttpSession session = request.getSession(false);
+        if (session == null || !"ADMIN".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+        return "redirect:/admin/dashboard";
     }
 
     private String pageForRole(HttpServletRequest request, String requiredRole, String view) {

@@ -2,20 +2,62 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh mục sản phẩm | FreshFruit</title>
-    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <title>Cấu hình danh mục | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .admin-main{max-width:900px;margin:40px auto;padding:0 20px;min-height:60vh}.admin-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(24,57,30,.05)}
-        .form-row{display:flex;gap:10px;margin:20px 0}.form-row input{flex:1;padding:11px;border:1px solid var(--line);border-radius:9px}.btn{border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer}.btn-primary{background:var(--green);color:#fff}.btn-toggle{background:#f1f5f2;color:var(--ink)}.btn-off{background:#fff0f0;color:#b42318}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:13px;border-bottom:1px solid var(--line)}.muted{color:var(--muted);font-size:13px}.badge{padding:4px 9px;border-radius:20px;font-size:12px;font-weight:700}.active{background:#e8f7ed;color:#16804b}.inactive{background:#f1f3f2;color:#6b7280}.toast-fixed{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line);border-left:5px solid var(--green);border-radius:12px;padding:12px 20px;box-shadow:0 8px 25px rgba(24,57,30,.12);font-size:14px;font-weight:600;color:var(--ink);z-index:1000;animation:slideDownFade 3s forwards}@keyframes slideDownFade{0%{opacity:0;transform:translateX(-50%) translateY(-20px)}15%,85%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px);pointer-events:none}}.toast-error{border-left-color:#dc2626}.toast-success{border-left-color:var(--green)}
+        .toast-fixed{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line);border-left:5px solid var(--green);border-radius:12px;padding:12px 20px;box-shadow:0 8px 25px rgba(24,57,30,.12);font-size:14px;font-weight:600;color:var(--ink);z-index:1000;animation:slideDownFade 3s forwards}
+        @keyframes slideDownFade{0%{opacity:0;transform:translateX(-50%) translateY(-20px)}15%,85%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px);pointer-events:none}}
+        .toast-error{border-left-color:#dc2626}.toast-success{border-left-color:var(--green)}
+        .form-row{display:flex;gap:10px;margin:20px 0}
+        .form-row input{flex:1;padding:11px;border:1px solid var(--line);border-radius:9px}
+        .btn-primary{background:#0a9e54;color:#fff;border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer}
+        table{width:100%;border-collapse:collapse}
+        th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);font-size:14px}
+        th{background:#f8fafc;font-size:12.5px;font-weight:700}
+        .status-active{color:#176b30;background:#e9f8ee;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700}
+        .status-inactive{color:#a46e1c;background:#fff4df;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700}
+        .action-link{color:var(--green-dark);font-weight:600}
     </style>
 </head>
 <body>
-<header class="site-header"><div class="container header-inner"><a class="brand" th:href="@{/admin}"><span class="brand-mark">F</span><span><strong>FreshFruit</strong><small>HỆ THỐNG QUẢN TRỊ</small></span></a><a class="secondary-btn" th:href="@{/admin}">Bảng điều khiển</a></div></header>
-<main class="admin-main"><a th:href="@{/admin}" style="color:var(--green-dark);font-weight:700;text-decoration:none">← Quay lại</a>
-<div class="admin-card"><h1>Cấu hình danh mục</h1><p class="muted">Thêm danh mục trái cây có sẵn và bật/tắt danh mục sử dụng trên sàn.</p>
-<div class="toast-fixed toast-success" th:if="${success}" th:text="${success}"></div><div class="toast-fixed toast-error" th:if="${error}" th:text="${error}"></div>
-<form class="form-row" method="post" th:action="@{/admin/categories/create}"><input name="name" maxlength="100" placeholder="Ví dụ: Dâu tây" required><button class="btn btn-primary">+ Thêm danh mục</button></form>
-<table class="table"><thead><tr><th>ID</th><th>Tên danh mục</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
-<tr th:each="category : ${categories}"><td th:text="${category.id}">1</td><td th:text="${category.name}">Táo</td><td><span class="badge" th:classappend="${category.isActive} ? ' active' : ' inactive'" th:text="${category.isActive} ? 'Đang dùng' : 'Đã tắt'">Đang dùng</span></td><td><form method="post" th:action="@{/admin/categories/{id}/toggle(id=${category.id})}"><button class="btn" th:classappend="${category.isActive} ? ' btn-off' : ' btn-toggle'" th:text="${category.isActive} ? 'Tắt' : 'Bật'">Tắt</button></form></td></tr>
-</tbody></table></div></main>
+<div class="app-shell">
+    <aside th:replace="~{admin/fragments :: sidebar('categories')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Quản trị / <span>Cấu hình danh mục</span></p>
+                <h1>Cấu hình danh mục</h1>
+                <p class="muted">Thêm danh mục trái cây có sẵn và bật/tắt danh mục sử dụng trên sàn.</p>
+            </div>
+        </header>
+
+        <section class="panel">
+            <div class="toast-fixed toast-success" th:if="${success != null}" th:text="${success}"></div>
+            <div class="toast-fixed toast-error" th:if="${error != null}" th:text="${error}"></div>
+
+            <form class="form-row" method="post" th:action="@{/admin/categories/create}">
+                <input name="name" maxlength="100" placeholder="Ví dụ: Dâu tây" required>
+                <button class="btn-primary" type="submit">+ Thêm danh mục</button>
+            </form>
+
+            <table>
+                <thead><tr><th>ID</th><th>Tên danh mục</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                <tbody>
+                <tr th:each="category : ${categories}">
+                    <td th:text="${category.id}">1</td>
+                    <td th:text="${category.name}">Táo</td>
+                    <td><span th:class="${category.isActive} ? 'status-active' : 'status-inactive'" th:text="${category.isActive} ? 'ACTIVE' : 'INACTIVE'">ACTIVE</span></td>
+                    <td>
+                        <form method="post" th:action="@{/admin/categories/{id}/toggle(id=${category.id})}" style="margin:0">
+                            <button type="submit" class="action-link" style="background:none;border:0;padding:0;cursor:pointer;color:var(--green-dark);font-weight:600" th:text="${category.isActive} ? 'Disable' : 'Enable'">Disable</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
 </body></html>

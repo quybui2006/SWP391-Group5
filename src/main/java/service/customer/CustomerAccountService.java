@@ -26,9 +26,41 @@ public class CustomerAccountService {
         try {
             jdbc.execute("CREATE TABLE IF NOT EXISTS customer_profiles (user_id BIGINT PRIMARY KEY, gender VARCHAR(10), birth_date DATE, avatar MEDIUMBLOB, avatar_type VARCHAR(30), FOREIGN KEY(user_id) REFERENCES users(id))");
             jdbc.execute("CREATE TABLE IF NOT EXISTS customer_favorites (user_id BIGINT NOT NULL, variant_id BIGINT NOT NULL, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), PRIMARY KEY(user_id, variant_id), FOREIGN KEY(user_id) REFERENCES users(id), FOREIGN KEY(variant_id) REFERENCES product_variants(id))");
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_saved_vouchers (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, voucher_id BIGINT NOT NULL, saved_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), UNIQUE KEY uq_customer_saved_voucher (user_id, voucher_id), FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (voucher_id) REFERENCES vouchers(id))");
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_wallets (user_id BIGINT PRIMARY KEY, balance DECIMAL(19,0) NOT NULL DEFAULT 0, total_deposited DECIMAL(19,0) NOT NULL DEFAULT 0, total_refunded DECIMAL(19,0) NOT NULL DEFAULT 0, updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3))");
         } catch (Exception ignored) {
-            // Handled by database migrations V1
+            // Handled by database migrations.
         }
+    }
+
+    @Transactional
+    public void saveVoucher(Long userId, String voucherCode) {
+        int inserted = jdbc.update("INSERT IGNORE INTO customer_saved_vouchers(user_id,voucher_id) SELECT ?,v.id FROM vouchers v WHERE v.code=? AND v.is_public=1 AND v.status='ACTIVE' AND v.starts_at<=CURRENT_TIMESTAMP(3) AND v.ends_at>CURRENT_TIMESTAMP(3) AND v.used_count<v.max_usages", userId, voucherCode == null ? "" : voucherCode.trim().toUpperCase(java.util.Locale.ROOT));
+        if (inserted == 0) throw new IllegalArgumentException("Voucher không còn khả dụng để lưu.");
+    }
+
+    public List<Map<String,Object>> savedVouchers(Long userId) {
+        return jdbc.queryForList("SELECT v.id,v.code,v.name,v.voucher_type,v.discount_type,v.discount_value,v.max_discount_amount,v.min_order_value,v.starts_at,v.ends_at FROM customer_saved_vouchers sv JOIN vouchers v ON v.id=sv.voucher_id WHERE sv.user_id=? ORDER BY sv.saved_at DESC", userId);
+    }
+
+    public Map<String,Object> wallet(Long userId) {
+        jdbc.update("INSERT IGNORE INTO customer_wallets(user_id) VALUES (?)", userId);
+        return jdbc.queryForMap("SELECT balance,total_deposited,total_refunded FROM customer_wallets WHERE user_id=?", userId);
+    }
+
+    public List<Map<String,Object>> coinHistory(Long userId, String filter) {
+        String condition = switch (filter == null ? "all" : filter) {
+            case "received" -> " AND type='RECEIVED' AND status='ACTIVE'";
+            case "used" -> " AND ((type='USED') OR (type='EXPIRED') OR status='EXPIRED')";
+            default -> "";
+        };
+        jdbc.update("UPDATE customer_coin_transactions SET status='EXPIRED',type='EXPIRED' WHERE user_id=? AND status='ACTIVE' AND expires_at IS NOT NULL AND expires_at<=CURRENT_TIMESTAMP(3)", userId);
+        return jdbc.queryForList("SELECT amount,type,status,description,expires_at,created_at FROM customer_coin_transactions WHERE user_id=?" + condition + " ORDER BY created_at DESC", userId);
+    }
+
+    public long coinBalance(Long userId) {
+        Number value = jdbc.queryForObject("SELECT COALESCE(SUM(CASE WHEN type='RECEIVED' AND status='ACTIVE' THEN amount ELSE 0 END),0)-COALESCE(SUM(CASE WHEN type IN ('USED','EXPIRED') OR status='EXPIRED' THEN amount ELSE 0 END),0) FROM customer_coin_transactions WHERE user_id=?", Number.class, userId);
+        return value == null ? 0L : Math.max(0L, value.longValue());
     }
 
     public Map<String,Object> profile(Long userId) {

@@ -108,7 +108,12 @@ public class CustomerProductDetailController {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         model.addAttribute("shopVouchers", jdbc.queryForList(
                 "SELECT code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
-                        "FROM vouchers WHERE shop_id=? AND is_public=1 AND status='ACTIVE' " +
+                        "FROM vouchers WHERE shop_id=? AND voucher_type='DISCOUNT' AND is_public=1 AND status='ACTIVE' " +
+                        "AND starts_at<=? AND ends_at>? AND used_count<max_usages ORDER BY starts_at,id",
+                shopId, now, now));
+        model.addAttribute("shopCashbackVouchers", jdbc.queryForList(
+                "SELECT code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
+                        "FROM vouchers WHERE shop_id=? AND voucher_type='CASHBACK' AND is_public=1 AND status='ACTIVE' " +
                         "AND starts_at<=? AND ends_at>? AND used_count<max_usages ORDER BY starts_at,id",
                 shopId, now, now));
         // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)

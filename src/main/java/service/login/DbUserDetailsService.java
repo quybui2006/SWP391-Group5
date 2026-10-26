@@ -43,6 +43,7 @@ public class DbUserDetailsService implements UserDetailsService {
         String primaryRole = roleCodes.contains("ADMIN") ? "ADMIN"
                 : roleCodes.contains("OPERATIONS_MANAGER") ? "OPERATIONS_MANAGER"
                 : roleCodes.contains("CS_STAFF") ? "CS_STAFF"
+                : roleCodes.contains("DELIVERY_MANAGER") ? "DELIVERY_MANAGER"
                 : roleCodes.contains("SHOP_OWNER") ? "SHOP_OWNER"
                 : roleCodes.contains("CUSTOMER") ? "CUSTOMER" : "CUSTOMER";
 

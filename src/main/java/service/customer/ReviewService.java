@@ -56,14 +56,38 @@ public class ReviewService {
         if (rating == null || rating < 1 || rating > 5) {
             throw new IllegalArgumentException("Số sao phải từ 1 đến 5.");
         }
+        if (orderItemId == null || userId == null || variantId == null) {
+            throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm đã mua và giao thành công.");
+        }
+
         String safeContent = content == null ? "" : content.trim();
         if (safeContent.isEmpty()) throw new IllegalArgumentException("Nội dung đánh giá không được để trống.");
         if (safeContent.length() > 2000) throw new IllegalArgumentException("Nội dung đánh giá tối đa 2000 ký tự.");
-        if (reviewRepository.existsByOrderItemId(orderItemId)) throw new IllegalArgumentException("Sản phẩm trong đơn này đã được đánh giá.");
+
+        Long eligibleCount = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                JOIN checkouts c ON c.id = o.checkout_id
+                WHERE oi.id = ?
+                  AND oi.variant_id = ?
+                  AND c.user_id = ?
+                  AND o.status IN ('DELIVERED', 'COMPLETED')
+                  AND oi.reviewed_at IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.order_item_id = oi.id)
+                """, Long.class, orderItemId, variantId, userId);
+
+        if (eligibleCount == null || eligibleCount == 0) {
+            throw new IllegalArgumentException("Bạn chỉ có thể đánh giá sản phẩm đã mua và giao thành công.");
+        }
+
         Review review = new Review(variantId, userId, rating, safeContent);
         review.setOrderItemId(orderItemId);
         Review saved = reviewRepository.save(review);
-        jdbc.update("UPDATE order_items SET reviewed_at = CURRENT_TIMESTAMP(3) WHERE id=? AND variant_id=?", orderItemId, variantId);
+        int updated = jdbc.update("UPDATE order_items SET reviewed_at = CURRENT_TIMESTAMP(3) WHERE id=? AND variant_id=? AND reviewed_at IS NULL", orderItemId, variantId);
+        if (updated != 1) {
+            throw new IllegalArgumentException("Sản phẩm trong đơn này đã được đánh giá.");
+        }
         return saved;
     }
 

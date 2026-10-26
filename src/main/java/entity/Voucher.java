@@ -19,6 +19,7 @@ public class Voucher {
     @Column(name="max_usages", nullable=false) private Integer maxUsages;
     @Column(name="used_count", nullable=false) private Integer usedCount = 0;
     @Column(name="is_public", nullable=false) private Boolean isPublic = true;
+    @Column(name="voucher_type", nullable=false, length=20) private String voucherType = "DISCOUNT";
     @Column(nullable=false, length=20) private String status = "ACTIVE";
     @Column(name="starts_at", nullable=false) private LocalDateTime startsAt;
     @Column(name="ends_at", nullable=false) private LocalDateTime endsAt;
@@ -44,6 +45,7 @@ public class Voucher {
     public Integer getMaxUsages(){return maxUsages;} public void setMaxUsages(Integer v){maxUsages=v;}
     public Integer getUsedCount(){return usedCount;} public void setUsedCount(Integer v){usedCount=v;}
     public Boolean getIsPublic(){return isPublic;} public void setIsPublic(Boolean v){isPublic=v;}
+    public String getVoucherType(){return voucherType;} public void setVoucherType(String v){voucherType=v;}
     public String getStatus(){return status;} public void setStatus(String v){status=v;}
     public LocalDateTime getStartsAt(){return startsAt;} public void setStartsAt(LocalDateTime v){startsAt=v;}
     public LocalDateTime getEndsAt(){return endsAt;} public void setEndsAt(LocalDateTime v){endsAt=v;}

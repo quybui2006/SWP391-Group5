@@ -313,9 +313,21 @@
     </section>
 
 
-    <!-- =========================================================
-         6. SẮP XẾP & BỘ LỌC SẢN PHẨM (FILTER BAR SHOPEE)
-    ========================================================= -->
+    <section class="container shop-vouchers-section shop-cashback-section" th:if="${shopCashbackVouchers != null and !shopCashbackVouchers.empty}">
+        <div class="vouchers-header">
+            <div class="vouchers-title-box"><span class="voucher-kicker">ƯU ĐÃI ĐẶC BIỆT</span><h3>MÃ HOÀN XU CỦA SHOP</h3></div>
+            <span class="voucher-sub-text">Nhận thêm xu sau khi đơn hàng hoàn tất</span>
+        </div>
+        <div class="shop-vouchers-grid">
+            <div class="shop-voucher-ticket cashback-ticket" th:each="v : ${shopCashbackVouchers}">
+                <div class="voucher-ticket-left"><span class="voucher-badge-tag" th:text="${v.tag}">Hoàn xu</span><strong class="voucher-amount" th:text="${v.title}">Hoàn 5% xu</strong><span class="voucher-code" th:text="${v.code}">CASHBACK5</span></div>
+                <div class="voucher-ticket-divider"></div>
+                <div class="voucher-ticket-right"><div class="voucher-terms"><span class="term-condition" th:text="${v.condition}">Đơn tối thiểu 150k</span></div><button type="button" class="btn-save-voucher" th:attr="data-code=${v.code}" onclick="saveVoucher(this)">Lưu</button></div>
+            </div>
+        </div>
+    </section>
+
+
     <section class="container shop-sort-section">
         <div class="shop-sort-bar">
             <span class="sort-title">Sắp xếp theo:</span>

@@ -25,7 +25,7 @@ public class SecurityConfig {
                 // 2. Phân quyền truy cập các đường dẫn
                 .authorizeHttpRequests(auth -> auth
                         // Tài nguyên tĩnh công khai (CSS, JS, Ảnh, Data JSON)
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/data/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/data/**", "/uploads/**", "/favicon.ico").permitAll()
 
                         // Các trang công khai cho khách xem sản phẩm, cửa hàng và giỏ hàng
                         .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}").permitAll()
@@ -34,10 +34,12 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register/**", "/forgot-password/**", "/reset-password/**").permitAll()
 
                         // Phân quyền cho từng khu vực
-.requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
                         .requestMatchers("/shopowner/**", "/shop-owner/**").hasAnyRole("SHOP_OWNER", "ADMIN")
                         .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
+                        .requestMatchers("/cs/**").hasAnyRole("CS_STAFF", "OPERATIONS_MANAGER", "ADMIN")
+                        .requestMatchers("/delivery/**").hasAnyRole("DELIVERY_MANAGER", "ADMIN")
                         // Ops pages and approval APIs are restricted to Operations Manager.
                         .requestMatchers("/operations/**").hasRole("OPERATIONS_MANAGER")
 

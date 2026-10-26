@@ -91,4 +91,19 @@ public class AdminUserController {
             return "admin/user-create";
         }
     }
+
+    @PostMapping("/{id}/toggle-status")
+    public String toggleStatus(@PathVariable Long id, HttpSession session, RedirectAttributes ra) {
+        if (!checkAdmin(session)) return "redirect:/login";
+        try {
+            Object uid = session.getAttribute("userId");
+            Long adminId = uid instanceof Number num ? num.longValue() : null;
+            String newStatus = adminUserService.toggleUserStatus(id, adminId);
+            ra.addFlashAttribute("message",
+                    "LOCKED".equals(newStatus) ? "Đã khóa tài khoản." : "Đã mở khóa tài khoản.");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("message", e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
 }

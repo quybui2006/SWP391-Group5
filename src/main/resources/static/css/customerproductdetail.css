@@ -802,7 +802,9 @@ img {
     border-color: var(--green);
 }
 
-/* Insurance */
+.fresh-voucher-chip{display:inline-flex;align-items:center;gap:8px}.save-voucher-button{border:0;background:transparent;color:var(--green-dark);font-size:11px;font-weight:700;cursor:pointer;padding:0}.save-voucher-button:hover{text-decoration:underline}.save-voucher-button:disabled{opacity:.65;cursor:default}
+
+
 .insurance-badge {
     color: var(--green-dark);
     font-weight: 600;

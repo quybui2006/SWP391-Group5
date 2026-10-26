@@ -58,11 +58,16 @@
             <span>％</span> Khuyến mãi
         </a>
 
-        <a th:classappend="${activePage == 'vouchers'} ? ' active' : ''"
-           th:href="@{/shop/vouchers}"
-           aria-label="Quản lý Voucher">
-            <span aria-hidden="true">▣</span> Voucher
-        </a>
+        <div class="nav-expandable" th:classappend="${activePage == 'vouchers-discount' or activePage == 'vouchers-cashback'} ? ' expanded' : ''">
+            <a class="nav-expandable-toggle" th:classappend="${activePage == 'vouchers-discount' or activePage == 'vouchers-cashback'} ? ' active' : ''"
+               href="#voucher-submenu" aria-controls="voucher-submenu" aria-expanded="false" onclick="this.parentElement.classList.toggle('expanded'); return false;">
+                <span aria-hidden="true">▣</span> Voucher <b class="nav-chevron" aria-hidden="true">⌄</b>
+            </a>
+            <div id="voucher-submenu" class="nav-submenu">
+                <a th:classappend="${activePage == 'vouchers-discount'} ? ' active' : ''" th:href="@{/shop/vouchers}">Voucher giảm giá</a>
+                <a th:classappend="${activePage == 'vouchers-cashback'} ? ' active' : ''" th:href="@{/shop/vouchers/cashback}">Voucher hoàn xu</a>
+            </div>
+        </div>
 
 <!--        <a th:classappend="${activePage == 'reopen-request'} ? ' active' : ''"-->
 <!--           th:href="@{/shopowner/reopen-request}">-->

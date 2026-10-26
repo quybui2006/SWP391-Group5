@@ -59,6 +59,50 @@
                 <p class="order-notice" th:if="${order.status == 'CONFIRMED'}">Đơn đã được xác nhận và chuyển sang bước giao hàng.</p>
             </section>
         </div>
+
+        <!-- KHU VỰC KHIẾU NẠI & GIẢI TRÌNH CỦA SHOP (MÔ HÌNH TRANH CHẤP 3 BÊN) -->
+        <section class="panel" th:if="${orderComplaints != null and !#lists.isEmpty(orderComplaints)}"
+                 style="margin-top: 20px; border: 1px solid #fde68a; background: #fffdf5; padding: 20px; border-radius: 12px;">
+            <h2 style="margin: 0 0 12px; color: #92400e;">🎫 Khiếu nại / Tranh chấp trên đơn hàng này</h2>
+            <div th:each="cp : ${orderComplaints}" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                    <div>
+                        <strong style="color: #0284c7;" th:text="${cp['complaint_code']}">KN-001</strong>
+                        <span style="margin-left: 8px; font-weight: 600; color: #dc2626;" th:text="${'• ' + cp['reason_label']}"></span>
+                    </div>
+                    <span style="font-size: 12px; padding: 4px 10px; border-radius: 99px; font-weight: 700; background: #fef3c7; color: #b45309;"
+                          th:text="${cp['status_label']}"></span>
+                </div>
+                <strong style="display: block; margin-bottom: 4px;" th:text="${cp['title']}"></strong>
+                <p style="margin: 0 0 10px; font-size: 13.5px; color: #334155;" th:text="${cp['description']}"></p>
+
+                <div th:if="${cp['evidence_image_url'] != null}" style="margin-bottom: 10px;">
+                    <a th:href="${cp['evidence_image_url']}" target="_blank" style="font-size: 13px; color: #0284c7; font-weight: 600;">📷 Xem ảnh minh chứng khách gửi →</a>
+                </div>
+
+                <div th:if="${cp['shop_response'] != null}" style="background: #f8fafc; border-left: 3px solid #0284c7; padding: 8px 12px; font-size: 13px; margin-bottom: 10px;">
+                    <strong>Giải trình của Shop (<span th:text="${cp['shop_responded_at_fmt']}"></span>):</strong>
+                    <span th:text="${cp['shop_response']}"></span>
+                </div>
+
+                <div th:if="${cp['resolution_note'] != null}" style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; font-size: 13px; margin-bottom: 10px;">
+                    <strong>🎧 Quyết định của CSKH (<span th:text="${cp['resolution_label']}"></span>):</strong>
+                    <span th:text="${cp['resolution_note']}"></span>
+                </div>
+
+                <form th:if="${cp['status'] == 'PENDING' or cp['status'] == 'IN_PROGRESS'}"
+                      th:action="@{/shopowner/orders/{oid}/complaints/{cid}/respond(oid=${order.id},cid=${cp['id']})}"
+                      method="post" style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" name="shopResponse" required minlength="5" maxlength="1500"
+                           th:value="${cp['shop_response']}"
+                           placeholder="Nhập phản hồi / phương án hỗ trợ của Shop (ví dụ: Đồng ý gửi bù 1kg mới hoặc giải trình quy cách đóng gói)..."
+                           style="flex: 1; min-width: 260px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px;">
+                    <button type="submit" style="background: #16a34a; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                        Gửi giải trình tới CSKH
+                    </button>
+                </form>
+            </div>
+        </section>
     </main>
 </div>
 </body>

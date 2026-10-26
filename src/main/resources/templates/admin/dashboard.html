@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển sàn | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin:24px 0}
+        .stat-box{border:1px solid var(--line);border-radius:14px;padding:22px;background:#fafdfa}
+        .stat-box strong{display:block;font-size:30px;color:var(--ink);margin:6px 0 0}
+        .stat-box span{color:var(--muted);font-size:13px;font-weight:600}
+        .stat-highlight{background:var(--green-light);border-color:#cfe4d2}.stat-highlight strong{color:var(--green-dark)}
+        .section-title{font-size:18px;margin:28px 0 14px;color:var(--ink)}
+        .small-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+        .small-box{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fafbfb}.small-box strong{font-size:20px}
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{admin/fragments :: sidebar('dashboard')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Quản trị / <span>Bảng điều khiển sàn</span></p>
+                <h1>Bảng điều khiển sàn</h1>
+                <p class="muted">Tổng quan thống kê toàn hệ thống FreshFruit.</p>
+            </div>
+        </header>
+
+        <section class="panel">
+            <h3 class="section-title" style="margin-top:0">Chỉ số chính</h3>
+            <div class="stat-grid">
+                <div class="stat-box stat-highlight"><span>GMV (Tổng giá trị giao dịch)</span><strong th:text="${#numbers.formatInteger(stats.gmv,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="stat-box"><span>Tổng đơn hàng</span><strong th:text="${stats.totalOrders}">0</strong></div>
+                <div class="stat-box"><span>Đơn hoàn thành</span><strong th:text="${stats.completedOrders}">0</strong></div>
+                <div class="stat-box"><span>Shop hoạt động</span><strong th:text="${stats.activeShops + '/' + stats.totalShops}">0</strong></div>
+                <div class="stat-box"><span>Khách hàng</span><strong th:text="${stats.customers}">0</strong></div>
+            </div>
+            <h3 class="section-title">Tài chính phí sàn</h3>
+            <div class="small-grid">
+                <div class="small-box"><span>Tổng phí đã thu</span><strong th:text="${#numbers.formatInteger(stats.totalFees,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="small-box"><span>Đã thanh toán</span><strong th:text="${#numbers.formatInteger(stats.paidFees,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="small-box"><span>Chờ thanh toán</span><strong th:text="${#numbers.formatInteger(stats.unpaidFees,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+            </div>
+            <h3 class="section-title">Đơn hàng 7 ngày qua</h3>
+            <div class="small-grid">
+                <div class="small-box"><span>Tổng đơn</span><strong th:text="${recent.total_7d}">0</strong></div>
+                <div class="small-box"><span>Hoàn thành</span><strong th:text="${recent.completed_7d}">0</strong></div>
+                <div class="small-box"><span>Đang chờ</span><strong th:text="${recent.pending_7d}">0</strong></div>
+            </div>
+        </section>
+    </main>
+</div>
+</body></html>
