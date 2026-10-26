@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{cs/layout :: head('Tổng quan CSKH & Báo cáo Tranh chấp')}"></head>
+<head th:replace="~{cs/layout :: head('Tổng quan CSKH')}"></head>
 <body>
 
 <aside th:replace="~{cs/layout :: sidebar('dashboard')}"></aside>
@@ -8,12 +8,12 @@
 <div class="cs-main-wrapper">
     <header class="cs-topbar">
         <div>
-            <h1>Bàn làm việc Chăm sóc Khách hàng & Báo cáo Khiếu nại</h1>
-            <p class="cs-topbar-subtitle">Giám sát SLA, giải quyết khiếu nại 2 tầng, kiểm duyệt đánh giá và cảnh báo vi phạm đối tác.</p>
+            <h1>Tổng quan CSKH</h1>
+            <p class="cs-topbar-subtitle">Theo dõi xử lý khiếu nại, giám sát SLA và đánh giá đối tác.</p>
         </div>
         <div style="display: flex; gap: 10px;">
             <a th:href="@{/cs/tickets(status='ESCALATED')}" class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; border-color: var(--cs-primary);">
-                ⚖️ Cần CSKH phân xử (<span th:text="${disputeReport['inProgressDisputes']}">0</span>)
+                ⚖️ Cần phân xử (<span th:text="${disputeReport['inProgressDisputes']}">0</span>)
             </a>
             <a th:href="@{/cs/reviews}" class="btn-cs-sm" style="color: #d97706; border-color: #fde68a; background: #fffbeb;">
                 ⭐ Duyệt đánh giá (<span th:text="${moderationMetrics['pendingReviews']}">0</span>)
@@ -34,7 +34,7 @@
                 </div>
                 <div class="cs-stat-value" style="color: #d97706;" th:text="${disputeReport['pendingDisputes']}">0</div>
                 <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
-                    Đang trong SLA 6h của Shop
+                    Hạn SLA 6h của Shop
                 </small>
             </a>
 
@@ -45,13 +45,13 @@
                 </div>
                 <div class="cs-stat-value" style="color: #0284c7;" th:text="${disputeReport['inProgressDisputes']}">0</div>
                 <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
-                    Đã giải quyết: <strong th:text="${disputeReport['resolvedDisputes']}">0</strong> vụ
+                    Đã giải quyết: <strong th:text="${disputeReport['resolvedDisputes']}">0</strong>
                 </small>
             </a>
 
             <a th:href="@{/cs/tickets(overdue=true)}" class="cs-stat-card" style="text-decoration: none; color: inherit;">
                 <div class="cs-stat-header">
-                    <span class="cs-stat-title">Quá hạn xử lý SLA</span>
+                    <span class="cs-stat-title">Quá hạn SLA</span>
                     <span class="cs-stat-icon" style="background: #fef2f2; color: #dc2626;">🚨</span>
                 </div>
                 <div class="cs-stat-value" style="color: #dc2626;" th:text="${csSlaReport['overdueActiveTickets']}">0</div>
@@ -67,19 +67,18 @@
                 </div>
                 <div class="cs-stat-value" style="color: #16a34a;" th:text="${moderationMetrics['pendingReviews']}">0</div>
                 <small style="color: var(--cs-text-sub); font-size: 12px; margin-top: 4px; display: block;">
-                    Đánh giá 1-2★: <strong style="color:#dc2626;" th:text="${moderationMetrics['lowRatingReviews']}">0</strong>
+                    1-2★: <strong style="color:#dc2626;" th:text="${moderationMetrics['lowRatingReviews']}">0</strong>
                 </small>
             </a>
         </div>
 
-        <!-- 2. BÁO CÁO TRANH CHẤP & SLA CSKH + CƠ CẤU KHIẾU NẠI (CHUYỂN TỪ OPERATIONS SANG) -->
+        <!-- 2. BÁO CÁO TRANH CHẤP & CƠ CẤU KHIẾU NẠI -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
             <!-- Box 1: SLA & Hiệu suất Giải quyết CSKH -->
             <div class="cs-card" style="margin-bottom: 0;">
                 <div class="cs-card-header">
                     <div>
-                        <h2 class="cs-card-title"><span>⚖️</span> Báo cáo Tranh chấp &amp; SLA CSKH</h2>
-                        <span style="font-size: 12px; color: var(--cs-text-sub);">Đo lường thời gian xử lý, tuân thủ hạn mức SLA và tỷ lệ giải quyết</span>
+                        <h2 class="cs-card-title"><span>⚖️</span> Báo cáo Tranh chấp &amp; SLA</h2>
                     </div>
                     <a th:href="@{/cs/tickets}" style="font-size: 13px; color: #0284c7; text-decoration: none; font-weight: 600;">Xem tất cả →</a>
                 </div>
@@ -92,7 +91,7 @@
                         </div>
                     </div>
                     <div style="background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 9px; padding: 12px;">
-                        <span style="font-size: 11.5px; color: #166534; font-weight: 600;">Tỷ lệ đạt chuẩn SLA</span>
+                        <span style="font-size: 11.5px; color: #166534; font-weight: 600;">Đúng hạn SLA</span>
                         <div style="font-size: 20px; font-weight: 800; color: #15803d; margin-top: 4px;">
                             <span th:text="${csSlaReport.slaComplianceRate}">100</span>%
                         </div>
@@ -101,30 +100,29 @@
 
                 <div style="display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; border-top: 1px solid var(--cs-border); padding-top: 12px;">
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--cs-text-sub);">Khiếu nại tồn đọng quá hạn SLA:</span>
+                        <span style="color: var(--cs-text-sub);">Hồ sơ quá hạn SLA:</span>
                         <strong style="color: #dc2626;" th:text="${csSlaReport.overdueActiveTickets + ' vụ việc'}">0 vụ việc</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--cs-text-sub);">Tỷ lệ giải quyết tranh chấp:</span>
+                        <span style="color: var(--cs-text-sub);">Tỷ lệ giải quyết:</span>
                         <strong style="color: #15803d;" th:text="${disputeReport.resolutionRatePct + '%'}">100%</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--cs-text-sub);">Tỷ lệ đơn hàng phát sinh khiếu nại:</span>
+                        <span style="color: var(--cs-text-sub);">Tỷ lệ đơn phát sinh khiếu nại:</span>
                         <strong th:text="${disputeReport.disputeRatePct + '%'}">0.0%</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--cs-text-sub);">Lỗi do đối tác Cửa hàng gây ra:</span>
+                        <span style="color: var(--cs-text-sub);">Lỗi do Cửa hàng:</span>
                         <strong style="color: #dc2626;" th:text="${disputeReport.shopFaultDisputes + ' / ' + disputeReport.totalDisputes + ' vụ'}">0/0</strong>
                     </div>
                 </div>
             </div>
 
-            <!-- Box 2: Phân tích Cơ cấu Khiếu nại & Biện pháp Đền bù -->
+            <!-- Box 2: Phân tích Cơ cấu Khiếu nại -->
             <div class="cs-card" style="margin-bottom: 0;">
                 <div class="cs-card-header">
                     <div>
-                        <h2 class="cs-card-title"><span>📊</span> Phân tích Cơ cấu Khiếu nại</h2>
-                        <span style="font-size: 12px; color: var(--cs-text-sub);">Nhóm nguyên nhân tranh chấp & phương án đền bù thực tế</span>
+                        <h2 class="cs-card-title"><span>📊</span> Cơ cấu Khiếu nại</h2>
                     </div>
                     <span class="badge-status badge-info" th:text="${'Tổng ' + disputeReport.totalDisputes + ' khiếu nại'}">0</span>
                 </div>
@@ -132,7 +130,7 @@
                 <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px;">
                     <!-- Theo nhóm lý do -->
                     <div>
-                        <div style="font-size: 12px; font-weight: 700; color: var(--cs-text-main); margin-bottom: 8px;">Theo nhóm nguyên nhân</div>
+                        <div style="font-size: 12px; font-weight: 700; color: var(--cs-text-main); margin-bottom: 8px;">Theo nguyên nhân</div>
                         <div th:if="${#lists.isEmpty(disputeReport.byReason)}" style="font-size: 12px; color: var(--cs-text-sub);">Chưa có dữ liệu.</div>
                         <div th:each="r : ${disputeReport.byReason}" style="margin-bottom: 8px;">
                             <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px;">
@@ -147,14 +145,14 @@
 
                     <!-- Theo phương án xử lý -->
                     <div style="background: #f8fafc; border: 1px solid var(--cs-border); border-radius: 8px; padding: 12px;">
-                        <div style="font-size: 12px; font-weight: 700; color: var(--cs-text-main); margin-bottom: 8px;">Phương án giải quyết</div>
+                        <div style="font-size: 12px; font-weight: 700; color: var(--cs-text-main); margin-bottom: 8px;">Phương án xử lý</div>
                         <div th:if="${#lists.isEmpty(disputeReport.byResolution)}" style="font-size: 12px; color: var(--cs-text-sub);">Chưa có hồ sơ đóng.</div>
                         <div th:each="res : ${disputeReport.byResolution}" style="display: flex; justify-content: space-between; font-size: 11.5px; padding: 4px 0; border-bottom: 1px dashed #e2e8f0;">
-                            <span th:text="${res.label}">Đền bù điểm</span>
+                            <span th:text="${res.label}">Đền bù</span>
                             <strong style="color: #15803d;" th:text="${res.count}">0</strong>
                         </div>
                         <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 2px;">
-                            <span style="color: var(--cs-text-sub); font-size: 11px;">Tổng Điểm thưởng đã hoàn:</span>
+                            <span style="color: var(--cs-text-sub); font-size: 11px;">Tổng điểm thưởng đã bồi hoàn:</span>
                             <strong style="color: #0284c7; font-size: 14px;" th:text="${'+' + #numbers.formatInteger(disputeReport.totalCompensatedPoints, 1, 'COMMA') + ' điểm'}">+0 điểm</strong>
                         </div>
                     </div>
@@ -162,12 +160,11 @@
             </div>
         </div>
 
-        <!-- 3. BẢNG CẢNH BÁO VI PHẠM GIAN HÀNG TỰ ĐỘNG (VIOLATION ALERTS - CHUYỂN TỪ OPERATIONS SANG) -->
+        <!-- 3. BẢNG CẢNH BÁO VI PHẠM GIAN HÀNG -->
         <div class="cs-card" style="margin-bottom: 24px;" th:if="${violationAlerts != null}">
             <div class="cs-card-header">
                 <div>
-                    <h2 class="cs-card-title"><span>🚨</span> Cảnh báo Vi phạm Gian hàng Tự động (Violation Alerts)</h2>
-                    <span style="font-size: 12px; color: var(--cs-text-sub);">Hệ thống tự động tính điểm rủi ro từ: Khiếu nại lỗi Shop, Đánh giá 1-2★ và Đơn giao thất bại</span>
+                    <h2 class="cs-card-title"><span>🚨</span> Cảnh báo Vi phạm Gian hàng</h2>
                 </div>
                 <span class="badge-status badge-danger" th:if="${!#lists.isEmpty(violationAlerts)}" th:text="${#lists.size(violationAlerts) + ' gian hàng rủi ro'}">0 rủi ro</span>
             </div>
@@ -178,11 +175,11 @@
                     <tr>
                         <th>CỬA HÀNG</th>
                         <th>TRẠNG THÁI</th>
-                        <th>KHIẾU NẠI (LỖI SHOP)</th>
+                        <th>LỖI SHOP</th>
                         <th>ĐÁNH GIÁ 1-2★</th>
                         <th>ĐƠN THẤT BẠI</th>
-                        <th>ĐIỂM RỦI RO &amp; MỨC ĐỘ</th>
-                        <th>KHUYẾN NGHỊ VẬN HÀNH</th>
+                        <th>RỦI RO</th>
+                        <th>KHUYẾN NGHỊ</th>
                         <th style="text-align: right;">HÀNH ĐỘNG</th>
                     </tr>
                     </thead>
@@ -228,93 +225,6 @@
             </div>
         </div>
 
-        <!-- 4. DANH SÁCH KHIẾU NẠI MỚI NHẤT & TỰ ĐỘNG PHÁT HIỆN ĐƠN LỖI (AUTO-ASSIST) -->
-        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start;">
-
-            <!-- Khiếu nại gần đây -->
-            <div class="cs-card" style="margin-bottom: 0;">
-                <div class="cs-card-header">
-                    <h2 class="cs-card-title"><span>🎫</span> Khiếu nại mới nhất</h2>
-                    <a th:href="@{/cs/tickets}" style="font-size: 13px; color: #0284c7; text-decoration: none; font-weight: 600;">Xem toàn bộ →</a>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="cs-table">
-                        <thead>
-                        <tr>
-                            <th>Mã phiếu</th>
-                            <th>Khách hàng</th>
-                            <th>Cửa hàng</th>
-                            <th>Thời hạn</th>
-                            <th>Trạng thái</th>
-                            <th></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="cp : ${recentComplaints}">
-                            <td>
-                                <strong style="color: #0284c7;" th:text="${cp['complaint_code']}">KN-001</strong>
-                                <small style="display:block;color:#64748b;" th:text="${cp['order_code']}"></small>
-                            </td>
-                            <td th:text="${cp['customer_name']}">Khách</td>
-                            <td th:text="${cp['shop_name']}">Shop</td>
-                            <td>
-                                <span style="font-size: 12px; font-weight: 700;"
-                                      th:styleappend="${cp['sla_state'] == 'OVERDUE'} ? 'color:#dc2626;' : 'color:#15803d;'"
-                                      th:text="${cp['sla_badge_text']}"></span>
-                            </td>
-                            <td>
-                                <span th:if="${cp['status'] == 'PENDING_SHOP' or cp['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ Shop xử lý</span>
-                                <span th:if="${cp['status'] == 'ESCALATED' or cp['status'] == 'IN_PROGRESS'}" class="badge-status badge-info">CSKH phân xử</span>
-                                <span th:if="${cp['status'] == 'RESOLVED'}" class="badge-status badge-success">Đã giải quyết</span>
-                                <span th:if="${cp['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
-                                <span th:if="${cp['status'] == 'CANCELLED'}" class="badge-status" style="background:#f1f5f9; color:#64748b;">Đã hủy</span>
-                            </td>
-                            <td style="text-align: right;">
-                                <a th:href="@{/cs/tickets/{id}(id=${cp['id']})}" class="btn-cs-sm">Xử lý →</a>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(recentComplaints)}">
-                            <td colspan="6" style="text-align: center; color: #94a3b8; padding: 24px;">Chưa có yêu cầu khiếu nại nào.</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tự động phát hiện sự cố đơn hàng chưa có phiếu (1-Click Auto Create Ticket) -->
-            <div class="cs-card" style="margin-bottom: 0;">
-                <div class="cs-card-header">
-                    <h2 class="cs-card-title"><span>⚡</span> Tự động phát hiện đơn gặp sự cố</h2>
-                    <span style="font-size: 11.5px; color: #64748b;">1-Click tạo phiếu</span>
-                </div>
-                <p style="margin: -6px 0 12px; font-size: 12px; color: var(--cs-text-sub);">
-                    Hệ thống tự động phát hiện đơn giao thất bại hoặc bị hủy chưa có phiếu khiếu nại.
-                </p>
-
-                <div th:each="iss : ${autoSuggestIssues}" style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                    <div>
-                        <strong style="color: #0284c7;" th:text="${iss['order_code']}">FF-123</strong>
-                        <span style="font-size: 12px; color: #334155;" th:text="${'• ' + iss['recipient_name'] + ' (' + iss['shop_name'] + ')'}"></span>
-                        <div style="font-size: 11.5px; color: #dc2626; margin-top: 2px;"
-                             th:text="${iss['delivery_failure_reason'] ?: (iss['cancellation_reason'] ?: 'Sự cố giao hàng / hủy đơn')}"></div>
-                    </div>
-                    <form th:action="@{/cs/tickets/create}" method="post" style="margin: 0; flex-shrink: 0;">
-                        <input type="hidden" name="orderCode" th:value="${iss['order_code']}">
-                        <input type="hidden" name="reasonType" value="DELIVERY_OR_SERVICE">
-                        <input type="hidden" name="sourceType" value="AUTO_SYSTEM">
-                        <input type="hidden" name="title" th:value="${'Hỗ trợ sự cố đơn hàng ' + iss['order_code']}">
-                        <input type="hidden" name="description" th:value="${'Hệ thống tự động khởi tạo phiếu hỗ trợ từ sự cố: ' + (iss['delivery_failure_reason'] ?: (iss['cancellation_reason'] ?: 'Giao hàng không thành công'))}">
-                        <button type="submit" class="btn-cs-sm" style="background: #f0fdf4; color: #15803d; border-color: #bbf7d0; cursor: pointer;">
-                            ⚡ Tạo phiếu
-                        </button>
-                    </form>
-                </div>
-
-                <div th:if="${#lists.isEmpty(autoSuggestIssues)}" style="text-align: center; color: #94a3b8; padding: 20px 0; font-size: 13px;">
-                    🎉 Tất cả đơn sự cố đều đã có phiếu hỗ trợ!
-                </div>
-            </div>
-        </div>
     </main>
 </div>
 

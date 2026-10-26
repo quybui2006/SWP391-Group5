@@ -104,7 +104,7 @@
                     <a class="btn-primary-sm"
                        th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
                        th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Đánh giá</a>
-                    <a th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED' or o['status'] == 'SHIPPING' or o['status'] == 'CANCELLED'}"
+                    <a th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
                        th:href="@{'/customer/account/orders/' + ${o['id']} + '#complaint-section'}"
                        style="display:inline-block; padding:8px 16px; border:1px solid #fecaca; border-radius:8px; font-size:13px; font-weight:700; color:#dc2626; background:#fef2f2; text-decoration:none;">
                         ⚠️ Khiếu nại

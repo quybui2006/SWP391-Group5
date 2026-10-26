@@ -195,12 +195,15 @@ public class CsStaffController {
             @RequestParam String resolutionNote,
             @RequestParam(required = false) Long finalRefundAmount,
             @RequestParam(required = false) Long compensatedPoints,
+            @RequestParam(defaultValue = "SHOP") String faultParty,
+            @RequestParam(defaultValue = "false") boolean giftFreeShipping,
             @RequestParam(defaultValue = "false") boolean isShopFault,
             @RequestParam(defaultValue = "false") boolean escalateToOps,
             HttpSession session,
             RedirectAttributes redirect) {
         try {
             Long refundAmount = finalRefundAmount != null ? finalRefundAmount : compensatedPoints;
+            boolean shopFault = "SHOP".equalsIgnoreCase(faultParty) || isShopFault;
             complaintService.resolveComplaint(
                     id,
                     currentStaffId(session),
@@ -208,11 +211,15 @@ public class CsStaffController {
                     resolutionType,
                     resolutionNote,
                     refundAmount,
-                    isShopFault,
+                    shopFault,
+                    faultParty,
+                    giftFreeShipping,
                     escalateToOps);
             redirect.addFlashAttribute("message", "Đã lưu quyết định xử lý khiếu nại và gửi thông báo tới các bên liên quan!");
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Lỗi xử lý khiếu nại: " + ex.getMessage());
         }
         return "redirect:/cs/tickets/" + id;
     }
