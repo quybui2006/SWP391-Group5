@@ -22,8 +22,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -107,15 +109,25 @@ public class CustomerProductDetailController {
         model.addAttribute("canReview", isCustomer && reviewService.canReview(id, currentUserId));
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         model.addAttribute("shopVouchers", jdbc.queryForList(
-                "SELECT code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
+                "SELECT id,code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
                         "FROM vouchers WHERE shop_id=? AND voucher_type='DISCOUNT' AND is_public=1 AND status='ACTIVE' " +
                         "AND starts_at<=? AND ends_at>? AND used_count<max_usages ORDER BY starts_at,id",
                 shopId, now, now));
         model.addAttribute("shopCashbackVouchers", jdbc.queryForList(
-                "SELECT code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
+                "SELECT id,code,name,discount_type,discount_value,max_discount_amount,min_order_value " +
                         "FROM vouchers WHERE shop_id=? AND voucher_type='CASHBACK' AND is_public=1 AND status='ACTIVE' " +
                         "AND starts_at<=? AND ends_at>? AND used_count<max_usages ORDER BY starts_at,id",
                 shopId, now, now));
+
+        Set<Long> savedVoucherIds = new HashSet<>();
+        if (isCustomer && shopId != null) {
+            savedVoucherIds.addAll(jdbc.queryForList(
+                    "SELECT v.id FROM customer_saved_vouchers sv " +
+                            "JOIN vouchers v ON v.id=sv.voucher_id " +
+                            "WHERE sv.user_id=? AND v.shop_id=?",
+                    Long.class, currentUserId, shopId));
+        }
+        model.addAttribute("savedVoucherIds", savedVoucherIds);
         // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)
         List<ProductVariant> allActiveVariants = productVariantRepository.findApprovedActiveForCatalog();
         List<ProductVariant> relatedProducts = allActiveVariants.stream()

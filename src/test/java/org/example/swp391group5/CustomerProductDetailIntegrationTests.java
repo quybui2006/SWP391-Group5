@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -76,6 +77,26 @@ class CustomerProductDetailIntegrationTests {
                 .andExpect(content().string(containsString("Thêm Vào Giỏ Hàng")))
                 .andExpect(content().string(containsString("Mua Ngay")))
                 .andExpect(content().string(containsString("FreshFruit Đảm Bảo")));
+    }
+
+    @Test
+    void productDetailPage_DoesNotOfferAlreadySavedVoucher() throws Exception {
+        Long variantId = seedProduct();
+        long customerId = jdbc.queryForObject("SELECT id FROM users WHERE email='shopee.owner@freshfruit.example'", Long.class);
+        long shopId = jdbc.queryForObject("SELECT shop_id FROM product_variants WHERE id=?", Long.class, variantId);
+        jdbc.update("INSERT INTO vouchers(shop_id,code,name,discount_type,discount_value,max_usages,starts_at,ends_at) VALUES (?,?,'Đã lưu','PERCENTAGE',10,10,CURRENT_TIMESTAMP(3),DATEADD('DAY',1,CURRENT_TIMESTAMP(3)))", shopId, "SAVED10");
+        long voucherId = jdbc.queryForObject("SELECT id FROM vouchers WHERE shop_id=? AND code='SAVED10'", Long.class, shopId);
+        jdbc.update("INSERT INTO customer_saved_vouchers(user_id,voucher_id) VALUES (?,?)", customerId, voucherId);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", customerId);
+        session.setAttribute("role", "CUSTOMER");
+
+        mvc.perform(get("/product/" + variantId).session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("SAVED10")))
+                .andExpect(content().string(containsString("Đã lưu")))
+                .andExpect(content().string(not(containsString("data-voucher-id=\"" + voucherId + "\" onclick"))));
     }
 
     @Test

@@ -52,29 +52,25 @@ public class CheckoutController {
                 .map(item -> ((BigDecimal) item.get("price")).multiply(BigDecimal.valueOf(((Number) item.get("quantity")).longValue())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<Long, String> codes = voucherCodes(params, "voucherCode_");
-        Map<Long, String> cashbackCodes = voucherCodes(params, "cashbackCode_");
+        Map<Long, String> codes = voucherCodes(params);
         Map<Long, Map<String, Object>> checkoutShops = new java.util.LinkedHashMap<>();
         items.forEach(item -> {
             Long shopId = ((Number) item.get("shop_id")).longValue();
             Map<String, Object> shop = checkoutShops.computeIfAbsent(shopId, ignored -> {
                 Map<String, Object> value = new java.util.LinkedHashMap<>();
                 value.put("shopId", shopId); value.put("shopName", item.get("shop_name"));
-                value.put("subtotal", BigDecimal.ZERO); value.put("discount", BigDecimal.ZERO); value.put("code", codes.getOrDefault(shopId, "")); value.put("cashbackCode", cashbackCodes.getOrDefault(shopId, ""));
+                value.put("subtotal", BigDecimal.ZERO); value.put("discount", BigDecimal.ZERO); value.put("code", codes.getOrDefault(shopId, ""));
                 return value;
             });
             BigDecimal line = ((BigDecimal) item.get("price")).multiply(BigDecimal.valueOf(((Number) item.get("quantity")).longValue()));
             shop.put("subtotal", ((BigDecimal) shop.get("subtotal")).add(line));
         });
         BigDecimal voucherDiscount = BigDecimal.ZERO;
-        long cashbackPoints = 0L;
         for (Map.Entry<Long, Map<String, Object>> entry : checkoutShops.entrySet()) {
             Map<String, Object> shop = entry.getValue();
             var quote = checkout.previewVoucher(entry.getKey(), (String) shop.get("code"), (BigDecimal) shop.get("subtotal"));
-            var cashback = checkout.previewCashback(entry.getKey(), (String) shop.get("cashbackCode"), (BigDecimal) shop.get("subtotal"));
             shop.put("discount", quote.discount()); shop.put("voucherError", quote.error());
-            shop.put("cashbackPoints", cashback.points()); shop.put("cashbackError", cashback.error());
-            voucherDiscount = voucherDiscount.add(quote.discount()); cashbackPoints += cashback.points();
+            voucherDiscount = voucherDiscount.add(quote.discount());
         }
 
         model.addAttribute("checkoutItems", items);
@@ -84,7 +80,6 @@ public class CheckoutController {
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("checkoutShops", checkoutShops.values());
         model.addAttribute("voucherDiscount", voucherDiscount);
-        model.addAttribute("cashbackPoints", cashbackPoints);
         model.addAttribute("guest", userId == null);
 
         BigDecimal shippingFee = new BigDecimal("20000").multiply(BigDecimal.valueOf(items.stream()
@@ -94,7 +89,7 @@ public class CheckoutController {
         return "customer/checkout";
     }
 
-        @PostMapping("/order/submit")
+    @PostMapping("/order/submit")
     public String submitOrder(
             @RequestParam("selectedVariantIds") List<Long> selectedVariantIds,
             @RequestParam(value = "addressId", required = false) Long addressId,
@@ -119,7 +114,7 @@ public class CheckoutController {
                 Map<Long, Integer> guest = guestCart(session);
                 var guestResult = checkout.placeGuestOrder(guest, selectedVariantIds,
                         params.getFirst("guestEmail"), recipientName, recipientPhone, provinceCode,
-                        wardName, addressDetail, customerNote, voucherCodes(params, "voucherCode_"), voucherCodes(params, "cashbackCode_"));
+                        wardName, addressDetail, customerNote, voucherCodes(params));
                 result = guestResult.checkout();
                 selectedVariantIds.forEach(guest::remove);
                 session.setAttribute("guestCart", guest);
@@ -127,7 +122,7 @@ public class CheckoutController {
             } else {
                 result = checkout.placeOrder(userId, selectedVariantIds, addressId, recipientName,
                         recipientPhone, provinceCode, wardName, addressDetail, customerNote,
-                        paymentMethod, voucherCodes(params, "voucherCode_"), voucherCodes(params, "cashbackCode_"));
+                        paymentMethod, voucherCodes(params));
             }
 
             // Nếu chọn VNPay -> Chuyển hướng sang cổng VNPay Sandbox
@@ -153,14 +148,14 @@ public class CheckoutController {
         }
     }
 
-    private Map<Long, String> voucherCodes(MultiValueMap<String, String> params, String prefix) {
+    private Map<Long, String> voucherCodes(MultiValueMap<String, String> params) {
         Map<Long, String> codes = new HashMap<>();
         if (params == null) return codes;
         params.forEach((key, values) -> {
-            if (key.startsWith(prefix)) {
+            if (key.startsWith("voucherCode_")) {
                 try {
                     String value = values == null || values.isEmpty() ? "" : values.get(0);
-                    if (!value.isBlank()) codes.put(Long.parseLong(key.substring(prefix.length())), value);
+                    if (!value.isBlank()) codes.put(Long.parseLong(key.substring("voucherCode_".length())), value);
                 } catch (NumberFormatException ignored) { }
             }
         });
