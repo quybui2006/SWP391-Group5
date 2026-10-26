@@ -3,7 +3,6 @@ package service.operations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import service.complaint.ComplaintService;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -12,11 +11,9 @@ import java.util.*;
 public class OperationsDashboardService {
 
     private final JdbcTemplate jdbc;
-    private final ComplaintService complaintService;
 
-    public OperationsDashboardService(JdbcTemplate jdbc, ComplaintService complaintService) {
+    public OperationsDashboardService(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
-        this.complaintService = complaintService;
     }
 
     @Transactional(readOnly = true)
@@ -31,9 +28,6 @@ public class OperationsDashboardService {
 
         // 3. SLA giao hàng
         data.put("deliverySla", getDeliverySlaMetrics());
-
-        // 4. Dispute Reports, Customer Service SLA Reports, Content Moderation Metrics & Violation Alerts
-        data.putAll(complaintService.getAnalyticsAndReports());
 
         return data;
     }

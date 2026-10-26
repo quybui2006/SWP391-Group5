@@ -515,7 +515,6 @@
                 <td th:text="${#temporals.format(ord['created_at'], 'dd/MM/yyyy HH:mm')}">22/10/2026</td>
                 <td style="max-width: 280px;" th:text="${ord['full_address']}">Hà Nội</td>
                 <td>
-                    <!-- Cập nhật lại nhãn Cần thu: Chỉ báo Không thu tiền đối với VNPAY -->
                     <span class="price-amount" th:text="${#numbers.formatDecimal(ord['total_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
                     <span class="pay-badge pay-vnpay" th:if="${ord['is_vnpay'] == true}">VNPAY • Không thu tiền</span>
                     <span class="pay-badge pay-cod" th:if="${ord['is_vnpay'] != true}">COD • Thu tiền mặt</span>
@@ -543,10 +542,11 @@
 
                     <!-- Đang giao hàng (SHIPPING) -->
                     <div class="action-btns" th:if="${ord['ui_status'] == 'SHIPPING'}">
-                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return confirm('Xác nhận đã giao đơn hàng này thành công?');">
+                        <!-- Sử dụng trạng thái DELIVERED theo logic mới của nhánh develop -->
+                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return confirm('Xác nhận đã giao đơn hàng này thành công cho khách?');">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
-                            <input type="hidden" name="newStatus" value="COMPLETED">
-                            <button type="submit" class="btn-action btn-complete">✔ Giao thành công</button>
+                            <input type="hidden" name="newStatus" value="DELIVERED">
+                            <button type="submit" class="btn-action btn-complete">✔ Đã giao thành công</button>
                         </form>
                         <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return promptCancel(this);">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
@@ -561,7 +561,7 @@
                         ✔ Đã hoàn tất
                     </span>
 
-                    <!-- Đã hủy (Chỉ hiện trạng thái hủy, không hiện text hoàn tiền) -->
+                    <!-- Đã hủy / Giao thất bại -->
                     <span class="status-pill status-cancelled" th:if="${ord['ui_status'] == 'CANCELLED'}">
                         ✕ Giao thất bại
                     </span>

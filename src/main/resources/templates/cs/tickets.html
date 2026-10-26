@@ -9,7 +9,7 @@
     <header class="cs-topbar">
         <div>
             <h1>Quản lý Khiếu nại</h1>
-            <p class="cs-topbar-subtitle">Tiếp nhận và giải quyết các yêu cầu hỗ trợ đơn hàng từ khách mua.</p>
+            <p class="cs-topbar-subtitle">Mô hình tranh chấp 2 tầng: Shop xử lý trong 6h SLA → CSKH phân xử độc lập khi leo thang.</p>
         </div>
         <button type="button" onclick="document.getElementById('createTicketModal').showModal()"
                 class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; border-color: var(--cs-primary); cursor: pointer; padding: 9px 16px;">
@@ -23,19 +23,19 @@
 
         <!-- THANH TAB TRẠNG THÁI NHANH + TÌM KIẾM GỌN -->
         <div class="cs-card" style="padding: 16px 20px; margin-bottom: 18px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <a th:href="@{/cs/tickets(status='ALL')}" class="btn-cs-sm"
                        th:style="${selectedStatus == 'ALL' and !overdueOnly} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
                         Tất cả (<span th:text="${disputeReport['totalDisputes']}">0</span>)
                     </a>
-                    <a th:href="@{/cs/tickets(status='PENDING')}" class="btn-cs-sm"
-                       th:style="${selectedStatus == 'PENDING'} ? 'background:#d97706;color:#fff;border-color:#d97706;' : ''">
-                        ⏳ Chờ tiếp nhận (<span th:text="${disputeReport['pendingDisputes']}">0</span>)
+                    <a th:href="@{/cs/tickets(status='ESCALATED')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'ESCALATED' or selectedStatus == 'IN_PROGRESS'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
+                        ⚖️ CSKH phân xử (<span th:text="${disputeReport['inProgressDisputes']}">0</span>)
                     </a>
-                    <a th:href="@{/cs/tickets(status='IN_PROGRESS')}" class="btn-cs-sm"
-                       th:style="${selectedStatus == 'IN_PROGRESS'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
-                        🔄 Đang xử lý (<span th:text="${disputeReport['inProgressDisputes']}">0</span>)
+                    <a th:href="@{/cs/tickets(status='PENDING_SHOP')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'PENDING_SHOP' or selectedStatus == 'PENDING'} ? 'background:#d97706;color:#fff;border-color:#d97706;' : ''">
+                        🏪 Chờ Shop xử lý (<span th:text="${disputeReport['pendingDisputes']}">0</span>)
                     </a>
                     <a th:href="@{/cs/tickets(overdue=true)}" class="btn-cs-sm"
                        th:style="${overdueOnly} ? 'background:#dc2626;color:#fff;border-color:#dc2626;' : 'color:#dc2626;border-color:#fecaca;background:#fef2f2;'">
@@ -82,7 +82,7 @@
                     <tr>
                         <th>Mã phiếu / Đơn</th>
                         <th>Khách hàng &amp; Cửa hàng</th>
-                        <th>Lý do khiếu nại</th>
+                        <th>Lý do &amp; Yêu cầu</th>
                         <th>Thời hạn xử lý</th>
                         <th style="text-align: right;">Trạng thái &amp; Thao tác</th>
                     </tr>
@@ -99,32 +99,38 @@
                         <td>
                             <div style="font-weight: 600; color: #0f172a;" th:text="${t['customer_name']}">Khách hàng</div>
                             <small style="color: #64748b; display: block;" th:text="${'Shop: ' + t['shop_name']}"></small>
-                            <small th:if="${t['shop_response'] != null}" style="color: #16a34a; font-weight: 600; font-size: 11.5px;">✓ Shop đã phản hồi</small>
+                            <small th:if="${t['shop_response'] != null}" style="color: #16a34a; font-weight: 600; font-size: 11.5px;"
+                                   th:text="${t['shop_decision'] == 'ACCEPT' ? '✓ Shop đồng ý' : '✕ Shop từ chối'}"></small>
                         </td>
                         <td style="max-width: 320px;">
                             <strong style="font-size: 13px; color: #dc2626; display: block;" th:text="${t['reason_label']}">Lý do</strong>
                             <span style="font-size: 13px; color: #334155; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
                                   th:text="${t['description']}">Mô tả</span>
-                            <small th:if="${t['evidence_image_url'] != null}" style="color: #0284c7; font-weight: 600; display: block; margin-top: 2px;">📷 Có ảnh đính kèm</small>
+                            <div style="margin-top: 2px;">
+                                <small th:if="${t['requested_refund_amount'] != null and t['requested_refund_amount'] > 0}" style="color: #b91c1c; font-weight: 600; margin-right: 6px;"
+                                       th:text="${'Đòi hoàn: ' + #numbers.formatDecimal(t['requested_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></small>
+                                <small th:if="${t['evidence_image_url'] != null}" style="color: #0284c7; font-weight: 600;">📷 Có ảnh</small>
+                            </div>
                         </td>
                         <td>
                             <span th:if="${t['priority'] == 'HIGH'}" class="badge-status badge-danger" style="margin-bottom: 4px;">🔥 Khẩn cấp</span>
                             <div style="font-size: 12.5px; font-weight: 700;"
-                                 th:styleappend="${t['sla_state'] == 'OVERDUE' or t['sla_state'] == 'BREACHED_SLA'} ? 'color:#dc2626;' : (${t['sla_state'] == 'DUE_SOON'} ? 'color:#d97706;' : 'color:#15803d;')"
-                                 th:text="${t['sla_badge_text']}">Đúng hạn</div>
+                                 th:styleappend="${t['sla_state'] == 'OVERDUE' or t['sla_state'] == 'BREACHED_SLA'} ? 'color:#dc2626;' : (${t['sla_state'] == 'DUE_SOON'} ? 'color:#d97706;' : 'color:#15803d;')">
+                                <span th:text="${t['sla_badge_text']}">Đúng hạn</span>
+                            </div>
                         </td>
                         <td style="text-align: right;">
                             <div style="margin-bottom: 6px;">
-                                <span th:if="${t['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ tiếp nhận</span>
-                                <span th:if="${t['status'] == 'IN_PROGRESS'}" class="badge-status badge-info">Đang xử lý</span>
+                                <span th:if="${t['status'] == 'PENDING_SHOP' or t['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ Shop</span>
+                                <span th:if="${t['status'] == 'ESCALATED' or t['status'] == 'IN_PROGRESS'}" class="badge-status badge-info">CSKH phân xử</span>
                                 <span th:if="${t['status'] == 'RESOLVED'}" class="badge-status badge-success">Đã giải quyết</span>
                                 <span th:if="${t['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
-                                <span th:if="${t['status'] == 'CANCELLED'}" class="badge-status">Đã hủy</span>
+                                <span th:if="${t['status'] == 'CANCELLED'}" class="badge-status">Đã rút</span>
                             </div>
                             <a th:href="@{/cs/tickets/{id}(id=${t['id']})}"
                                class="btn-cs-sm"
-                               th:style="${t['status'] == 'PENDING' or t['status'] == 'IN_PROGRESS'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
-                                <span th:text="${t['status'] == 'PENDING' or t['status'] == 'IN_PROGRESS'} ? 'Xử lý →' : 'Chi tiết'"></span>
+                               th:style="${t['status'] == 'ESCALATED' or t['status'] == 'IN_PROGRESS'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
+                                <span th:text="${t['status'] == 'ESCALATED' or t['status'] == 'IN_PROGRESS'} ? 'Phân xử →' : 'Chi tiết'"></span>
                             </a>
                         </td>
                     </tr>

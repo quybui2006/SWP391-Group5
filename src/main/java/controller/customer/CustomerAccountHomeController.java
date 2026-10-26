@@ -1,12 +1,15 @@
 package controller.customer;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.customer.CustomerAccountService;
 import service.customer.NotificationService;
+import service.customer.OrderCheckoutService;
 import service.complaint.ComplaintService;
 import java.util.Map;
 import dto.customer.ChangePasswordRequest;
@@ -20,11 +23,13 @@ public class CustomerAccountHomeController {
     private final CustomerAccountService account;
     private final NotificationService notificationService;
     private final ComplaintService complaintService;
+    private final OrderCheckoutService checkout;
 
-    public CustomerAccountHomeController(CustomerAccountService account, NotificationService notificationService, ComplaintService complaintService) {
+    public CustomerAccountHomeController(CustomerAccountService account, NotificationService notificationService, ComplaintService complaintService, OrderCheckoutService checkout) {
         this.account = account;
         this.notificationService = notificationService;
         this.complaintService = complaintService;
+        this.checkout = checkout;
     }
 
     private Long current(HttpSession s) {
@@ -109,12 +114,28 @@ public class CustomerAccountHomeController {
         model.addAttribute("order", account.orderDetail(customerId, id));
         var orderComplaints = complaintService.listComplaintsByOrder(id);
         boolean hasActiveComplaint = orderComplaints.stream()
-                .anyMatch(c -> "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
+                .anyMatch(c -> "PENDING_SHOP".equals(c.get("status")) || "ESCALATED".equals(c.get("status")) || "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
         model.addAttribute("orderComplaints", orderComplaints);
         model.addAttribute("hasActiveComplaint", hasActiveComplaint);
-        model.addAttribute("reasonLabels", complaintService.getReasonLabels());
+        Map<String, Object> eligibility = complaintService.getOrderComplaintEligibility(customerId, id);
+        model.addAttribute("eligibility", eligibility);
+        model.addAttribute("reasonLabels", eligibility.get("allowedReasons") != null ? eligibility.get("allowedReasons") : complaintService.getReasonLabels());
         model.addAttribute("activePage", "orders");
         return "customer/order-detail";
+    }
+
+    @PostMapping("/orders/{id}/complete")
+    public String completeOrder(@PathVariable Long id, HttpSession session, RedirectAttributes ra) {
+        Long customerId = current(session);
+        String redirect = login(customerId, "/customer/account/orders/" + id);
+        if (redirect != null) return redirect;
+        try {
+            checkout.completeOrderByCustomer(customerId, id);
+            ra.addFlashAttribute("message", "Đã xác nhận hoàn tất đơn hàng thành công!");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/customer/account/orders/" + id;
     }
 
     @GetMapping("/favorites")
@@ -169,8 +190,15 @@ public class CustomerAccountHomeController {
 
     @PostMapping("/wallet/vouchers/save")
     @ResponseBody
-    public Map<String,Object> saveVoucher(@RequestParam String voucherCode, HttpSession session) {
-        account.saveVoucher(requireCustomer(session), voucherCode); return Map.of("saved", true);
+    public ResponseEntity<Map<String,Object>> saveVoucher(@RequestParam Long voucherId, HttpSession session) {
+        try {
+            account.saveVoucher(requireCustomer(session), voucherId);
+            return ResponseEntity.ok(Map.of("saved", true));
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode()).body(Map.of("saved", false, "message", "Vui lòng đăng nhập để lưu voucher."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("saved", false, "message", ex.getMessage()));
+        }
     }
 
 

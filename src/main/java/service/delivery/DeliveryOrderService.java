@@ -77,7 +77,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Thống kê nhanh số lượng đơn theo trạng thái (khớp với danh sách hiển thị của Delivery)
+     * Thống kê nhanh số lượng đơn theo trạng thái
      */
     public Map<String, Object> getOrderCounts() {
         String sql = """
@@ -230,7 +230,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Cập nhật trạng thái giao hàng của đơn hàng (Hỗ trợ hoàn tiền tự động VNPAY khi hủy đơn)
+     * Cập nhật trạng thái giao hàng của đơn hàng (Kết hợp luồng của nhánh develop và nhánh hiện tại có VNPAY Refund)
      */
     @Transactional
     public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason) {
@@ -244,63 +244,50 @@ public class DeliveryOrderService {
         String paymentMethod = firstNonNullStr(order, "payment_method", "COD").toUpperCase(Locale.ROOT);
         String paymentStatus = firstNonNullStr(order, "payment_status", "UNPAID").toUpperCase(Locale.ROOT);
 
-        if ("COMPLETED".equals(currentStatus) || "DELIVERED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
+        if ("COMPLETED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
             throw new IllegalStateException("Đơn hàng đã kết thúc, không thể cập nhật thêm.");
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         String target = newStatus == null ? "" : newStatus.trim().toUpperCase(Locale.ROOT);
 
+        // 1. CHUYỂN SANG ĐANG GIAO HÀNG
         if ("SHIPPING".equals(target)) {
-            if (!("CONFIRMED".equals(currentStatus) || "PROCESSING".equals(currentStatus) || "READY_TO_SHIP".equals(currentStatus))) {
+            if (!"CONFIRMED".equals(currentStatus) && !"PROCESSING".equals(currentStatus) && !"READY_TO_SHIP".equals(currentStatus)) {
                 throw new IllegalStateException("Chỉ nhận đơn Shop Owner đã xác nhận để bắt đầu giao.");
             }
-            jdbc.update("""
-                UPDATE orders 
-                SET status = 'SHIPPING', 
-                    delivery_status = 'IN_TRANSIT', 
-                    shipped_at = ?, 
-                    delivery_updated_at = ? 
-                WHERE id = ?
-            """, now, now, orderId);
+            jdbc.update("UPDATE orders SET status='SHIPPING',delivery_status='IN_TRANSIT',shipped_at=?,delivery_updated_at=? WHERE id=? AND status='CONFIRMED'", now, now, orderId);
             return;
         }
 
-        if ("COMPLETED".equals(target) || "DELIVERED".equals(target)) {
-            if (!"SHIPPING".equals(currentStatus)) {
-                throw new IllegalStateException("Chỉ hoàn tất đơn đang được giao.");
-            }
+        // 2. XÁC NHẬN ĐÃ GIAO ĐẾN NƠI (NHƯNG CHƯA COMPLETED)
+        if ("DELIVERED".equals(target)) {
+            if (!"SHIPPING".equals(currentStatus)) throw new IllegalStateException("Chỉ xác nhận đã giao đối với đơn đang vận chuyển.");
             consumeReservedItems(orderId);
             if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
-                jdbc.update("UPDATE payments SET status = 'SUCCEEDED', paid_at = ? WHERE order_id = ? AND status = 'PENDING'", now, orderId);
-                jdbc.update("""
-                    UPDATE orders 
-                    SET status = 'COMPLETED', 
-                        payment_status = 'PAID', 
-                        paid_at = ?, 
-                        delivery_status = 'DELIVERED', 
-                        delivered_at = ?, 
-                        auto_complete_at = DATE_ADD(?, INTERVAL 3 DAY), 
-                        completed_at = ?, 
-                        delivery_updated_at = ? 
-                    WHERE id = ? AND status = 'SHIPPING'
-                """, now, now, now, now, now, orderId);
+                jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
             } else {
-                jdbc.update("""
-                    UPDATE orders 
-                    SET status = 'COMPLETED', 
-                        delivery_status = 'DELIVERED', 
-                        delivered_at = ?, 
-                        auto_complete_at = DATE_ADD(?, INTERVAL 3 DAY), 
-                        completed_at = ?, 
-                        delivery_updated_at = ? 
-                    WHERE id = ? AND status = 'SHIPPING'
-                """, now, now, now, now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, orderId);
+            }
+            return;
+        }
+
+        // 3. HOÀN TẤT ĐƠN HÀNG
+        if ("COMPLETED".equals(target)) {
+            if (!"SHIPPING".equals(currentStatus) && !"DELIVERED".equals(currentStatus)) throw new IllegalStateException("Chỉ hoàn tất đơn đang được giao.");
+            consumeReservedItems(orderId);
+            if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
+                jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
+                jdbc.update("UPDATE orders SET status='COMPLETED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),auto_complete_at=COALESCE(auto_complete_at,DATE_ADD(?,INTERVAL 3 DAY)),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, now, orderId);
+            } else {
+                jdbc.update("UPDATE orders SET status='COMPLETED',delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),auto_complete_at=COALESCE(auto_complete_at,DATE_ADD(?,INTERVAL 3 DAY)),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, orderId);
             }
             checkout.creditCashbackPoints(orderId);
             return;
         }
 
+        // 4. GIAO HÀNG THẤT BẠI / HỦY ĐƠN VÀ HOÀN TIỀN VNPAY
         if ("CANCELLED".equals(target)) {
             String reason = (cancelReason == null || cancelReason.isBlank())
                     ? "Giao hàng không thành công / Khách từ chối nhận"
@@ -309,10 +296,10 @@ public class DeliveryOrderService {
                 throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
             }
 
-            // 1. Hoàn trả tồn kho về kệ
+            // Hoàn trả tồn kho về kệ
             releaseReservedItems(orderId);
 
-            // 2. Nếu đơn VNPAY đã thanh toán (PAID) -> Gọi API Refund VNPAY
+            // Xử lý hoàn tiền VNPAY
             if ("VNPAY".equalsIgnoreCase(paymentMethod) && "PAID".equalsIgnoreCase(paymentStatus)) {
                 BigDecimal refundAmount = firstNonNullDecimal(order, "total_amount", "grand_total");
                 String orderCode = firstNonNullStr(order, "order_code", String.valueOf(orderId));
@@ -376,10 +363,10 @@ public class DeliveryOrderService {
                             delivery_updated_at = ?, 
                             cancelled_at = ?, 
                             cancellation_reason = ? 
-                        WHERE id = ?
+                        WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')
                     """, refundNote, now, now, refundNote, orderId);
+                    jdbc.update("UPDATE payments SET status = 'REFUNDED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
                 } catch (Exception ex) {
-                    // Fallback nếu bảng orders giới hạn CHECK CONSTRAINT trên cột payment_status
                     jdbc.update("""
                         UPDATE orders 
                         SET status = 'CANCELLED', 
@@ -388,30 +375,16 @@ public class DeliveryOrderService {
                             delivery_updated_at = ?, 
                             cancelled_at = ?, 
                             cancellation_reason = ? 
-                        WHERE id = ?
+                        WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')
                     """, refundNote, now, now, refundNote, orderId);
-                }
-
-                try {
-                    jdbc.update("UPDATE payments SET status = 'REFUNDED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
-                } catch (Exception ex) {
                     jdbc.update("UPDATE payments SET status = 'CANCELLED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
                 }
                 return;
             }
 
-            // 3. Nếu là đơn COD bình thường -> Hủy đơn và cập nhật trạng thái
-            jdbc.update("""
-                UPDATE orders 
-                SET status = 'CANCELLED', 
-                    delivery_status = 'FAILED', 
-                    delivery_failure_reason = ?, 
-                    delivery_updated_at = ?, 
-                    cancelled_at = ?, 
-                    cancellation_reason = ? 
-                WHERE id = ? AND status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPING')
-            """, reason, now, now, reason, orderId);
-            jdbc.update("UPDATE payments SET status = 'CANCELLED', failure_reason = ? WHERE order_id = ? AND status = 'PENDING'", reason, orderId);
+            // Nếu đơn COD bình thường
+            jdbc.update("UPDATE orders SET status='CANCELLED',delivery_status='FAILED',delivery_failure_reason=?,delivery_updated_at=?,cancelled_at=?,cancellation_reason=? WHERE id=? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')", reason, now, now, reason, orderId);
+            jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
             return;
         }
 
@@ -419,13 +392,9 @@ public class DeliveryOrderService {
     }
 
     private void consumeReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList(
-                "SELECT oi.id, oi.inventory_id, oi.quantity FROM order_items oi WHERE oi.order_id = ? AND oi.allocation_status = 'RESERVED' ORDER BY oi.inventory_id FOR UPDATE",
-                orderId);
+        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status='RESERVED' ORDER BY oi.inventory_id FOR UPDATE", orderId);
         if (items.isEmpty()) {
-            Integer soldItems = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM order_items WHERE order_id = ? AND allocation_status = 'CONSUMED'",
-                    Integer.class, orderId);
+            Integer soldItems = jdbc.queryForObject("SELECT COUNT(*) FROM order_items WHERE order_id=? AND allocation_status='CONSUMED'", Integer.class, orderId);
             if (soldItems != null && soldItems > 0) return;
             throw new IllegalStateException("Không tìm thấy tồn kho đã giữ cho đơn hàng.");
         }
@@ -433,52 +402,37 @@ public class DeliveryOrderService {
             long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
             int quantity = ((Number) item.get("quantity")).intValue();
-
-            if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand = quantity_on_hand - ?, reserved_quantity = reserved_quantity - ? WHERE id = ? AND quantity_on_hand >= ? AND reserved_quantity >= ?",
-                    quantity, quantity, inventoryId, quantity, quantity) != 1) {
+            if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-? WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, inventoryId, quantity, quantity) != 1)
                 throw new IllegalStateException("Tồn kho đã giữ không còn nhất quán cho mặt hàng " + itemId + ".");
-            }
-            jdbc.update("UPDATE order_items SET allocation_status = 'CONSUMED' WHERE id = ? AND allocation_status = 'RESERVED'", itemId);
-
-            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id = ?", Integer.class, inventoryId);
-            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id = ?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id, order_item_id, type, on_hand_delta, reserved_delta, on_hand_after, reserved_after, event_key, created_by) VALUES(?, ?, 'SALE', ?, ?, ?, ?, ?, NULL)",
-                    inventoryId, itemId, -quantity, -quantity, onHand, reserved, "sale-delivery-" + itemId);
+            jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=? AND allocation_status='RESERVED'", itemId);
+            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'SALE',?,?,?,?,?,NULL)", inventoryId, itemId, -quantity, -quantity, onHand, reserved, "sale-delivery-" + itemId);
         }
     }
 
     private void releaseReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList(
-                "SELECT oi.id, oi.inventory_id, oi.quantity, oi.allocation_status FROM order_items oi WHERE oi.order_id = ? AND oi.allocation_status IN ('RESERVED', 'CONSUMED') ORDER BY oi.inventory_id FOR UPDATE",
-                orderId);
+        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity,oi.allocation_status FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status IN ('RESERVED','CONSUMED') ORDER BY oi.inventory_id FOR UPDATE", orderId);
         for (Map<String, Object> item : items) {
             long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
             int quantity = ((Number) item.get("quantity")).intValue();
             boolean alreadySold = "CONSUMED".equals(item.get("allocation_status"));
-
             if (alreadySold) {
-                if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand = quantity_on_hand + ? WHERE id = ?", quantity, inventoryId) != 1) {
+                if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId) != 1)
                     throw new IllegalStateException("Không thể hoàn kho cho mặt hàng " + itemId + ".");
-                }
-                jdbc.update("UPDATE order_items SET allocation_status = 'RELEASED' WHERE id = ? AND allocation_status = 'CONSUMED'", itemId);
-                int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id = ?", Integer.class, inventoryId);
-                int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id = ?", Integer.class, inventoryId);
-                jdbc.update("INSERT INTO inventory_transactions(inventory_id, order_item_id, type, on_hand_delta, reserved_delta, on_hand_after, reserved_after, event_key, reason, created_by) VALUES(?, ?, 'ADJUST', ?, 0, ?, ?, ?, ?, NULL)",
-                        inventoryId, itemId, quantity, onHand, reserved, "return-delivery-" + itemId, "Hoàn kho do giao hàng thất bại - đơn " + orderId);
+                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='CONSUMED'", itemId);
+                int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+                int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+                jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'ADJUST',?,0,?,?,? ,?,NULL)", inventoryId, itemId, quantity, onHand, reserved, "return-delivery-" + itemId, "Hoàn kho do giao hàng thất bại - đơn " + orderId);
                 continue;
             }
-
-            if (jdbc.update("UPDATE variant_inventory SET reserved_quantity = reserved_quantity - ? WHERE id = ? AND reserved_quantity >= ?",
-                    quantity, inventoryId, quantity) != 1) {
+            if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity-? WHERE id=? AND reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
                 throw new IllegalStateException("Không thể trả tồn kho đã giữ cho mặt hàng " + itemId + ".");
-            }
-            jdbc.update("UPDATE order_items SET allocation_status = 'RELEASED' WHERE id = ? AND allocation_status = 'RESERVED'", itemId);
-
-            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id = ?", Integer.class, inventoryId);
-            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id = ?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id, order_item_id, type, on_hand_delta, reserved_delta, on_hand_after, reserved_after, event_key, created_by) VALUES(?, ?, 'RELEASE', 0, ?, ?, ?, ?, NULL)",
-                    inventoryId, itemId, -quantity, onHand, reserved, "release-delivery-" + itemId);
+            jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
+            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,NULL)", inventoryId, itemId, -quantity, onHand, reserved, "release-delivery-" + itemId);
         }
     }
 

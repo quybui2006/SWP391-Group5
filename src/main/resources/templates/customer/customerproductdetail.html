@@ -264,7 +264,7 @@
                     <div class="detail-line">
                         <span class="detail-label">Mã Giảm Giá Shop</span>
                         <div class="detail-content vouchers-wrap">
-                            <span class="fresh-voucher-chip" th:each="voucher : ${shopVouchers}"><span th:text="${voucher.name + ' · ' + voucher.code}">Voucher cửa hàng</span><button type="button" class="save-voucher-button" th:attr="data-voucher-code=${voucher.code}" onclick="saveCustomerVoucher(this)">Lưu</button></span>
+                            <span class="fresh-voucher-chip" th:each="voucher : ${shopVouchers}"><span th:text="${voucher.name + ' · ' + voucher.code}">Voucher cửa hàng</span><button th:if="${!savedVoucherIds.contains(voucher.id)}" type="button" class="save-voucher-button" th:attr="data-voucher-id=${voucher.id}" onclick="saveCustomerVoucher(this)">Lưu</button><button th:if="${savedVoucherIds.contains(voucher.id)}" type="button" class="save-voucher-button" disabled>Đã lưu</button></span>
                             <span th:if="${shopVouchers == null or #lists.isEmpty(shopVouchers)}">Hiện shop chưa có voucher.</span>
                         </div>
                     </div>
@@ -272,8 +272,11 @@
                     <div class="detail-line">
                         <span class="detail-label">Mã Hoàn Xu Shop</span>
                         <div class="detail-content vouchers-wrap">
-                            <span class="fresh-voucher-chip cashback-voucher-chip" th:each="voucher : ${shopCashbackVouchers}"
-                                  th:text="${voucher.name + ' · ' + voucher.code}">Voucher hoàn xu của cửa hàng</span><button type="button" class="save-voucher-button" th:attr="data-voucher-code=${voucher.code}" onclick="saveCustomerVoucher(this)">Lưu</button>
+                            <span class="fresh-voucher-chip cashback-voucher-chip" th:each="voucher : ${shopCashbackVouchers}">
+                                <span th:text="${voucher.name + ' · ' + voucher.code}">Voucher hoàn xu của cửa hàng</span>
+                                <button th:if="${!savedVoucherIds.contains(voucher.id)}" type="button" class="save-voucher-button" th:attr="data-voucher-id=${voucher.id}" onclick="saveCustomerVoucher(this)">Lưu</button>
+                                <button th:if="${savedVoucherIds.contains(voucher.id)}" type="button" class="save-voucher-button" disabled>Đã lưu</button>
+                            </span>
                             <span th:if="${shopCashbackVouchers == null or #lists.isEmpty(shopCashbackVouchers)}">Hiện shop chưa có voucher hoàn xu.</span>
                         </div>
                     </div>
@@ -837,12 +840,22 @@
 ========================================================= -->
 <script>
 async function saveCustomerVoucher(button) {
-    const code = button.dataset.voucherCode;
+    const voucherId = button.dataset.voucherId;
+    if (!voucherId) return;
+    button.disabled = true;
     try {
-        const response = await fetch('/customer/account/wallet/vouchers/save', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'voucherCode=' + encodeURIComponent(code)});
+        const response = await fetch('/customer/account/wallet/vouchers/save', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'voucherId=' + encodeURIComponent(voucherId)});
+        if (response.status === 401 || response.status === 403) {
+            alert('Vui lòng đăng nhập để lưu voucher.');
+            button.disabled = false;
+            return;
+        }
         if (!response.ok) throw new Error();
-        button.textContent = 'Đã lưu'; button.disabled = true;
-    } catch (e) { alert('Vui lòng đăng nhập để lưu voucher.'); }
+        button.textContent = 'Đã lưu';
+    } catch (e) {
+        button.disabled = false;
+        alert('Không thể lưu voucher. Vui lòng thử lại.');
+    }
 }
 </script>
 
