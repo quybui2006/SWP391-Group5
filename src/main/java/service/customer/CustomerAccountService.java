@@ -78,7 +78,6 @@ public class CustomerAccountService {
     }
 
     /**
-     * Lịch sử đơn hàng của khách, lọc theo nhóm trạng thái kiểu Shopee:
      * all | pending-payment | shipping | completed | cancelled
      */
     public List<Map<String,Object>> orders(Long userId, String statusFilter) {
@@ -116,7 +115,7 @@ public class CustomerAccountService {
         return orders;
     }
 
-    /** Đếm số đơn theo từng tab trạng thái để hiển thị badge giống Shopee. */
+
     public Map<String,Object> orderStatusCounts(Long userId) {
         return jdbc.queryForMap("""
             SELECT
