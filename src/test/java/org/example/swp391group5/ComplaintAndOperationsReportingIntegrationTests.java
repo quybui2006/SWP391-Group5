@@ -34,6 +34,9 @@ class ComplaintAndOperationsReportingIntegrationTests {
     private OrderCheckoutService orderCheckoutService;
 
     @Autowired
+    private service.shop.ShopOrderService shopOrderService;
+
+    @Autowired
     private JdbcTemplate jdbc;
 
     private Long createUser(String email, String name, String roleCode) {
@@ -118,6 +121,13 @@ class ComplaintAndOperationsReportingIntegrationTests {
         // 2. Verify status is PENDING_SHOP and priority is HIGH
         List<Map<String, Object>> customerComplaints = complaintService.listCustomerComplaints(customerId, "ALL");
         assertEquals(1, customerComplaints.size());
+
+        // Verify Shop Order list shows complaint badge and pending count
+        Map<String, Object> counts = shopOrderService.countComplaints(sellerId);
+        assertEquals(1L, ((Number) counts.get("pending_shop_complaints")).longValue());
+        List<Map<String, Object>> shopOrders = shopOrderService.list(sellerId, "complaint");
+        assertEquals(1, shopOrders.size());
+        assertEquals("PENDING_SHOP", shopOrders.get(0).get("complaint_status"));
         Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
         assertNotNull(detail);
         assertEquals("HIGH", detail.get("priority"));
@@ -164,6 +174,16 @@ class ComplaintAndOperationsReportingIntegrationTests {
         // Verify customer points balance increased from 100 to 30100
         Long updatedPoints = jdbc.queryForObject("SELECT points_balance FROM users WHERE id = ?", Long.class, customerId);
         assertEquals(30100L, updatedPoints);
+
+        // Verify shop order revenue was deducted by 30,000 (from 500,000 to 470,000)
+        java.math.BigDecimal updatedRevenue = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
+        assertNotNull(updatedRevenue);
+        assertEquals(0, new java.math.BigDecimal("470000").compareTo(updatedRevenue));
+
+        // Verify shop reputation was deducted by 5 (from 100 to 95)
+        Integer shopReputation = jdbc.queryForObject("SELECT reputation_score FROM shops WHERE id = ?", Integer.class, shopId);
+        assertNotNull(shopReputation);
+        assertEquals(95, shopReputation.intValue());
 
         // 5. Verify CS Staff Analytics Reports (Reports & Alerts moved to CS Staff)
         Map<String, Object> csAnalytics = complaintService.getAnalyticsAndReports();
@@ -222,6 +242,11 @@ class ComplaintAndOperationsReportingIntegrationTests {
         // Points balance: 100 + 40000 = 40100
         Long points = jdbc.queryForObject("SELECT points_balance FROM users WHERE id = ?", Long.class, customerId);
         assertEquals(40100L, points);
+
+        // Verify shop order revenue was deducted by 40,000 (from 500,000 to 460,000)
+        java.math.BigDecimal shopRevenueAfterAccept = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
+        assertNotNull(shopRevenueAfterAccept);
+        assertEquals(0, new java.math.BigDecimal("460000").compareTo(shopRevenueAfterAccept));
     }
 
     @Test
@@ -237,24 +262,16 @@ class ComplaintAndOperationsReportingIntegrationTests {
                         customerId, confirmedOrderId, null, "DELIVERY_OR_SERVICE", "Giao lâu", "Chưa thấy giao", null, 0L
                 )
         );
-        assertTrue(blockedConfirmed.getMessage().contains("CONFIRMED"));
+        assertTrue(blockedConfirmed.getMessage().contains("DELIVERED"));
 
-        // 2. Order status SHIPPING allows DELIVERY_OR_SERVICE but blocks PRODUCT defects and refunds > 0
+        // 2. Order status SHIPPING is completely blocked from complaints (complaints only allowed when DELIVERED)
         Long shippingOrderId = createTestOrder(customerId, shopId, "ORD-SHIPPING-01", "SHIPPING", null);
-        IllegalArgumentException blockedProductDefectInShipping = assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException blockedShipping = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.submitCustomerComplaint(
-                        customerId, shippingOrderId, null, "QUALITY_ISSUE", "Hư quả", "Quả hư", null, 0L
+                        customerId, shippingOrderId, null, "DELIVERY_OR_SERVICE", "Shipper thái độ", "Giao hàng cộc lốc", null, 0L
                 )
         );
-        assertTrue(blockedProductDefectInShipping.getMessage().contains("Sự cố giao hàng"));
-
-        // In SHIPPING, requestedRefundAmount must be 0
-        IllegalArgumentException blockedRefundInShipping = assertThrows(IllegalArgumentException.class, () ->
-                complaintService.submitCustomerComplaint(
-                        customerId, shippingOrderId, null, "DELIVERY_OR_SERVICE", "Shipper thái độ", "Giao hàng cộc lốc", null, 50000L
-                )
-        );
-        assertTrue(blockedRefundInShipping.getMessage().contains("chỉ hỗ trợ phản ánh dịch vụ"));
+        assertTrue(blockedShipping.getMessage().contains("DELIVERED"));
 
         // 3. Order status DELIVERED:
         // Exceeding 24h is blocked
@@ -308,6 +325,75 @@ class ComplaintAndOperationsReportingIntegrationTests {
                 customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Dập nát tạo lại", "Hộp bị nén", img, 80000L
         );
         assertNotNull(cId2);
+    }
+
+    @Test
+    void testPlatformFaultCompensationAndFreeShippingVoucher() {
+        Long customerId = createUser("buyer-platform@test.local", "Khách Hàng Nền Tảng", "CUSTOMER");
+        Long sellerId = createUser("seller-platform@test.local", "Shop Bị Oan", "SHOP_OWNER");
+        Long csId = createUser("cs-platform@test.local", "Nhân Viên CS Phân Xử", "CS_STAFF");
+        Long shopId = createTestShop(sellerId, "Shop Hoa Quả Uy Tín");
+        Long orderId = createTestOrder(customerId, shopId, "ORD-PLATFORM-01", "DELIVERED", LocalDateTime.now().minusHours(2));
+
+        MockMultipartFile img = createTestPngImage();
+        Long complaintId = complaintService.submitCustomerComplaint(
+                customerId,
+                orderId,
+                null,
+                "DELIVERY_OR_SERVICE",
+                "Hàng bị móp do đơn vị vận chuyển",
+                "Thùng hàng bị chèn ép trong quá trình giao của đơn vị vận chuyển.",
+                img,
+                100000L
+        );
+
+        // Shop rejects with explanation
+        complaintService.submitShopDecision(
+                sellerId,
+                complaintId,
+                "REJECT",
+                "Shop đã quấn bọt khí rất dày, lỗi dập thùng do shipper làm rơi vỡ.",
+                null
+        );
+
+        // CS staff arbitrates with PLATFORM fault (quỹ sàn tài trợ 50% = 50,000đ + tặng mã freeship)
+        complaintService.resolveComplaint(
+                complaintId,
+                csId,
+                "RESOLVED",
+                "COMPENSATE_POINTS",
+                "Xác định lỗi do khâu vận chuyển của Nền tảng. Quỹ Sàn tài trợ đền bù điểm và gửi tặng Voucher FreeShip.",
+                50000L,
+                false, // isShopFault = false
+                "PLATFORM",
+                true, // giftFreeShipping = true
+                false
+        );
+
+        Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
+        assertEquals("RESOLVED", detail.get("status"));
+        assertEquals("PLATFORM", detail.get("fault_party"));
+        assertNotNull(detail.get("gifted_freeship_voucher"));
+        assertTrue(String.valueOf(detail.get("gifted_freeship_voucher")).startsWith("FS-"));
+
+        // Customer receives points: initial 100 + 50000 = 50100
+        Long custPoints = jdbc.queryForObject("SELECT points_balance FROM users WHERE id = ?", Long.class, customerId);
+        assertEquals(50100L, custPoints);
+
+        // Shop revenue remains UNTOUCHED (500,000)
+        java.math.BigDecimal shopRev = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
+        assertNotNull(shopRev);
+        assertEquals(0, new java.math.BigDecimal("500000").compareTo(shopRev));
+
+        // Shop reputation remains 100 (NOT penalized)
+        Integer repScore = jdbc.queryForObject("SELECT reputation_score FROM shops WHERE id = ?", Integer.class, shopId);
+        assertNotNull(repScore);
+        assertEquals(100, repScore.intValue());
+
+        // Customer status label in customer view is "Đã xử lý"
+        List<Map<String, Object>> customerComplaints = complaintService.listCustomerComplaints(customerId, "all");
+        assertFalse(customerComplaints.isEmpty());
+        assertTrue(String.valueOf(customerComplaints.get(0).get("customer_status_label")).contains("Đã xử lý"));
     }
 
     @Test

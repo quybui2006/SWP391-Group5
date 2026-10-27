@@ -11,12 +11,46 @@ public class ShopOrderService {
     public ShopOrderService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public List<Map<String, Object>> list(Long ownerId) {
-        return jdbc.queryForList("""
+        return list(ownerId, null);
+    }
+
+    public List<Map<String, Object>> list(Long ownerId, String filter) {
+        StringBuilder sql = new StringBuilder("""
                 SELECT o.id, o.order_code, o.recipient_name, o.total_amount, o.status,
                        o.recipient_phone, o.payment_method, o.payment_status, o.delivery_status,
-                       o.cancellation_reason, o.created_at
-                FROM orders o JOIN shops s ON s.id=o.shop_id
-                WHERE s.owner_id=? ORDER BY o.created_at DESC, o.id DESC
+                       o.cancellation_reason, o.created_at, o.shop_revenue_amount,
+                       c.id AS complaint_id, c.complaint_code, c.status AS complaint_status,
+                       c.reason_type AS complaint_reason_type, c.sla_due_at AS complaint_sla_due_at,
+                       c.requested_refund_amount, c.final_refund_amount
+                FROM orders o
+                JOIN shops s ON s.id = o.shop_id
+                LEFT JOIN (
+                    SELECT c1.id, c1.order_id, c1.complaint_code, c1.status, c1.reason_type,
+                           c1.sla_due_at, c1.requested_refund_amount, c1.final_refund_amount
+                    FROM complaints c1
+                    INNER JOIN (
+                        SELECT order_id, MAX(id) AS max_id
+                        FROM complaints
+                        GROUP BY order_id
+                    ) c2 ON c1.id = c2.max_id
+                ) c ON c.order_id = o.id
+                WHERE s.owner_id = ?
+                """);
+        if ("complaint".equalsIgnoreCase(filter)) {
+            sql.append(" AND c.status IS NOT NULL AND c.status <> 'CANCELLED' ");
+        }
+        sql.append(" ORDER BY o.created_at DESC, o.id DESC ");
+        return jdbc.queryForList(sql.toString(), ownerId);
+    }
+
+    public Map<String, Object> countComplaints(Long ownerId) {
+        return jdbc.queryForMap("""
+                SELECT
+                    COUNT(c.id) AS total_complaints,
+                    COALESCE(SUM(CASE WHEN c.status IN ('PENDING_SHOP', 'PENDING') THEN 1 ELSE 0 END), 0) AS pending_shop_complaints
+                FROM complaints c
+                JOIN shops s ON s.id = c.shop_id
+                WHERE s.owner_id = ? AND c.status <> 'CANCELLED'
                 """, ownerId);
     }
 

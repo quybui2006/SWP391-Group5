@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
 import service.customer.CurrentUserProvider;
 import service.complaint.ComplaintService;
 import service.shop.ShopOrderExcelExporter;
@@ -23,9 +24,19 @@ public class ShopOrderController {
         this.currentUser = currentUser; this.orders = orders; this.excelExporter = excelExporter; this.complaintService = complaintService;
     }
     @GetMapping("/shopowner/orders")
-    public String orders(HttpServletRequest request, Model model) {
+    public String orders(@RequestParam(value = "filter", required = false) String filter,
+                         HttpServletRequest request, Model model) {
         Long ownerId = currentUser.requireUserId(request);
-        model.addAttribute("orders", orders.list(ownerId));
+        model.addAttribute("orders", orders.list(ownerId, filter));
+        model.addAttribute("filter", filter != null ? filter : "all");
+
+        Map<String, Object> complaintCounts = orders.countComplaints(ownerId);
+        long pendingComplaintsCount = ((Number) complaintCounts.getOrDefault("pending_shop_complaints", 0)).longValue();
+        long totalComplaintsCount = ((Number) complaintCounts.getOrDefault("total_complaints", 0)).longValue();
+
+        model.addAttribute("pendingComplaintsCount", pendingComplaintsCount);
+        model.addAttribute("totalComplaintsCount", totalComplaintsCount);
+
         model.addAttribute("ownerName", request.getSession(false).getAttribute("fullName"));
         var session = request.getSession(false);
         if (session.getAttribute("shopOrderToken") == null) session.setAttribute("shopOrderToken", java.util.UUID.randomUUID().toString());
@@ -72,7 +83,9 @@ public class ShopOrderController {
                 redirect.addFlashAttribute("message", "Đã gửi giải trình từ chối khiếu nại và chuyển hồ sơ lên CSKH phân xử.");
             }
         } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("message", ex.getMessage());
+            redirect.addFlashAttribute("error", ex.getMessage());
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Đã xảy ra lỗi khi xử lý khiếu nại: " + (ex.getMessage() != null ? ex.getMessage() : "Vui lòng kiểm tra lại."));
         }
         return "redirect:/shopowner/orders/" + orderId;
     }
