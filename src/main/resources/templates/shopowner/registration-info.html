@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin đăng ký Cửa hàng | FreshFruit</title>
+
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           REGISTRATION INFO PAGE STYLES (Clean, Modern, Aesthetic)
+           ========================================================================== */
+        .reg-info-wrapper {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding-bottom: 50px;
+        }
+
+        /* Top Bar Header Navigation */
+        .reg-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .reg-header-left h1 {
+            font: 800 24px/1.3 'Plus Jakarta Sans', sans-serif;
+            color: #0f172a;
+            margin: 0 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reg-header-left p {
+            color: #64748b;
+            font-size: 13.5px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .reg-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-action-primary {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+        }
+        .btn-action-primary:hover {
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+            transform: translateY(-1px);
+        }
+
+        .btn-action-secondary {
+            background: #ffffff;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .btn-action-secondary:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
+        }
+
+        .btn-action-blue {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+        .btn-action-blue:hover {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Hero Status Banner */
+        .status-hero {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px 28px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .status-hero-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .status-shop-summary {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .shop-badge-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font: 800 24px 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
+            flex-shrink: 0;
+        }
+
+        .shop-name-block strong {
+            display: block;
+            font: 800 19px 'Plus Jakarta Sans', sans-serif;
+            color: #0f172a;
+            margin-bottom: 3px;
+        }
+
+        .shop-id-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pills-cluster {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .status-pill-lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .pill-approved {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .pill-pending {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .pill-rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .pill-blue {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .pill-gray {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Rejection Alerts */
+        .rejection-banner {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-left: 4px solid #e11d48;
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: #9f1239;
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+        .rejection-banner strong {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* 4-Step Stepper Timeline */
+        .stepper-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding-top: 14px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        @media (max-width: 820px) {
+            .stepper-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .step-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .step-card.done {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .step-card.active-step {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .step-card.fail {
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .step-num-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font: 700 12px 'Plus Jakarta Sans', sans-serif;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-card.done .step-num-icon {
+            background: #16a34a;
+        }
+
+        .step-card.active-step .step-num-icon {
+            background: #2563eb;
+        }
+
+        .step-card.fail .step-num-icon {
+            background: #dc2626;
+        }
+
+        .step-card-text strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 2px;
+        }
+
+        .step-card-text small {
+            display: block;
+            font-size: 11.5px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* Tab Navigation */
+        .reg-nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font: 600 13px 'DM Sans', sans-serif;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: #0f172a;
+            background: #f1f5f9;
+        }
+
+        .tab-btn.active {
+            background: #16a34a;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+        }
+
+        /* 2-Column Responsive Layout Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 22px;
+            align-items: start;
+        }
+
+        @media (max-width: 960px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Section Styles */
+        .section-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px 26px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .section-title h2 {
+            font: 700 16px 'Plus Jakarta Sans', sans-serif;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-tag {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #16a34a;
+            background: #f0fdf4;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #bbf7d0;
+        }
+
+        /* Key-Value Fields */
+        .data-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .data-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-row.horizontal {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #f1f5f9;
+        }
+
+        .data-row.horizontal:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .data-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .data-val {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            word-break: break-word;
+        }
+
+        .copy-chip {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .copy-chip:hover {
+            background: #16a34a;
+            color: #fff;
+            border-color: #16a34a;
+        }
+
+        /* Mock Digital ID Card */
+        .id-mockup-card {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%);
+            border-radius: 14px;
+            padding: 20px;
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(6, 78, 59, 0.28);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .id-mockup-card::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .id-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.18);
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }
+
+        .id-card-top strong {
+            font: 700 12px 'Plus Jakarta Sans', sans-serif;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #a7f3d0;
+        }
+
+        .id-card-chip {
+            width: 32px;
+            height: 24px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .id-card-chip::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 2px;
+        }
+
+        .id-name-box {
+            margin-bottom: 14px;
+        }
+
+        .id-name-box small {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #6ee7b7;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .id-name-box h3 {
+            font: 800 18px 'Plus Jakarta Sans', sans-serif;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .id-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 10px 14px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+        }
+
+        .id-meta-item small {
+            font-size: 10px;
+            color: #a7f3d0;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .id-meta-item b {
+            font-size: 12.5px;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+
+        /* Mock Bank Card */
+        .bank-mockup-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 20px;
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .bank-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .bank-title {
+            font: 800 14px 'Plus Jakarta Sans', sans-serif;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+        }
+
+        .bank-account-num {
+            font: 700 18px/1.2 'Courier New', monospace;
+            letter-spacing: 2px;
+            color: #f8fafc;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bank-holder-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 10px;
+        }
+
+        .bank-holder-footer small {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            display: block;
+        }
+
+        .bank-holder-footer strong {
+            font-size: 13px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        /* Shipping Methods Pills */
+        .shipping-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .ship-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        .ship-pill.active {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .ship-pill.inactive {
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+            text-decoration: line-through;
+        }
+
+        /* Copy Toast */
+        #copyToast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0f172a;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(12px);
+            transition: all 0.25s ease;
+            z-index: 9999;
+        }
+
+        #copyToast.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        /* Print Media Style */
+        @media print {
+            .sidebar, .top-actions, .reg-header-actions, .reg-nav-tabs, #copyToast {
+                display: none !important;
+            }
+            .app-shell {
+                display: block !important;
+            }
+            .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .section-card {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- Sidebar Kênh Chủ Cửa Hàng -->
+        <aside th:replace="~{shopowner/fragments :: sidebar('registration-info')}"></aside>
+
+        <main class="main-content">
+
+            <!-- Topbar dùng chung -->
+            <header class="topbar">
+                <div>
+                    <p class="breadcrumb">
+                        Chủ cửa hàng / <span>Thông tin đăng ký Shop</span>
+                    </p>
+                    <h1>
+                        Hồ sơ Đăng ký Gian hàng
+                        <span th:text="${shop.name}">Tên Shop</span>
+                        <span>✦</span>
+                    </h1>
+                </div>
+
+                <div class="top-actions">
+                    <!-- Notification Bell -->
+                    <div class="notif-dropdown-wrapper">
+                        <button type="button" class="notif-bell-btn" id="globalNotifBellBtn" title="Thông báo"
+                            aria-label="Thông báo"
+                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px;">
+                            🔔
+                            <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
+                        </button>
+                        <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
+                            <div class="notif-dropdown-header">
+                                <h4><span>🔔</span> Thông báo</h4>
+                                <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
+                            </div>
+                            <div class="notif-dropdown-body" id="globalNotifList">
+                                <div class="notif-empty-box">Đang tải...</div>
+                            </div>
+                            <div class="notif-dropdown-footer">
+                                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="top-user">
+                        <div class="avatar" th:text="${ownerName != null && !#strings.isEmpty(ownerName) ? #strings.substring(ownerName, 0, 1).toUpperCase() : 'S'}">SO</div>
+                        <span th:text="${ownerName ?: 'Chủ cửa hàng'}">Chủ cửa hàng</span>
+                    </div>
+
+                    <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
+                        <button type="submit"
+                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                            onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'"
+                            title="Đăng xuất">
+                            🚪 Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <div class="reg-info-wrapper">
+
+                <!-- Header Actions Bar -->
+                <div class="reg-header">
+                    <div class="reg-header-left">
+                        <h1>
+                            <span>📋</span> Toàn bộ Hồ sơ Đăng ký Shop
+                        </h1>
+                        <p>Xem lại chi tiết hồ sơ định danh CCCD, thông tin thuế, địa chỉ kho lấy hàng và tài khoản đối soát thanh toán đã đăng ký với FreshFruit.</p>
+                    </div>
+
+                    <div class="reg-header-actions">
+                        <button type="button" onclick="window.print()" class="btn-action btn-action-secondary" title="In hoặc lưu file PDF">
+                            <span>🖨️</span> In / Xuất Hồ sơ
+                        </button>
+
+                        <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" title="Cập nhật thông tin gian hàng & kho">
+                            <span>✏️</span> Cập nhật Hồ sơ Shop
+                        </a>
+
+                        <a th:href="@{/shopowner/payment-verification}" class="btn-action btn-action-blue" title="Xem hoặc đối chiếu thông tin ngân hàng">
+                            <span>💳</span> Đối soát Thanh toán
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Hero Status Banner -->
+                <div class="status-hero">
+                    <div class="status-hero-main">
+                        <div class="status-shop-summary">
+                            <div class="shop-badge-avatar" th:text="${#strings.substring(shop.name, 0, 1).toUpperCase()}">
+                                F
+                            </div>
+                            <div class="shop-name-block">
+                                <strong th:text="${shop.name}">Tên Gian Hàng</strong>
+                                <span class="shop-id-pill">
+                                    Mã Shop: <b th:text="'#FF-' + ${shop.id}">#FF-1</b>
+                                    <span style="color: #cbd5e1;">•</span>
+                                    <span>Nộp hồ sơ: </span>
+                                    <span th:text="${createdAtFormatted}">25/10/2026</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Cluster of Status Pills -->
+                        <div class="status-pills-cluster">
+                            <!-- Shop Approval Status -->
+                            <span th:if="${shop.approvalStatus == 'APPROVED'}" class="status-pill-lg pill-approved">
+                                ✓ Hồ sơ Shop: ĐÃ DUYỆT
+                            </span>
+                            <span th:if="${shop.approvalStatus == 'PENDING'}" class="status-pill-lg pill-pending">
+                                ⏳ Hồ sơ Shop: CHỜ DUYỆT
+                            </span>
+                            <span th:if="${shop.approvalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected">
+                                ✕ Hồ sơ Shop: BỊ TỪ CHỐI
+                            </span>
+
+                            <!-- Payment Approval Status -->
+                            <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" class="status-pill-lg pill-approved">
+                                💳 Thanh toán: ĐÃ KHỚP CCCD
+                            </span>
+                            <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" class="status-pill-lg pill-pending">
+                                💳 Thanh toán: CHỜ ĐỐI SOÁT
+                            </span>
+                            <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected">
+                                💳 Thanh toán: BỊ TỪ CHỐI
+                            </span>
+                            <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' or shop.paymentApprovalStatus == null}" class="status-pill-lg pill-gray">
+                                💳 Thanh toán: CHƯA CÀI ĐẶT
+                            </span>
+
+                            <!-- Operating Status -->
+                            <span th:if="${shop.operatingStatus == 'OPEN'}" class="status-pill-lg pill-approved">
+                                ● ĐANG MỞ BÁN
+                            </span>
+                            <span th:if="${shop.operatingStatus == 'SUSPENDED'}" class="status-pill-lg pill-rejected">
+                                ⛔ TẠM DỪNG BÁN
+                            </span>
+                            <span th:if="${shop.operatingStatus == 'CLOSED'}" class="status-pill-lg pill-gray">
+                                ○ ĐANG ĐÓNG CỬA
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Warning box if rejected -->
+                    <div th:if="${shop.approvalStatus == 'REJECTED' and shop.rejectionReason != null}" class="rejection-banner">
+                        <strong>⚠️ Lý do Ban Quản trị từ chối hồ sơ Shop:</strong>
+                        <span th:text="${shop.rejectionReason}">Thông tin chưa đạt yêu cầu.</span>
+                    </div>
+
+                    <div th:if="${shop.paymentApprovalStatus == 'REJECTED' and shop.bankRejectionReason != null}" class="rejection-banner">
+                        <strong>⚠️ Lý do từ chối tài khoản ngân hàng:</strong>
+                        <span th:text="${shop.bankRejectionReason}">Tên chủ tài khoản không trùng khớp với CCCD.</span>
+                    </div>
+
+                    <!-- 4-Step Stepper Timeline -->
+                    <div class="stepper-container">
+                        <!-- Step 1 -->
+                        <div class="step-card done">
+                            <span class="step-num-icon">✓</span>
+                            <div class="step-card-text">
+                                <strong>1. Định danh CCCD & Thuế</strong>
+                                <small th:text="${createdAtFormatted}">Đã xác thực nộp đơn</small>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="step-card" th:classappend="${shop.approvalStatus == 'APPROVED'} ? ' done' : (${shop.approvalStatus == 'REJECTED'} ? ' fail' : ' active-step')">
+                            <span class="step-num-icon" th:text="${shop.approvalStatus == 'APPROVED' ? '✓' : (shop.approvalStatus == 'REJECTED' ? '✕' : '2')}">2</span>
+                            <div class="step-card-text">
+                                <strong>2. Thẩm định Hồ sơ Shop</strong>
+                                <small th:text="${reviewedAtFormatted != null ? reviewedAtFormatted : (shop.approvalStatus == 'REJECTED' ? 'Bị từ chối' : 'Đang xử lý trong 24h')}">
+                                    Thẩm định thông tin
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="step-card" th:classappend="${shop.paymentApprovalStatus == 'APPROVED'} ? ' done' : (${shop.paymentApprovalStatus == 'REJECTED'} ? ' fail' : (${shop.approvalStatus == 'APPROVED'} ? ' active-step' : ''))">
+                            <span class="step-num-icon" th:text="${shop.paymentApprovalStatus == 'APPROVED' ? '✓' : (shop.paymentApprovalStatus == 'REJECTED' ? '✕' : '3')}">3</span>
+                            <div class="step-card-text">
+                                <strong>3. Đối soát Ngân hàng</strong>
+                                <small th:text="${paymentReviewedAtFormatted != null ? paymentReviewedAtFormatted : (shop.paymentApprovalStatus == 'APPROVED' ? 'Đã duyệt khớp CCCD' : 'Đối chiếu Tên TK với CCCD')}">
+                                    Đối soát tài khoản
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="step-card" th:classappend="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN'} ? ' done' : ''">
+                            <span class="step-num-icon" th:text="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN' ? '✓' : '4'}">4</span>
+                            <div class="step-card-text">
+                                <strong>4. Mở bán Chính thức</strong>
+                                <small th:text="${shop.operatingStatus == 'OPEN' ? 'Đang mở bán trên FreshFruit' : 'Sẵn sàng bán hàng'}">
+                                    Đăng biến thể & bán hoa quả
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs Filter -->
+                <div class="reg-nav-tabs">
+                    <button type="button" class="tab-btn active" onclick="filterTab('all', this)">📋 Tất cả thông tin</button>
+                    <button type="button" class="tab-btn" onclick="filterTab('shop-section', this)">🏪 Gian hàng & Kho bãi</button>
+                    <button type="button" class="tab-btn" onclick="filterTab('legal-section', this)">🪪 Định danh & Thuế</button>
+                    <button type="button" class="tab-btn" onclick="filterTab('banking-section', this)">💳 Ngân hàng Đối soát</button>
+                </div>
+
+                <!-- Main Grid Layout -->
+                <div class="info-grid">
+
+                    <!-- LEFT COLUMN: Shop Info & Fulfillment -->
+                    <div class="grid-col-left">
+
+                        <!-- SECTION 1: THÔNG TIN GIAN HÀNG & KHO HÀNG -->
+                        <div class="section-card" id="shop-section">
+                            <div class="section-title">
+                                <h2><span>🏪</span> Thông tin Gian hàng & Kho vận</h2>
+                                <span class="section-tag">Hồ sơ chính thức</span>
+                            </div>
+
+                            <div class="data-rows">
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Tên gian hàng hiển thị</span>
+                                    <span class="data-val">
+                                        <b th:text="${shop.name}">FreshFruit Store</b>
+                                        <span style="color:#16a34a; font-size: 15px;" title="Cửa hàng đã xác minh">✓</span>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Hotline liên hệ kinh doanh</span>
+                                    <span class="data-val">
+                                        <span th:text="${shop.phone}">0912345678</span>
+                                        <button type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.phone} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Tỉnh / Thành phố kho lấy hàng</span>
+                                    <span class="data-val" th:text="${provinceName}">Hà Nội</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Phường / Xã</span>
+                                    <span class="data-val" th:text="${shop.wardName}">Phường Dịch Vọng Hậu</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Địa chỉ kho lấy hàng chi tiết</span>
+                                    <span class="data-val" style="text-align: right; max-width: 320px;" th:text="${shop.addressDetail}">
+                                        Số 123 Đường Cầu Giấy
+                                    </span>
+                                </div>
+
+                                <div class="data-row" style="margin-top: 6px;">
+                                    <span class="data-label">Mô tả gian hàng & Cam kết chất lượng nông sản</span>
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 13.5px; color: #334155; line-height: 1.5;"
+                                         th:text="${!#strings.isEmpty(shop.description) ? shop.description : '(Chưa có mô tả chi tiết)'}">
+                                        Cam kết cung cấp hoa quả tươi ngon, có nguồn gốc xuất xứ rõ ràng.
+                                    </div>
+                                </div>
+
+                                <!-- Shipping Methods Enabled -->
+                                <div class="data-row" style="margin-top: 8px;">
+                                    <span class="data-label">Kênh vận chuyển đã đăng ký</span>
+                                    <div class="shipping-pills">
+                                        <span class="ship-pill" th:classappend="${shippingExpress} ? 'active' : 'inactive'">
+                                            ⚡ Giao Hỏa tốc (2h - 4h)
+                                        </span>
+                                        <span class="ship-pill" th:classappend="${shippingFast} ? 'active' : 'inactive'">
+                                            🚚 Giao Nhanh (Trong ngày)
+                                        </span>
+                                        <span class="ship-pill" th:classappend="${shippingStandard} ? 'active' : 'inactive'">
+                                            📦 Giao Tiêu chuẩn (2 - 3 ngày)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 3: TÀI KHOẢN NGÂN HÀNG ĐỐI SOÁT & NHẬN THANH TOÁN -->
+                        <div class="section-card" id="banking-section">
+                            <div class="section-title">
+                                <h2><span>💳</span> Tài khoản Ngân hàng Đối soát & Thanh toán</h2>
+                                <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Nhận tiền doanh thu</span>
+                            </div>
+
+                            <!-- Virtual Bank Card Mockup -->
+                            <div class="bank-mockup-card">
+                                <div class="bank-card-header">
+                                    <span class="bank-title" th:text="${!#strings.isEmpty(shop.bankName) ? shop.bankName : 'NGÂN HÀNG VIỆT NAM'}">
+                                        VIETCOMBANK
+                                    </span>
+                                    <div class="id-card-chip"></div>
+                                </div>
+
+                                <div class="bank-account-num">
+                                    <span th:text="${!#strings.isEmpty(shop.bankAccountNumber) ? shop.bankAccountNumber : '•••• •••• •••• ••••'}">
+                                        0123 4567 8999
+                                    </span>
+                                    <button th:if="${!#strings.isEmpty(shop.bankAccountNumber)}" type="button" class="copy-chip" style="background:rgba(255,255,255,0.2); color:#fff; border:none;" th:attr="onclick='copyText(\'' + ${shop.bankAccountNumber} + '\')'">
+                                        Copy
+                                    </button>
+                                </div>
+
+                                <div class="bank-holder-footer">
+                                    <div>
+                                        <small>CHỦ TÀI KHOẢN (TRÙNG CCCD)</small>
+                                        <strong th:text="${!#strings.isEmpty(shop.bankAccountName) ? #strings.toUpperCase(shop.bankAccountName) : (shop.idCardName != null ? #strings.toUpperCase(shop.idCardName) : 'CHỦ CỬA HÀNG')}">
+                                            NGUYEN VAN A
+                                        </strong>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <small>TRẠNG THÁI</small>
+                                        <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="color: #4ade80; font-weight: 700; font-size: 12px;">✓ Đã xác thực</span>
+                                        <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="color: #facc15; font-weight: 700; font-size: 12px;">⏳ Đang đối soát</span>
+                                        <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="color: #f87171; font-weight: 700; font-size: 12px;">✕ Bị từ chối</span>
+                                        <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' or shop.paymentApprovalStatus == null}" style="color: #cbd5e1; font-weight: 700; font-size: 12px;">Chưa cài đặt</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Details breakdown -->
+                            <div class="data-rows">
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Ngân hàng thụ hưởng</span>
+                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.bankName) ? shop.bankName : 'Chưa cấu hình'}">Vietcombank</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Số tài khoản ngân hàng</span>
+                                    <span class="data-val">
+                                        <span th:text="${!#strings.isEmpty(shop.bankAccountNumber) ? shop.bankAccountNumber : 'Chưa cập nhật'}">0123456789</span>
+                                        <button th:if="${!#strings.isEmpty(shop.bankAccountNumber)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.bankAccountNumber} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Tên chủ tài khoản</span>
+                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.bankAccountName) ? #strings.toUpperCase(shop.bankAccountName) : 'Chưa cập nhật'}">NGUYEN VAN A</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Chi nhánh ngân hàng</span>
+                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.bankBranch) ? shop.bankBranch : 'Hội sở chính / Không bắt buộc'}">Chi nhánh Hà Nội</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Quy tắc đối soát tên</span>
+                                    <span class="data-val" style="color: #16a34a; font-size: 12.5px;">
+                                        ✓ Bắt buộc trùng khớp với Họ tên trên CCCD (<strong th:text="${shop.idCardName ?: 'Đã định danh'}">Tên CCCD</strong>)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT COLUMN: Legal Identity & Tax -->
+                    <div class="grid-col-right">
+
+                        <!-- SECTION 2: ĐỊNH DANH PHÁP LÝ CCCD & THUẾ -->
+                        <div class="section-card" id="legal-section">
+                            <div class="section-title">
+                                <h2><span>🪪</span> Định danh Pháp lý & Thuế</h2>
+                                <span class="section-tag">Bảo mật cao</span>
+                            </div>
+
+                            <!-- Digital ID Card Mockup -->
+                            <div class="id-mockup-card">
+                                <div class="id-card-top">
+                                    <strong>CĂN CƯỚC CÔNG DÂN VIỆT NAM</strong>
+                                    <div class="id-card-chip"></div>
+                                </div>
+
+                                <div class="id-name-box">
+                                    <small>HỌ VÀ TÊN / FULL NAME</small>
+                                    <h3 th:text="${shop.idCardName != null ? #strings.toUpperCase(shop.idCardName) : (activation != null ? #strings.toUpperCase(activation.idCardName) : 'CHỦ GIAN HÀNG')}">
+                                        NGUYEN VAN A
+                                    </h3>
+                                </div>
+
+                                <div class="id-meta-grid">
+                                    <div class="id-meta-item">
+                                        <small>SỐ ĐỊNH DANH / ID</small>
+                                        <b th:text="${shop.idCardNumber ?: (activation != null ? activation.idCardNumber : 'Chưa cập nhật')}">001203004567</b>
+                                    </div>
+                                    <div class="id-meta-item">
+                                        <small>LOẠI HÌNH</small>
+                                        <b th:text="${businessTypeLabel}">Cá nhân / Nhà vườn</b>
+                                    </div>
+                                    <div class="id-meta-item">
+                                        <small>NGÀY CẤP</small>
+                                        <b th:text="${shop.idCardDate != null ? #temporals.format(shop.idCardDate, 'dd/MM/yyyy') : (activation != null && activation.idCardDate != null ? activation.idCardDate : 'Chưa có')}">01/01/2021</b>
+                                    </div>
+                                    <div class="id-meta-item">
+                                        <small>NƠI CẤP</small>
+                                        <b th:text="${shop.idCardPlace ?: (activation != null ? activation.idCardPlace : 'Cục CSQLHC về TTXH')}">Cục CSQLHC</b>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tax Information Breakdown -->
+                            <div class="data-rows">
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Số Căn cước công dân</span>
+                                    <span class="data-val">
+                                        <span th:text="${shop.idCardNumber ?: 'Chưa cập nhật'}">001203004567</span>
+                                        <button th:if="${shop.idCardNumber != null}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.idCardNumber} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Mô hình kinh doanh</span>
+                                    <span class="data-val" th:text="${businessTypeLabel}">Cá nhân / Nhà vườn</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Mã số thuế (MST)</span>
+                                    <span class="data-val">
+                                        <span th:text="${!#strings.isEmpty(shop.taxCode) ? shop.taxCode : 'Chưa có / Đăng ký theo CCCD'}">8123456789</span>
+                                        <button th:if="${!#strings.isEmpty(shop.taxCode)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.taxCode} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Tên người nộp thuế</span>
+                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.taxName) ? shop.taxName : (shop.idCardName ?: 'Đồng nhất chủ hộ')}">
+                                        Nguyen Van A
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Email nhận hóa đơn điện tử</span>
+                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.taxEmail) ? shop.taxEmail : (activation != null ? activation.email : 'Chưa cung cấp')}">
+                                        seller@freshfruit.com
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 4: QUY CHẾ VẬN HÀNH & HỖ TRỢ -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <h2><span>📜</span> Cam kết & Hỗ trợ Gian hàng</h2>
+                            </div>
+
+                            <div style="font-size: 13px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                    <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                    <span>Hồ sơ đã được lưu trữ và mã hóa an toàn trên máy chủ FreshFruit Việt Nam.</span>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                    <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                    <span>Chủ cửa hàng cam kết cung ứng nông sản đúng nguồn gốc xuất xứ, đạt tiêu chuẩn an toàn thực phẩm.</span>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                    <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                    <span>Mọi điều chỉnh liên quan đến thông tin pháp lý CCCD / MST cần được Ban Quản trị hậu kiểm trước khi có hiệu lực.</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 12px; color: #64748b;">Cần giải đáp thắc mắc?</span>
+                                <a th:href="@{/customer/account/complaints}" style="font-size: 12.5px; font-weight: 700; color: #16a34a; text-decoration: none;">
+                                    Liên hệ Ban Quản trị →
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Toast Notification for Copy -->
+    <div id="copyToast">
+        <span>✓</span> Đã sao chép vào bộ nhớ tạm!
+    </div>
+
+    <script>
+        // Copy to clipboard helper
+        function copyText(text) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(function() {
+                var toast = document.getElementById('copyToast');
+                toast.classList.add('show');
+                setTimeout(function() {
+                    toast.classList.remove('show');
+                }, 2200);
+            }).catch(function() {
+                alert('Không thể sao chép: ' + text);
+            });
+        }
+
+        // Tab Filter Helper
+        function filterTab(targetId, btn) {
+            var allButtons = document.querySelectorAll('.tab-btn');
+            allButtons.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+
+            var leftCol = document.querySelector('.grid-col-left');
+            var rightCol = document.querySelector('.grid-col-right');
+
+            if (targetId === 'all') {
+                leftCol.style.display = 'block';
+                rightCol.style.display = 'block';
+                document.getElementById('shop-section').style.display = 'block';
+                document.getElementById('banking-section').style.display = 'block';
+                document.getElementById('legal-section').style.display = 'block';
+            } else if (targetId === 'shop-section') {
+                leftCol.style.display = 'block';
+                rightCol.style.display = 'none';
+                document.getElementById('shop-section').style.display = 'block';
+                document.getElementById('banking-section').style.display = 'none';
+            } else if (targetId === 'banking-section') {
+                leftCol.style.display = 'block';
+                rightCol.style.display = 'none';
+                document.getElementById('shop-section').style.display = 'none';
+                document.getElementById('banking-section').style.display = 'block';
+            } else if (targetId === 'legal-section') {
+                leftCol.style.display = 'none';
+                rightCol.style.display = 'block';
+                document.getElementById('legal-section').style.display = 'block';
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -41,6 +41,11 @@
             <span>⌂</span> Tổng quan
         </a>
 
+        <a th:classappend="${activePage == 'registration-info'} ? ' active' : ''"
+           th:href="@{/shopowner/registration-info}">
+            <span>📋</span> Thông tin đăng ký
+        </a>
+
         <span class="nav-label">QUẢN LÝ CỬA HÀNG</span>
 
         <a th:classappend="${activePage == 'products'} ? ' active' : ''"
