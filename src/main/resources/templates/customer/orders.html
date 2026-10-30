@@ -101,6 +101,12 @@
                 </div>
                 <div class="order-actions">
                     <a class="btn-outline" th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Chi tiết</a>
+                    <form th:if="${o['status'] == 'PENDING' and o['payment_status'] != 'PAID'}"
+                          th:action="@{/customer/account/orders/{id}/cancel(id=${o['id']})}"
+                          method="post" style="display: inline-block; margin: 0;"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
+                        <button class="btn-cancel-sm" type="submit">Hủy đơn</button>
+                    </form>
                     <a class="btn-primary-sm"
                        th:if="${o['status'] == 'COMPLETED'}"
                        th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Đánh giá</a>
