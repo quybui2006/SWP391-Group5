@@ -25,6 +25,7 @@ public class OperationsVariantApprovalController {
         this.approvals = approvals;
     }
 
+    /** Danh sách biến thể đang chờ Operations hậu kiểm. */
     @GetMapping("/operations/variants")
     public String pendingVariants(Model model) {
         List<PendingVariantApprovalDto> variants = approvals.findPendingVariants();
@@ -32,6 +33,7 @@ public class OperationsVariantApprovalController {
         return "operations/variants";
     }
 
+    /** Chi tiết biến thể, sản phẩm cha, cửa hàng và tồn kho để phục vụ kiểm duyệt. */
     @GetMapping("/operations/variants/{variantId}")
     public String variantDetails(@PathVariable Long variantId, Model model) {
         OperationsVariantDetailDto variant = approvals.getVariantDetail(variantId);
@@ -39,6 +41,7 @@ public class OperationsVariantApprovalController {
         return "operations/variant-detail";
     }
 
+    /** Duyệt biến thể đang chờ và cho phép biến thể tiếp tục mở bán. */
     @PostMapping("/operations/api/variants/{variantId}/approve")
     @ResponseBody
     public ResponseEntity<ApprovalActionResponse> approveVariant(@PathVariable Long variantId) {
@@ -46,6 +49,7 @@ public class OperationsVariantApprovalController {
         return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã duyệt biến thể. Biến thể đủ điều kiện mở bán."));
     }
 
+    /** Từ chối biến thể với lý do bắt buộc để ngừng bán và phản hồi cho shop. */
     @PostMapping("/operations/api/variants/{variantId}/reject")
     @ResponseBody
     public ResponseEntity<ApprovalActionResponse> rejectVariant(

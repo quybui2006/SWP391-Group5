@@ -50,6 +50,7 @@ public class CustomerProductDetailController {
     @Autowired
     private JdbcTemplate jdbc;
 
+    /** Hiển thị sản phẩm, giá khuyến mãi đang chạy và các voucher giảm tiền công khai của shop. */
     @GetMapping("/product/{id}")
     public String productDetail(@PathVariable("id") Long id,
                                 HttpSession session,

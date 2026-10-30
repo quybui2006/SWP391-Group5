@@ -31,6 +31,7 @@ public class ShopProductManagementController {
         this.categoryRepository = categoryRepository;
     }
 
+    /** Danh sách sản phẩm của shop, hỗ trợ tìm kiếm và phân trang. */
     @GetMapping({"/shop/products", "/shopowner/products"})
     public String list(@RequestParam(defaultValue = "") String keyword,
                        @RequestParam(defaultValue = "0") int page,
@@ -43,6 +44,7 @@ public class ShopProductManagementController {
         return "shopowner/product-list";
     }
 
+    /** Hiển thị biểu mẫu tạo hồ sơ sản phẩm và chọn danh mục còn hoạt động. */
     @GetMapping({"/shop/products/add", "/shopowner/products/add"})
     public String addForm(HttpServletRequest request, Model model) {
         if (ownerId(request) == null) return "redirect:/login";
@@ -52,6 +54,7 @@ public class ShopProductManagementController {
         return "shopowner/product-form";
     }
 
+    /** Tạo hồ sơ sản phẩm sau khi kiểm tra dữ liệu và ảnh bắt buộc. */
     @PostMapping({"/shop/products/add", "/shopowner/products/add"})
     public String create(@Valid @ModelAttribute("productCreateRequest") ProductCreateRequest form,
                         BindingResult binding, HttpServletRequest request, Model model,

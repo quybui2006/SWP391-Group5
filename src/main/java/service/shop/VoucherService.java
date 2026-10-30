@@ -18,9 +18,13 @@ public class VoucherService {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final VoucherRepository vouchers;
     private final ShopRepository shops;
+    /** Kết nối nơi lưu voucher với thông tin cửa hàng của chủ shop. */
     public VoucherService(VoucherRepository vouchers, ShopRepository shops){this.vouchers=vouchers;this.shops=shops;}
 
+    /** Lấy danh sách voucher giảm tiền theo mặc định, cùng từ khóa và trạng thái lọc. */
     public List<Voucher> list(Long ownerId,String keyword,String status){ return list(ownerId, keyword, status, "DISCOUNT"); }
+
+    /** Kiểm tra quyền shop, cập nhật trạng thái hết hạn rồi lấy danh sách voucher phù hợp. */
     public List<Voucher> list(Long ownerId,String keyword,String status,String voucherType){
         Long shopId=requireShop(ownerId).getId();
         String normalizedStatus=status==null?"":status.trim().toUpperCase(java.util.Locale.ROOT);
@@ -28,8 +32,10 @@ public class VoucherService {
         refreshExpired(shopId);
         return vouchers.searchByShop(shopId,keyword==null?"":keyword.trim(),normalizedStatus, voucherType);
     }
+    /** Chỉ tải voucher thuộc shop hiện tại để tránh sửa dữ liệu của shop khác. */
     public Voucher getForEdit(Long ownerId,Long id){return vouchers.findByIdAndShopId(id,requireShop(ownerId).getId()).orElseThrow(()->new IllegalArgumentException("Không tìm thấy voucher thuộc cửa hàng của bạn."));}
 
+    /** Kiểm tra dữ liệu voucher, chuẩn hóa mã và lưu voucher mới hoặc cập nhật voucher hiện có. */
     @Transactional
     public void save(Long ownerId,Long id,VoucherRequest form){
         Shop shop = requireShop(ownerId);
@@ -90,6 +96,7 @@ public class VoucherService {
         else if(id==null||"EXPIRED".equals(v.getStatus()))v.setStatus("ACTIVE");
         try {vouchers.saveAndFlush(v);} catch(DataIntegrityViolationException ex){throw new IllegalArgumentException("Không thể lưu voucher. Hãy kiểm tra mã trùng và các giá trị bắt buộc.");}
     }
+    /** Xóa voucher chưa được dùng; voucher đã gắn vào đơn được giữ lại để bảo toàn lịch sử. */
     @Transactional
     public void deleteUnusedVoucher(Long ownerId, Long voucherId) {
         Voucher voucher = getForEdit(ownerId, voucherId);
@@ -106,13 +113,15 @@ public class VoucherService {
         }
     }
 
+    /** Tạm dừng hoặc bật voucher còn lượt và còn hạn; voucher hết hạn được lưu EXPIRED rồi trả về. */
     @Transactional
     public String toggleVoucherStatus(Long ownerId,Long voucherId){
         Voucher v=getForEdit(ownerId,voucherId);
-        if(!v.getEndsAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))||"EXPIRED".equals(v.getStatus())){v.setStatus("EXPIRED");vouchers.save(v);throw new IllegalArgumentException("Voucher đã hết hạn nên không thể bật hoặc tắt.");}
+        if(!v.getEndsAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))||"EXPIRED".equals(v.getStatus())){v.setStatus("EXPIRED");vouchers.save(v);return "EXPIRED";}
         if(v.getUsedCount()!=null&&v.getMaxUsages()!=null&&v.getUsedCount()>=v.getMaxUsages())throw new IllegalArgumentException("Voucher đã hết lượt sử dụng nên không thể bật lại.");
         v.setStatus("ACTIVE".equals(v.getStatus())?"PAUSED":"ACTIVE");vouchers.save(v);return v.getStatus();
     }
+    /** Kiểm tra số tiền là số nguyên VNĐ và vừa giới hạn 19 chữ số của cơ sở dữ liệu. */
     private boolean isWholeVnd(BigDecimal value) {
         if (value == null) return false;
         BigDecimal normalized = value.stripTrailingZeros();
@@ -120,6 +129,9 @@ public class VoucherService {
         return normalized.scale() <= 0 && integerDigits <= 19;
     }
 
+    /** Đồng bộ các voucher quá hạn thành EXPIRED khi chủ shop mở danh sách. */
     private void refreshExpired(Long shopId){List<Voucher> expired=vouchers.searchByShop(shopId,"","","DISCOUNT"); expired = new java.util.ArrayList<>(expired); expired.addAll(vouchers.searchByShop(shopId,"","","CASHBACK")); expired.stream().filter(v->!"EXPIRED".equals(v.getStatus())&&v.getEndsAt()!=null&&!v.getEndsAt().isAfter(LocalDateTime.now(BUSINESS_ZONE))).forEach(v->v.setStatus("EXPIRED"));if(!expired.isEmpty())vouchers.saveAll(expired);}
+
+    /** Đảm bảo tài khoản có shop đã được duyệt trước khi quản lý voucher. */
     private Shop requireShop(Long ownerId){Shop s=shops.findByOwnerId(ownerId).orElseThrow(()->new IllegalArgumentException("Tài khoản chưa có cửa hàng."));if(!"APPROVED".equals(s.getApprovalStatus()))throw new IllegalArgumentException("Cửa hàng cần được duyệt trước khi quản lý voucher.");return s;}
 }

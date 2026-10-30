@@ -6,6 +6,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
+import service.shop.VoucherUsageService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.PreparedStatement;
@@ -23,8 +24,15 @@ public class OrderCheckoutService {
     private static final BigDecimal SHIPPING_FEE = new BigDecimal("20000");
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
-    public OrderCheckoutService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final VoucherUsageService voucherUsage;
 
+    /** Kết nối truy vấn checkout với nghiệp vụ trả lượt voucher khi đơn bị hủy. */
+    public OrderCheckoutService(JdbcTemplate jdbc, VoucherUsageService voucherUsage) {
+        this.jdbc = jdbc;
+        this.voucherUsage = voucherUsage;
+    }
+
+    /** Đọc sản phẩm đã chọn và lấy giá khuyến mãi đang hiệu lực cho khách đã đăng nhập. */
     public List<Map<String, Object>> items(Long userId, List<Long> variantIds) {
         if (variantIds == null || variantIds.isEmpty()) return List.of();
         String marks = String.join(",", java.util.Collections.nCopies(variantIds.size(), "?"));
@@ -36,6 +44,7 @@ public class OrderCheckoutService {
                 "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args);
     }
 
+    /** Đọc sản phẩm trong giỏ khách vãng lai và áp giá khuyến mãi hiện tại. */
     public List<Map<String, Object>> guestItems(Map<Long, Integer> guestCart, List<Long> variantIds) {
         if (guestCart == null || variantIds == null || variantIds.isEmpty()) return List.of();
         List<Long> selected = variantIds.stream().distinct().filter(guestCart::containsKey).toList();
@@ -53,8 +62,10 @@ public class OrderCheckoutService {
         return rows;
     }
 
+    /** Gói kết quả áp voucher gồm mã, số tiền giảm hoặc lý do không áp dụng được. */
     public record VoucherQuote(Long voucherId, String code, BigDecimal discount, String error) {}
 
+    /** Tính thử mức giảm và trả lỗi dễ hiển thị trên checkout, chưa ghi nhận lượt dùng. */
     public VoucherQuote previewVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal) {
         if (rawCode == null || rawCode.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
         try {
@@ -64,12 +75,13 @@ public class OrderCheckoutService {
         }
     }
 
+    /** Kiểm tra mã thuộc shop, loại giảm tiền, hiệu lực, lượt còn lại và đơn tối thiểu rồi tính số tiền giảm. */
     private VoucherQuote quoteVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
         String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
         if (code.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
         String lockClause = lock ? " FOR UPDATE" : "";
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at " +
-                "FROM vouchers WHERE shop_id=? AND code=? AND is_public=1" + lockClause, shopId, code);
+                "FROM vouchers WHERE shop_id=? AND code=? AND voucher_type='DISCOUNT'" + lockClause, shopId, code);
         if (rows.isEmpty()) throw new IllegalArgumentException("Mã voucher không thuộc cửa hàng này.");
         Map<String, Object> v = rows.get(0);
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
@@ -92,14 +104,17 @@ public class OrderCheckoutService {
         return new VoucherQuote(((Number) v.get("id")).longValue(), code, discount, null);
     }
 
+    /** Đọc sổ địa chỉ của khách để chọn khi đặt hàng. */
     public List<Map<String, Object>> addresses(Long userId) {
         return jdbc.queryForList("SELECT ua.id,ua.recipient_name,ua.recipient_phone,ua.province_code,p.name AS province_name,ua.ward_name,ua.address_detail,ua.is_default FROM user_addresses ua JOIN provinces p ON p.code=ua.province_code WHERE ua.user_id=? ORDER BY ua.is_default DESC,ua.created_at DESC", userId);
     }
 
+    /** Đọc danh sách tỉnh thành đang hoạt động để kiểm tra địa chỉ giao hàng. */
     public List<Map<String, Object>> provinces() {
         return jdbc.queryForList("SELECT code,name FROM provinces WHERE is_active=1 ORDER BY name");
     }
 
+    /** Đặt COD theo giao diện cũ; chuyển sang luồng tạo đơn chung không có mã voucher. */
     @Transactional
     public String placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                              String recipientPhone, String provinceCode, String wardName, String addressDetail, String note) {
@@ -228,6 +243,7 @@ public class OrderCheckoutService {
     public record CheckoutResult(String checkoutCode, BigDecimal totalAmount, List<String> orderCodes, String paymentMethod) {}
     public record GuestCheckoutResult(CheckoutResult checkout, String guestAccessToken) {}
 
+    /** Đặt hàng từ giỏ khách đã đăng nhập và áp mã voucher riêng cho từng shop. */
     @Transactional
     public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                                      String recipientPhone, String provinceCode, String wardName, String addressDetail,
@@ -236,6 +252,7 @@ public class OrderCheckoutService {
                 provinceCode, wardName, addressDetail, note, paymentMethod, Map.of());
     }
 
+    /** Đặt hàng và tính voucher giảm tiền trên subtotal của từng shop. */
     @Transactional
     public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                                      String recipientPhone, String provinceCode, String wardName, String addressDetail,
@@ -344,6 +361,7 @@ public class OrderCheckoutService {
         return new CheckoutResult(checkoutCode, total, orderCodes, method);
     }
 
+    /** Đặt hàng COD cho khách vãng lai, dùng cùng quy tắc giá và voucher như khách đăng nhập. */
     @Transactional
     public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
                                                 String recipientName, String recipientPhone, String provinceCode,
@@ -426,12 +444,14 @@ public class OrderCheckoutService {
         return new GuestCheckoutResult(new CheckoutResult(checkoutCode, total, orderCodes, "COD"), accessToken);
     }
 
+    /** Cộng tiền các dòng hàng sau khi đã lấy giá khuyến mãi hiện tại. */
     private BigDecimal sumLines(List<Map<String, Object>> lines) {
         return lines.stream().map(line -> ((BigDecimal) line.get("price"))
                 .multiply(BigDecimal.valueOf(((Number) line.get("quantity")).longValue())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    /** Chuẩn hóa kiểu thời gian JDBC trước khi so sánh hạn voucher. */
     private LocalDateTime toLocalDateTime(Object value) {
         if (value instanceof LocalDateTime dateTime) return dateTime;
         if (value instanceof java.sql.Timestamp timestamp) return timestamp.toLocalDateTime();
@@ -439,10 +459,17 @@ public class OrderCheckoutService {
                 + (value == null ? "null" : value.getClass().getName()));
     }
 
+    /** Giữ một lượt voucher bằng câu lệnh có điều kiện để không vượt tổng hạn mức. */
     private void countVoucherUse(VoucherQuote quote) {
         if (quote.voucherId() != null && jdbc.update("UPDATE vouchers SET used_count=used_count+1 WHERE id=? AND status='ACTIVE' AND used_count<max_usages", quote.voucherId()) != 1) {
             throw new IllegalArgumentException("Voucher vừa hết lượt sử dụng. Hãy thử mã khác.");
         }
+    }
+
+    /** Hoàn lại lượt voucher giảm tiền sau khi đơn đã chuyển sang CANCELLED. */
+    /** Gọi nghiệp vụ chung để trả lượt sau khi một luồng hủy đơn cập nhật thành công. */
+    private void returnDiscountVoucherUse(Long orderId) {
+        voucherUsage.returnDiscountUse(orderId);
     }
 
     @Transactional
@@ -467,6 +494,7 @@ public class OrderCheckoutService {
     /**
      * Hàm xử lý khi VNPay redirect kết quả về
      */
+    /** Xác nhận kết quả VNPay; nếu thất bại thì hủy đơn và hoàn lượt voucher đã giữ. */
     @Transactional
     public List<String> handleVnPayCallback(String checkoutCode, boolean isSuccess) {
         List<Map<String, Object>> checkouts = jdbc.queryForList("SELECT id,payment_method FROM checkouts WHERE checkout_code=? FOR UPDATE", checkoutCode);
@@ -494,7 +522,8 @@ public class OrderCheckoutService {
             for (Map<String, Object> order : orderRows) {
                 long orderId = ((Number) order.get("id")).longValue();
                 releaseReservedItems(orderId, "vnpay-failed");
-                jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Thanh toán VNPay thất bại hoặc bị hủy' WHERE id=? AND status='PENDING'", now, orderId);
+                int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Thanh toán VNPay thất bại hoặc bị hủy' WHERE id=? AND status='PENDING'", now, orderId);
+                if (cancelled == 1) returnDiscountVoucherUse(orderId);
                 jdbc.update("UPDATE payments SET status='FAILED',failure_reason='Khách hủy hoặc giao dịch thất bại' WHERE order_id=? AND status='PENDING'", orderId);
                 notifyOrderCustomer(orderId, "ORDER_PAYMENT_FAILED", "Thanh toán không thành công", "Thanh toán cho đơn " + order.get("order_code") + " không thành công.");
             }
@@ -503,6 +532,7 @@ public class OrderCheckoutService {
         return orderCodes;
     }
 
+    /** Tự hủy đơn COD/online quá hạn và trả lại lượt voucher trong cùng transaction. */
     @Scheduled(fixedDelayString = "${orders.expiry-scan-ms:300000}")
     @Transactional
     public void expirePendingOrders() {
@@ -513,7 +543,8 @@ public class OrderCheckoutService {
             List<Map<String, Object>> rows = jdbc.queryForList("SELECT o.id,o.order_code,o.checkout_id FROM orders o WHERE o.id=? AND o.status='PENDING' AND o.payment_method='COD' AND o.created_at<=? FOR UPDATE", orderId, codCutoff);
             if (rows.isEmpty()) continue;
             Map<String, Object> order = rows.get(0);
-            jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Shop không xác nhận trong thời hạn 3 ngày' WHERE id=? AND status='PENDING'", now, orderId);
+            int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Shop không xác nhận trong thời hạn 3 ngày' WHERE id=? AND status='PENDING'", now, orderId);
+            if (cancelled == 1) returnDiscountVoucherUse(orderId);
             jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", orderId);
             jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason='Shop không xác nhận trong thời hạn 3 ngày' WHERE order_id=? AND status='PENDING'", orderId);
             updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
@@ -526,7 +557,8 @@ public class OrderCheckoutService {
             if (rows.isEmpty()) continue;
             Map<String, Object> order = rows.get(0);
             releaseReservedItems(orderId, "payment-expired");
-            jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Phiên thanh toán online hết hạn' WHERE id=? AND status='PENDING'", now, orderId);
+            int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Phiên thanh toán online hết hạn' WHERE id=? AND status='PENDING'", now, orderId);
+            if (cancelled == 1) returnDiscountVoucherUse(orderId);
             jdbc.update("UPDATE payments SET status='EXPIRED',failure_reason='Phiên thanh toán hết hạn' WHERE order_id=? AND status='PENDING'", orderId);
             updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
             notifyOrderCustomer(orderId, "ORDER_PAYMENT_EXPIRED", "Đơn hàng đã hết hạn thanh toán", "Phiên thanh toán của đơn " + order.get("order_code") + " đã hết hạn; tồn kho được trả lại.");

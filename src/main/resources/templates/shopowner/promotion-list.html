@@ -40,7 +40,7 @@
                     <thead><tr><th>Sản phẩm / Loại hàng</th><th>Mã hàng</th><th>Giá ban đầu</th><th>Giá ưu đãi</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="promotion : ${promotions}">
-                        <td><div class="product-cell"><span class="image-placeholder">🍊</span><div><strong th:text="${promotion.productName}">Sản phẩm</strong><small th:text="${promotion.variantName}">Biến thể</small></div></div></td>
+                        <td><div class="product-cell"><span class="image-placeholder"></span><div><strong th:text="${promotion.productName}">Sản phẩm</strong><small th:text="${promotion.variantName}">Biến thể</small></div></div></td>
                         <td th:text="${promotion.sku}">SKU</td>
                         <td th:text="${#numbers.formatDecimal(promotion.originalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">100.000 ₫</td>
                         <td><strong th:text="${#numbers.formatDecimal(promotion.promotionalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">80.000 ₫</strong></td>

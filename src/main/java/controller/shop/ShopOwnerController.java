@@ -66,6 +66,7 @@ public class ShopOwnerController {
         return "shopowner/home";
     }
 
+    /** Danh sách biến thể thuộc shop, kèm tìm kiếm và thống kê trạng thái. */
     @GetMapping("/shopowner/product-variants")
     public String productVariants(
             @RequestParam(defaultValue = "") String keyword,
@@ -91,6 +92,7 @@ public class ShopOwnerController {
         return "shopowner/product-variants";
     }
 
+    /** Hiển thị biểu mẫu thêm biến thể cho một hồ sơ sản phẩm của shop. */
     @GetMapping("/shopowner/product-variants/add")
     public String addVariantForm(
             @RequestParam(required = false) Long productId,
@@ -112,6 +114,7 @@ public class ShopOwnerController {
         return "shopowner/product-variant-form";
     }
 
+    /** Tạo biến thể và tồn kho ban đầu, đồng thời đưa biến thể vào hàng đợi hậu kiểm. */
     @PostMapping("/shopowner/product-variants/add")
     public String createVariant(
             @Valid @ModelAttribute("variantCreateRequest")

@@ -42,6 +42,7 @@ public class PromotionServiceImpl {
         this.jdbc = jdbc;
     }
 
+    /** Đọc các chương trình của shop và trả tên sản phẩm, giá, lịch chạy cho màn danh sách. */
     public List<PromotionListItem> getPromotions(Long ownerUserId, String keyword) {
         Long shopId = requireShop(ownerUserId).getId();
         String term = keyword == null ? "" : keyword.trim().toLowerCase();
@@ -61,6 +62,7 @@ public class PromotionServiceImpl {
                 shopId, term, "%" + term + "%", "%" + term + "%", "%" + term + "%");
     }
 
+    /** Lấy các biến thể đủ điều kiện để chủ shop chọn khi tạo khuyến mãi. */
     public List<PromotionVariantOption> getVariantOptions(Long ownerUserId) {
         Long shopId = requireShop(ownerUserId).getId();
         return variantRepository.findPromotionEligibleVariants(shopId).stream()
@@ -68,6 +70,7 @@ public class PromotionServiceImpl {
                 .toList();
     }
 
+    /** Nạp dữ liệu chương trình thuộc shop vào form chỉnh sửa. */
     public PromotionForm getForm(Long id, Long ownerUserId) {
         PromotionalPrice promotion = loadOwnedPromotion(id, ownerUserId);
         PromotionForm form = new PromotionForm();
@@ -79,6 +82,7 @@ public class PromotionServiceImpl {
         return form;
     }
 
+    /** Kiểm tra quyền sở hữu, giá, thời gian, tồn kho và lưu lịch khuyến mãi không chồng lấn. */
     @Transactional
     public void save(PromotionForm form, Long ownerUserId, Long promotionId) {
         try {
@@ -102,6 +106,8 @@ public class PromotionServiceImpl {
             if (form.getEndsAt() == null || !form.getEndsAt().isAfter(form.getStartsAt())) {
                 throw new PromotionValidationException("endsAt", "Thời điểm kết thúc phải sau thời điểm bắt đầu.");
             }
+            // Khóa dòng biến thể để hai yêu cầu đồng thời không cùng vượt qua bước kiểm tra lịch trùng.
+            jdbc.queryForObject("SELECT id FROM product_variants WHERE id=? FOR UPDATE", Long.class, variant.getId());
             VariantInventory inventory = inventoryRepository.findByVariantId(variant.getId())
                     .orElseThrow(() -> new PromotionValidationException("variantId", "Biến thể này chưa có thông tin kho hàng."));
             if (!"ACTIVE".equals(inventory.getStatus())) {
@@ -132,11 +138,14 @@ public class PromotionServiceImpl {
         }
     }
 
+    /** Bật hoặc tắt lịch; khi bật phải kiểm tra lịch còn hạn và không trùng với lịch khác. */
     @Transactional
     public void toggle(Long id, Long ownerUserId) {
         PromotionalPrice promotion = loadOwnedPromotion(id, ownerUserId);
         boolean enable = !Boolean.TRUE.equals(promotion.getEnabled());
         if (enable) {
+            // Dùng cùng khóa biến thể với hàm lưu để thao tác bật/tạo được tuần tự hóa.
+            jdbc.queryForObject("SELECT id FROM product_variants WHERE id=? FOR UPDATE", Long.class, promotion.getVariantId());
             LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
             if (!promotion.getEndsAt().isAfter(now)) {
                 throw new PromotionValidationException("serviceError", "Không thể bật khuyến mãi đã hết hạn. Hãy chỉnh sửa thời gian kết thúc trước.");
@@ -153,6 +162,7 @@ public class PromotionServiceImpl {
         promotionRepository.save(promotion);
     }
 
+    /** Chỉ xóa lịch chưa được dùng trong đơn để không làm mất giá đã chốt trong lịch sử. */
     @Transactional
     public void delete(Long id, Long ownerUserId) {
         PromotionalPrice promotion = loadOwnedPromotion(id, ownerUserId);
@@ -165,6 +175,7 @@ public class PromotionServiceImpl {
         promotionRepository.delete(promotion);
     }
 
+    /** Tải chương trình và xác nhận biến thể thuộc cửa hàng của tài khoản đang thao tác. */
     private PromotionalPrice loadOwnedPromotion(Long id, Long ownerUserId) {
         PromotionalPrice promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new PromotionValidationException("serviceError", "Không tìm thấy chương trình khuyến mãi."));
@@ -176,10 +187,12 @@ public class PromotionServiceImpl {
         return promotion;
     }
 
+    /** Tìm cửa hàng của tài khoản; báo lỗi rõ ràng khi tài khoản chưa có shop. */
     private Shop requireShop(Long ownerUserId) {
         return shopRepository.findByOwnerId(ownerUserId)
                 .orElseThrow(() -> new PromotionValidationException("serviceError", "Tài khoản chưa có cửa hàng hợp lệ."));
     }
 
+    /** Chuyển thời gian JDBC sang LocalDateTime để hiển thị trong form. */
     private LocalDateTime toLocalDateTime(Timestamp value) { return value == null ? null : value.toLocalDateTime(); }
 }

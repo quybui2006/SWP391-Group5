@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import service.customer.OrderCheckoutService;
+import service.shop.VoucherUsageService;
 
 @Service
 public class DeliveryOrderService {
@@ -20,10 +21,12 @@ public class DeliveryOrderService {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
     private final OrderCheckoutService checkout;
+    private final VoucherUsageService voucherUsage;
 
-    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout) {
+    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout, VoucherUsageService voucherUsage) {
         this.jdbc = jdbc;
         this.checkout = checkout;
+        this.voucherUsage = voucherUsage;
     }
 
     /**
@@ -195,6 +198,7 @@ public class DeliveryOrderService {
     /**
      * Cập nhật trạng thái giao hàng của đơn hàng
      */
+    /** Cập nhật giao hàng; đơn giao thất bại được hủy và trả lượt voucher giảm tiền. */
     @Transactional
     public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason) {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM orders WHERE id = ? FOR UPDATE", orderId);
@@ -244,7 +248,8 @@ public class DeliveryOrderService {
                     ? "Giao hàng không thành công / Khách từ chối nhận" : cancelReason.trim();
             if (reason.length() > 1000) throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
             releaseReservedItems(orderId);
-            jdbc.update("UPDATE orders SET status='CANCELLED',delivery_status='FAILED',delivery_failure_reason=?,delivery_updated_at=?,cancelled_at=?,cancellation_reason=? WHERE id=? AND status IN ('CONFIRMED','SHIPPING')", reason, now, now, reason, orderId);
+            int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',delivery_status='FAILED',delivery_failure_reason=?,delivery_updated_at=?,cancelled_at=?,cancellation_reason=? WHERE id=? AND status IN ('CONFIRMED','SHIPPING')", reason, now, now, reason, orderId);
+            if (cancelled == 1) voucherUsage.returnDiscountUse(orderId);
             jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
             return;
         }

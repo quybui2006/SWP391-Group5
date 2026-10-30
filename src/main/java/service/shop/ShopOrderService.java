@@ -2,13 +2,18 @@ package service.shop;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import service.shop.VoucherUsageService;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class ShopOrderService {
     private final JdbcTemplate jdbc;
-    public ShopOrderService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final VoucherUsageService voucherUsage;
+    public ShopOrderService(JdbcTemplate jdbc, VoucherUsageService voucherUsage) {
+        this.jdbc = jdbc;
+        this.voucherUsage = voucherUsage;
+    }
 
     public List<Map<String, Object>> list(Long ownerId) {
         return list(ownerId, null);
@@ -120,6 +125,7 @@ public class ShopOrderService {
         jdbc.update("INSERT IGNORE INTO notifications(user_id,event_key,type,title,content,target_type,target_id) SELECT c.user_id,CONCAT('ORDER_CONFIRMED_',o.id),'ORDER','Shop đã xác nhận đơn',CONCAT('Shop đã xác nhận đơn ',o.order_code),'ORDER',o.id FROM orders o JOIN checkouts c ON c.id=o.checkout_id WHERE o.id=? AND c.user_id IS NOT NULL", id);
     }
 
+    /** Shop từ chối đơn COD đang chờ và hoàn lại lượt voucher nếu đơn được hủy thành công. */
     @org.springframework.transaction.annotation.Transactional
     public void rejectCod(Long ownerId, Long id, String reason) {
         if (reason == null || reason.isBlank() || reason.trim().length() > 1000)
@@ -132,6 +138,7 @@ public class ShopOrderService {
         String cleanReason = reason.trim();
         if (jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=CURRENT_TIMESTAMP(3),cancellation_reason=? WHERE id=? AND status='PENDING'", cleanReason, id) != 1)
             throw new IllegalArgumentException("Đơn vừa được cập nhật ở nơi khác. Tải lại trang.");
+        voucherUsage.returnDiscountUse(id);
         jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", id);
         jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", cleanReason, id);
         Long checkoutId = ((Number) order.get("checkout_id")).longValue();
