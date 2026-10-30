@@ -611,6 +611,43 @@ public class OrderCheckoutService {
     }
 
     /**
+     * Khách hàng được hủy đơn khi Shop chưa xác nhận (trạng thái PENDING).
+     * Việc kiểm tra quyền và trạng thái được thực hiện trong cùng một transaction
+     * để không thể hủy đơn sau khi Shop vừa xác nhận ở một luồng khác.
+     */
+    @Transactional
+    public void cancelOrderByCustomer(Long userId, Long orderId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT o.id, o.order_code, o.status, o.payment_status, o.checkout_id
+            FROM orders o
+            JOIN checkouts c ON c.id = o.checkout_id
+            WHERE o.id = ? AND c.user_id = ?
+            FOR UPDATE
+        """, orderId, userId);
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
+        }
+        Map<String, Object> order = rows.get(0);
+        if (!"PENDING".equals(order.get("status")) || "PAID".equals(order.get("payment_status"))) {
+            throw new IllegalArgumentException("Shop đã xác nhận hoặc đơn đã thanh toán, bạn không thể hủy đơn từ phía khách hàng.");
+        }
+
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        String reason = "Khách hàng hủy đơn trước khi Shop xác nhận";
+        if (jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=? AND status='PENDING'",
+                now, reason, orderId) != 1) {
+            throw new IllegalArgumentException("Đơn hàng vừa được Shop xác nhận, vui lòng tải lại trang.");
+        }
+
+        releaseReservedItems(orderId, "customer-cancel");
+        jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", orderId);
+        jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
+        updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
+        notifyOrderCustomer(orderId, "ORDER_CANCELLED_BY_CUSTOMER", "Đã hủy đơn hàng", "Bạn đã hủy đơn " + order.get("order_code") + " trước khi Shop xác nhận.");
+    }
+
+    /**
      * Khách hàng bấm "Đã nhận hàng / Hoàn tất đơn hàng" khi đơn đang ở trạng thái DELIVERED.
      * Chặn hoàn tất nếu đơn đang có khiếu nại ở trạng thái PENDING_SHOP hoặc ESCALATED.
      */
