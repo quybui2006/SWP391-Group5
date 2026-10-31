@@ -187,7 +187,12 @@ public class CheckoutController {
 
         if (checkoutCode != null && !checkoutCode.isEmpty()) {
             try {
-                List<String> orderCodes = checkout.handleVnPayCallback(checkoutCode, isSuccess);
+                List<String> orderCodes = checkout.handleVnPayCallback(
+                        checkoutCode,
+                        isSuccess,
+                        allParams.get("vnp_TransactionNo"),
+                        allParams.get("vnp_PayDate")
+                );
                 orderCodesStr = String.join(", ", orderCodes);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -225,10 +230,35 @@ public class CheckoutController {
             return List.of();
         }
     }
+    @PostMapping("/customer/account/orders/{orderId}/cancel")
+    public String cancelMyOrder(@org.springframework.web.bind.annotation.PathVariable Long orderId,
+                                @RequestParam(required = false) String cancelReason,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        Long userId = customerId(session);
 
+        // Kiểm tra đăng nhập
+        if (userId == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            // Gọi hàm hủy đơn & hoàn tiền đã viết ở Service
+            checkout.cancelMyOrder(userId, orderId, cancelReason);
+            redirectAttributes.addFlashAttribute("successMessage", "Hủy đơn hàng và hoàn tiền (nếu có) thành công!");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi hệ thống xảy ra khi xử lý hủy đơn.");
+        }
+
+        // Trở về trang danh sách đơn hàng của khách (bạn nhớ sửa lại URL này nếu link dự án của bạn khác)
+        return "redirect:/customer/account/orders";
+    }
     private Long customerId(HttpSession session) {
         if (!"CUSTOMER".equals(session.getAttribute("role"))) return null;
         Object id = session.getAttribute("userId");
         return id instanceof Number number ? number.longValue() : null;
     }
 }
+

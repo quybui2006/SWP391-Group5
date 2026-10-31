@@ -22,7 +22,6 @@ public class DeliveryOrderService {
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final BigDecimal DEFAULT_SHIPPING_FEE = new BigDecimal("20000");
-    private static final DateTimeFormatter VNP_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final JdbcTemplate jdbc;
     private final OrderCheckoutService checkout;
@@ -35,7 +34,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Chỉ lấy các đơn hàng mà Shop Owner ĐÃ XÁC NHẬN (không lấy đơn PENDING chưa duyệt)
+     * Chỉ lấy các đơn hàng mà Shop Owner ĐÃ XÁC NHẬN hoặc ĐÃ BÀN GIAO (không lấy đơn PENDING chưa duyệt)
      */
     public List<Map<String, Object>> getDeliveryOrders() {
         String sql = """
@@ -48,10 +47,10 @@ public class DeliveryOrderService {
             ORDER BY o.id DESC
         """;
 
-        List<Map<String, Object>> rawOrders = jdbc.queryForList(sql);
-        List<Map<String, Object>> result = new ArrayList<>();
+        var rawOrders = jdbc.queryForList(sql);
+        var result = new ArrayList<Map<String, Object>>();
 
-        for (Map<String, Object> row : rawOrders) {
+        for (var row : rawOrders) {
             String rawStatus = firstNonNullStr(row, "status", "order_status", "PENDING").toUpperCase(Locale.ROOT);
             if ("PENDING".equals(rawStatus) || "UNCONFIRMED".equals(rawStatus) || "DRAFT".equals(rawStatus)) {
                 continue;
@@ -63,7 +62,7 @@ public class DeliveryOrderService {
     }
 
     public Map<String, Object> getOrderDetail(Long orderId) {
-        List<Map<String, Object>> rows = jdbc.queryForList("""
+        var rows = jdbc.queryForList("""
             SELECT o.*, s.name AS joined_shop_name
             FROM orders o
             LEFT JOIN shops s ON s.id = o.shop_id
@@ -83,7 +82,7 @@ public class DeliveryOrderService {
         String sql = """
             SELECT 
                 COUNT(*) AS total_all,
-                SUM(CASE WHEN status = 'CONFIRMED' THEN 1 ELSE 0 END) AS waiting_pickup,
+                SUM(CASE WHEN status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP') THEN 1 ELSE 0 END) AS waiting_pickup,
                 SUM(CASE WHEN status = 'SHIPPING' THEN 1 ELSE 0 END) AS shipping_count,
                 SUM(CASE WHEN status IN ('DELIVERED', 'COMPLETED') THEN 1 ELSE 0 END) AS delivered_count,
                 SUM(CASE WHEN status = 'CANCELLED' AND delivery_status IN ('IN_TRANSIT', 'FAILED') THEN 1 ELSE 0 END) AS cancelled_count
@@ -95,7 +94,7 @@ public class DeliveryOrderService {
     }
 
     public List<Map<String, Object>> getOrderItems(Long orderId) {
-        List<Map<String, Object>> rawItems = jdbc.queryForList("""
+        var rawItems = jdbc.queryForList("""
             SELECT oi.*,
                    pv.name AS pv_name,
                    pv.image_url AS pv_image_url,
@@ -107,10 +106,10 @@ public class DeliveryOrderService {
             ORDER BY oi.id ASC
         """, orderId);
 
-        List<Map<String, Object>> items = new ArrayList<>();
+        var items = new ArrayList<Map<String, Object>>();
         int stt = 1;
-        for (Map<String, Object> row : rawItems) {
-            Map<String, Object> item = new HashMap<>(row);
+        for (var row : rawItems) {
+            var item = new HashMap<String, Object>(row);
             item.put("stt", stt++);
 
             String productName = firstNonNullStr(row, "product_name", "p_name", "variant_name", "pv_name", "Sản phẩm");
@@ -140,7 +139,7 @@ public class DeliveryOrderService {
     }
 
     private Map<String, Object> enrichOrderRow(Map<String, Object> row) {
-        Map<String, Object> ord = new HashMap<>(row);
+        var ord = new HashMap<String, Object>(row);
         Long orderId = ((Number) row.get("id")).longValue();
 
         String rawStatus = firstNonNullStr(row, "status", "order_status", "CONFIRMED").toUpperCase(Locale.ROOT);
@@ -158,7 +157,7 @@ public class DeliveryOrderService {
         Object checkoutIdObj = row.get("checkout_id");
         if (checkoutIdObj instanceof Number cid) {
             try {
-                List<Map<String, Object>> cList = jdbc.queryForList("SELECT * FROM checkouts WHERE id = ?", cid.longValue());
+                var cList = jdbc.queryForList("SELECT * FROM checkouts WHERE id = ?", cid.longValue());
                 if (!cList.isEmpty()) checkoutRow = cList.get(0);
             } catch (Exception ignored) {}
         }
@@ -181,12 +180,12 @@ public class DeliveryOrderService {
         String provinceName = firstNonNullStr(row, "delivery_province_name", "province_name", "shipping_province_name", "");
         if (provinceName.isEmpty() && !provinceCode.isEmpty()) {
             try {
-                List<String> pNames = jdbc.queryForList("SELECT name FROM provinces WHERE code = ?", String.class, provinceCode);
+                var pNames = jdbc.queryForList("SELECT name FROM provinces WHERE code = ?", String.class, provinceCode);
                 if (!pNames.isEmpty()) provinceName = pNames.get(0);
             } catch (Exception ignored) {}
         }
 
-        List<String> addrParts = new ArrayList<>();
+        var addrParts = new ArrayList<String>();
         if (!addressDetail.isBlank()) addrParts.add(addressDetail);
         if (!wardName.isBlank()) addrParts.add(wardName);
         if (!provinceName.isBlank()) addrParts.add(provinceName);
@@ -202,11 +201,14 @@ public class DeliveryOrderService {
         }
         BigDecimal fullOrderTotal = firstNonNullDecimal(row, "total_amount", "grand_total", "final_amount", "total");
 
-        // Nếu đơn thanh toán VNPAY -> Khách đã thanh toán 100% online, số tiền thu hộ = 0 ₫
         boolean isVnpay = "VNPAY".equalsIgnoreCase(paymentMethod);
         BigDecimal displayTotal = isVnpay ? BigDecimal.ZERO : fullOrderTotal;
 
+        String podImageUrl = firstNonNullStr(row, "pod_image_url", "pod_url", "");
+        String deliveryNote = firstNonNullStr(row, "delivery_note", "shipping_note", "");
+
         ord.put("order_code", firstNonNullStr(row, "order_code", "code", String.valueOf(orderId)));
+        ord.put("tracking_code", firstNonNullStr(row, "delivery_tracking_code", "tracking_code", "DL-" + orderId));
         ord.put("recipient_name", recipientName);
         ord.put("recipient_phone", recipientPhone);
         ord.put("full_address", fullAddress);
@@ -218,6 +220,8 @@ public class DeliveryOrderService {
         ord.put("shipping_fee", shippingFee);
         ord.put("full_order_total", fullOrderTotal);
         ord.put("total_amount", displayTotal);
+        ord.put("pod_image_url", podImageUrl);
+        ord.put("delivery_note", deliveryNote);
 
         Object createdObj = row.get("created_at");
         if (createdObj instanceof Timestamp ts) {
@@ -230,16 +234,24 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Cập nhật trạng thái giao hàng của đơn hàng (Kết hợp luồng của nhánh develop và nhánh hiện tại có VNPAY Refund)
+     * Hàm 3 tham số giữ nguyên để tương thích với code hiện tại
      */
     @Transactional
     public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason) {
-        List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM orders WHERE id = ? FOR UPDATE", orderId);
+        updateDeliveryStatus(orderId, newStatus, cancelReason, null, null);
+    }
+
+    /**
+     * Cập nhật trạng thái giao hàng: Bàn giao -> Lấy hàng -> Giao thành công kèm POD -> Hoàn tất / Hủy
+     */
+    @Transactional
+    public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason, String podImageUrl, String deliveryNote) {
+        var rows = jdbc.queryForList("SELECT * FROM orders WHERE id = ? FOR UPDATE", orderId);
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId);
         }
 
-        Map<String, Object> order = rows.get(0);
+        var order = rows.get(0);
         String currentStatus = firstNonNullStr(order, "status", "order_status", "").toUpperCase(Locale.ROOT);
         String paymentMethod = firstNonNullStr(order, "payment_method", "COD").toUpperCase(Locale.ROOT);
         String paymentStatus = firstNonNullStr(order, "payment_status", "UNPAID").toUpperCase(Locale.ROOT);
@@ -251,43 +263,75 @@ public class DeliveryOrderService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         String target = newStatus == null ? "" : newStatus.trim().toUpperCase(Locale.ROOT);
 
-        // 1. CHUYỂN SANG ĐANG GIAO HÀNG
+        // 1. SHOP BÀN GIAO CHO VẬN CHUYỂN (READY_TO_SHIP)
+        if ("READY_TO_SHIP".equals(target)) {
+            if (!"CONFIRMED".equals(currentStatus) && !"PROCESSING".equals(currentStatus)) {
+                throw new IllegalStateException("Chỉ bàn giao đơn hàng đã được Shop xác nhận.");
+            }
+            String trackingCode = "DL-" + now.format(DateTimeFormatter.ofPattern("yyMMdd")) + "-" + orderId;
+            try {
+                jdbc.update("""
+                    UPDATE orders 
+                    SET status = 'READY_TO_SHIP', 
+                        delivery_status = 'WAITING_PICKUP', 
+                        delivery_tracking_code = COALESCE(delivery_tracking_code, ?),
+                        delivery_updated_at = ? 
+                    WHERE id = ?
+                """, trackingCode, now, orderId);
+            } catch (Exception e) {
+                jdbc.update("UPDATE orders SET status = 'READY_TO_SHIP', delivery_status = 'WAITING_PICKUP', delivery_updated_at = ? WHERE id = ?", now, orderId);
+            }
+            return;
+        }
+
+        // 2. SHIPPER NHẬN HÀNG & BẮT ĐẦU GIAO (SHIPPING)
         if ("SHIPPING".equals(target)) {
             if (!"CONFIRMED".equals(currentStatus) && !"PROCESSING".equals(currentStatus) && !"READY_TO_SHIP".equals(currentStatus)) {
                 throw new IllegalStateException("Chỉ nhận đơn Shop Owner đã xác nhận để bắt đầu giao.");
             }
-            jdbc.update("UPDATE orders SET status='SHIPPING',delivery_status='IN_TRANSIT',shipped_at=?,delivery_updated_at=? WHERE id=? AND status='CONFIRMED'", now, now, orderId);
+            jdbc.update("""
+                UPDATE orders 
+                SET status = 'SHIPPING',
+                    delivery_status = 'IN_TRANSIT',
+                    shipped_at = ?,
+                    delivery_updated_at = ? 
+                WHERE id = ? AND status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP')
+            """, now, now, orderId);
             return;
         }
 
-        // 2. XÁC NHẬN ĐÃ GIAO ĐẾN NƠI (NHƯNG CHƯA COMPLETED)
+        // 3. ĐÃ GIAO ĐẾN NƠI + LƯU MINH CHỨNG POD (DELIVERED)
         if ("DELIVERED".equals(target)) {
-            if (!"SHIPPING".equals(currentStatus)) throw new IllegalStateException("Chỉ xác nhận đã giao đối với đơn đang vận chuyển.");
-            consumeReservedItems(orderId);
+            if (!"SHIPPING".equals(currentStatus)) {
+                throw new IllegalStateException("Chỉ xác nhận đã giao đối với đơn đang vận chuyển.");
+            }
             if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
                 jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
                 jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
             } else {
                 jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, orderId);
             }
+            savePodEvidence(orderId, podImageUrl, deliveryNote);
             return;
         }
 
-        // 3. HOÀN TẤT ĐƠN HÀNG
+        // 4. HOÀN TẤT ĐƠN HÀNG (COMPLETED)
         if ("COMPLETED".equals(target)) {
-            if (!"SHIPPING".equals(currentStatus) && !"DELIVERED".equals(currentStatus)) throw new IllegalStateException("Chỉ hoàn tất đơn đang được giao.");
-            consumeReservedItems(orderId);
+            if (!"SHIPPING".equals(currentStatus) && !"DELIVERED".equals(currentStatus)) {
+                throw new IllegalStateException("Chỉ hoàn tất đơn đang được giao.");
+            }
             if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
                 jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
                 jdbc.update("UPDATE orders SET status='COMPLETED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),auto_complete_at=COALESCE(auto_complete_at,DATE_ADD(?,INTERVAL 3 DAY)),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, now, orderId);
             } else {
                 jdbc.update("UPDATE orders SET status='COMPLETED',delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),auto_complete_at=COALESCE(auto_complete_at,DATE_ADD(?,INTERVAL 3 DAY)),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, orderId);
             }
+            savePodEvidence(orderId, podImageUrl, deliveryNote);
             checkout.creditCashbackPoints(orderId);
             return;
         }
 
-        // 4. GIAO HÀNG THẤT BẠI / HỦY ĐƠN VÀ HOÀN TIỀN VNPAY
+        // 5. GIAO HÀNG THẤT BẠI / HỦY ĐƠN (KHÔNG DÙNG REFUND & INVENTORY)
         if ("CANCELLED".equals(target)) {
             String reason = (cancelReason == null || cancelReason.isBlank())
                     ? "Giao hàng không thành công / Khách từ chối nhận"
@@ -296,94 +340,17 @@ public class DeliveryOrderService {
                 throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
             }
 
-            // Hoàn trả tồn kho về kệ
-            releaseReservedItems(orderId);
+            jdbc.update("""
+                UPDATE orders 
+                SET status = 'CANCELLED',
+                    delivery_status = 'FAILED',
+                    delivery_failure_reason = ?,
+                    delivery_updated_at = ?,
+                    cancelled_at = ?,
+                    cancellation_reason = ? 
+                WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')
+            """, reason, now, now, reason, orderId);
 
-            // Xử lý hoàn tiền VNPAY
-            if ("VNPAY".equalsIgnoreCase(paymentMethod) && "PAID".equalsIgnoreCase(paymentStatus)) {
-                BigDecimal refundAmount = firstNonNullDecimal(order, "total_amount", "grand_total");
-                String orderCode = firstNonNullStr(order, "order_code", String.valueOf(orderId));
-
-                String txnRef = orderCode;
-                String transactionNo = "";
-                String transDateStr = now.format(VNP_DATE_FMT);
-                boolean isFullRefund = true;
-
-                Object checkoutIdObj = order.get("checkout_id");
-                if (checkoutIdObj instanceof Number cid) {
-                    try {
-                        List<Map<String, Object>> ckRows = jdbc.queryForList("SELECT * FROM checkouts WHERE id = ?", cid.longValue());
-                        if (!ckRows.isEmpty()) {
-                            txnRef = firstNonNullStr(ckRows.get(0), "checkout_code", "code", txnRef);
-                        }
-                        Integer orderCount = jdbc.queryForObject(
-                                "SELECT COUNT(*) FROM orders WHERE checkout_id = ?", Integer.class, cid.longValue());
-                        if (orderCount != null && orderCount > 1) {
-                            isFullRefund = false;
-                        }
-                    } catch (Exception ignored) {}
-                }
-
-                try {
-                    List<Map<String, Object>> payRows = jdbc.queryForList(
-                            "SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC LIMIT 1", orderId);
-                    if (!payRows.isEmpty()) {
-                        Map<String, Object> pay = payRows.get(0);
-                        txnRef = firstNonNullStr(pay, "provider_txn_ref", "txn_ref", "transaction_code", txnRef);
-                        transactionNo = firstNonNullStr(pay, "provider_transaction_no", "transaction_no", "vnp_transaction_no", "");
-                        Object paidAtObj = pay.get("paid_at");
-                        if (paidAtObj instanceof Timestamp ts) {
-                            transDateStr = ts.toLocalDateTime().format(VNP_DATE_FMT);
-                        }
-                    }
-                } catch (Exception ignored) {}
-
-                VNPayService.RefundResult refundRes = vnPayService.refundTransaction(
-                        txnRef,
-                        transactionNo,
-                        refundAmount,
-                        isFullRefund,
-                        transDateStr,
-                        "DeliveryManager",
-                        "127.0.0.1",
-                        "Hoan tien don hang #" + orderCode + " - " + reason
-                );
-
-                String refundNote = reason + " [Đã hoàn tiền VNPAY: "
-                        + refundAmount.toPlainString() + "đ - Mã GD: "
-                        + (refundRes.refundTransactionNo() != null ? refundRes.refundTransactionNo() : "SANDBOX") + "]";
-
-                try {
-                    jdbc.update("""
-                        UPDATE orders 
-                        SET status = 'CANCELLED', 
-                            payment_status = 'REFUNDED',
-                            delivery_status = 'FAILED', 
-                            delivery_failure_reason = ?, 
-                            delivery_updated_at = ?, 
-                            cancelled_at = ?, 
-                            cancellation_reason = ? 
-                        WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')
-                    """, refundNote, now, now, refundNote, orderId);
-                    jdbc.update("UPDATE payments SET status = 'REFUNDED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
-                } catch (Exception ex) {
-                    jdbc.update("""
-                        UPDATE orders 
-                        SET status = 'CANCELLED', 
-                            delivery_status = 'FAILED', 
-                            delivery_failure_reason = ?, 
-                            delivery_updated_at = ?, 
-                            cancelled_at = ?, 
-                            cancellation_reason = ? 
-                        WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')
-                    """, refundNote, now, now, refundNote, orderId);
-                    jdbc.update("UPDATE payments SET status = 'CANCELLED', failure_reason = ? WHERE order_id = ?", refundNote, orderId);
-                }
-                return;
-            }
-
-            // Nếu đơn COD bình thường
-            jdbc.update("UPDATE orders SET status='CANCELLED',delivery_status='FAILED',delivery_failure_reason=?,delivery_updated_at=?,cancelled_at=?,cancellation_reason=? WHERE id=? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')", reason, now, now, reason, orderId);
             jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
             return;
         }
@@ -391,60 +358,36 @@ public class DeliveryOrderService {
         throw new IllegalArgumentException("Trạng thái giao hàng không hợp lệ.");
     }
 
-    private void consumeReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status='RESERVED' ORDER BY oi.inventory_id FOR UPDATE", orderId);
-        if (items.isEmpty()) {
-            Integer soldItems = jdbc.queryForObject("SELECT COUNT(*) FROM order_items WHERE order_id=? AND allocation_status='CONSUMED'", Integer.class, orderId);
-            if (soldItems != null && soldItems > 0) return;
-            throw new IllegalStateException("Không tìm thấy tồn kho đã giữ cho đơn hàng.");
+    private void savePodEvidence(Long orderId, String podImageUrl, String deliveryNote) {
+        if ((podImageUrl == null || podImageUrl.isBlank()) && (deliveryNote == null || deliveryNote.isBlank())) {
+            return;
         }
-        for (Map<String, Object> item : items) {
-            long inventoryId = ((Number) item.get("inventory_id")).longValue();
-            long itemId = ((Number) item.get("id")).longValue();
-            int quantity = ((Number) item.get("quantity")).intValue();
-            if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-? WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, inventoryId, quantity, quantity) != 1)
-                throw new IllegalStateException("Tồn kho đã giữ không còn nhất quán cho mặt hàng " + itemId + ".");
-            jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=? AND allocation_status='RESERVED'", itemId);
-            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'SALE',?,?,?,?,?,NULL)", inventoryId, itemId, -quantity, -quantity, onHand, reserved, "sale-delivery-" + itemId);
-        }
-    }
-
-    private void releaseReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity,oi.allocation_status FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status IN ('RESERVED','CONSUMED') ORDER BY oi.inventory_id FOR UPDATE", orderId);
-        for (Map<String, Object> item : items) {
-            long inventoryId = ((Number) item.get("inventory_id")).longValue();
-            long itemId = ((Number) item.get("id")).longValue();
-            int quantity = ((Number) item.get("quantity")).intValue();
-            boolean alreadySold = "CONSUMED".equals(item.get("allocation_status"));
-            if (alreadySold) {
-                if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId) != 1)
-                    throw new IllegalStateException("Không thể hoàn kho cho mặt hàng " + itemId + ".");
-                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='CONSUMED'", itemId);
-                int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-                int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-                jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'ADJUST',?,0,?,?,? ,?,NULL)", inventoryId, itemId, quantity, onHand, reserved, "return-delivery-" + itemId, "Hoàn kho do giao hàng thất bại - đơn " + orderId);
-                continue;
-            }
-            if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity-? WHERE id=? AND reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
-                throw new IllegalStateException("Không thể trả tồn kho đã giữ cho mặt hàng " + itemId + ".");
-            jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
-            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,NULL)", inventoryId, itemId, -quantity, onHand, reserved, "release-delivery-" + itemId);
+        try {
+            jdbc.update("""
+                UPDATE orders 
+                SET pod_image_url = COALESCE(?, pod_image_url),
+                    delivery_note = COALESCE(?, delivery_note)
+                WHERE id = ?
+            """, podImageUrl, deliveryNote, orderId);
+        } catch (Exception ignored) {
+            String podInfo = "POD_IMAGE:" + (podImageUrl != null ? podImageUrl : "")
+                    + (deliveryNote != null && !deliveryNote.isBlank() ? " | Ghi chú: " + deliveryNote : "");
+            try {
+                jdbc.update("UPDATE orders SET delivery_failure_reason = ? WHERE id = ?", podInfo, orderId);
+            } catch (Exception ignored2) {}
         }
     }
 
     private String firstNonNullStr(Map<String, Object> map, String... keysAndDefault) {
         if (map == null || keysAndDefault.length == 0) return "";
-        for (int i = 0; i < keysAndDefault.length - 1; i++) {
+        int limit = keysAndDefault.length - 1;
+        for (int i = 0; i < limit; i++) {
             Object val = map.get(keysAndDefault[i]);
             if (val != null && !val.toString().isBlank()) {
                 return val.toString();
             }
         }
-        return keysAndDefault[keysAndDefault.length - 1];
+        return keysAndDefault[limit];
     }
 
     private BigDecimal firstNonNullDecimal(Map<String, Object> map, String... keys) {

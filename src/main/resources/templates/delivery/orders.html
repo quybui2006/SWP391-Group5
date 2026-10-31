@@ -381,6 +381,95 @@
             border: 1px solid #fecaca;
         }
 
+        .pod-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--blue-primary);
+            text-decoration: none;
+        }
+        .pod-link:hover { text-decoration: underline; }
+
+        /* Modal POD */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.55);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-backdrop.show {
+            display: flex;
+        }
+        .modal-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 460px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.18);
+        }
+        .modal-box h3 {
+            margin: 0 0 6px;
+            font-size: 18px;
+            color: var(--text-dark);
+        }
+        .modal-box p {
+            margin: 0 0 16px;
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+        .form-group input[type="file"],
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-family: inherit;
+        }
+        .pod-preview {
+            margin-top: 10px;
+            max-height: 180px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+            display: none;
+            object-fit: cover;
+            width: 100%;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .btn-secondary {
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #374151;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         /* Footer Pagination */
         .table-footer {
             display: flex;
@@ -507,7 +596,10 @@
             </thead>
             <tbody id="orderTableBody">
             <tr th:each="ord : ${orders}" class="order-row" th:attr="data-status=${ord['ui_status']}">
-                <td th:text="${ord['order_code']}">FF-01</td>
+                <td>
+                    <div th:text="${ord['order_code']}">FF-01</div>
+                    <small style="color:#6b7280; font-weight:500;" th:if="${ord['tracking_code'] != null}" th:text="${ord['tracking_code']}"></small>
+                </td>
                 <td class="customer-cell">
                     <strong th:text="${ord['recipient_name']}">Nguyễn Văn A</strong>
                     <small th:text="${ord['recipient_phone']}">0912345678</small>
@@ -530,24 +622,23 @@
                         <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="SHIPPING">
-                            <button type="submit" class="btn-action btn-pickup">🚚 Nhận giao</button>
+                            <button type="submit" class="btn-action btn-pickup">🚚 Nhận bàn giao</button>
                         </form>
                         <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return promptCancel(this);">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="CANCELLED">
                             <input type="hidden" name="cancelReason" value="">
-                            <button type="submit" class="btn-action btn-cancel">✕ Giao thất bại</button>
+                            <button type="submit" class="btn-action btn-cancel">✕ Từ chối / Hủy</button>
                         </form>
                     </div>
 
                     <!-- Đang giao hàng (SHIPPING) -->
                     <div class="action-btns" th:if="${ord['ui_status'] == 'SHIPPING'}">
-                        <!-- Sử dụng trạng thái DELIVERED theo logic mới của nhánh develop -->
-                        <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return confirm('Xác nhận đã giao đơn hàng này thành công cho khách?');">
-                            <input type="hidden" name="orderId" th:value="${ord['id']}">
-                            <input type="hidden" name="newStatus" value="DELIVERED">
-                            <button type="submit" class="btn-action btn-complete">✔ Đã giao thành công</button>
-                        </form>
+                        <button type="button" class="btn-action btn-complete"
+                                th:attr="data-id=${ord['id']}, data-code=${ord['order_code']}"
+                                onclick="openPodModal(this.getAttribute('data-id'), this.getAttribute('data-code'))">
+                            📸 Giao xong & Chụp POD
+                        </button>
                         <form th:action="@{/delivery/orders/update-status}" method="post" style="margin:0;" onsubmit="return promptCancel(this);">
                             <input type="hidden" name="orderId" th:value="${ord['id']}">
                             <input type="hidden" name="newStatus" value="CANCELLED">
@@ -557,9 +648,12 @@
                     </div>
 
                     <!-- Đã hoàn tất -->
-                    <span class="status-pill status-done" th:if="${ord['ui_status'] == 'COMPLETED'}">
-                        ✔ Đã hoàn tất
-                    </span>
+                    <div th:if="${ord['ui_status'] == 'COMPLETED'}">
+                        <span class="status-pill status-done">✔ Đã giao hàng</span>
+                        <div th:if="${ord['pod_image_url'] != null and !ord['pod_image_url'].isEmpty()}">
+                            <a class="pod-link" th:href="${ord['pod_image_url']}" target="_blank">🖼 Xem ảnh POD</a>
+                        </div>
+                    </div>
 
                     <!-- Đã hủy / Giao thất bại -->
                     <span class="status-pill status-cancelled" th:if="${ord['ui_status'] == 'CANCELLED'}">
@@ -577,10 +671,65 @@
     </div>
 </div>
 
+<!-- MODAL UPLOAD ẢNH MINH CHỨNG GIAO HÀNG (POD) -->
+<div class="modal-backdrop" id="podModal">
+    <div class="modal-box">
+        <h3>📸 Xác nhận giao hàng (POD)</h3>
+        <p>Đơn hàng: <strong id="podOrderCodeLabel">#FF</strong></p>
+
+        <form th:action="@{/delivery/orders/update-status}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="orderId" id="podOrderIdInput">
+            <input type="hidden" name="newStatus" value="DELIVERED">
+
+            <div class="form-group">
+                <label>Tải ảnh minh chứng giao hàng (Chụp kiện hàng / Khách nhận) *</label>
+                <input type="file" name="podImage" id="podImageInput" accept="image/*" required onchange="previewPodImage(this)">
+                <img id="podPreviewImg" class="pod-preview" alt="Xem trước ảnh POD">
+            </div>
+
+            <div class="form-group">
+                <label>Ghi chú nhận hàng</label>
+                <textarea name="deliveryNote" rows="2" placeholder="VD: Khách chính chủ đã nhận và kiểm tra trái cây tươi ngon..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closePodModal()">Đóng</button>
+                <button type="submit" class="btn-action btn-complete">✔ Xác nhận đã giao</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     let currentPage = 1;
     let pageSize = 10;
     let currentStatusFilter = 'ALL';
+
+    function openPodModal(orderId, orderCode) {
+        document.getElementById('podOrderIdInput').value = orderId;
+        document.getElementById('podOrderCodeLabel').textContent = orderCode;
+        document.getElementById('podImageInput').value = '';
+        document.getElementById('podPreviewImg').style.display = 'none';
+        document.getElementById('podModal').classList.add('show');
+    }
+
+    function closePodModal() {
+        document.getElementById('podModal').classList.remove('show');
+    }
+
+    function previewPodImage(input) {
+        const preview = document.getElementById('podPreviewImg');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    }
 
     function promptCancel(form) {
         const reason = prompt('Nhập lý do giao hàng thất bại:', 'Khách không nghe máy / Khách từ chối nhận');
