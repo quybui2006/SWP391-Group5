@@ -78,6 +78,31 @@ class CartCheckoutIntegrationTests {
     }
 
     @Test
+    void customerCanCancelOnlyPendingOrders() {
+        long customer = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
+
+        cart.add(customer, variant, 1);
+        String pendingCode = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null);
+        long pendingOrderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, pendingCode);
+
+        checkout.cancelOrderByCustomer(customer, pendingOrderId);
+
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, pendingOrderId));
+        assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, pendingOrderId));
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM payments WHERE order_id=?", String.class, pendingOrderId));
+
+        cart.add(customer, variant, 1);
+        String confirmedCode = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null);
+        long confirmedOrderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, confirmedCode);
+        shopOrders.confirmCod(customer, confirmedOrderId);
+
+        assertThrows(IllegalArgumentException.class, () -> checkout.cancelOrderByCustomer(customer, confirmedOrderId));
+        assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, confirmedOrderId));
+    }
+
+    @Test
     void customerProfilePersistsAndAccountPagesRender() throws Exception {
         long user = seed();
         var session = new MockHttpSession();

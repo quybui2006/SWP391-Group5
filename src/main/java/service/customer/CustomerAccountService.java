@@ -78,7 +78,6 @@ public class CustomerAccountService {
     }
 
     /**
-     * Lịch sử đơn hàng của khách, lọc theo nhóm trạng thái kiểu Shopee:
      * all | pending-payment | shipping | completed | cancelled
      */
     public List<Map<String,Object>> orders(Long userId, String statusFilter) {
@@ -116,7 +115,7 @@ public class CustomerAccountService {
         return orders;
     }
 
-    /** Đếm số đơn theo từng tab trạng thái để hiển thị badge giống Shopee. */
+
     public Map<String,Object> orderStatusCounts(Long userId) {
         return jdbc.queryForMap("""
             SELECT
@@ -150,8 +149,91 @@ public class CustomerAccountService {
             """, orderId));
         order.put("payments", jdbc.queryForList(
             "SELECT payment_code, method, amount, status, paid_at FROM payments WHERE order_id=? ORDER BY id", orderId));
+        for (String field : List.of("created_at", "shipped_at", "delivered_at", "completed_at", "cancelled_at", "paid_at"))
+            order.put(field + "_fmt", formatOrderDate(order.get(field)));
+        order.put("tracking", orderTracking(order));
         return order;
     }
+
+    private String formatOrderDate(Object value) {
+        if (value == null) return "—";
+        java.time.LocalDateTime dateTime;
+        if (value instanceof java.sql.Timestamp timestamp) dateTime = timestamp.toLocalDateTime();
+        else if (value instanceof java.time.LocalDateTime localDateTime) dateTime = localDateTime;
+        else if (value instanceof java.util.Date date)
+            dateTime = java.time.LocalDateTime.ofInstant(date.toInstant(), java.time.ZoneId.systemDefault());
+        else return value.toString();
+        return dateTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    /**
+     * Chuẩn hóa tiến độ hiển thị trên trang chi tiết đơn hàng.
+     *
+     * CONFIRMED là trạng thái Shop đã xác nhận và bàn giao đơn ở trạng thái
+     * sẵn sàng lấy hàng, vì vậy bước "Chuẩn bị hàng" cũng được xem là đã xong.
+     * delivery_status và các mốc thời gian được dùng làm dữ liệu dự phòng để
+     * timeline không bị lùi hoặc hiển thị sai khi một luồng cập nhật thiếu một cột.
+     */
+    private Map<String, Object> orderTracking(Map<String, Object> order) {
+        String status = normalized(order.get("status"));
+        String deliveryStatus = normalized(order.get("delivery_status"));
+
+        int progress = switch (status) {
+            case "CONFIRMED" -> 2;
+            case "PREPARING" -> 2;
+            case "SHIPPING" -> 3;
+            case "DELIVERED" -> 4;
+            case "COMPLETED" -> 5;
+            default -> 0;
+        };
+        if ("READY".equals(deliveryStatus)) progress = Math.max(progress, 2);
+        if ("IN_TRANSIT".equals(deliveryStatus)) progress = Math.max(progress, 3);
+        if ("DELIVERED".equals(deliveryStatus) || order.get("delivered_at") != null)
+            progress = Math.max(progress, 4);
+        if (order.get("completed_at") != null || "COMPLETED".equals(status))
+            progress = Math.max(progress, 5);
+
+        String currentStep = switch (status) {
+            case "PENDING" -> isPaid(order) ? "CONFIRMED" : "PLACED";
+            case "CONFIRMED" -> "CONFIRMED";
+            case "PREPARING" -> "PREPARING";
+            case "SHIPPING" -> "SHIPPING";
+            case "DELIVERED" -> "DELIVERED";
+            case "COMPLETED" -> "COMPLETED";
+            case "CANCELLED" -> "CANCELLED";
+            default -> progress >= 5 ? "COMPLETED" : progress >= 4 ? "DELIVERED"
+                    : progress >= 3 ? "SHIPPING" : progress >= 2 ? "PREPARING"
+                    : progress >= 1 ? "CONFIRMED" : "PLACED";
+        };
+        if ("READY".equals(deliveryStatus) && "CONFIRMED".equals(status)) currentStep = "PREPARING";
+        if ("IN_TRANSIT".equals(deliveryStatus) && progress >= 3) currentStep = "SHIPPING";
+        if ("DELIVERED".equals(deliveryStatus) && progress >= 4) currentStep = "DELIVERED";
+        if ("COMPLETED".equals(status)) currentStep = "COMPLETED";
+
+        Map<String, Object> tracking = new java.util.LinkedHashMap<>();
+        tracking.put("confirmedClass", trackingClass(progress >= 1, "CONFIRMED".equals(currentStep)));
+        tracking.put("preparingClass", trackingClass(progress >= 2, "PREPARING".equals(currentStep)));
+        tracking.put("shippingClass", trackingClass(progress >= 3, "SHIPPING".equals(currentStep)));
+        tracking.put("deliveredClass", trackingClass(progress >= 4, "DELIVERED".equals(currentStep)));
+        tracking.put("completedClass", trackingClass(progress >= 5, "COMPLETED".equals(currentStep)));
+        tracking.put("currentStep", currentStep);
+        return tracking;
+    }
+
+    private String trackingClass(boolean done, boolean active) {
+        if (done && active) return "done active";
+        if (done) return "done";
+        return active ? "active" : "";
+    }
+
+    private boolean isPaid(Map<String, Object> order) {
+        return "PAID".equals(normalized(order.get("payment_status")));
+    }
+
+    private String normalized(Object value) {
+        return value == null ? "" : value.toString().trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
     public List<Map<String,Object>> favorites(Long userId) {
         return jdbc.queryForList("""
             SELECT pv.id AS variant_id,pv.name AS variant_name,pv.sku,pv.price,pv.image_url,

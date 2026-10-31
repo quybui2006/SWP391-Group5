@@ -19,7 +19,7 @@
                 <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
                     <h1 th:text="${'Đơn hàng ' + order['order_code']}">Đơn hàng FF-XXX</h1>
                     <span class="order-status"
-                          th:classappend="${order['status'] == 'COMPLETED'} ? ' completed' : (${order['status'] == 'CANCELLED'} ? ' cancelled' : '')"
+                          th:classappend="${order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED'} ? ' completed' : (${order['status'] == 'CANCELLED'} ? ' cancelled' : '')"
                           th:switch="${order['status']}">
                         <span th:case="'PENDING'"
                               th:text="${order['payment_status'] == 'UNPAID'} ? 'Chờ thanh toán' : 'Chờ xác nhận'">Chờ thanh toán</span>
@@ -68,45 +68,41 @@
         </div>
 
         <!-- Timeline theo dõi đơn hàng -->
-        <div class="tracking-card" th:if="${order['status'] != 'CANCELLED'}">
+        <div class="tracking-card" th:if="${order['status'] != 'CANCELLED'}"
+             th:with="tracking=${order['tracking']}">
             <h3>📍 Trạng thái đơn hàng</h3>
             <div class="tracking-steps">
                 <div class="track-step done">
                     <div class="track-dot"></div>
                     <div class="track-label">Đặt hàng</div>
-                    <div class="track-time" th:text="${order['created_at']}"></div>
+                    <div class="track-time" th:text="${order['created_at_fmt']}"></div>
                 </div>
-                <div class="track-step"
-                     th:classappend="${order['status'] != 'PENDING'} ? 'done' : ''">
+                <div class="track-step" th:classappend="${tracking['confirmedClass']}">
                     <div class="track-dot"></div>
                     <div class="track-label">Xác nhận</div>
                     <div class="track-time">—</div>
                 </div>
-                <div class="track-step"
-                     th:classappend="${order['status'] == 'PREPARING' or order['status'] == 'SHIPPING' or order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED'} ? 'done' : ''">
+                <div class="track-step" th:classappend="${tracking['preparingClass']}">
                     <div class="track-dot"></div>
                     <div class="track-label">Chuẩn bị hàng</div>
                     <div class="track-time">—</div>
                 </div>
-                <div class="track-step"
-                     th:classappend="${order['status'] == 'SHIPPING' or order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED' or order['delivery_status'] == 'IN_TRANSIT' or order['delivery_status'] == 'DELIVERED'} ? 'done' : ''">
+                <div class="track-step" th:classappend="${tracking['shippingClass']}">
                     <div class="track-dot"></div>
                     <div class="track-label">Vận chuyển</div>
-                    <div class="track-time" th:if="${order['shipped_at'] != null}" th:text="${order['shipped_at']}"></div>
+                    <div class="track-time" th:if="${order['shipped_at'] != null}" th:text="${order['shipped_at_fmt']}"></div>
                     <div class="track-time" th:if="${order['shipped_at'] == null}">—</div>
                 </div>
-                <div class="track-step"
-                     th:classappend="${order['status'] == 'DELIVERED' or order['status'] == 'COMPLETED' or order['delivery_status'] == 'DELIVERED'} ? 'done' : ''">
+                <div class="track-step" th:classappend="${tracking['deliveredClass']}">
                     <div class="track-dot"></div>
                     <div class="track-label">Đã giao</div>
-                    <div class="track-time" th:if="${order['delivered_at'] != null}" th:text="${order['delivered_at']}"></div>
+                    <div class="track-time" th:if="${order['delivered_at'] != null}" th:text="${order['delivered_at_fmt']}"></div>
                     <div class="track-time" th:if="${order['delivered_at'] == null}">—</div>
                 </div>
-                <div class="track-step"
-                     th:classappend="${order['status'] == 'COMPLETED'} ? 'done' : ''">
+                <div class="track-step" th:classappend="${tracking['completedClass']}">
                     <div class="track-dot"></div>
                     <div class="track-label">Hoàn thành</div>
-                    <div class="track-time" th:if="${order['completed_at'] != null}" th:text="${order['completed_at']}"></div>
+                    <div class="track-time" th:if="${order['completed_at'] != null}" th:text="${order['completed_at_fmt']}"></div>
                     <div class="track-time" th:if="${order['completed_at'] == null}">—</div>
                 </div>
             </div>
@@ -118,7 +114,7 @@
             <div>
                 <strong>Đơn hàng đã bị hủy</strong>
                 <p th:if="${order['cancellation_reason'] != null}" th:text="${'Lý do: ' + order['cancellation_reason']}"></p>
-                <p th:if="${order['cancelled_at'] != null}" th:text="${'Thời gian hủy: ' + order['cancelled_at']}"></p>
+                <p th:if="${order['cancelled_at'] != null}" th:text="${'Thời gian hủy: ' + order['cancelled_at_fmt']}"></p>
             </div>
         </div>
 
@@ -154,7 +150,7 @@
                     </div>
                     <div class="pay-row" th:if="${order['paid_at'] != null}">
                         <span>Thời gian thanh toán</span>
-                        <span th:text="${order['paid_at']}"></span>
+                        <span th:text="${order['paid_at_fmt']}"></span>
                     </div>
                     <div class="pay-row" th:if="${order['delivery_code'] != null}">
                         <span>Mã vận đơn</span>
