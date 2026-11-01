@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thêm thông tin tài khoản ngân hàng | FreshFruit</title>
+    <title>Thông tin tài khoản ngân hàng | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
     <script th:src="@{/js/notification-dropdown.js}" defer></script>
@@ -35,7 +35,7 @@
             box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
         }
 
         .info-card h2 {
@@ -45,6 +45,279 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        /* Bank Account Cards List */
+        .bank-accounts-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .bank-accounts-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .bank-accounts-header h2 {
+            font: 800 17px 'Plus Jakarta Sans', sans-serif;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bank-grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .bank-item-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 18px 20px;
+            color: #fff;
+            position: relative;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 175px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .bank-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+        }
+
+        .bank-item-card.is-default-card {
+            border: 2px solid #22c55e;
+            background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.2);
+        }
+
+        .bank-item-card.is-pending-card {
+            border: 1.5px dashed rgba(245, 158, 11, 0.7);
+            background: linear-gradient(135deg, #451a03 0%, #0f172a 100%);
+        }
+
+        .bank-item-card.is-rejected-card {
+            border: 1.5px solid rgba(239, 68, 68, 0.7);
+            background: linear-gradient(135deg, #450a0a 0%, #0f172a 100%);
+        }
+
+        .bank-tick-box.pending-badge {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1.5px solid #f59e0b;
+            color: #fbbf24;
+            cursor: default;
+        }
+
+        .bank-tick-box.rejected-badge {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1.5px solid #ef4444;
+            color: #f87171;
+            cursor: default;
+        }
+
+        .bank-card-top-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .bank-card-name {
+            font: 700 14px 'Plus Jakarta Sans', sans-serif;
+            color: #38bdf8;
+            letter-spacing: 0.3px;
+        }
+
+        .bank-item-card.is-default-card .bank-card-name {
+            color: #4ade80;
+        }
+
+        /* Tick Selector on Bank Card */
+        .bank-tick-wrapper {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .bank-tick-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            line-height: 1;
+            transition: all 0.2s ease;
+            user-select: none;
+            border: none;
+            font-family: inherit;
+        }
+
+        /* Default Card: Active Green Tick */
+        .bank-tick-box.checked {
+            background: rgba(34, 197, 94, 0.22);
+            border: 1.5px solid #22c55e;
+            color: #4ade80;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.25);
+            cursor: default;
+        }
+
+        .bank-tick-box.checked .tick-icon {
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            color: #064e3b;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        /* Non-default Card: Clickable Unchecked Tick Box */
+        .bank-tick-box.unchecked {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(255, 255, 255, 0.28);
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+
+        .bank-tick-box.unchecked .tick-circle {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            background: transparent;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .bank-tick-box.unchecked:hover {
+            background: rgba(34, 197, 94, 0.16);
+            border-color: #22c55e;
+            color: #ffffff;
+            transform: scale(1.04);
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+        }
+
+        .bank-tick-box.unchecked:hover .tick-circle {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.35);
+        }
+
+        .bank-tick-box.unchecked:active {
+            transform: scale(0.98);
+        }
+
+        .bank-card-stk {
+            font: 700 19px/1.3 'Courier New', monospace;
+            letter-spacing: 2px;
+            color: #f8fafc;
+            margin: 14px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bank-card-copy-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            font-size: 10.5px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .bank-card-copy-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        .bank-card-bottom-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding-top: 10px;
+            gap: 10px;
+        }
+
+        .bank-card-holder-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #f1f5f9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+        }
+
+        .bank-card-branch {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+            display: block;
+        }
+
+        .bank-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-set-default {
+            background: #ffffff;
+            color: #0f172a;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-set-default:hover {
+            background: #f1f5f9;
+            color: #16a34a;
+        }
+
+        .btn-delete-acc {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-delete-acc:hover {
+            background: #ef4444;
+            color: #ffffff;
         }
 
         .purpose-box {
@@ -69,113 +342,46 @@
             line-height: 1.6;
         }
 
-        .cccd-proof-card {
-            background: linear-gradient(145deg, #f0fdf4 0%, #ecfdf5 100%);
-            border: 1px solid #bbf7d0;
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .cccd-proof-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #bbf7d0;
-        }
-
-        .cccd-proof-header strong {
-            font-size: 12px;
-            color: #166534;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .cccd-proof-badge {
-            background: #dcfce7;
-            color: #15803d;
-            font-size: 10.5px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 6px;
-            border: 1px solid #86efac;
-        }
-
-        .cccd-data-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px 14px;
-            font-size: 12px;
-        }
-
-        .cccd-data-item label {
-            display: block;
-            font-size: 11px;
-            color: #64748b;
-            margin-bottom: 2px;
-            font-weight: 600;
-        }
-
-        .cccd-data-item .val {
-            font-size: 12.5px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .cccd-data-item .val.highlight {
-            color: #15803d;
-            font-size: 13.5px;
-        }
-
         .form-group-field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
             margin-bottom: 14px;
         }
 
         .form-group-field label {
+            display: block;
             font-size: 12.5px;
-            font-weight: 600;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 5px;
         }
 
         .form-group-field label .req {
             color: #dc2626;
-            margin-left: 2px;
         }
 
         .form-group-field input,
         .form-group-field select {
             width: 100%;
-            padding: 10px 12px;
-            border: 1.5px solid #cbd5e1;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            font-size: 13px;
-            font-family: inherit;
+            font-size: 13.5px;
             color: #0f172a;
-            background: #ffffff;
             box-sizing: border-box;
+            background: #ffffff;
             transition: all 0.15s ease;
         }
 
         .form-group-field input:focus,
         .form-group-field select:focus {
             outline: none;
-            border-color: #28a866;
-            box-shadow: 0 0 0 3px rgba(40, 168, 102, 0.15);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
         .field-helper {
             font-size: 11.5px;
             color: #64748b;
+            margin-top: 4px;
             line-height: 1.4;
         }
 
@@ -236,7 +442,7 @@
             color: #ffffff;
             border: none;
             border-radius: 8px;
-            padding: 10px 20px;
+            padding: 11px 20px;
             font-size: 13.5px;
             font-weight: 700;
             cursor: pointer;
@@ -258,13 +464,6 @@
         .btn-submit-verify:active {
             transform: translateY(0);
         }
-
-        .btn-submit-verify:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
     </style>
 </head>
 
@@ -277,53 +476,53 @@
 
         <main class="main-content">
 
-            <!-- Top Header -->
+            <!-- Top Header (Standardized & Synchronized) -->
             <header class="topbar">
                 <div>
                     <p class="breadcrumb">
                         Chủ cửa hàng / <span>Thông tin tài khoản ngân hàng</span>
                     </p>
-                    <h1>Thêm thông tin tài khoản ngân hàng</h1>
-                    <p class="muted" style="margin: 2px 0 0; font-size: 12.5px;">
-                        Khai báo thông tin tài khoản ngân hàng thụ hưởng chính chủ để Ban Quản Lý (Operations) đối chiếu với hồ sơ định danh CCCD và kích hoạt trạng thái mở bán (OPEN) trên sàn FreshFruit.
+                    <h1>Thông tin tài khoản ngân hàng</h1>
+                    <p class="muted">
+                        Quản lý danh sách tài khoản ngân hàng thụ hưởng và lựa chọn tài khoản mặc định để nhận doanh thu quyết toán từ FreshFruit.
                     </p>
                 </div>
 
-                <div class="topbar-actions">
-                    <!-- In-web notification center dropdown -->
-                    <div class="notification-dropdown-wrapper">
-                        <button type="button" class="notif-btn" id="notifBellBtn" aria-label="Thông báo"
-                            aria-expanded="false">
-                            <span class="bell-icon">🔔</span>
-                            <span class="notif-badge" id="notifUnreadBadge" style="display: none;">0</span>
+                <div class="top-actions">
+                    <!-- Notification Bell Dropdown -->
+                    <div class="notif-dropdown-wrapper">
+                        <button type="button" class="notif-bell-btn" id="globalNotifBellBtn" title="Thông báo"
+                            aria-label="Thông báo"
+                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px;">
+                            🔔
+                            <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
                         </button>
-                        <div class="notification-panel" id="notificationPanel" role="region" aria-label="Bảng thông báo"
-                            hidden>
-                            <div class="notif-panel-header">
-                                <div class="notif-header-title">
-                                    <h3>Thông báo</h3>
-                                    <span class="notif-unread-count" id="notifHeaderCount">0 chưa đọc</span>
-                                </div>
-                                <button type="button" class="notif-mark-all-btn" id="notifMarkAllReadBtn">Đã đọc tất
-                                    cả</button>
+                        <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
+                            <div class="notif-dropdown-header">
+                                <h4><span>🔔</span> Thông báo</h4>
+                                <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
                             </div>
-                            <div class="notif-panel-body" id="notifListContainer">
-                                <div class="notif-loading">Đang tải...</div>
+                            <div class="notif-dropdown-body" id="globalNotifList">
+                                <div class="notif-empty-box">Đang tải...</div>
                             </div>
-                            <div class="notif-panel-footer">
+                            <div class="notif-dropdown-footer">
                                 <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
                             </div>
                         </div>
                     </div>
 
-                    <div class="user-chip">
-                        <div class="avatar" style="background:#e9f8ee;color:#28a866;font-weight:700;">SO</div>
+                    <div class="top-user">
+                        <div class="avatar"
+                            th:text="${ownerName != null && !#strings.isEmpty(ownerName) ? #strings.substring(ownerName, 0, 1).toUpperCase() : 'S'}">
+                            SO</div>
                         <span th:text="${ownerName ?: 'Chủ cửa hàng'}">Chủ cửa hàng</span>
                     </div>
 
-                    <form th:action="@{/logout}" method="post" style="margin: 0;">
-                        <button type="submit" class="button"
-                            style="border:1px solid #fee2e2;background:#fff5f5;color:#dc2626;padding:6px 12px;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;">
+                    <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
+                        <button type="submit"
+                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                            onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'"
+                            title="Đăng xuất">
                             🚪 Đăng xuất
                         </button>
                     </form>
@@ -345,7 +544,7 @@
             <!-- Status Alert Banners -->
             <!-- 1. Trạng thái ĐÃ DUYỆT (APPROVED) -->
             <div th:if="${paymentApprovalStatus == 'APPROVED'}"
-                style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
+                style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
                 <div style="font-size: 26px;">🎉</div>
                 <div style="flex: 1;">
                     <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #166534; margin: 0 0 4px;">
@@ -353,7 +552,7 @@
                     </h3>
                     <p style="font-size: 12.5px; color: #14532d; margin: 0 0 6px; line-height: 1.5;">
                         Thông tin tài khoản ngân hàng của bạn đã được Ban Quản Lý (Operations) đối chiếu trùng khớp hoàn
-                        toàn với hồ sơ CCCD. Cửa hàng hiện đang ở trạng thái <strong>MỞ BÁN TRÊN SÀN (Hoạt động: OPEN)</strong>.
+                        toàn với hồ sơ CCCD. Cửa hàng hiện đang ở trạng thái <strong>MỞ BÁN TRÊN SÀN (Hoạt động: OPEN)</strong>. Doanh thu đơn hàng sẽ tự động quyết toán về tài khoản được đánh dấu "Mặc định" bên dưới.
                     </p>
                     <div
                         style="display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; background: #fff; border: 1px solid #bbf7d0; color: #15803d; padding: 3px 10px; border-radius: 6px;">
@@ -368,28 +567,24 @@
 
             <!-- 2. Trạng thái ĐANG CHỜ DUYỆT (PENDING) -->
             <div th:if="${paymentApprovalStatus == 'PENDING'}"
-                style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
+                style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
                 <div style="font-size: 26px;">⏳</div>
                 <div style="flex: 1;">
                     <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #92400e; margin: 0 0 4px;">
                         Thông tin tài khoản ngân hàng đang chờ Ban Quản Lý thẩm định (PENDING)
                     </h3>
                     <p style="font-size: 12.5px; color: #78350f; margin: 0; line-height: 1.5;">
-                        Hồ sơ khai báo tài khoản ngân hàng của bạn đã được chuyển tới Ban Quản Lý (Operations). Nhân
+                        Hồ sơ tài khoản ngân hàng của bạn đã được chuyển tới Ban Quản Lý (Operations). Nhân
                         viên thẩm định đang tiến hành đối chiếu tên chủ tài khoản với CCCD <strong>"<span
                                 th:text="${shop.idCardName}">HỌ TÊN CCCD</span>"</strong>. Cửa hàng sẽ tự động chuyển
                         sang <strong>OPEN</strong> để chính thức đẩy sản phẩm lên sàn ngay khi hoàn tất.
                     </p>
-                    <small style="color: #b45309; display: block; margin-top: 4px; font-size: 11.5px;">
-                        ℹ️ Bạn vẫn có thể chỉnh sửa và cập nhật lại thông tin ngân hàng bên dưới nếu phát hiện có sai
-                        sót.
-                    </small>
                 </div>
             </div>
 
             <!-- 3. Trạng thái BỊ TỪ CHỐI (REJECTED) -->
             <div th:if="${paymentApprovalStatus == 'REJECTED'}"
-                style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
+                style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
                 <div style="font-size: 26px;">❌</div>
                 <div style="flex: 1;">
                     <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #991b1b; margin: 0 0 4px;">
@@ -402,20 +597,123 @@
                         th:text="${bankRejectionReason ?: 'Tên chủ tài khoản ngân hàng không trùng khớp với họ tên trên CCCD của chủ Shop.'}">
                         Lý do từ chối...
                     </div>
-                    <small style="color: #991b1b; display: block; margin-top: 6px; font-size: 11.5px;">
-                        👉 Vui lòng kiểm tra lại chính xác Tên chủ tài khoản và Số tài khoản chính chủ bên dưới rồi bấm
-                        <strong>"Thêm thông tin tài khoản ngân hàng"</strong>.
-                    </small>
                 </div>
             </div>
 
-            <!-- 4. Trạng thái CHƯA KHAI BÁO (UNCONFIGURED) -->
-            <div th:if="${paymentApprovalStatus == 'UNCONFIGURED' or paymentApprovalStatus == null}"
-                style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">💳</div>
-                <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #1e40af; margin: 0 0 4px;">
-                        Cửa hàng đã đư�            <!-- Main Content 2 Columns -->
+            <!-- ========================================================================= -->
+            <!-- KHỐI 1: DANH SÁCH TÀI KHOẢN NGÂN HÀNG ĐÃ LIÊN KẾT (CÓ THỂ THÊM NHIỀU CÁI) -->
+            <!-- ========================================================================= -->
+            <div class="bank-accounts-container">
+                <div class="bank-accounts-header">
+                    <div>
+                        <h2>
+                            <span>🏦</span> Tài khoản ngân hàng nhận doanh thu
+                            <span style="font-size: 13px; font-weight: normal; color: #64748b;" th:if="${hasAccounts}" th:text="'(' + ${bankAccounts.size()} + ' tài khoản)'"></span>
+                        </h2>
+                        <p style="margin: 4px 0 0; font-size: 12.5px; color: #64748b;">
+                            Doanh thu bán hàng từ sàn FreshFruit sẽ được đối soát tự động về <strong>Tài khoản mặc định</strong>. Bạn có thể thêm nhiều tài khoản và tick chọn 1 tài khoản đã được phê duyệt làm mặc định bất cứ lúc nào. Khi thêm tài khoản mới, Ban Quản Lý sẽ đối soát thẩm định trước khi có thể sử dụng.
+                        </p>
+                    </div>
+                    <a href="#form-add-bank" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; transition: background 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                        <span>➕</span> Thêm tài khoản mới
+                    </a>
+                </div>
+
+                                <!-- Khi đã có tài khoản ngân hàng -->
+                <div th:if="${hasAccounts}" class="bank-grid-cards">
+                    <div th:each="acc : ${bankAccounts}" class="bank-item-card"
+                         th:classappend="${acc.default ? ' is-default-card' : (acc.approvalStatus == 'PENDING' ? ' is-pending-card' : (acc.approvalStatus == 'REJECTED' ? ' is-rejected-card' : ''))}">
+                        <div class="bank-card-top-row">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:20px;">💳</span>
+                                <span class="bank-card-name" th:text="${acc.bankName}">Vietcombank (VCB)</span>
+                            </div>
+
+                            <!-- Tick chọn tài khoản mặc định HOẶC Badge trạng thái phê duyệt -->
+                            <!-- TH1: Tài khoản ĐÃ DUYỆT (APPROVED) -->
+                            <th:block th:if="${acc.approvalStatus == 'APPROVED' or (acc.approvalStatus == null and acc.default)}">
+                                <div th:if="${acc.default}" class="bank-tick-wrapper" title="Tài khoản đang nhận doanh thu mặc định">
+                                    <div class="bank-tick-box checked">
+                                        <span class="tick-icon">✓</span>
+                                        <span class="tick-label">Mặc định</span>
+                                    </div>
+                                </div>
+
+                                <form th:unless="${acc.default}" th:action="@{/shopowner/payment-verification/set-default}" method="post" class="bank-tick-wrapper" style="margin:0;">
+                                    <input type="hidden" name="accountId" th:value="${acc.id}">
+                                    <button type="submit" class="bank-tick-box unchecked" title="Tick vào đây để chọn làm tài khoản mặc định">
+                                        <span class="tick-circle"></span>
+                                        <span class="tick-label">Chọn mặc định</span>
+                                    </button>
+                                </form>
+                            </th:block>
+
+                            <!-- TH2: Tài khoản ĐANG CHỜ DUYỆT (PENDING) -->
+                            <th:block th:if="${acc.approvalStatus == 'PENDING'}">
+                                <div class="bank-tick-wrapper" title="Tài khoản đang chờ Ban Quản Lý (Operations) thẩm định đối chiếu CCCD">
+                                    <div class="bank-tick-box pending-badge">
+                                        <span>⏳</span>
+                                        <span>Chờ duyệt</span>
+                                    </div>
+                                </div>
+                            </th:block>
+
+                            <!-- TH3: Tài khoản BỊ TỪ CHỐI (REJECTED) -->
+                            <th:block th:if="${acc.approvalStatus == 'REJECTED'}">
+                                <div class="bank-tick-wrapper" title="Tài khoản bị từ chối đối soát do sai lệch thông tin">
+                                    <div class="bank-tick-box rejected-badge">
+                                        <span>✕</span>
+                                        <span>Bị từ chối</span>
+                                    </div>
+                                </div>
+                            </th:block>
+                        </div>
+
+                        <div class="bank-card-stk">
+                            <span th:text="${acc.bankAccountNumber}">0123456789</span>
+                            <button type="button" class="bank-card-copy-btn" th:attr="onclick='copyStk(\' + ${acc.bankAccountNumber} + \')'">Sao chép</button>
+                        </div>
+
+                        <div class="bank-card-bottom-row">
+                            <div>
+                                <span class="bank-card-holder-name" th:text="${acc.bankAccountName}">NGUYEN VAN A</span>
+                                <span class="bank-card-branch" th:if="${acc.bankBranch != null and !#strings.isEmpty(acc.bankBranch)}" th:text="'Chi nhánh: ' + ${acc.bankBranch}"></span>
+                                <!-- Ghi chú trạng thái tài khoản -->
+                                <div th:if="${acc.approvalStatus == 'PENDING'}" style="margin-top:5px; font-size:11px; color:#fbbf24; font-weight:600; display:flex; align-items:center; gap:4px;">
+                                    <span>⏳</span> <span>Đang chờ Ban Quản Lý thẩm định đối soát (Chưa thể chọn làm mặc định)</span>
+                                </div>
+                                <div th:if="${acc.approvalStatus == 'REJECTED'}" style="margin-top:5px; font-size:11px; color:#f87171; font-weight:600; display:flex; align-items:center; gap:4px;">
+                                    <span>✕</span> <span>Lý do từ chối: <span th:text="${acc.rejectionReason ?: 'Không khớp CCCD'}"></span></span>
+                                </div>
+                            </div>
+
+                            <div class="bank-card-actions">
+                                <!-- Nút xóa (chỉ hiện khi có nhiều hơn 1 tài khoản hoặc tài khoản bị từ chối) -->
+                                <form th:if="${bankAccounts.size() > 1 or acc.approvalStatus == 'REJECTED'}" th:action="@{/shopowner/payment-verification/delete}" method="post" style="margin:0;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài khoản ngân hàng này?');">
+                                    <input type="hidden" name="accountId" th:value="${acc.id}">
+                                    <button type="submit" class="btn-delete-acc" title="Xóa tài khoản này">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khi chưa có tài khoản nào -->
+                <div th:unless="${hasAccounts}" style="text-align: center; padding: 32px 16px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;">
+                    <div style="font-size: 36px; margin-bottom: 8px;">🏦</div>
+                    <strong style="display: block; font-size: 14px; color: #1e293b;">Chưa có tài khoản ngân hàng nào được liên kết</strong>
+                    <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 14px;">Vui lòng điền thông tin tài khoản bên dưới để gửi Ban Quản Lý đối soát mở bán.</p>
+                    <a href="#form-add-bank" style="display: inline-flex; align-items: center; gap: 6px; background: #16a34a; color: #fff; text-decoration: none; padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 700;">
+                        Nhập thông tin tài khoản ➔
+                    </a>
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- MAIN CONTENT 2 COLUMNS: NGUYÊN TẮC BÁN HÀNG & FORM THÊM TÀI KHOẢN MỚI      -->
+            <!-- ========================================================================= -->
             <div class="payment-verify-grid">
 
                 <!-- CỘT 1: MỤC ĐÍCH & NGUYÊN TẮC BÁN HÀNG -->
@@ -491,19 +789,19 @@
                 </div>
 
                 <!-- CỘT 2: FORM THÊM THÔNG TIN TÀI KHOẢN NGÂN HÀNG -->
-                <div>
+                <div id="form-add-bank" th:attr="data-existing-stks=${existingStks != null ? #strings.listJoin(existingStks, ',') : ''}">
                     <div class="info-card">
                         <h2>
-                            <span>🏦</span> Thêm thông tin tài khoản ngân hàng
+                            <span>➕</span> Thêm thông tin tài khoản ngân hàng
                         </h2>
                         <p style="font-size: 12px; color: #64748b; margin: 0 0 10px;">
-                            Điền chính xác thông tin tài khoản ngân hàng chính chủ của bạn để gửi cho Ban Quản Lý (Operations) xét duyệt mở bán.
+                            Điền chính xác thông tin tài khoản ngân hàng chính chủ của bạn để thêm vào danh sách và chọn tài khoản nhận quyết toán doanh thu.
                         </p>
 
                         <!-- Hidden CCCD Name for live cross-check validation -->
                         <input type="hidden" id="refIdCardName" th:value="${shop.idCardName ?: ''}">
 
-                        <form th:action="@{/shopowner/payment-verification}" th:object="${form}" method="post"
+                        <form th:action="@{/shopowner/payment-verification/add}" th:object="${form}" method="post"
                             id="paymentVerifyForm">
 
                             <!-- 1. Ngân hàng thụ hưởng -->
@@ -580,7 +878,7 @@
                                 </label>
                                 <input type="text" id="bankBranch" th:field="*{bankBranch}"
                                     placeholder="Ví dụ: Chi nhánh Ba Đình, CN Hà Nội, CN TP.HCM..." maxlength="150">
-                                <div class="field-helper">Tỉnh/Thành phố hoặc chi nhánh ngân hàng nơi bạn phát hành tài khoản.</div>
+                                <div class="field-helper">Tỉnh/Thành phố hoặc chi nhánh ngân hàng nơi bạn mở tài khoản.</div>
                             </div>
 
                             <!-- 5. Cam kết xác nhận tài khoản chính chủ -->
@@ -596,7 +894,7 @@
 
                             <!-- Nút gửi yêu cầu -->
                             <button type="submit" class="btn-submit-verify" id="btnSubmitVerify">
-                                <span>💾</span> Thêm thông tin tài khoản ngân hàng
+                                <span>💾</span> Lưu thông tin tài khoản ngân hàng
                             </button>
                         </form>
 
@@ -610,6 +908,21 @@
     </div>
 
     <script>
+        function copyStk(text) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Đã sao chép số tài khoản: ' + text);
+            }).catch(function() {
+                const temp = document.createElement('textarea');
+                temp.value = text;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+                alert('Đã sao chép số tài khoản: ' + text);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const refNameElem = document.getElementById('refIdCardName');
             const inputNameElem = document.getElementById('bankAccountName');
@@ -684,6 +997,10 @@
                 }
             }
 
+            const addFormWrapper = document.getElementById('form-add-bank');
+            const existingStksRaw = addFormWrapper ? (addFormWrapper.getAttribute('data-existing-stks') || '') : '';
+            const existingStks = existingStksRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+
             function checkNumberValidity() {
                 if (!inputNumElem) return true;
                 const val = inputNumElem.value.trim();
@@ -699,6 +1016,14 @@
                     if (numAlert) {
                         numAlert.style.display = 'block';
                         numAlert.textContent = '✕ Số tài khoản chỉ gồm các chữ số (từ 6 đến 30 chữ số).';
+                    }
+                    return false;
+                } else if (existingStks.includes(val)) {
+                    inputNumElem.classList.remove('input-success');
+                    inputNumElem.classList.add('input-error');
+                    if (numAlert) {
+                        numAlert.style.display = 'block';
+                        numAlert.textContent = '✕ Số tài khoản này đã có trong danh sách tài khoản của bạn. Mỗi số tài khoản chỉ tạo 1 thẻ.';
                     }
                     return false;
                 } else {

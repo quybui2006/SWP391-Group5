@@ -5,6 +5,13 @@ import dto.customer.ShopRegistrationDto;
 import dto.operations.ShopApprovalDetailDto;
 import entity.Shop;
 import org.junit.jupiter.api.Test;
+import entity.ShopBankAccount;
+import repository.ShopBankAccountRepository;
+import controller.shop.ShopOwnerPaymentVerificationController;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +30,12 @@ class ShopPaymentApprovalIntegrationTests {
 
     @Autowired
     private OperationsShopApprovalService operationsShopService;
+    @Autowired
+    private repository.ShopRepository shopRepository;
+    @Autowired
+    private ShopBankAccountRepository shopBankAccountRepository;
+    @Autowired
+    private ShopOwnerPaymentVerificationController shopOwnerPaymentController;
 
     @Autowired
     private repository.ProductVariantRepository productVariantRepository;
@@ -308,4 +321,182 @@ class ShopPaymentApprovalIntegrationTests {
         assertEquals("/uploads/licenses/attp-dalat.png", detail.getFoodSafetyCertUrl());
     }
 
+    @Test
+    void testMultipleBankAccountsAndDefaultSelection() {
+        String code = "P-MULTI-BANK";
+        ensureProvince(code, "Đà Nẵng");
+
+        Long ownerId = createTestUser("multi-bank@example.com", "Nguyễn Văn Đa");
+
+        ShopRegistrationDto regDto = new ShopRegistrationDto();
+        regDto.setName("Cửa Hàng Trái Cây Đa Tài Khoản");
+        regDto.setPhone("0977889900");
+        regDto.setProvinceCode(code);
+        regDto.setWardName("Hải Châu 1");
+        regDto.setAddressDetail("Số 50 Bạch Đằng");
+        regDto.setIdCardNumber("048203001234");
+        regDto.setIdCardName("Nguyễn Văn Đa");
+        regDto.setAgreeTerms(true);
+
+        Shop shop = customerShopService.registerShop(ownerId, regDto);
+        operationsShopService.approveShop(shop.getId());
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", ownerId);
+        session.setAttribute("fullName", "Nguyễn Văn Đa");
+        session.setAttribute("role", "SHOP_OWNER");
+        request.setSession(session);
+
+        // 1. Thêm tài khoản ngân hàng đầu tiên (VCB) -> Tự động thành Mặc định
+        ShopPaymentSetupDto form1 = new ShopPaymentSetupDto();
+        form1.setBankName("Vietcombank (VCB)");
+        form1.setBankAccountNumber("0123456789");
+        form1.setBankAccountName("NGUYEN VAN DA");
+        form1.setBankBranch("Chi nhánh Đà Nẵng");
+        form1.setDefault(true);
+
+        shopOwnerPaymentController.submitPaymentVerification(
+                form1,
+                new BeanPropertyBindingResult(form1, "form"),
+                request,
+                new org.springframework.ui.ConcurrentModel(),
+                new RedirectAttributesModelMap()
+        );
+
+        java.util.List<ShopBankAccount> list1 = shopBankAccountRepository.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        assertEquals(1, list1.size());
+        assertTrue(list1.get(0).isDefault());
+        assertEquals("Vietcombank (VCB)", list1.get(0).getBankName());
+
+        // Kiểm tra đồng bộ sang bảng shops
+        Shop shopAfter1 = shopRepository.findById(shop.getId()).orElseThrow();
+        assertEquals("Vietcombank (VCB)", shopAfter1.getBankName());
+        assertEquals("0123456789", shopAfter1.getBankAccountNumber());
+
+        // Operations phê duyệt tài khoản đầu tiên -> Shop được mở bán OPEN, payment APPROVED
+        operationsShopService.approvePayment(shop.getId());
+        assertEquals("APPROVED", shopRepository.findById(shop.getId()).orElseThrow().getPaymentApprovalStatus());
+
+        // 2. Thêm tài khoản thứ 2 (MB Bank) -> Không chọn mặc định
+        ShopPaymentSetupDto form2 = new ShopPaymentSetupDto();
+        form2.setBankName("MB Bank (MB)");
+        form2.setBankAccountNumber("0987654321");
+        form2.setBankAccountName("NGUYEN VAN DA");
+        form2.setBankBranch("Chi nhánh Hải Châu");
+        form2.setDefault(false);
+
+        shopOwnerPaymentController.submitPaymentVerification(
+                form2,
+                new BeanPropertyBindingResult(form2, "form"),
+                request,
+                new org.springframework.ui.ConcurrentModel(),
+                new RedirectAttributesModelMap()
+        );
+
+        java.util.List<ShopBankAccount> list2 = shopBankAccountRepository.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        assertEquals(2, list2.size());
+        // Tài khoản VCB vẫn là mặc định
+        assertTrue(list2.get(0).isDefault());
+        assertEquals("Vietcombank (VCB)", list2.get(0).getBankName());
+        // Tài khoản MB là phụ
+        assertFalse(list2.get(1).isDefault());
+        assertEquals("MB Bank (MB)", list2.get(1).getBankName());
+
+        Long mbAccountId = list2.get(1).getId();
+        Long vcbAccountId = list2.get(0).getId();
+
+        // Kiểm tra tài khoản thứ 2 mới thêm ở trạng thái PENDING (chờ duyệt)
+        assertEquals("PENDING", list2.get(1).getApprovalStatus());
+        // Hệ thống BẮT BUỘC phải báo lại là CHỜ DUYỆT (PENDING) như lần đầu chứ không được báo đã duyệt luôn
+        assertEquals("PENDING", shopRepository.findById(shop.getId()).orElseThrow().getPaymentApprovalStatus());
+
+        // Phải được BQL phê duyệt mới được chọn làm mặc định:
+        // Thử đặt làm mặc định khi chưa duyệt -> Phải bị từ chối
+        RedirectAttributesModelMap unapprovedRedirect = new RedirectAttributesModelMap();
+        shopOwnerPaymentController.setDefaultBankAccount(mbAccountId, request, unapprovedRedirect);
+        assertNotNull(unapprovedRedirect.getFlashAttributes().get("errorMessage"), "Chưa duyệt không được phép chọn làm mặc định");
+        assertFalse(shopBankAccountRepository.findById(mbAccountId).orElseThrow().isDefault());
+
+        // Operations phê duyệt tài khoản ngân hàng thứ 2
+        operationsShopService.approveBankAccount(mbAccountId);
+        assertEquals("APPROVED", shopBankAccountRepository.findById(mbAccountId).orElseThrow().getApprovalStatus());
+        assertEquals("APPROVED", shopRepository.findById(shop.getId()).orElseThrow().getPaymentApprovalStatus());
+
+        // 3. Đặt MB Bank đã duyệt làm tài khoản mặc định
+        shopOwnerPaymentController.setDefaultBankAccount(mbAccountId, request, new RedirectAttributesModelMap());
+
+        java.util.List<ShopBankAccount> list3 = shopBankAccountRepository.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        assertEquals(2, list3.size());
+        // Lúc này MB Bank đã trở thành mặc định
+        assertTrue(list3.get(0).isDefault());
+        assertEquals("MB Bank (MB)", list3.get(0).getBankName());
+        assertFalse(list3.get(1).isDefault());
+        assertEquals("Vietcombank (VCB)", list3.get(1).getBankName());
+
+        // Kiểm tra shops đã tự động đồng bộ sang MB Bank
+        Shop shopAfterDefault = shopRepository.findById(shop.getId()).orElseThrow();
+        assertEquals("MB Bank (MB)", shopAfterDefault.getBankName());
+        assertEquals("0987654321", shopAfterDefault.getBankAccountNumber());
+
+        // 4. Xóa tài khoản VCB phụ
+        shopOwnerPaymentController.deleteBankAccount(vcbAccountId, request, new RedirectAttributesModelMap());
+
+        java.util.List<ShopBankAccount> list4 = shopBankAccountRepository.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        assertEquals(1, list4.size());
+        assertEquals("MB Bank (MB)", list4.get(0).getBankName());
+        assertTrue(list4.get(0).isDefault());
+
+        // 5. Kiem tra tu dong chuan hoa khi co nhieu hon 1 tai khoan mac dinh
+        ShopBankAccount extraAcc = new ShopBankAccount(
+                shop.getId(),
+                "Agribank (VBA)",
+                "1234567890",
+                "NGUYEN VAN DA",
+                "Chi nhanh Ha Noi",
+                true
+        );
+        shopBankAccountRepository.save(extraAcc);
+
+        // Goi trang GET /shopowner/payment-verification -> he thong tu dong phat hien va chuan hoa chi con dung 1 mac dinh
+        shopOwnerPaymentController.showPaymentVerificationForm(request, new org.springframework.ui.ConcurrentModel());
+
+        java.util.List<ShopBankAccount> list5 = shopBankAccountRepository.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        assertEquals(2, list5.size());
+        long defaultCount = list5.stream().filter(ShopBankAccount::isDefault).count();
+        assertEquals(1, defaultCount, "Bat buoc chi co duy nhat 1 tai khoan mac dinh");
+
+        // 6. Kiem tra khong duoc nhap trung so tai khoan (duplicate STK rejection)
+        ShopPaymentSetupDto dupForm = new ShopPaymentSetupDto();
+        dupForm.setBankName("MB Bank (MB)");
+        dupForm.setBankAccountNumber("1234567890"); // Trung voi extraAcc da co
+        dupForm.setBankAccountName("NGUYEN VAN DA");
+        dupForm.setBankBranch("Chi nhanh Dong Da");
+
+        org.springframework.validation.BeanPropertyBindingResult dupErrors = new org.springframework.validation.BeanPropertyBindingResult(dupForm, "form");
+        shopOwnerPaymentController.submitPaymentVerification(
+                dupForm,
+                dupErrors,
+                request,
+                new org.springframework.ui.ConcurrentModel(),
+                new RedirectAttributesModelMap()
+        );
+        assertTrue(dupErrors.hasFieldErrors("bankAccountNumber"), "Bat buoc bao loi trung so tai khoan ngan hang");
+
+        // 7. Kiem tra tu dong deduplicate neu du lieu cu bi luu 2 the trung STK
+        ShopBankAccount duplicateStkAcc = new ShopBankAccount(
+                shop.getId(),
+                "Agribank (VBA)",
+                "1234567890", // Trung STK voi extraAcc
+                "NGUYEN VAN DA",
+                "Chi nhanh Ha Noi",
+                false
+        );
+        shopBankAccountRepository.save(duplicateStkAcc);
+        assertEquals(3, shopBankAccountRepository.countByShopId(shop.getId()));
+
+        // Goi showPaymentVerificationForm -> he thong phai tu dong xoa the trung lap, giu lai 1 the duy nhat cho moi STK
+        shopOwnerPaymentController.showPaymentVerificationForm(request, new org.springframework.ui.ConcurrentModel());
+        assertEquals(2, shopBankAccountRepository.countByShopId(shop.getId()), "Moi STK chi duoc co dung 1 the");
+    }
 }

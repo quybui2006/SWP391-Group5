@@ -276,7 +276,7 @@
         </div>
 
         <div class="form-card">
-            <form id="shopRegForm" th:action="@{/customer/shop-registration}" th:object="${form}" method="post">
+            <form id="shopRegForm" th:action="@{/customer/shop-registration}" th:object="${form}" method="post" enctype="multipart/form-data">
 
                 <!-- ================= PHASE 1: KÍCH HOẠT TÀI KHOẢN BÁN HÀNG ================= -->
                 <div id="phase1Section">
@@ -582,9 +582,17 @@
                                 <input type="date" id="legacyBusinessLicenseDate" th:field="*{businessLicenseDate}" class="form-control">
                             </div>
                         </div>
-                        <div class="form-group" style="margin-bottom: 0;">
+                        <div class="form-group">
                             <label for="legacyBusinessLicensePlace">Cơ quan / Nơi cấp GPKD <span class="req">*</span></label>
                             <input type="text" id="legacyBusinessLicensePlace" th:field="*{businessLicensePlace}" class="form-control" placeholder="Ví dụ: Sở Kế hoạch &amp; Đầu tư TP. Hà Nội">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="legacyBusinessLicenseFile">Bản chụp / Tệp Giấy phép kinh doanh <span class="req">*</span> <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
+                            <input type="file" id="legacyBusinessLicenseFile" name="businessLicenseFile" accept="image/*,application/pdf" class="form-control" th:required="${form.businessLicenseUrl == null or form.businessLicenseUrl.isBlank()}">
+                            <input type="hidden" th:field="*{businessLicenseUrl}">
+                            <div th:if="${form.businessLicenseUrl != null and !form.businessLicenseUrl.isBlank()}" style="margin-top:6px; font-size:12px;">
+                                <span>📎 Đã có bản chụp: </span><a th:href="${form.businessLicenseUrl}" target="_blank" style="color:#2e7d32; font-weight:600;">Xem tài liệu</a>
+                            </div>
                         </div>
                     </div>
 
@@ -608,6 +616,14 @@
                             <div class="form-group">
                                 <label for="legacyFoodSafetyCertExpiry">Ngày hết hạn chứng nhận</label>
                                 <input type="date" id="legacyFoodSafetyCertExpiry" th:field="*{foodSafetyCertExpiry}" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="legacyFoodSafetyCertFile">Bản chụp / Tệp Giấy chứng nhận ATTP <span class="req">*</span> <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
+                            <input type="file" id="legacyFoodSafetyCertFile" name="foodSafetyCertFile" accept="image/*,application/pdf" class="form-control" th:required="${form.foodSafetyCertUrl == null or form.foodSafetyCertUrl.isBlank()}">
+                            <input type="hidden" th:field="*{foodSafetyCertUrl}">
+                            <div th:if="${form.foodSafetyCertUrl != null and !form.foodSafetyCertUrl.isBlank()}" style="margin-top:6px; font-size:12px;">
+                                <span>📎 Đã có bản chụp: </span><a th:href="${form.foodSafetyCertUrl}" target="_blank" style="color:#2e7d32; font-weight:600;">Xem chứng nhận</a>
                             </div>
                         </div>
                     </div>

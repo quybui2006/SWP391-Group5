@@ -149,9 +149,9 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:0;">
-                    <label for="businessLicenseFile">Bản chụp / Tệp Giấy phép kinh doanh <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
+                    <label for="businessLicenseFile">Bản chụp / Tệp Giấy phép kinh doanh <span class="req">*</span> <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
                     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:6px;">
-                        <input type="file" id="businessLicenseFile" name="businessLicenseFile" accept="image/*,application/pdf" style="font-size:13px; max-width:320px;">
+                        <input type="file" id="businessLicenseFile" name="businessLicenseFile" accept="image/*,application/pdf" style="font-size:13px; max-width:320px;" th:required="${form.businessLicenseUrl == null or form.businessLicenseUrl.isBlank()}">
                         <input type="hidden" th:field="*{businessLicenseUrl}">
                         <div th:if="${form.businessLicenseUrl != null and !form.businessLicenseUrl.isBlank()}" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 10px; border-radius:6px; font-size:12px;">
                             <span>📎 Đã có bản chụp:</span>
@@ -200,9 +200,9 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:0;">
-                    <label for="foodSafetyCertFile">Bản chụp / Tệp Giấy chứng nhận ATTP <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
+                    <label for="foodSafetyCertFile">Bản chụp / Tệp Giấy chứng nhận ATTP <span class="req">*</span> <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
                     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:6px;">
-                        <input type="file" id="foodSafetyCertFile" name="foodSafetyCertFile" accept="image/*,application/pdf" style="font-size:13px; max-width:320px;">
+                        <input type="file" id="foodSafetyCertFile" name="foodSafetyCertFile" accept="image/*,application/pdf" style="font-size:13px; max-width:320px;" th:required="${form.foodSafetyCertUrl == null or form.foodSafetyCertUrl.isBlank()}">
                         <input type="hidden" th:field="*{foodSafetyCertUrl}">
                         <div th:if="${form.foodSafetyCertUrl != null and !form.foodSafetyCertUrl.isBlank()}" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 10px; border-radius:6px; font-size:12px;">
                             <span>📎 Đã có bản chụp:</span>
@@ -304,6 +304,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setupPreview('businessLicenseFile', 'licensePreviewContainer', 'licensePreviewImg');
     setupPreview('foodSafetyCertFile', 'foodSafetyPreviewContainer', 'foodSafetyPreviewImg');
+
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const licenseInput = document.getElementById('businessLicenseFile');
+            const licenseUrl = document.getElementById('businessLicenseUrl');
+            const hasLicense = (licenseInput && licenseInput.files && licenseInput.files.length > 0) || (licenseUrl && licenseUrl.value.trim().length > 0);
+            if (!hasLicense) {
+                e.preventDefault();
+                alert('Vui lòng tải lên ảnh chụp hoặc tệp Giấy phép kinh doanh (GPKD).');
+                if (licenseInput) licenseInput.focus();
+                return false;
+            }
+
+            const certInput = document.getElementById('foodSafetyCertFile');
+            const certUrl = document.getElementById('foodSafetyCertUrl');
+            const hasCert = (certInput && certInput.files && certInput.files.length > 0) || (certUrl && certUrl.value.trim().length > 0);
+            if (!hasCert) {
+                e.preventDefault();
+                alert('Vui lòng tải lên ảnh chụp hoặc tệp Giấy chứng nhận cơ sở đủ điều kiện An toàn thực phẩm (ATTP).');
+                if (certInput) certInput.focus();
+                return false;
+            }
+        });
+    }
 });
 </script>
 

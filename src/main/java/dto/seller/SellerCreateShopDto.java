@@ -39,16 +39,29 @@ public class SellerCreateShopDto {
     private boolean agreeTerms = true;
 
     // --- Giấy phép kinh doanh & Giấy đảm bảo vệ sinh an toàn thực phẩm ---
+    @NotBlank(message = "Vui lòng nhập số Giấy phép ĐKKD / MST.")
     private String businessLicenseNumber;
+
+    @NotBlank(message = "Vui lòng chọn ngày cấp GPKD.")
     private String businessLicenseDate;
+
+    @NotBlank(message = "Vui lòng nhập cơ quan / nơi cấp GPKD.")
     private String businessLicensePlace;
+
     private String businessLicenseUrl;
     private MultipartFile businessLicenseFile;
 
+    @NotBlank(message = "Vui lòng nhập số Giấy chứng nhận ATTP.")
     private String foodSafetyCertNumber;
+
+    @NotBlank(message = "Vui lòng chọn ngày cấp chứng nhận ATTP.")
     private String foodSafetyCertDate;
+
     private String foodSafetyCertExpiry;
+
+    @NotBlank(message = "Vui lòng nhập cơ quan / đơn vị cấp chứng nhận ATTP.")
     private String foodSafetyCertPlace;
+
     private String foodSafetyCertUrl;
     private MultipartFile foodSafetyCertFile;
 

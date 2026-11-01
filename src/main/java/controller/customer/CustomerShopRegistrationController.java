@@ -305,7 +305,10 @@ public class CustomerShopRegistrationController {
             } catch (Exception ex) {
                 errors.rejectValue("businessLicenseFile", "invalid", ex.getMessage());
             }
+        } else if (form.getBusinessLicenseUrl() == null || form.getBusinessLicenseUrl().isBlank()) {
+            errors.rejectValue("businessLicenseFile", "required", "Ảnh chụp hoặc tệp Giấy phép kinh doanh là bắt buộc.");
         }
+
         if (form.getFoodSafetyCertFile() != null && !form.getFoodSafetyCertFile().isEmpty()) {
             try {
                 String certUrl = certificateStorage.store(form.getFoodSafetyCertFile());
@@ -313,6 +316,8 @@ public class CustomerShopRegistrationController {
             } catch (Exception ex) {
                 errors.rejectValue("foodSafetyCertFile", "invalid", ex.getMessage());
             }
+        } else if (form.getFoodSafetyCertUrl() == null || form.getFoodSafetyCertUrl().isBlank()) {
+            errors.rejectValue("foodSafetyCertFile", "required", "Ảnh chụp hoặc tệp Giấy chứng nhận An toàn thực phẩm (ATTP) là bắt buộc.");
         }
 
 
