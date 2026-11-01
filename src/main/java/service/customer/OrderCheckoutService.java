@@ -33,7 +33,7 @@ public class OrderCheckoutService {
         for (int i = 0; i < variantIds.size(); i++) args[i + 3] = variantIds.get(i);
         return jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.name AS name,pv.image_url,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price " +
-                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args);
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.payment_approval_status='APPROVED' AND s.operating_status='OPEN'", args);
     }
 
     public List<Map<String, Object>> guestItems(Map<Long, Integer> guestCart, List<Long> variantIds) {
@@ -48,7 +48,7 @@ public class OrderCheckoutService {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT pv.id AS variant_id,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.name AS name,pv.image_url,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price,vi.available_quantity " +
                 "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
-                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args);
+                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.payment_approval_status='APPROVED' AND s.operating_status='OPEN'", args);
         rows.forEach(row -> row.put("quantity", guestCart.get(((Number) row.get("variant_id")).longValue())));
         return rows;
     }
@@ -271,7 +271,7 @@ public class OrderCheckoutService {
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
                 "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code " +
-                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.payment_approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
 
         if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hoặc không mở bán.");
 
@@ -370,7 +370,7 @@ public class OrderCheckoutService {
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
                 "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code,s.name AS shop_name " +
                 "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id " +
-                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
+                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.payment_approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
         if (lines.size() != selected.size()) throw new IllegalArgumentException("Một số sản phẩm đã ngừng bán hoặc bị ẩn.");
         for (Map<String, Object> line : lines) {
             int quantity = guestCart.get(((Number) line.get("variant_id")).longValue());
@@ -590,6 +590,43 @@ public class OrderCheckoutService {
             }
         }
         return completedCount;
+    }
+
+    /**
+     * Khách hàng được hủy đơn khi Shop chưa xác nhận (trạng thái PENDING).
+     * Việc kiểm tra quyền và trạng thái được thực hiện trong cùng một transaction
+     * để không thể hủy đơn sau khi Shop vừa xác nhận ở một luồng khác.
+     */
+    @Transactional
+    public void cancelOrderByCustomer(Long userId, Long orderId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT o.id, o.order_code, o.status, o.payment_status, o.checkout_id
+            FROM orders o
+            JOIN checkouts c ON c.id = o.checkout_id
+            WHERE o.id = ? AND c.user_id = ?
+            FOR UPDATE
+        """, orderId, userId);
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
+        }
+        Map<String, Object> order = rows.get(0);
+        if (!"PENDING".equals(order.get("status")) || "PAID".equals(order.get("payment_status"))) {
+            throw new IllegalArgumentException("Shop đã xác nhận hoặc đơn đã thanh toán, bạn không thể hủy đơn từ phía khách hàng.");
+        }
+
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        String reason = "Khách hàng hủy đơn trước khi Shop xác nhận";
+        if (jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=? AND status='PENDING'",
+                now, reason, orderId) != 1) {
+            throw new IllegalArgumentException("Đơn hàng vừa được Shop xác nhận, vui lòng tải lại trang.");
+        }
+
+        releaseReservedItems(orderId, "customer-cancel");
+        jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", orderId);
+        jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
+        updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
+        notifyOrderCustomer(orderId, "ORDER_CANCELLED_BY_CUSTOMER", "Đã hủy đơn hàng", "Bạn đã hủy đơn " + order.get("order_code") + " trước khi Shop xác nhận.");
     }
 
     /**

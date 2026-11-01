@@ -124,6 +124,20 @@ public class CustomerAccountHomeController {
         return "customer/order-detail";
     }
 
+    @PostMapping("/orders/{id}/cancel")
+    public String cancelOrder(@PathVariable Long id, HttpSession session, RedirectAttributes ra) {
+        Long customerId = current(session);
+        String redirect = login(customerId, "/customer/account/orders/" + id);
+        if (redirect != null) return redirect;
+        try {
+            checkout.cancelOrderByCustomer(customerId, id);
+            ra.addFlashAttribute("message", "Đã hủy đơn hàng thành công.");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/customer/account/orders/" + id;
+    }
+
     @PostMapping("/orders/{id}/complete")
     public String completeOrder(@PathVariable Long id, HttpSession session, RedirectAttributes ra) {
         Long customerId = current(session);

@@ -44,6 +44,8 @@
                 <a th:classappend="${active == 'wallet-vouchers'} ? ' active' : ''" th:href="@{/customer/account/wallet/vouchers}">Ví voucher</a>
             </div>
         </div>
+        <span class="nav-caption second">KÊNH BÁN HÀNG</span>
+        <a th:classappend="${active == 'registration-info' or active == 'shopRegistration' or active == 'shopRegistrationStatus'} ? 'active'" th:href="@{/shopowner/registration-info}">🏪 Thông tin đăng ký Shop</a>
         <span class="nav-caption second">KHÁC</span>
         <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
         <a th:classappend="${active == 'changePassword'} ? 'active'" th:href="@{/customer/account/change-password}">Đổi mật khẩu</a>
