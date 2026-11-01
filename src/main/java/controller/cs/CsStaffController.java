@@ -201,26 +201,7 @@ public class CsStaffController {
             @RequestParam(defaultValue = "false") boolean escalateToOps,
             HttpSession session,
             RedirectAttributes redirect) {
-        try {
-            Long refundAmount = finalRefundAmount != null ? finalRefundAmount : compensatedPoints;
-            boolean shopFault = "SHOP".equalsIgnoreCase(faultParty) || isShopFault;
-            complaintService.resolveComplaint(
-                    id,
-                    currentStaffId(session),
-                    decisionStatus,
-                    resolutionType,
-                    resolutionNote,
-                    refundAmount,
-                    shopFault,
-                    faultParty,
-                    giftFreeShipping,
-                    escalateToOps);
-            redirect.addFlashAttribute("message", "Đã lưu quyết định xử lý khiếu nại và gửi thông báo tới các bên liên quan!");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        } catch (Exception ex) {
-            redirect.addFlashAttribute("error", "Lỗi xử lý khiếu nại: " + ex.getMessage());
-        }
+        redirect.addFlashAttribute("error", "Bộ phận CSKH chỉ có quyền xem báo cáo thống kê, không có thẩm quyền quyết định hay phân xử khiếu nại. Quyền quyết định thuộc về Chủ Cửa hàng.");
         return "redirect:/cs/tickets/" + id;
     }
 

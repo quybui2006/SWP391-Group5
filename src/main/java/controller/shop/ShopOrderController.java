@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import java.util.Map;
 import service.customer.CurrentUserProvider;
 import service.complaint.ComplaintService;
@@ -66,21 +68,121 @@ public class ShopOrderController {
         return "shopowner/order-detail";
     }
 
+    @GetMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/resend")
+    public String resendOrderPage(@PathVariable Long orderId,
+                                  @PathVariable Long complaintId,
+                                  HttpServletRequest request,
+                                  Model model) {
+        Long owner = currentUser.requireUserId(request);
+        Map<String, Object> order = orders.detail(owner, orderId);
+        Long shopId = ((Number) order.get("shop_id")).longValue();
+        Map<String, Object> complaint = complaintService.getComplaintDetail(complaintId);
+        if (complaint == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+
+        model.addAttribute("order", order);
+        model.addAttribute("orderItems", orders.items(owner, orderId));
+        model.addAttribute("complaint", complaint);
+        model.addAttribute("shopVariants", complaintService.getAvailableShopVariants(shopId));
+        return "shopowner/complaint-resend-order";
+    }
+
+    @PostMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/resend")
+    public String processResendOrder(@PathVariable Long orderId,
+                                     @PathVariable Long complaintId,
+                                     @RequestParam(name = "variantIds", required = false) java.util.List<Long> variantIds,
+                                     @RequestParam(name = "quantities", required = false) java.util.List<Integer> quantities,
+                                     @RequestParam(required = false) String shopResponse,
+                                     HttpServletRequest request,
+                                     org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
+        Long owner = currentUser.requireUserId(request);
+        try {
+            Long replacementOrderId = complaintService.submitShopDecisionResendCustom(owner, complaintId, variantIds, quantities, shopResponse);
+            redirect.addFlashAttribute("message", "Đã tạo đơn giao bù 0đ thành công và chuyển sang quy trình đóng gói!");
+            return "redirect:/shopowner/orders/" + replacementOrderId;
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/shopowner/orders/" + orderId + "/complaints/" + complaintId + "/resend";
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Lỗi tạo đơn giao bù: " + ex.getMessage());
+            return "redirect:/shopowner/orders/" + orderId;
+        }
+    }
+
+    @GetMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/voucher")
+    public String issueVoucherPage(@PathVariable Long orderId,
+                                   @PathVariable Long complaintId,
+                                   HttpServletRequest request,
+                                   Model model) {
+        Long owner = currentUser.requireUserId(request);
+        Map<String, Object> order = orders.detail(owner, orderId);
+        Map<String, Object> complaint = complaintService.getComplaintDetail(complaintId);
+        if (complaint == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+
+        model.addAttribute("order", order);
+        model.addAttribute("complaint", complaint);
+
+        String randomSuffix = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase(java.util.Locale.ROOT);
+        String suggestedCode = "VC-KN-" + randomSuffix;
+        long suggestedDiscount = 50000L;
+        if (complaint.get("actual_paid_amount") instanceof Number num && num.longValue() > 0) {
+            suggestedDiscount = num.longValue();
+        }
+
+        model.addAttribute("suggestedCode", suggestedCode);
+        model.addAttribute("suggestedDiscount", suggestedDiscount);
+        return "shopowner/complaint-voucher-form";
+    }
+
+    @PostMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/voucher")
+    public String processIssueVoucher(@PathVariable Long orderId,
+                                      @PathVariable Long complaintId,
+                                      @RequestParam(required = false) String voucherCode,
+                                      @RequestParam(required = false) String voucherName,
+                                      @RequestParam(defaultValue = "FIXED_AMOUNT") String discountType,
+                                      @RequestParam(required = false) java.math.BigDecimal discountValue,
+                                      @RequestParam(required = false) java.math.BigDecimal maxDiscountAmount,
+                                      @RequestParam(required = false) java.math.BigDecimal minOrderValue,
+                                      @RequestParam(defaultValue = "30") Integer validDays,
+                                      @RequestParam(required = false) String shopResponse,
+                                      HttpServletRequest request,
+                                      org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
+        Long owner = currentUser.requireUserId(request);
+        try {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            java.time.LocalDateTime end = now.plusDays(validDays != null && validDays > 0 ? validDays : 30);
+            complaintService.submitShopDecisionIssueVoucherCustom(
+                    owner, complaintId, voucherCode, voucherName, discountType,
+                    discountValue, maxDiscountAmount, minOrderValue,
+                    now, end, shopResponse
+            );
+            redirect.addFlashAttribute("message", "Đã phát hành voucher đền bù thành công và lưu trực tiếp vào ví của khách hàng!");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/shopowner/orders/" + orderId + "/complaints/" + complaintId + "/voucher";
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Lỗi phát hành voucher: " + ex.getMessage());
+        }
+        return "redirect:/shopowner/orders/" + orderId;
+    }
+
     @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/respond")
     public String respondComplaint(@org.springframework.web.bind.annotation.PathVariable Long orderId,
                                    @org.springframework.web.bind.annotation.PathVariable Long complaintId,
-                                   @RequestParam(defaultValue = "REJECT") String decision,
+                                   @RequestParam(defaultValue = "RESEND_ITEMS") String decision,
                                    @RequestParam(required = false) String shopResponse,
                                    @RequestParam(required = false) org.springframework.web.multipart.MultipartFile shopEvidenceImage,
+                                   @RequestParam(required = false) Long voucherDiscount,
                                    HttpServletRequest request,
                                    org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
         Long owner = currentUser.requireUserId(request);
         try {
-            complaintService.submitShopDecision(owner, complaintId, decision, shopResponse, shopEvidenceImage);
-            if ("ACCEPT".equalsIgnoreCase(decision)) {
-                redirect.addFlashAttribute("message", "Đã đồng ý giải quyết khiếu nại và tự động hoàn trả điểm cho khách hàng!");
+            complaintService.submitShopDecision(owner, complaintId, decision, shopResponse, shopEvidenceImage, voucherDiscount);
+            if ("RESEND_ITEMS".equalsIgnoreCase(decision)) {
+                redirect.addFlashAttribute("message", "Đã chấp thuận khiếu nại và tự động tạo đơn hàng giao bù 0đ cho khách hàng!");
+            } else if ("ISSUE_VOUCHER".equalsIgnoreCase(decision)) {
+                redirect.addFlashAttribute("message", "Đã chấp thuận khiếu nại và tặng voucher đền bù vào ví của khách hàng!");
             } else {
-                redirect.addFlashAttribute("message", "Đã gửi giải trình từ chối khiếu nại và chuyển hồ sơ lên CSKH phân xử.");
+                redirect.addFlashAttribute("message", "Đã từ chối khiếu nại của khách hàng.");
             }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());

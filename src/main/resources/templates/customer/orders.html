@@ -104,10 +104,16 @@
                     <a class="btn-primary-sm"
                        th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
                        th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Đánh giá</a>
-                    <a th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
+                    <!-- Ẩn nút khiếu nại nếu đơn đã COMPLETED hoặc đã có khiếu nại. Chỉ hiển thị khi DELIVERED và chưa khiếu nại -->
+                    <a th:if="${o['status'] == 'DELIVERED' and (o['complaint_count'] == null or o['complaint_count'] == 0)}"
                        th:href="@{'/customer/account/orders/' + ${o['id']} + '#complaint-section'}"
                        style="display:inline-block; padding:8px 16px; border:1px solid #fecaca; border-radius:8px; font-size:13px; font-weight:700; color:#dc2626; background:#fef2f2; text-decoration:none;">
                         ⚠️ Khiếu nại
+                    </a>
+                    <a th:if="${o['complaint_count'] != null and o['complaint_count'] > 0}"
+                       th:href="@{'/customer/account/orders/' + ${o['id']} + '#complaint-section'}"
+                       style="display:inline-block; padding:8px 16px; border:1px solid #e0f2fe; border-radius:8px; font-size:13px; font-weight:700; color:#0284c7; background:#f0f9ff; text-decoration:none;">
+                        🎫 Xem khiếu nại
                     </a>
                     <a class="btn-outline" th:href="@{/shop/{id}(id=${o['shop_id']})}">Mua lại</a>
                 </div>

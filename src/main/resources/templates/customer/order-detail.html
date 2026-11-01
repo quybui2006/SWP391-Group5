@@ -239,7 +239,7 @@
                 <div>
                     <h3 style="margin: 0; font-size: 16.5px; color: #0f172a;">🎫 Hỗ trợ &amp; Khiếu nại đơn hàng</h3>
                     <p style="margin: 3px 0 0; font-size: 13px; color: #64748b;">
-                        Xử lý tranh chấp 2 tầng: Shop giải quyết trong 6h → CSKH phân xử độc lập nếu không thỏa đáng.
+                        Gửi phản ánh về tình trạng đơn hàng để được hỗ trợ bồi hoàn sớm nhất.
                     </p>
                 </div>
                 <a th:href="@{/customer/account/complaints}" style="font-size: 13px; font-weight: 700; color: #16a34a; text-decoration: none;">
@@ -256,7 +256,7 @@
                             <span style="margin-left: 6px; font-size: 13px; font-weight: 600; color: #dc2626;" th:text="${'• ' + cp['reason_label']}">Lý do</span>
                         </div>
                         <span style="font-size: 12px; padding: 4px 10px; border-radius: 99px; font-weight: 700;"
-                              th:styleappend="${cp['status'] == 'RESOLVED'} ? 'background:#dcfce7;color:#15803d;' : (${cp['status'] == 'REJECTED'} ? 'background:#fee2e2;color:#b91c1c;' : (${cp['status'] == 'CANCELLED'} ? 'background:#f1f5f9;color:#64748b;' : (${cp['status'] == 'ESCALATED' or cp['status'] == 'IN_PROGRESS'} ? 'background:#e0f2fe;color:#0369a1;' : 'background:#fef3c7;color:#b45309;')))"
+                              th:styleappend="${cp['status'] == 'PENDING_OPERATIONS'} ? 'background:#ffedd5;color:#c2410c;' : (${cp['status'] == 'PENDING_SHOP'} ? 'background:#fef3c7;color:#b45309;' : (${cp['status'] == 'RESOLVED'} ? 'background:#dcfce7;color:#15803d;' : (${cp['status'] == 'REJECTED'} ? 'background:#fee2e2;color:#b91c1c;' : (${cp['status'] == 'CANCELLED'} ? 'background:#f1f5f9;color:#64748b;' : 'background:#e0f2fe;color:#0369a1;'))))"
                               th:text="${cp['status_label']}">Trạng thái</span>
                     </div>
 
@@ -290,7 +290,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12.5px; color: #64748b; flex-wrap: wrap; gap: 8px;">
                         <span th:text="${'Ngày gửi: ' + cp['created_at_fmt']}"></span>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <form th:if="${cp['status'] == 'PENDING_SHOP' or cp['status'] == 'ESCALATED' or cp['status'] == 'PENDING' or cp['status'] == 'IN_PROGRESS'}"
+                            <form th:if="${cp['status'] == 'PENDING_OPERATIONS' or cp['status'] == 'PENDING_SHOP' or cp['status'] == 'ESCALATED' or cp['status'] == 'PENDING' or cp['status'] == 'IN_PROGRESS'}"
                                   th:action="@{/customer/account/complaints/{cid}/cancel(cid=${cp['id']})}" method="post"
                                   onsubmit="return confirm('Bạn có chắc chắn muốn rút lại khiếu nại này?');" style="margin: 0;">
                                 <button type="submit"
@@ -338,37 +338,29 @@
                         </div>
                     </div>
 
-                    <!-- Ô nhập số tiền/điểm yêu cầu đền bù -->
-                    <div th:if="${eligibility['allowRefundRequest']}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <label style="font-size: 13px; font-weight: 600; color: #334155;">
-                                Số tiền/điểm yêu cầu đền bù (₫) *
+                    <!-- Phương án mong muốn giải quyết khiếu nại -->
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;">
+                        <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #1e293b;">
+                            Phương án bạn mong muốn Shop giải quyết *:
+                        </label>
+                        <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #047857;">
+                                <input type="radio" name="desiredResolution" value="RESEND_ITEMS" checked style="accent-color: #059669; transform: scale(1.15);">
+                                📦 Giao bù hàng (Tạo đơn giao hàng mới 0đ)
                             </label>
-                            <span style="font-size: 12px; color: #64748b;">
-                                Tối đa thực trả: <strong id="maxRefundDisplay" style="color: #16a34a;"
-                                                         th:text="${#numbers.formatDecimal(eligibility['orderActualPaidAmount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
-                            </span>
-                        </div>
-                        <input type="number" id="requestedRefundAmountInput" name="requestedRefundAmount"
-                               min="0" th:max="${eligibility['orderActualPaidAmount']}"
-                               th:value="${eligibility['orderActualPaidAmount']}" required
-                               placeholder="Nhập số tiền yêu cầu đền bù..."
-                               style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; background: #fff;">
-                        <small style="display: block; color: #64748b; font-size: 11.5px; margin-top: 4px;">
-                            Số tiền thực tế bạn đã thanh toán cho món hàng sau khi trừ mã giảm giá (1 điểm thưởng = 1 ₫).
-                        </small>
-                    </div>
-                    <div th:if="${!eligibility['allowRefundRequest']}">
-                        <input type="hidden" name="requestedRefundAmount" value="0">
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: #64748b;">
-                            ℹ️ Khiếu nại dịch vụ / vận chuyển: Yêu cầu hỗ trợ phản ánh chất lượng dịch vụ (không yêu cầu hoàn tiền hàng).
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #b45309;">
+                                <input type="radio" name="desiredResolution" value="ISSUE_VOUCHER" style="accent-color: #d97706; transform: scale(1.15);">
+                                🎟️ Đền bù voucher (Tặng mã giảm giá mua sắm)
+                            </label>
                         </div>
                     </div>
+
+                    <input type="hidden" id="requestedRefundAmountInput" name="requestedRefundAmount" value="0"/>
 
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155;">Mô tả chi tiết tình trạng *</label>
                         <textarea id="complaintDescInput" name="description" rows="3" required minlength="5" maxlength="2000"
-                                  placeholder="Mô tả ngắn gọn tình trạng (ví dụ: Hộp dâu tây bị dập nát khoảng 30%, mong shop kiểm tra và đền bù điểm thưởng)..."
+                                  placeholder="Mô tả chi tiết tình trạng hàng hóa hoặc vấn đề bạn gặp phải..."
                                   style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; background: #fff;"></textarea>
                     </div>
 
@@ -385,7 +377,7 @@
                         </div>
                         <button type="submit"
                                 style="background: #dc2626; color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;">
-                            Gửi khiếu nại tới Shop
+                            Gửi khiếu nại
                         </button>
                     </div>
                 </form>
@@ -399,7 +391,7 @@
     /*<![CDATA[*/
     const orderPaidMax = /*[[${eligibility != null ? eligibility['orderActualPaidAmount'] : 0}]]*/ 0;
     const itemPaidMap = /*[[${eligibility != null ? eligibility['itemActualPaidAmounts'] : null}]]*/ {};
-    const productDefectReasons = ['QUALITY_ISSUE', 'WEIGHT_OR_QUANTITY_SHORTAGE', 'WRONG_SPECIFICATION'];
+    const productDefectReasons = ['QUALITY_ISSUE', 'QUANTITY_SHORTAGE', 'WRONG_PRODUCT', 'WEIGHT_OR_QUANTITY_SHORTAGE', 'WRONG_SPECIFICATION'];
 
     function handleReasonChange() {
         const sel = document.getElementById('complaintReasonSelect');

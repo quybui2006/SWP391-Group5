@@ -61,6 +61,12 @@
                 <span>↻</span> Yêu cầu mở lại Shop
             </a>
 
+            <span class="nav-label">XỬ LÝ KHIẾU NẠI</span>
+
+            <a th:classappend="${activePage == 'complaints'} ? ' active' : ''" th:href="@{/operations/complaints}">
+                <span>⚖</span> Quản lý Khiếu nại
+            </a>
+
             <span class="nav-label">GIÁM SÁT & HẬU KIỂM</span>
 
             <a th:classappend="${activePage == 'shop-list'} ? ' active' : ''" th:href="@{/operations/shop-list}">
