@@ -45,6 +45,7 @@ public class VariantInventory {
     @Column(name = "low_stock_threshold_pct", nullable = false, precision = 5, scale = 2)
     private BigDecimal lowStockThresholdPct = new BigDecimal("10.00");
 
+
     /** ACTIVE / BLOCKED / CLOSED */
     @Column(name = "status", nullable = false)
     private String status = "ACTIVE";

@@ -88,9 +88,6 @@ public class ShopOwnerController {
                 products.shopVariantSummary(ownerId)
         );
         model.addAttribute("keyword", keyword.trim());
-        java.util.Map<String, Object> shop = products.shopDashboard(ownerId);
-        model.addAttribute("shopPaymentApprovalStatus", shop.get("paymentApprovalStatus"));
-        model.addAttribute("shopApprovalStatus", shop.get("approvalStatus"));
 
         return "shopowner/product-variants";
     }
@@ -139,11 +136,11 @@ public class ShopOwnerController {
         }
 
         try {
-            products.createVariantInventory(ownerId, form);
+            String sku = products.createVariantInventory(ownerId, form);
 
             redirect.addFlashAttribute(
                     "success",
-                    "Đã lưu biến thể và thông tin tồn kho."
+                    "Đã tạo loại hàng. Mã SKU: " + sku
             );
 
             return "redirect:/shopowner/product-variants";
@@ -171,6 +168,7 @@ public class ShopOwnerController {
     }
 
     private void addVariantOptions(Long ownerId, Model model) {
+        model.addAttribute("skuPreview", products.previewNextVariantSku(ownerId));
         model.addAttribute(
                 "products",
                 products.getListByShop(ownerId)

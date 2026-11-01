@@ -291,23 +291,23 @@
                  th:if="${products != null and !products.isEmpty()}">
 
                 <article class="product-card"
-                         th:each="variant : ${products}"
-                         th:attr="data-name=${variant.name + ' ' + variant.product.name}"
-                         th:onclick="|openProductDetail(${variant.id})|"
+                         th:each="product : ${products}"
+                         th:attr="data-name=${product.name}"
+                         th:onclick="|openProductDetail(${product.variantId})|"
                          role="link"
                          tabindex="0"
-                         th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
+                         th:attrappend="aria-label=|Xem chi tiết ${product.name}|">
 
                     <!-- Product image -->
                     <div class="product-image">
 
-                        <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
-                             th:src="${variant.imageUrl}"
-                             th:alt="${variant.name}"
+                        <img th:if="${product.imageUrl != null and !product.imageUrl.isEmpty()}"
+                             th:src="${product.imageUrl}"
+                             th:alt="${product.name}"
                              onerror="handleImageError(this)">
 
                         <div class="image-placeholder"
-                             th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
+                             th:style="${product.imageUrl != null and !product.imageUrl.isEmpty()}
                                 ? 'display:none' : 'display:grid'">
                             🍎
                         </div>
@@ -318,7 +318,7 @@
                                 type="button"
                                 title="Yêu thích"
                                 aria-label="Thêm vào yêu thích"
-                                th:attr="data-favorite-id=${variant.id}"
+                                th:attr="data-favorite-id=${product.variantId}"
                                 onclick="toggleFavorite(event, this)">
                             ♡
                         </button>
@@ -328,27 +328,15 @@
                     <div class="product-info">
 
                         <h3 class="product-title"
-                            th:text="${variant.product != null ? variant.product.name : variant.name}"
-                            th:title="${variant.product != null ? variant.product.name : variant.name}">
+                            th:text="${product.name}"
+                            th:title="${product.name}">
                             Tên sản phẩm
                         </h3>
 
                         <div class="product-bottom">
-                            <div class="price-wrap" th:if="${variant.promotionalPrice != null}">
-                                <strong class="price price-promotion"
-                                        th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
-                                <span class="price-old"
-                                      th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</span>
-                            </div>
-
-                            <strong class="price"
-                                    th:if="${variant.price != null and variant.promotionalPrice == null}"
-                                    th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</strong>
-
-                            <strong class="price price-contact"
-                                    th:unless="${variant.price != null}">
-                                Liên hệ
-                            </strong>
+                            <strong class="price" th:if="${product.salePrice != null}"
+                                    th:text="${#numbers.formatDecimal(product.salePrice, 0, 'POINT', 0, 'COMMA') + ' ₫'}">10.000 ₫</strong>
+                            <strong class="price price-contact" th:unless="${product.salePrice != null}">Liên hệ</strong>
                         </div>
                     </div>
                 </article>

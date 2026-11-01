@@ -30,7 +30,7 @@
             </div>
             <form class="search-bar" method="get" th:action="@{/shop/promotions}">
                 <label class="sr-only" for="keyword">Tìm sản phẩm, loại hàng hoặc mã</label>
-                <input id="keyword" name="keyword" type="search" th:value="${keyword}" placeholder="Tìm sản phẩm, loại hàng hoặc mã">
+                <input id="keyword" name="keyword" type="search" th:value="${keyword}">
                 <button class="primary-action" type="submit">Tìm kiếm</button>
                 <a class="cancel-btn" th:if="${!keyword.isEmpty()}" th:href="@{/shop/promotions}">Bỏ lọc</a>
             </form>

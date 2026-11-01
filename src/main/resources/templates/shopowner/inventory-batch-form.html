@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhập lô hàng | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/inventory-management.css(v=20261103)}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+</head>
+<body>
+<div class="app-shell inventory-app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('inventory')}"></aside>
+    <main class="main-content inventory-page">
+        <header class="topbar inventory-topbar">
+            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Tạo lô hàng</span></p><h1>Tạo lô hàng mới</h1><p class="muted">Mỗi lần nhập hàng tạo một lô riêng.</p></div>
+        </header>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+        <form class="inventory-form" method="post" th:action="@{/shopowner/inventory/batches}" th:object="${form}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
+            <div class="inventory-form-grid">
+                <label class="inventory-field inventory-field-wide"><span>Sản phẩm / biến thể</span>
+                    <select th:field="*{inventoryId}" required>
+                        <option value="">Chọn biến thể</option>
+                        <option th:each="variant : ${variants}" th:value="${variant.inventoryId}" th:text="${variant.productName + ' · ' + variant.variantName + ' · SKU ' + variant.sku + ' (' + variant.unitName + ')'}"></option>
+                    </select>
+                    <small th:if="${#fields.hasErrors('inventoryId')}" th:errors="*{inventoryId}"></small>
+                </label>
+                <label class="inventory-field"><span>Số lượng nhập</span><input type="number" min="1" step="1" th:field="*{quantity}" required><small th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></small></label>
+                <label class="inventory-field"><span>Ngày nhập</span>
+                    <input type="text" data-vn-date data-time-target="receivedAtTime" data-target="receivedAt"
+                           th:value="${form.receivedAt == null ? '' : #temporals.format(form.receivedAt, 'dd/MM/yyyy')}"
+                           inputmode="numeric" autocomplete="off" required>
+                    <input type="hidden" id="receivedAt" th:field="*{receivedAt}">
+                    <small th:if="${#fields.hasErrors('receivedAt')}" th:errors="*{receivedAt}"></small>
+                </label>
+                <label class="inventory-field"><span>Giờ nhập</span>
+                    <input type="time" id="receivedAtTime" th:value="${form.receivedAt == null ? '' : #temporals.format(form.receivedAt, 'HH:mm')}" required>
+                </label>
+                <label class="inventory-field inventory-field-wide"><span>Ghi chú</span><textarea rows="3" maxlength="1000" th:field="*{note}"></textarea><small th:if="${#fields.hasErrors('note')}" th:errors="*{note}"></small></label>
+            </div>
+            <div class="inventory-form-actions"><a class="btn btn-outline-secondary" th:href="@{/shopowner/inventory}">Hủy</a><button class="btn btn-success" type="submit">Tạo lô hàng</button></div>
+        </form>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/vn.js"></script>
+<script th:src="@{/js/vn-date-time.js(v=20261103)}"></script>
+</body>
+</html>

@@ -145,7 +145,6 @@
                     <div><span>Hiện có</span><strong th:text="${variant.quantityOnHand + ' ' + variant.unitName}">-</strong></div>
                     <div><span>Đang giữ</span><strong th:text="${variant.reservedQuantity + ' ' + variant.unitName}">-</strong></div>
                     <div><span>Có thể bán</span><strong th:text="${variant.availableQuantity + ' ' + variant.unitName}">-</strong></div>
-                    <div><span>Ngưỡng cảnh báo</span><strong th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '-'}">-</strong></div>
                 </div>
             </section>
         </div>
@@ -160,7 +159,7 @@
         </div>
         <p id="variantComplaintName" class="dialog-description"></p>
         <label for="variantComplaintMessage">Nội dung giải trình <span>*</span></label>
-        <textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required placeholder="Nhập nội dung giải trình..."></textarea>
+        <textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required></textarea>
         <p class="field-note">Từ 10 đến 1000 ký tự.</p>
         <div class="dialog-actions">
             <button type="button" class="button button-secondary" id="cancelVariantComplaint">Hủy</button>

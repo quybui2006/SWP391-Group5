@@ -96,27 +96,6 @@ public class ShopOwnerPaymentVerificationController {
             return "redirect:/seller/status";
         }
 
-        // Validate đối chiếu: Tên chủ TK phải trùng khớp với Họ tên trên CCCD
-        String accName = form.getBankAccountName() != null ? form.getBankAccountName().trim().toUpperCase() : "";
-        String cccdName = shop.getIdCardName() != null ? shop.getIdCardName().trim() : "";
-        if (!accName.isEmpty() && !cccdName.isEmpty()) {
-            String normAcc = removeAccents(accName);
-            String normCccd = removeAccents(cccdName);
-            if (!normAcc.equals(normCccd)) {
-                errors.rejectValue("bankAccountName", "mismatch",
-                        "Tên chủ tài khoản không trùng khớp với Họ tên trên CCCD (" + cccdName + "). Vui lòng nhập đúng họ tên chính chủ.");
-            }
-        }
-
-        // Validate STK: Chỉ gồm chữ số, độ dài 6-30
-        if (form.getBankAccountNumber() != null && !form.getBankAccountNumber().trim().isBlank()) {
-            String cleanStk = form.getBankAccountNumber().trim();
-            if (!cleanStk.matches("^[0-9]{6,30}$")) {
-                errors.rejectValue("bankAccountNumber", "pattern",
-                        "Số tài khoản ngân hàng chỉ được bao gồm các chữ số (độ dài từ 6 đến 30 số).");
-            }
-        }
-
         if (errors.hasErrors()) {
             HttpSession session = request.getSession(false);
             model.addAttribute("ownerName", session != null ? session.getAttribute("fullName") : null);
@@ -128,6 +107,7 @@ public class ShopOwnerPaymentVerificationController {
         }
 
         try {
+            String accName = form.getBankAccountName() != null ? form.getBankAccountName().trim().toUpperCase() : "";
             jdbc.update("""
                 UPDATE shops
                 SET bank_name = ?,
@@ -146,8 +126,8 @@ public class ShopOwnerPaymentVerificationController {
                 notifications.createNotification(
                         ownerId,
                         "PAYMENT",
-                        "Đã thêm thông tin tài khoản ngân hàng ⏳",
-                        "Thông tin tài khoản ngân hàng của bạn (" + form.getBankName() + " - STK: " + form.getBankAccountNumber().trim() + ") đã được chuyển tới Ban Quản Lý. Trạng thái cửa hàng sẽ chuyển sang OPEN để mở bán trên sàn ngay khi được phê duyệt.",
+                        "Đã gửi Yêu cầu Đối soát thanh toán ⏳",
+                        "Hồ sơ tài khoản ngân hàng của bạn (" + form.getBankName() + " - STK: " + form.getBankAccountNumber().trim() + ") đã được gửi tới Ban Quản Lý. Trạng thái cửa hàng sẽ chuyển sang OPEN ngay khi được phê duyệt.",
                         "PAYMENT_VERIFICATION",
                         shop.getId()
                 );
@@ -161,8 +141,8 @@ public class ShopOwnerPaymentVerificationController {
             } catch (Exception ignored) {}
 
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Thêm thông tin tài khoản ngân hàng thành công! Ban Quản Lý (Operations) sẽ đối chiếu với hồ sơ CCCD ("
-                            + (shop.getIdCardName() != null ? shop.getIdCardName() : "") + ") và kích hoạt trạng thái mở bán (OPEN) trên sàn.");
+                    "Đã gửi Yêu cầu Đối soát thanh toán thành công! Ban Quản Lý (Operations) sẽ đối chiếu với hồ sơ CCCD ("
+                            + (shop.getIdCardName() != null ? shop.getIdCardName() : "") + ") và kích hoạt trạng thái mở bán (OPEN).");
 
             return "redirect:/shopowner/payment-verification";
         } catch (Exception ex) {
@@ -175,14 +155,5 @@ public class ShopOwnerPaymentVerificationController {
             model.addAttribute("activePage", "payment-verification");
             return "shopowner/payment-verification";
         }
-    }
-
-    private String removeAccents(String str) {
-        if (str == null) return "";
-        String normalized = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
-        return normalized.replaceAll("\\p{M}", "")
-                .replace("đ", "d").replace("Đ", "D")
-                .replaceAll("\\s+", " ")
-                .trim().toLowerCase();
     }
 }

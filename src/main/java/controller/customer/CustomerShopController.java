@@ -2,6 +2,7 @@ package controller.customer;
 
 import entity.Category;
 import entity.ProductVariant;
+import dto.customer.CustomerProductCard;
 import entity.Province;
 import entity.Shop;
 import jakarta.servlet.http.HttpSession;
@@ -131,11 +132,19 @@ public class CustomerShopController {
         model.addAttribute("shop", shop);
         model.addAttribute("shopProvinceName", shopProvinceName);
         model.addAttribute("categories", allCategories);
-        model.addAttribute("products", sortedVariants);
+        List<CustomerProductCard> productCards = CustomerProductCard.fromVariants(sortedVariants);
+        if ("price_asc".equals(sort)) {
+            productCards.sort(Comparator.comparing(CustomerProductCard::getSalePrice,
+                    Comparator.nullsLast(Comparator.naturalOrder())));
+        } else if ("price_desc".equals(sort)) {
+            productCards.sort(Comparator.comparing(CustomerProductCard::getSalePrice,
+                    Comparator.nullsLast(Comparator.reverseOrder())));
+        }
+        model.addAttribute("products", productCards);
         model.addAttribute("selectedCategoryId", categoryId);
         model.addAttribute("keyword", safeKeyword);
         model.addAttribute("sort", sort);
-        model.addAttribute("resultCount", sortedVariants.size());
+        model.addAttribute("resultCount", productCards.size());
         model.addAttribute("shopVouchers", shopVouchers);
         model.addAttribute("shopCashbackVouchers", shopCashbackVouchers);
 

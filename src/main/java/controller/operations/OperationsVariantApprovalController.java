@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import service.operations.OperationsVariantApprovalService;
 
@@ -35,9 +36,18 @@ public class OperationsVariantApprovalController {
 
     /** Chi tiết biến thể, sản phẩm cha, cửa hàng và tồn kho để phục vụ kiểm duyệt. */
     @GetMapping("/operations/variants/{variantId}")
-    public String variantDetails(@PathVariable Long variantId, Model model) {
+    public String variantDetails(@PathVariable Long variantId,
+                                 @RequestParam(required = false) Long returnShopId,
+                                 @RequestParam(required = false) String returnPage,
+                                 Model model) {
         OperationsVariantDetailDto variant = approvals.getVariantDetail(variantId);
         model.addAttribute("variant", variant);
+        // Keep shop-based reviews in that shop's context after the action completes.
+        boolean returningToShop = returnShopId != null && returnShopId.equals(variant.shopId());
+        model.addAttribute("returnShopId", returningToShop ? variant.shopId() : null);
+        model.addAttribute("returnUrl", returningToShop
+                ? ("shops".equals(returnPage) ? "/operations/shops/" : "/operations/shop-list/") + variant.shopId()
+                : "/operations/variants");
         return "operations/variant-detail";
     }
 

@@ -41,9 +41,6 @@ public class ShopProductManagementController {
         Page<?> result = products.searchShopProducts(ownerId, keyword, Math.max(0, page), PAGE_SIZE);
         model.addAttribute("products", result);
         model.addAttribute("keyword", keyword.trim());
-        java.util.Map<String, Object> shop = products.shopDashboard(ownerId);
-        model.addAttribute("shopPaymentApprovalStatus", shop.get("paymentApprovalStatus"));
-        model.addAttribute("shopApprovalStatus", shop.get("approvalStatus"));
         return "shopowner/product-list";
     }
 
@@ -73,7 +70,7 @@ public class ShopProductManagementController {
         }
         try {
             Long productId = products.createProduct(ownerId, form);
-            redirect.addFlashAttribute("success", "Đã tạo hồ sơ sản phẩm để quản lý biến thể. Hãy thêm biến thể để đăng bán; Operations sẽ hậu kiểm sau.");
+            redirect.addFlashAttribute("success", "Đã tạo sản phẩm ở trạng thái chưa đăng bán.");
             return "redirect:/shop/products";
         } catch (ProductValidationException ex) {
             // The service supplies user-facing text, not a Spring message-code.

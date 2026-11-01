@@ -26,42 +26,24 @@
             <div>
                 <p class="breadcrumb">Chủ cửa hàng / <span>Biến thể sản phẩm</span></p>
                 <h1>Biến thể sản phẩm</h1>
-                <p class="muted">Quản lý từng biến thể, hình ảnh, tồn kho và trạng thái duyệt trước khi mở bán.</p>
+                <p class="muted">Quản lý mã SKU, hình ảnh, giá và tồn kho.</p>
             </div>
             <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm loại hàng</a>
         </header>
 
-        <div class="policy-notice-banner" th:if="${shopPaymentApprovalStatus != 'APPROVED'}" style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);">
-            <div style="font-size: 1.6rem; line-height: 1;">⚖️</div>
-            <div style="flex: 1;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
-                    <strong style="color: #1e40af; font-size: 0.95rem;">Nguyên tắc bán hàng FreshFruit:</strong>
-                    <span style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid #fde68a;">Quản lý danh mục nội bộ</span>
-                </div>
-                <p style="margin: 0; color: #334155; font-size: 0.88rem; line-height: 1.5;">
-                    Cửa hàng đã được duyệt hồ sơ! Bạn có thể thêm biến thể và chuẩn bị danh sách hàng hóa nội bộ của shop.
-                    <strong>Sản phẩm chưa được đẩy lên sàn thương mại FreshFruit</strong> để khách hàng tìm kiếm và mua sắm cho tới khi hoàn tất và được duyệt <em>Thông tin tài khoản ngân hàng</em>.
-                </p>
-                <div style="margin-top: 10px;">
-                    <a th:href="@{/shopowner/payment-verification}" class="button button-sm" style="background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem;">
-                        <span>💳</span> Thêm thông tin tài khoản ngân hàng ngay ➔
-                    </a>
-                </div>
-            </div>
-        </div>
+        <p class="alert alert-success" th:if="${success}" th:text="${success}"></p>
 
         <section class="variant-summary" aria-label="Tổng quan biến thể">
             <article class="variant-stat"><strong th:text="${variantSummary.total}">0</strong><span>Tổng biến thể</span></article>
             <article class="variant-stat"><strong th:text="${variantSummary.active}">0</strong><span>Đang bán</span></article>
-            <article class="variant-stat"><strong th:text="${variantSummary.draft}">0</strong><span>Bản nháp / chờ kiểm tra</span></article>
-            <article class="variant-stat"><strong th:text="${variantSummary.paused}">0</strong><span>Đang ẩn / ngừng bán</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.draft}">0</strong><span>Bản nháp</span></article>
+            <article class="variant-stat"><strong th:text="${variantSummary.paused}">0</strong><span>Đã tắt</span></article>
         </section>
 
         <section class="panel">
             <form class="search-bar" method="get" th:action="@{/shopowner/product-variants}">
                 <label class="sr-only" for="keyword">Tìm sản phẩm hoặc loại hàng</label>
-                <input id="keyword" name="keyword" type="search" th:value="${keyword}"
-                       placeholder="Tìm theo sản phẩm, loại hàng hoặc mã">
+                <input id="keyword" name="keyword" type="search" th:value="${keyword}">
                 <button class="button button-dark" type="submit">Tìm kiếm</button>
                 <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shopowner/product-variants}">Bỏ lọc</a>
             </form>
@@ -97,16 +79,14 @@
                                 </div>
                             </div>
                         </td>
-                        <td th:text="${variant.sku}">SKU</td>
+                        <td><code class="sku-code" th:text="${variant.sku}">SKU-00000001</code></td>
                         <td th:text="${variant.unit_name}">Đơn vị bán</td>
                         <td th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.stock_quantity + ' ' + variant.unit_name}">0 kg</td>
                         <td>
                             <span class="badge badge-draft variant-status" th:if="${variant.approval_status == 'DRAFT'}">Bản nháp</span>
-                            <span class="badge badge-active variant-status" th:if="${variant.approval_status == 'PENDING' and variant.variant_status == 'ACTIVE'}">Đang bán · Chờ hậu kiểm</span>
-                            <span class="badge badge-draft variant-status" th:if="${variant.approval_status == 'PENDING' and variant.variant_status == 'INACTIVE'}">Chờ hậu kiểm · Chưa mở bán</span>
-                            <span class="badge badge-active variant-status" th:if="${variant.approval_status == 'APPROVED' and variant.variant_status == 'ACTIVE'}">Đã duyệt · Đang bán</span>
-                            <span class="badge badge-draft variant-status" th:if="${variant.approval_status == 'APPROVED' and variant.variant_status == 'INACTIVE'}">Đã duyệt · Ngừng bán</span>
+                            <span class="badge badge-active variant-status" th:if="${variant.approval_status != 'DRAFT' and variant.approval_status != 'REJECTED' and variant.variant_status == 'ACTIVE'}">Đang bán</span>
+                            <span class="badge badge-draft variant-status" th:if="${variant.approval_status != 'DRAFT' and variant.approval_status != 'REJECTED' and variant.variant_status == 'INACTIVE'}">Đã tắt</span>
                             <span class="badge variant-status" th:if="${variant.approval_status == 'REJECTED'}" style="color:#b42318;background:#fff0ef">Bị từ chối</span>
                             <small class="variant-rejection" th:if="${variant.approval_status == 'REJECTED' and variant.rejection_reason != null}" th:text="${'Lý do: ' + variant.rejection_reason}"></small>
                         </td>
@@ -137,7 +117,7 @@
         <div class="dialog-heading"><div><p class="eyebrow">BIẾN THỂ BỊ TỪ CHỐI</p><h2 id="variantComplaintTitle">Khiếu nại quyết định</h2></div><button type="button" class="icon-button" id="closeVariantComplaint" aria-label="Đóng">×</button></div>
         <p id="variantComplaintName" class="dialog-description"></p>
         <label for="variantComplaintMessage">Nội dung giải trình <span aria-hidden="true">*</span></label>
-        <textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required placeholder="Nhập nội dung giải trình..."></textarea>
+        <textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required></textarea>
         <p class="field-note">Từ 10 đến 1000 ký tự.</p>
         <div class="dialog-actions"><button type="button" class="button button-secondary" id="cancelVariantComplaint">Hủy</button><button type="submit" class="button button-reject">Lưu bản nháp khiếu nại</button></div>
     </form>

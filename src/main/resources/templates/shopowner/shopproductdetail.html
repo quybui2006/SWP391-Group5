@@ -46,7 +46,7 @@
             <div>
                 <p class="eyebrow">Quản lý sản phẩm / Chi tiết</p>
                 <h1 th:text="${product.name}">Tên sản phẩm</h1>
-                <p class="muted">Đây là hồ sơ nhóm để quản lý thông tin chung; mỗi biến thể cần được duyệt riêng trước khi mở bán.</p>
+                <p class="muted">Quản lý thông tin chung và các loại hàng.</p>
             </div>
             <div class="detail-actions">
                 <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách</a>
@@ -110,7 +110,7 @@
                         <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.quantityOnHand}">0</td>
                         <td th:text="${variant.availableQuantity}">0</td>
-                        <td><span class="badge" th:classappend="${variant.approvalStatus == 'APPROVED' and variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.approvalStatus == 'PENDING' ? 'Chờ duyệt' : (variant.approvalStatus == 'APPROVED' ? variant.status : variant.approvalStatus)}">DRAFT</span></td>
+                        <td><span class="badge" th:classappend="${variant.approvalStatus == 'APPROVED' and variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.approvalStatus == 'PENDING' ? 'Đang kiểm tra' : (variant.approvalStatus == 'APPROVED' ? (variant.status == 'ACTIVE' ? 'Đang bán' : 'Đã tắt') : (variant.approvalStatus == 'DRAFT' ? 'Bản nháp' : 'Bị từ chối'))}">Đang bán</span></td>
                         <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a></td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>

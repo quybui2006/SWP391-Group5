@@ -3,11 +3,9 @@ package org.example.swp391group5;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import service.complaint.ComplaintService;
 import service.customer.OrderCheckoutService;
 import service.operations.OperationsDashboardService;
@@ -80,15 +78,7 @@ class ComplaintAndOperationsReportingIntegrationTests {
                     500000, 50, 30000, 530000, 500000,
                     'COD', ?, ?, 'PAID', 'DELIVERED', ?)
             """, checkoutId, shopId, orderCode, deliveryCode, status, delTs);
-        Long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code = ?", Long.class, orderCode);
-
-        // Add 1 test order item
-        jdbc.update("""
-            INSERT INTO order_items (order_id, shop_id, variant_id, inventory_id, product_name, variant_name, sku, base_unit_name, quantity, unit_price, sale_unit_price, line_total, allocation_status)
-            VALUES (?, ?, 1, 1, 'Dâu tây Đà Lạt', 'Hộp 500g', 'DAU-500G', 'Hộp', 2, 250000, 250000, 500000, 'CONSUMED')
-        """, orderId, shopId);
-
-        return orderId;
+        return jdbc.queryForObject("SELECT id FROM orders WHERE order_code = ?", Long.class, orderCode);
     }
 
     private MockMultipartFile createTestPngImage() {
@@ -103,229 +93,160 @@ class ComplaintAndOperationsReportingIntegrationTests {
     }
 
     @Test
-    void testShopSoleDecision_ResendItemsWorkflow() {
-        Long customerId = createUser("buyer-resend@test.local", "Nguyễn Văn Mua", "CUSTOMER");
-        Long sellerId = createUser("seller-resend@test.local", "Trần Chủ Vựa", "SHOP_OWNER");
-        Long opsId = createUser("ops-resend@test.local", "Hoàng Quản Trị Vận Hành", "OPERATIONS_MANAGER");
+    void testEndToEndComplaintWorkflowAndOperationsReports() {
+        Long customerId = createUser("buyer-complaint@test.local", "Nguyễn Văn Mua", "CUSTOMER");
+        Long sellerId = createUser("seller-complaint@test.local", "Trần Chủ Vựa", "SHOP_OWNER");
+        Long csId = createUser("cs-complaint@test.local", "Lê CSKH", "CS_STAFF");
+        createUser("ops-complaint@test.local", "Phạm Vận Hành", "OPERATIONS_MANAGER");
 
         Long shopId = createTestShop(sellerId, "Nông Sản Tươi Đà Lạt");
-        Long orderId = createTestOrder(customerId, shopId, "ORD-RESEND-01", "DELIVERED", LocalDateTime.now().minusHours(2));
+        // DELIVERED just 2 hours ago
+        Long orderId = createTestOrder(customerId, shopId, "ORD-TEST-CMP-01", "DELIVERED", LocalDateTime.now().minusHours(2));
 
         MockMultipartFile evidenceImage = createTestPngImage();
 
-        // 1. Customer submits complaint selecting desired resolution: RESEND_ITEMS
+        // 1. Customer creates complaint (QUALITY_ISSUE -> auto HIGH priority, 6h SLA)
         Long complaintId = complaintService.submitCustomerComplaint(
                 customerId,
                 orderId,
                 null,
-                "DELIVERY_ISSUE",
-                "Dâu tây bị dập nát do vận chuyển giao chậm",
-                "Khi mở hộp ra có nhiều quả bị chảy nước do shipper giao chậm, mong shop giao bù hàng mới.",
+                "QUALITY_ISSUE",
+                "Dâu tây bị dập nát khoảng 30% hộp",
+                "Khi mở hộp ra có nhiều quả bị chảy nước và dập nát, mong shop đền bù điểm thưởng.",
                 evidenceImage,
-                "RESEND_ITEMS",
-                0L
+                50000L
         );
         assertNotNull(complaintId);
 
-        // 2. Verify complaint status is PENDING_OPERATIONS initially
+        // 2. Verify status is PENDING_SHOP and priority is HIGH
+        List<Map<String, Object>> customerComplaints = complaintService.listCustomerComplaints(customerId, "ALL");
+        assertEquals(1, customerComplaints.size());
+
+        // Verify Shop Order list shows complaint badge and pending count
+        Map<String, Object> counts = shopOrderService.countComplaints(sellerId);
+        assertEquals(1L, ((Number) counts.get("pending_shop_complaints")).longValue());
+        List<Map<String, Object>> shopOrders = shopOrderService.list(sellerId, "complaint");
+        assertEquals(1, shopOrders.size());
+        assertEquals("PENDING_SHOP", shopOrders.get(0).get("complaint_status"));
         Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
         assertNotNull(detail);
-        assertEquals("PENDING_OPERATIONS", detail.get("status"));
-        assertEquals("RESEND_ITEMS", detail.get("desired_resolution"));
+        assertEquals("HIGH", detail.get("priority"));
+        assertEquals("PENDING_SHOP", detail.get("status"));
+        assertEquals(50000L, ((Number) detail.get("requested_refund_amount")).longValue());
 
-        // 3. Shop CANNOT process yet when in PENDING_OPERATIONS
-        IllegalArgumentException shopBlockedEx = assertThrows(IllegalArgumentException.class, () ->
-                complaintService.submitShopDecision(
-                        sellerId,
-                        complaintId,
-                        "RESEND_ITEMS",
-                        "Shop muốn xử lý sớm",
-                        null,
-                        null
+        // 2b. CS cannot resolve directly while ticket is in PENDING_SHOP
+        IllegalArgumentException csBlockedEx = assertThrows(IllegalArgumentException.class, () ->
+                complaintService.resolveComplaint(
+                        complaintId, csId, "RESOLVED", "COMPENSATE_POINTS", "CS can thiệp", 50000L, true, false
                 )
         );
-        assertTrue(shopBlockedEx.getMessage().contains("Chờ Shop phản hồi") || shopBlockedEx.getMessage().contains("Chờ Vận hành duyệt"));
+        assertTrue(csBlockedEx.getMessage().contains("PENDING_SHOP"));
 
-        // 4. Operations Manager approves the complaint (Step 1)
-        complaintService.approveComplaintByOperations(opsId, complaintId, "Đã kiểm tra bằng chứng, khiếu nại hợp lệ.");
-
-        detail = complaintService.getComplaintDetail(complaintId);
-        assertEquals("PENDING_SHOP", detail.get("status"));
-        assertEquals("APPROVED", detail.get("operations_decision"));
-
-        // 5. Shop Owner chooses RESEND_ITEMS (Step 2) -> generates 0đ replacement order
+        // 3. Shop rejects complaint with explanation -> escalates to ESCALATED
         complaintService.submitShopDecision(
                 sellerId,
                 complaintId,
-                "RESEND_ITEMS",
-                "Shop thành thật xin lỗi, shop gửi ngay đơn giao bù trái cây mới tinh cho quý khách.",
+                "REJECT",
+                "Shop đã đóng thùng xốp lót mút cẩn thận trước khi giao, đề nghị CSKH phân xử đối chiếu.",
+                null
+        );
+        detail = complaintService.getComplaintDetail(complaintId);
+        assertEquals("ESCALATED", detail.get("status"));
+        assertEquals("REJECT", detail.get("shop_decision"));
+        assertNotNull(detail.get("shop_response"));
+
+        // 4. CS Staff arbitrates escalated ticket: resolves with adjusted finalRefundAmount = 30,000đ
+        complaintService.resolveComplaint(
+                complaintId,
+                csId,
+                "RESOLVED",
+                "COMPENSATE_POINTS",
+                "Xác nhận dập hỏng cục bộ, duyệt đền bù 30,000 điểm thiện chí cho khách và ghi nhận lỗi Shop.",
+                30000L,
+                true,
+                true
+        );
+
+        detail = complaintService.getComplaintDetail(complaintId);
+        assertEquals("RESOLVED", detail.get("status"));
+        assertEquals(30000L, ((Number) detail.get("final_refund_amount")).longValue());
+
+        // Verify customer points balance increased from 100 to 30100
+        Long updatedPoints = jdbc.queryForObject("SELECT points_balance FROM users WHERE id = ?", Long.class, customerId);
+        assertEquals(30100L, updatedPoints);
+
+        // Verify shop order revenue was deducted by 30,000 (from 500,000 to 470,000)
+        java.math.BigDecimal updatedRevenue = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
+        assertNotNull(updatedRevenue);
+        assertEquals(0, new java.math.BigDecimal("470000").compareTo(updatedRevenue));
+
+        // Verify shop reputation was deducted by 5 (from 100 to 95)
+        Integer shopReputation = jdbc.queryForObject("SELECT reputation_score FROM shops WHERE id = ?", Integer.class, shopId);
+        assertNotNull(shopReputation);
+        assertEquals(95, shopReputation.intValue());
+
+        // 5. Verify CS Staff Analytics Reports (Reports & Alerts moved to CS Staff)
+        Map<String, Object> csAnalytics = complaintService.getAnalyticsAndReports();
+        assertNotNull(csAnalytics.get("disputeReport"));
+        assertNotNull(csAnalytics.get("csSlaReport"));
+        assertNotNull(csAnalytics.get("violationAlerts"));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> violationAlerts = (List<Map<String, Object>>) csAnalytics.get("violationAlerts");
+        boolean shopAlertFound = violationAlerts.stream()
+                .anyMatch(a -> shopId.equals(((Number) a.get("shop_id")).longValue()));
+        assertTrue(shopAlertFound, "Shop with fault complaint should appear in Violation Alerts");
+
+        // Verify Operations Dashboard focus remains on core Operations KPIs (Shop, Approval SLA, Delivery SLA)
+        Map<String, Object> opsData = operationsDashboardService.getDashboardData();
+        assertNotNull(opsData.get("shopPerformance"));
+        assertNotNull(opsData.get("approvalSla"));
+        assertNotNull(opsData.get("deliverySla"));
+    }
+
+    @Test
+    void testShopAcceptAutoResolvesAndCreditsPoints() {
+        Long customerId = createUser("buyer-accept@test.local", "Trần Mua Hàng", "CUSTOMER");
+        Long sellerId = createUser("seller-accept@test.local", "Chủ Shop Thân Thiện", "SHOP_OWNER");
+        Long shopId = createTestShop(sellerId, "Shop Hoa Quả Sạch");
+        Long orderId = createTestOrder(customerId, shopId, "ORD-ACCEPT-01", "DELIVERED", LocalDateTime.now().minusHours(1));
+
+        MockMultipartFile evidenceImage = createTestPngImage();
+
+        Long complaintId = complaintService.submitCustomerComplaint(
+                customerId,
+                orderId,
                 null,
+                "WEIGHT_OR_QUANTITY_SHORTAGE",
+                "Giao thiếu 500g nho xanh",
+                "Đặt 2kg nhưng cân chỉ có 1.5kg, mong shop hoàn điểm tương ứng.",
+                evidenceImage,
+                40000L
+        );
+
+        // Shop ACCEPTS complaint -> system sets finalRefundAmount = requestedRefundAmount and auto-credits points
+        complaintService.submitShopDecision(
+                sellerId,
+                complaintId,
+                "ACCEPT",
+                "Shop kiểm tra lại thấy nhân viên đóng thiếu nửa cân nho. Shop thành thật xin lỗi và đồng ý hoàn đủ 40,000 điểm.",
                 null
         );
 
-        // 6. Verify complaint is marked RESOLVED and replacement order is linked
-        detail = complaintService.getComplaintDetail(complaintId);
-        assertEquals("RESOLVED", detail.get("status"));
-        assertEquals("RESEND_ITEMS", detail.get("resolution_type"));
-        Long replacementOrderId = ((Number) detail.get("replacement_order_id")).longValue();
-        assertNotNull(replacementOrderId);
-
-        // 6. Verify replacement order properties
-        Map<String, Object> replacementOrder = jdbc.queryForMap("SELECT * FROM orders WHERE id = ?", replacementOrderId);
-        assertEquals("RESEND", replacementOrder.get("order_type"));
-        assertEquals(orderId, ((Number) replacementOrder.get("original_order_id")).longValue());
-        assertEquals("CONFIRMED", replacementOrder.get("status"));
-        assertEquals("PAID", replacementOrder.get("payment_status"));
-        assertEquals("RESEND", replacementOrder.get("payment_method"));
-        assertEquals(0, new java.math.BigDecimal("0").compareTo((java.math.BigDecimal) replacementOrder.get("total_amount")));
-        assertEquals(0, new java.math.BigDecimal("0").compareTo((java.math.BigDecimal) replacementOrder.get("shipping_fee")));
-        assertEquals(0, new java.math.BigDecimal("0").compareTo((java.math.BigDecimal) replacementOrder.get("shop_revenue_amount")));
-
-        // Verify replacement order items were copied with line_total = 0
-        List<Map<String, Object>> repItems = jdbc.queryForList("SELECT * FROM order_items WHERE order_id = ?", replacementOrderId);
-        assertFalse(repItems.isEmpty());
-        assertEquals(0, new java.math.BigDecimal("0").compareTo((java.math.BigDecimal) repItems.get(0).get("line_total")));
-
-        // 7. Verify original order revenue is NOT deducted (no financial deduction on complaint)
-        java.math.BigDecimal origRevenue = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
-        assertNotNull(origRevenue);
-        assertEquals(0, new java.math.BigDecimal("500000").compareTo(origRevenue));
-
-        // 8. Verify shop reputation score was NOT deducted
-        Integer repScore = jdbc.queryForObject("SELECT reputation_score FROM shops WHERE id = ?", Integer.class, shopId);
-        assertNotNull(repScore);
-        assertEquals(100, repScore.intValue());
-    }
-
-    @Test
-    void testShopSoleDecision_IssueVoucherWorkflow() {
-        Long customerId = createUser("buyer-voucher@test.local", "Trần Khách Voucher", "CUSTOMER");
-        Long sellerId = createUser("seller-voucher@test.local", "Chủ Vựa Voucher", "SHOP_OWNER");
-        Long shopId = createTestShop(sellerId, "Vựa Trái Cây Miền Tây");
-        Long orderId = createTestOrder(customerId, shopId, "ORD-VOUCHER-01", "DELIVERED", LocalDateTime.now().minusHours(1));
-
-        MockMultipartFile evidenceImage = createTestPngImage();
-
-        Long opsId = createUser("ops-voucher@test.local", "Vũ Vận Hành", "OPERATIONS_MANAGER");
-
-        // Customer submits complaint requesting ISSUE_VOUCHER
-        Long complaintId = complaintService.submitCustomerComplaint(
-                customerId,
-                orderId,
-                null,
-                "QUANTITY_SHORTAGE",
-                "Thiếu 500g cam sành",
-                "Đơn giao thiếu 500g cam, vui lòng đền voucher giúp tôi.",
-                evidenceImage,
-                "ISSUE_VOUCHER",
-                0L
-        );
-
-        // 1. Operations Manager approves the complaint (Step 1)
-        complaintService.approveComplaintByOperations(opsId, complaintId, "Chấp thuận chuyển Shop đền bù.");
-
-        // 2. Shop resolves by issuing a 60,000đ voucher (Step 2)
-        complaintService.submitShopDecision(
-                sellerId,
-                complaintId,
-                "ISSUE_VOUCHER",
-                "Shop gửi tặng quý khách voucher 60k cho đơn hàng tiếp theo.",
-                null,
-                60000L
-        );
-
-        // Verify complaint is RESOLVED and voucher is created
         Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
         assertEquals("RESOLVED", detail.get("status"));
-        assertEquals("ISSUE_VOUCHER", detail.get("resolution_type"));
-        Long voucherId = ((Number) detail.get("voucher_id")).longValue();
-        String voucherCode = (String) detail.get("voucher_code");
-        assertNotNull(voucherId);
-        assertNotNull(voucherCode);
+        assertEquals("ACCEPT", detail.get("shop_decision"));
+        assertEquals(40000L, ((Number) detail.get("final_refund_amount")).longValue());
+        assertEquals(40000L, ((Number) detail.get("compensated_points")).longValue());
 
-        // Verify voucher is saved in customer_saved_vouchers
-        Integer countSaved = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM customer_saved_vouchers WHERE user_id = ? AND voucher_id = ?",
-                Integer.class, customerId, voucherId);
-        assertEquals(1, countSaved);
+        // Points balance: 100 + 40000 = 40100
+        Long points = jdbc.queryForObject("SELECT points_balance FROM users WHERE id = ?", Long.class, customerId);
+        assertEquals(40100L, points);
 
-        // Verify voucher discount amount is 60000
-        java.math.BigDecimal discountAmount = jdbc.queryForObject(
-                "SELECT discount_value FROM vouchers WHERE id = ?",
-                java.math.BigDecimal.class, voucherId);
-        assertNotNull(discountAmount);
-        assertEquals(0, new java.math.BigDecimal("60000").compareTo(discountAmount));
-    }
-
-    @Test
-    void testOperationsRejectWorkflowAndShopCannotReject() {
-        Long customerId = createUser("buyer-reject@test.local", "Lê Người Mua", "CUSTOMER");
-        Long sellerId = createUser("seller-reject@test.local", "Chủ Shop Nghiêm Túc", "SHOP_OWNER");
-        Long opsId = createUser("ops-reject@test.local", "Phạm Quản Trị Viên", "OPERATIONS_MANAGER");
-        Long shopId = createTestShop(sellerId, "Shop Hoa Quả Sạch");
-        Long orderId = createTestOrder(customerId, shopId, "ORD-REJECT-01", "DELIVERED", LocalDateTime.now().minusHours(3));
-
-        MockMultipartFile evidenceImage = createTestPngImage();
-
-        Long complaintId = complaintService.submitCustomerComplaint(
-                customerId,
-                orderId,
-                null,
-                "WRONG_PRODUCT",
-                "Giao sai táo gala thành táo fuji",
-                "Tôi đặt táo gala nhưng shop giao nhầm loại khác.",
-                evidenceImage,
-                "RESEND_ITEMS",
-                0L
-        );
-
-        // 1. Operations rejecting without reason or with reason < 5 chars must fail
-        IllegalArgumentException shortReasonEx = assertThrows(IllegalArgumentException.class, () ->
-                complaintService.rejectComplaintByOperations(
-                        opsId,
-                        complaintId,
-                        "Sai"
-                )
-        );
-        assertTrue(shortReasonEx.getMessage().contains("tối thiểu 5 ký tự") || shortReasonEx.getMessage().contains("từ 5 đến 1500"));
-
-        // 2. Operations approves first complaint
-        complaintService.approveComplaintByOperations(opsId, complaintId, "Duyệt yêu cầu.");
-
-        // 3. Shop CANNOT reject once Operations approved!
-        IllegalArgumentException shopRejectBlocked = assertThrows(IllegalArgumentException.class, () ->
-                complaintService.submitShopDecision(
-                        sellerId,
-                        complaintId,
-                        "REJECTED",
-                        "Shop không muốn bồi thường",
-                        null,
-                        null
-                )
-        );
-        assertTrue(shopRejectBlocked.getMessage().contains("không có quyền từ chối") || shopRejectBlocked.getMessage().contains("không thể từ chối"));
-
-        // 4. Test Operations rejecting a different complaint directly
-        Long orderId2 = createTestOrder(customerId, shopId, "ORD-REJECT-02", "DELIVERED", LocalDateTime.now().minusHours(1));
-        Long complaintId2 = complaintService.submitCustomerComplaint(
-                customerId,
-                orderId2,
-                null,
-                "WRONG_PRODUCT",
-                "Lỗi không có cơ sở",
-                "Không đồng ý chất lượng",
-                evidenceImage,
-                "RESEND_ITEMS",
-                0L
-        );
-        complaintService.rejectComplaintByOperations(opsId, complaintId2, "Hình ảnh chụp không chứng minh được sản phẩm bị giao nhầm loại.");
-
-        Map<String, Object> detail2 = complaintService.getComplaintDetail(complaintId2);
-        assertEquals("REJECTED", detail2.get("status"));
-        assertEquals("REJECTED", detail2.get("resolution_type"));
-        assertNull(detail2.get("replacement_order_id"));
-        assertNull(detail2.get("voucher_id"));
-        assertEquals("Hình ảnh chụp không chứng minh được sản phẩm bị giao nhầm loại.", detail2.get("resolution_note"));
+        // Verify shop order revenue was deducted by 40,000 (from 500,000 to 460,000)
+        java.math.BigDecimal shopRevenueAfterAccept = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
+        assertNotNull(shopRevenueAfterAccept);
+        assertEquals(0, new java.math.BigDecimal("460000").compareTo(shopRevenueAfterAccept));
     }
 
     @Test
@@ -334,95 +255,208 @@ class ComplaintAndOperationsReportingIntegrationTests {
         Long sellerId = createUser("seller-matrix@test.local", "Vựa Kiểm Tra", "SHOP_OWNER");
         Long shopId = createTestShop(sellerId, "Vựa Test");
 
-        // 1. Order status CONFIRMED cannot create complaint (only DELIVERED allowed)
+        // 1. Order status CONFIRMED or COMPLETED cannot create complaint
         Long confirmedOrderId = createTestOrder(customerId, shopId, "ORD-CONFIRMED-01", "CONFIRMED", null);
         IllegalArgumentException blockedConfirmed = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.submitCustomerComplaint(
-                        customerId, confirmedOrderId, null, "QUALITY_ISSUE", "Giao lâu", "Chưa thấy giao", null, 0L
+                        customerId, confirmedOrderId, null, "DELIVERY_OR_SERVICE", "Giao lâu", "Chưa thấy giao", null, 0L
                 )
         );
         assertTrue(blockedConfirmed.getMessage().contains("DELIVERED"));
 
-        // 2. Order status SHIPPING cannot create complaint
+        // 2. Order status SHIPPING is completely blocked from complaints (complaints only allowed when DELIVERED)
         Long shippingOrderId = createTestOrder(customerId, shopId, "ORD-SHIPPING-01", "SHIPPING", null);
         IllegalArgumentException blockedShipping = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.submitCustomerComplaint(
-                        customerId, shippingOrderId, null, "QUALITY_ISSUE", "Shipper thái độ", "Giao hàng cộc lốc", null, 0L
+                        customerId, shippingOrderId, null, "DELIVERY_OR_SERVICE", "Shipper thái độ", "Giao hàng cộc lốc", null, 0L
                 )
         );
         assertTrue(blockedShipping.getMessage().contains("DELIVERED"));
 
-        // 3. Order status DELIVERED exceeding 24h is blocked
+        // 3. Order status DELIVERED:
+        // Exceeding 24h is blocked
         Long oldDeliveredOrderId = createTestOrder(customerId, shopId, "ORD-OLD-01", "DELIVERED", LocalDateTime.now().minusHours(25));
         IllegalArgumentException blockedOver24h = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.submitCustomerComplaint(
-                        customerId, oldDeliveredOrderId, null, "QUALITY_ISSUE", "Trái cây thối", "Dập mốc", null, 0L
+                        customerId, oldDeliveredOrderId, null, "QUALITY_ISSUE", "Trái cây thối", "Dập mốc", null, 10000L
                 )
         );
         assertTrue(blockedOver24h.getMessage().contains("quá thời hạn 24 giờ"));
 
-        // 4. Within 24h: product defect WITHOUT evidence image is blocked
+        // Within 24h: product defect WITHOUT evidence image is blocked
         Long deliveredOrderId = createTestOrder(customerId, shopId, "ORD-VALID-01", "DELIVERED", LocalDateTime.now().minusHours(2));
         IllegalArgumentException blockedNoImage = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.submitCustomerComplaint(
-                        customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Trái cây thối", "Dập mốc nhiều", null, 0L
+                        customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Trái cây thối", "Dập mốc nhiều", null, 10000L
                 )
         );
         assertTrue(blockedNoImage.getMessage().contains("bắt buộc phải đính kèm ít nhất 1 hình ảnh"));
 
-        // 5. Valid complaint with photo
+        // Requested refund amount exceeding actualPaidAmount (500,000đ goods subtotal) is blocked
         MockMultipartFile img = createTestPngImage();
+        IllegalArgumentException blockedExceedRefund = assertThrows(IllegalArgumentException.class, () ->
+                complaintService.submitCustomerComplaint(
+                        customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Dập nát", "Hư hết trơn", img, 600000L
+                )
+        );
+        assertTrue(blockedExceedRefund.getMessage().contains("không được vượt quá"));
+
+        // Valid complaint within 24h with photo & refund <= 500,000
         Long cId = complaintService.submitCustomerComplaint(
-                customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Dập nát 20%", "Hộp bị nén", img, "RESEND_ITEMS", 0L
+                customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Dập nát 20%", "Hộp bị nén", img, 100000L
         );
         assertNotNull(cId);
 
-        // 6. Max 1 active complaint per order constraint
+        // Max 1 complaint per order constraint: cannot create second complaint
         IllegalArgumentException blockedDuplicate = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.submitCustomerComplaint(
-                        customerId, deliveredOrderId, null, "WRONG_PRODUCT", "Thêm lỗi khác", "Mô tả", img, "RESEND_ITEMS", 0L
+                        customerId, deliveredOrderId, null, "DELIVERY_OR_SERVICE", "Thêm lỗi khác", "Mô tả", null, 0L
                 )
         );
         assertTrue(blockedDuplicate.getMessage().contains("chỉ được phép gửi khiếu nại tối đa 1 lần"));
 
-        // 7. Customer cancels active complaint -> status becomes CANCELLED
+        // Customer cancels active complaint -> status becomes CANCELLED
         complaintService.cancelCustomerComplaint(customerId, cId);
         Map<String, Object> cancelledDetail = complaintService.getComplaintDetail(cId);
         assertEquals("CANCELLED", cancelledDetail.get("status"));
 
-        // 8. Recreating is allowed once previous complaint was CANCELLED and order is still within 24h
+        // Recreating is allowed now that the previous complaint was CANCELLED and order is still within 24h
         Long cId2 = complaintService.submitCustomerComplaint(
-                customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Dập nát tạo lại", "Hộp bị nén", img, "RESEND_ITEMS", 0L
+                customerId, deliveredOrderId, null, "QUALITY_ISSUE", "Dập nát tạo lại", "Hộp bị nén", img, 80000L
         );
         assertNotNull(cId2);
     }
 
     @Test
-    void testOrderLocksDuringComplaint() {
+    void testPlatformFaultCompensationAndFreeShippingVoucher() {
+        Long customerId = createUser("buyer-platform@test.local", "Khách Hàng Nền Tảng", "CUSTOMER");
+        Long sellerId = createUser("seller-platform@test.local", "Shop Bị Oan", "SHOP_OWNER");
+        Long csId = createUser("cs-platform@test.local", "Nhân Viên CS Phân Xử", "CS_STAFF");
+        Long shopId = createTestShop(sellerId, "Shop Hoa Quả Uy Tín");
+        Long orderId = createTestOrder(customerId, shopId, "ORD-PLATFORM-01", "DELIVERED", LocalDateTime.now().minusHours(2));
+
+        MockMultipartFile img = createTestPngImage();
+        Long complaintId = complaintService.submitCustomerComplaint(
+                customerId,
+                orderId,
+                null,
+                "DELIVERY_OR_SERVICE",
+                "Hàng bị móp do đơn vị vận chuyển",
+                "Thùng hàng bị chèn ép trong quá trình giao của đơn vị vận chuyển.",
+                img,
+                100000L
+        );
+
+        // Shop rejects with explanation
+        complaintService.submitShopDecision(
+                sellerId,
+                complaintId,
+                "REJECT",
+                "Shop đã quấn bọt khí rất dày, lỗi dập thùng do shipper làm rơi vỡ.",
+                null
+        );
+
+        // CS staff arbitrates with PLATFORM fault (quỹ sàn tài trợ 50% = 50,000đ + tặng mã freeship)
+        complaintService.resolveComplaint(
+                complaintId,
+                csId,
+                "RESOLVED",
+                "COMPENSATE_POINTS",
+                "Xác định lỗi do khâu vận chuyển của Nền tảng. Quỹ Sàn tài trợ đền bù điểm và gửi tặng Voucher FreeShip.",
+                50000L,
+                false, // isShopFault = false
+                "PLATFORM",
+                true, // giftFreeShipping = true
+                false
+        );
+
+        Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
+        assertEquals("RESOLVED", detail.get("status"));
+        assertEquals("PLATFORM", detail.get("fault_party"));
+        assertNotNull(detail.get("gifted_freeship_voucher"));
+        assertTrue(String.valueOf(detail.get("gifted_freeship_voucher")).startsWith("FS-"));
+
+        // Customer receives points: initial 100 + 50000 = 50100
+        Long custPoints = jdbc.queryForObject("SELECT points_balance FROM users WHERE id = ?", Long.class, customerId);
+        assertEquals(50100L, custPoints);
+
+        // Shop revenue remains UNTOUCHED (500,000)
+        java.math.BigDecimal shopRev = jdbc.queryForObject("SELECT shop_revenue_amount FROM orders WHERE id = ?", java.math.BigDecimal.class, orderId);
+        assertNotNull(shopRev);
+        assertEquals(0, new java.math.BigDecimal("500000").compareTo(shopRev));
+
+        // Shop reputation remains 100 (NOT penalized)
+        Integer repScore = jdbc.queryForObject("SELECT reputation_score FROM shops WHERE id = ?", Integer.class, shopId);
+        assertNotNull(repScore);
+        assertEquals(100, repScore.intValue());
+
+        // Customer status label in customer view is "Đã xử lý"
+        List<Map<String, Object>> customerComplaints = complaintService.listCustomerComplaints(customerId, "all");
+        assertFalse(customerComplaints.isEmpty());
+        assertTrue(String.valueOf(customerComplaints.get(0).get("customer_status_label")).contains("Đã xử lý"));
+    }
+
+    @Test
+    void testOrderAutoCompleteAndCustomerCompletionLocksDuringComplaint() {
         Long customerId = createUser("buyer-lock@test.local", "Võ Khóa Đơn", "CUSTOMER");
         Long sellerId = createUser("seller-lock@test.local", "Shop Khóa Đơn", "SHOP_OWNER");
         Long shopId = createTestShop(sellerId, "Shop Lock");
 
-        Long orderId = createTestOrder(customerId, shopId, "ORD-LOCK-01", "DELIVERED", LocalDateTime.now().minusHours(2));
+        // Order DELIVERED 25 hours ago with active complaint
+        Long orderId = createTestOrder(customerId, shopId, "ORD-LOCK-01", "DELIVERED", LocalDateTime.now().minusHours(25));
         MockMultipartFile img = createTestPngImage();
 
+        // Artificially allow complaint submission by adjusting delivered_at briefly
+        jdbc.update("UPDATE orders SET delivered_at = ? WHERE id = ?", Timestamp.valueOf(LocalDateTime.now().minusHours(2)), orderId);
         Long complaintId = complaintService.submitCustomerComplaint(
-                customerId, orderId, null, "QUALITY_ISSUE", "Bị dập", "Bị dập", img, "RESEND_ITEMS", 0L
+                customerId, orderId, null, "QUALITY_ISSUE", "Bị dập", "Bị dập", img, 20000L
         );
-        assertNotNull(complaintId);
+        // Reset delivered_at to 25 hours ago so it qualifies for auto-complete time
+        jdbc.update("UPDATE orders SET delivered_at = ? WHERE id = ?", Timestamp.valueOf(LocalDateTime.now().minusHours(25)), orderId);
 
-        // Customer tries to manually complete order -> BLOCKED due to active complaint
+        // 1. Customer tries to manually complete order -> BLOCKED due to active complaint
         IllegalArgumentException blockedCustomerComplete = assertThrows(IllegalArgumentException.class, () ->
                 orderCheckoutService.completeOrderByCustomer(customerId, orderId)
         );
         assertTrue(blockedCustomerComplete.getMessage().contains("đang có khiếu nại"));
 
-        // Customer withdraws complaint -> complaint is CANCELLED
+        // 2. Scheduled Job runs auto-complete -> MUST SKIP this order
+        int completedCount = orderCheckoutService.autoCompleteDeliveredOrders();
+        assertEquals(0, completedCount);
+        String currentOrderStatus = jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId);
+        assertEquals("DELIVERED", currentOrderStatus);
+
+        // 3. Customer withdraws complaint -> complaint is CANCELLED
         complaintService.cancelCustomerComplaint(customerId, complaintId);
 
-        // Customer can now manually complete order
+        // 4. Customer can now manually complete order
         orderCheckoutService.completeOrderByCustomer(customerId, orderId);
-        String currentOrderStatus = jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId);
+        currentOrderStatus = jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId);
         assertEquals("COMPLETED", currentOrderStatus);
+    }
+
+    @Test
+    void testSlaAutoEscalateOverdueShopComplaints() {
+        Long customerId = createUser("buyer-sla@test.local", "Hoàng Quá Hạn", "CUSTOMER");
+        Long sellerId = createUser("seller-sla@test.local", "Shop Bận Quá", "SHOP_OWNER");
+        Long shopId = createTestShop(sellerId, "Shop Bận");
+        Long orderId = createTestOrder(customerId, shopId, "ORD-SLA-01", "DELIVERED", LocalDateTime.now().minusHours(1));
+
+        MockMultipartFile img = createTestPngImage();
+        Long complaintId = complaintService.submitCustomerComplaint(
+                customerId, orderId, null, "QUALITY_ISSUE", "Quả úng", "Úng nước", img, 25000L
+        );
+
+        // Artificially backdate sla_due_at to 1 hour ago
+        jdbc.update("UPDATE complaints SET sla_due_at = ? WHERE id = ?",
+                Timestamp.valueOf(LocalDateTime.now().minusHours(1)), complaintId);
+
+        // Run scheduled SLA job
+        int escalatedCount = complaintService.autoEscalateOverdueShopComplaints();
+        assertTrue(escalatedCount >= 1);
+
+        Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
+        assertEquals("ESCALATED", detail.get("status"));
+        assertNotNull(detail.get("escalated_at"));
     }
 }

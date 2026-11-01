@@ -55,15 +55,6 @@ public class CustomerAccountService {
         return jdbc.queryForMap("SELECT balance,total_deposited,total_refunded FROM customer_wallets WHERE user_id=?", userId);
     }
 
-    public List<Map<String,Object>> walletTransactions(Long userId) {
-        return jdbc.queryForList("""
-            SELECT id, type, amount, description, created_at
-            FROM customer_wallet_transactions
-            WHERE user_id = ?
-            ORDER BY created_at DESC, id DESC
-        """, userId);
-    }
-
     public List<Map<String,Object>> coinHistory(Long userId, String filter) {
         String condition = switch (filter == null ? "all" : filter) {
             case "received" -> " AND type='RECEIVED' AND status='ACTIVE'";
@@ -100,14 +91,13 @@ public class CustomerAccountService {
         };
         List<Map<String,Object>> orders = jdbc.query("""
             SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_status,o.delivery_status,o.created_at,
-                   s.name AS shop_name, s.id AS shop_id,
-                   (SELECT COUNT(*) FROM complaints c WHERE c.order_id=o.id AND c.status <> 'CANCELLED') AS complaint_count
+                   s.name AS shop_name, s.id AS shop_id
             FROM orders o JOIN checkouts c ON c.id=o.checkout_id
             JOIN shops s ON s.id=o.shop_id
             WHERE c.user_id=?""" + condition + " ORDER BY o.created_at DESC,o.id DESC",
             (rs, row) -> {
                 Map<String,Object> order = new java.util.LinkedHashMap<>();
-                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_status", "delivery_status", "shop_name", "shop_id", "complaint_count"))
+                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_status", "delivery_status", "shop_name", "shop_id"))
                     order.put(column, rs.getObject(column));
                 var timestamp = rs.getTimestamp("created_at");
                 order.put("created_at", timestamp == null ? "—" : timestamp.toLocalDateTime()

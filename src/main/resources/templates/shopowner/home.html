@@ -151,51 +151,52 @@
                 </div>
             </section>
 
-            <!-- Banner khi Shop đã duyệt nhưng CHƯA THÊM THÔNG TIN TÀI KHOẢN NGÂN HÀNG -->
+            <!-- Banner khi Shop đã duyệt nhưng CHƯA GỬI ĐỐI SOÁT THANH TOÁN -->
             <section
                 th:if="${shop.approvalStatus == 'APPROVED' and (shop.paymentApprovalStatus == 'UNCONFIGURED' or shop.paymentApprovalStatus == null)}"
                 class="shop-setup-banner"
                 style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); border-color: #3b82f6;">
                 <div class="setup-banner-left">
                     <span class="setup-tag" style="background: #eff6ff; color: #1d4ed8;">BƯỚC BẮT BUỘC ĐỂ MỞ BÁN</span>
-                    <h2 style="color: #ffffff;">Cửa hàng đã được duyệt! Vui lòng "Thêm thông tin tài khoản ngân hàng" 💳
+                    <h2 style="color: #ffffff;">Cửa hàng đã được duyệt! Vui lòng gửi "Yêu cầu Đối soát thanh toán" 💳
                     </h2>
-                    <p style="color: #dbeafe;">Để kích hoạt trạng thái mở bán <strong>(Hoạt động: OPEN)</strong> và đẩy sản phẩm lên sàn bán hàng, bạn cần thêm thông tin tài khoản ngân hàng thụ hưởng chính chủ để Ban Quản
+                    <p style="color: #dbeafe;">Để kích hoạt trạng thái mở bán <strong>(Hoạt động: OPEN)</strong> và nhận
+                        tiền thanh toán đơn hàng, bạn cần khai báo tài khoản ngân hàng thụ hưởng chính chủ để Ban Quản
                         Lý (Operations) đối chiếu với hồ sơ CCCD.</p>
                 </div>
                 <div class="setup-banner-right">
                     <a th:href="@{/shopowner/payment-verification}" class="setup-open-shop-btn"
                         style="background: #28a866; color: #fff; box-shadow: 0 4px 14px rgba(40, 168, 102, 0.4);">
-                        <span>⚡ Thêm thông tin tài khoản ngân hàng</span>
+                        <span>⚡ Yêu cầu đối soát thanh toán</span>
                         <span class="btn-arrow">➔</span>
                     </a>
                 </div>
             </section>
 
-            <!-- Banner khi Thông tin tài khoản ngân hàng đang chờ phê duyệt -->
+            <!-- Banner khi Yêu cầu đối soát đang chờ phê duyệt -->
             <section th:if="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'PENDING'}"
                 class="shop-setup-banner pending"
                 style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fcd34d;">
                 <div class="setup-banner-left">
                     <span class="setup-tag pending">ĐANG ĐỐI SOÁT</span>
-                    <h2>Thông tin tài khoản ngân hàng đang chờ Ban Quản Lý thẩm định ⏳</h2>
+                    <h2>Yêu cầu đối soát thanh toán đang chờ Ban Quản Lý thẩm định ⏳</h2>
                     <p>Thông tin tài khoản ngân hàng của bạn đang được đối chiếu với hồ sơ CCCD đã xác thực. Cửa hàng sẽ
                         tự động chuyển sang trạng thái <strong>MỞ BÁN (Hoạt động: OPEN)</strong> ngay sau khi thẩm định
                         hoàn tất.</p>
                 </div>
                 <div class="setup-banner-right">
                     <a th:href="@{/shopowner/payment-verification}" class="setup-open-shop-btn secondary">
-                        <span>Xem chi tiết tài khoản ➔</span>
+                        <span>Xem chi tiết yêu cầu ➔</span>
                     </a>
                 </div>
             </section>
 
-            <!-- Banner khi Thông tin tài khoản ngân hàng bị từ chối -->
+            <!-- Banner khi Yêu cầu đối soát bị từ chối -->
             <section th:if="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'REJECTED'}"
                 class="shop-setup-banner rejected">
                 <div class="setup-banner-left">
                     <span class="setup-tag rejected">CẦN ĐIỀU CHỈNH</span>
-                    <h2>Thông tin tài khoản ngân hàng chưa được phê duyệt ⚠️</h2>
+                    <h2>Yêu cầu đối soát thanh toán chưa được phê duyệt ⚠️</h2>
                     <p>Ban Quản Lý phản hồi: <strong
                             th:text="${shop.bankRejectionReason ?: 'Tên chủ tài khoản không trùng khớp với họ tên CCCD'}">Chưa
                             khớp thông tin</strong>. Vui lòng cập nhật lại thông tin tài khoản chính chủ.</p>
@@ -256,22 +257,6 @@
 
                         <small class="neutral" th:text="${stats.active_variants + ' đang hoạt động'}">
                             0 đang hoạt động
-                        </small>
-                    </div>
-                </article>
-
-                <article class="stat-card">
-                    <div class="stat-icon orange">!</div>
-
-                    <div>
-                        <span>Sắp hết hàng</span>
-
-                        <strong th:text="${stats.low_stock}">
-                            0
-                        </strong>
-
-                        <small class="warning">
-                            Cần kiểm tra tồn kho
                         </small>
                     </div>
                 </article>
@@ -559,17 +544,14 @@
             <section class="panel table-panel" style="margin-top: 14px;">
                 <div class="panel-heading">
                     <div>
-                        <h2>📦 Tình hình Tồn kho & Cảnh báo nhập hàng</h2>
-                        <p class="muted">Theo dõi biến thể sắp hết hàng hoặc hết hàng để kịp thời bổ sung</p>
+                        <h2>📦 Tình hình tồn kho</h2>
+                        <p class="muted">Theo dõi số lượng hàng đang có trong kho</p>
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <span
                             style="background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;"
                             th:text="${revenueAnalytics.inventoryCounts.out_of_stock_count + ' hết hàng'}">0 hết
                             hàng</span>
-                        <span
-                            style="background: #ffedd5; color: #c2410c; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;"
-                            th:text="${revenueAnalytics.inventoryCounts.low_stock_count + ' sắp hết'}">0 sắp hết</span>
                         <a class="text-link" th:href="@{/shopowner/product-variants}">Quản lý kho →</a>
                     </div>
                 </div>
@@ -582,7 +564,6 @@
                                 <th>MÃ SKU</th>
                                 <th>ĐƠN VỊ</th>
                                 <th>TỒN HIỆN TẠI</th>
-                                <th>NGƯỠNG CẢNH BÁO</th>
                                 <th>KHẢ DỤNG</th>
                                 <th>TRẠNG THÁI</th>
                                 <th>THAO TÁC</th>
@@ -604,7 +585,6 @@
                                 <td>
                                     <strong th:text="${item.quantity_on_hand}">0</strong>
                                 </td>
-                                <td style="color: #64748b;" th:text="${item.threshold_qty}">0</td>
                                 <td>
                                     <span th:text="${item.available_quantity}">0</span>
                                 </td>
@@ -612,9 +592,6 @@
                                     <span th:if="${item.stock_status == 'Hết hàng'}"
                                         style="background: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">HẾT
                                         HÀNG</span>
-                                    <span th:if="${item.stock_status == 'Sắp hết'}"
-                                        style="background: #ffedd5; color: #c2410c; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">SẮP
-                                        HẾT</span>
                                     <span th:if="${item.stock_status == 'Đủ hàng'}"
                                         style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">ĐỦ
                                         HÀNG</span>
