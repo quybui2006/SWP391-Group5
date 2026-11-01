@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.customer.CustomerAccountService;
 import service.customer.CustomerShopRegistrationService;
+import service.shop.ShopCertificateStorage;
 
 import java.util.Map;
 import java.util.Optional;
@@ -28,12 +29,15 @@ public class CustomerShopRegistrationController {
 
     private final CustomerShopRegistrationService shopRegistrationService;
     private final CustomerAccountService customerAccountService;
+    private final ShopCertificateStorage certificateStorage;
 
     public CustomerShopRegistrationController(
             CustomerShopRegistrationService shopRegistrationService,
-            CustomerAccountService customerAccountService) {
+            CustomerAccountService customerAccountService,
+            ShopCertificateStorage certificateStorage) {
         this.shopRegistrationService = shopRegistrationService;
         this.customerAccountService = customerAccountService;
+        this.certificateStorage = certificateStorage;
     }
 
     private Long getUserIdFromSession(HttpSession session) {
@@ -236,6 +240,15 @@ public class CustomerShopRegistrationController {
                 form.setProvinceCode(s.getProvinceCode());
                 form.setWardName(s.getWardName());
                 form.setAddressDetail(s.getAddressDetail());
+                form.setBusinessLicenseNumber(s.getBusinessLicenseNumber());
+                form.setBusinessLicenseDate(s.getBusinessLicenseDate() != null ? s.getBusinessLicenseDate().toString() : null);
+                form.setBusinessLicensePlace(s.getBusinessLicensePlace());
+                form.setBusinessLicenseUrl(s.getBusinessLicenseUrl());
+                form.setFoodSafetyCertNumber(s.getFoodSafetyCertNumber());
+                form.setFoodSafetyCertDate(s.getFoodSafetyCertDate() != null ? s.getFoodSafetyCertDate().toString() : null);
+                form.setFoodSafetyCertExpiry(s.getFoodSafetyCertExpiry() != null ? s.getFoodSafetyCertExpiry().toString() : null);
+                form.setFoodSafetyCertPlace(s.getFoodSafetyCertPlace());
+                form.setFoodSafetyCertUrl(s.getFoodSafetyCertUrl());
             } else if (activation != null && activation.getPhone() != null) {
                 form.setPhone(activation.getPhone());
             }
@@ -285,6 +298,28 @@ public class CustomerShopRegistrationController {
         if (!form.isAgreeTerms()) {
             errors.rejectValue("agreeTerms", "required", "Bạn cần đồng ý với Quy chế hoạt động của FreshFruit.");
         }
+        if (form.getBusinessLicenseFile() != null && !form.getBusinessLicenseFile().isEmpty()) {
+            try {
+                String licenseUrl = certificateStorage.store(form.getBusinessLicenseFile());
+                if (licenseUrl != null) form.setBusinessLicenseUrl(licenseUrl);
+            } catch (Exception ex) {
+                errors.rejectValue("businessLicenseFile", "invalid", ex.getMessage());
+            }
+        } else if (form.getBusinessLicenseUrl() == null || form.getBusinessLicenseUrl().isBlank()) {
+            errors.rejectValue("businessLicenseFile", "required", "Ảnh chụp hoặc tệp Giấy phép kinh doanh là bắt buộc.");
+        }
+
+        if (form.getFoodSafetyCertFile() != null && !form.getFoodSafetyCertFile().isEmpty()) {
+            try {
+                String certUrl = certificateStorage.store(form.getFoodSafetyCertFile());
+                if (certUrl != null) form.setFoodSafetyCertUrl(certUrl);
+            } catch (Exception ex) {
+                errors.rejectValue("foodSafetyCertFile", "invalid", ex.getMessage());
+            }
+        } else if (form.getFoodSafetyCertUrl() == null || form.getFoodSafetyCertUrl().isBlank()) {
+            errors.rejectValue("foodSafetyCertFile", "required", "Ảnh chụp hoặc tệp Giấy chứng nhận An toàn thực phẩm (ATTP) là bắt buộc.");
+        }
+
 
         if (errors.hasErrors()) {
             model.addAttribute("activation", activation);
@@ -307,6 +342,15 @@ public class CustomerShopRegistrationController {
                 fullDto.setShippingExpress(form.isShippingExpress());
                 fullDto.setShippingStandard(form.isShippingStandard());
                 fullDto.setAgreeTerms(form.isAgreeTerms());
+                fullDto.setBusinessLicenseNumber(form.getBusinessLicenseNumber());
+                fullDto.setBusinessLicenseDate(form.getBusinessLicenseDate());
+                fullDto.setBusinessLicensePlace(form.getBusinessLicensePlace());
+                fullDto.setBusinessLicenseUrl(form.getBusinessLicenseUrl() != null ? form.getBusinessLicenseUrl() : (existingShopOpt.isPresent() ? existingShopOpt.get().getBusinessLicenseUrl() : null));
+                fullDto.setFoodSafetyCertNumber(form.getFoodSafetyCertNumber());
+                fullDto.setFoodSafetyCertDate(form.getFoodSafetyCertDate());
+                fullDto.setFoodSafetyCertExpiry(form.getFoodSafetyCertExpiry());
+                fullDto.setFoodSafetyCertPlace(form.getFoodSafetyCertPlace());
+                fullDto.setFoodSafetyCertUrl(form.getFoodSafetyCertUrl() != null ? form.getFoodSafetyCertUrl() : (existingShopOpt.isPresent() ? existingShopOpt.get().getFoodSafetyCertUrl() : null));
 
                 if (activation != null) {
                     fullDto.setIdCardNumber(activation.getIdCardNumber());

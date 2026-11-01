@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.operations.OperationsShopApprovalService;
+import repository.ShopBankAccountRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,15 @@ import java.util.Map;
 public class OperationsShopApprovalController {
     private final OperationsShopApprovalService approvals;
     private final service.operations.OperationsShopManagementService shops;
+    private final ShopBankAccountRepository shopBankAccounts;
 
     public OperationsShopApprovalController(
             OperationsShopApprovalService approvals,
-            service.operations.OperationsShopManagementService shops) {
+            service.operations.OperationsShopManagementService shops,
+            ShopBankAccountRepository shopBankAccounts) {
         this.approvals = approvals;
         this.shops = shops;
+        this.shopBankAccounts = shopBankAccounts;
     }
 
     /**
@@ -152,6 +156,7 @@ public class OperationsShopApprovalController {
         model.addAttribute("shop", shop);
         // Lấy danh sách sản phẩm / biến thể của shop để Operations hậu kiểm chất lượng nông sản
         model.addAttribute("variants", shops.listShopVariants(id));
+        model.addAttribute("bankAccounts", shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(id));
         model.addAttribute("activeNav", "shops");
         return "operations/shop-detail";
     }
@@ -248,6 +253,47 @@ public class OperationsShopApprovalController {
         try {
             approvals.rejectPayment(id, reason);
             redirectAttributes.addFlashAttribute("successMessage", "Đã từ chối thông tin thanh toán và gửi thông báo yêu cầu người bán điều chỉnh.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        if (redirectUrl != null && !redirectUrl.isBlank()) {
+            return "redirect:" + redirectUrl;
+        }
+        return "redirect:/operations/payments";
+    }
+
+    /**
+     * Phê duyệt tài khoản ngân hàng cụ thể của Shop.
+     */
+    @PostMapping("/operations/bank-accounts/{accountId:[0-9]+}/approve")
+    public String approveBankAccount(
+            @PathVariable Long accountId,
+            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            approvals.approveBankAccount(accountId);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã phê duyệt tài khoản ngân hàng thành công!");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        if (redirectUrl != null && !redirectUrl.isBlank()) {
+            return "redirect:" + redirectUrl;
+        }
+        return "redirect:/operations/payments";
+    }
+
+    /**
+     * Từ chối tài khoản ngân hàng cụ thể của Shop.
+     */
+    @PostMapping("/operations/bank-accounts/{accountId:[0-9]+}/reject")
+    public String rejectBankAccount(
+            @PathVariable Long accountId,
+            @RequestParam("reason") String reason,
+            @RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            approvals.rejectBankAccount(accountId, reason);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã từ chối tài khoản ngân hàng và gửi phản hồi cho chủ shop.");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }

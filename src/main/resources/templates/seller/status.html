@@ -134,6 +134,29 @@
                     </span>
                 </div>
             </div>
+
+        <div style="background:#f8fafc;padding:16px 20px;border-radius:12px;border:1px solid #e2e8f0;margin-top:16px;">
+            <div style="font-size:12px;text-transform:uppercase;color:#64748b;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <span>📑</span> Giấy phép kinh doanh &amp; Chứng nhận An toàn thực phẩm
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;">
+                <div style="background:#fff;padding:12px 14px;border-radius:8px;border:1px solid #e2e8f0;">
+                    <div style="font-weight:700;color:#1e40af;margin-bottom:4px;">📄 Giấy phép ĐKKD</div>
+                    <div style="color:#334155;">Số hiệu: <strong style="font-family:monospace;" th:text="${shop.businessLicenseNumber ?: 'Chưa cập nhật'}">--</strong></div>
+                    <div style="color:#64748b;font-size:12px;margin-top:2px;" th:text="${(shop.businessLicenseDate != null ? #temporals.format(shop.businessLicenseDate, 'dd/MM/yyyy') : '—') + ' · ' + (shop.businessLicensePlace ?: '—')}">--</div>
+                    <div th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}" style="margin-top:6px;">
+                        <a th:href="${shop.businessLicenseUrl}" target="_blank" style="color:#2563eb;font-weight:600;font-size:12px;text-decoration:underline;">📎 Xem bản chụp GPKD</a>
+                    </div>
+                </div>
+                <div style="background:#fff;padding:12px 14px;border-radius:8px;border:1px solid #e2e8f0;">
+                    <div style="font-weight:700;color:#166534;margin-bottom:4px;">🛡️ Giấy chứng nhận ATTP</div>
+                    <div style="color:#334155;">Số hiệu: <strong style="font-family:monospace;" th:text="${shop.foodSafetyCertNumber ?: 'Chưa cập nhật'}">--</strong></div>
+                    <div style="color:#64748b;font-size:12px;margin-top:2px;" th:text="${(shop.foodSafetyCertDate != null ? #temporals.format(shop.foodSafetyCertDate, 'dd/MM/yyyy') : '—') + ' · ' + (shop.foodSafetyCertPlace ?: '—')}">--</div>
+                    <div th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}" style="margin-top:6px;">
+                        <a th:href="${shop.foodSafetyCertUrl}" target="_blank" style="color:#16a34a;font-weight:600;font-size:12px;text-decoration:underline;">📎 Xem bản chụp Giấy ATTP</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </main>

@@ -14,11 +14,16 @@ import org.springframework.web.server.ResponseStatusException;
 import repository.ProvinceRepository;
 import repository.ShopRepository;
 import repository.UserRepository;
+import repository.ShopBankAccountRepository;
+import entity.ShopBankAccount;
+import java.time.LocalDateTime;
 import service.customer.NotificationService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -48,18 +53,21 @@ public class OperationsShopApprovalService {
     private final UserRepository users;
     private final NotificationService notifications;
     private final JdbcTemplate jdbc;
+    private final ShopBankAccountRepository shopBankAccounts;
 
     public OperationsShopApprovalService(
             ShopRepository shops,
             ProvinceRepository provinces,
             UserRepository users,
             NotificationService notifications,
-            JdbcTemplate jdbc) {
+            JdbcTemplate jdbc,
+            ShopBankAccountRepository shopBankAccounts) {
         this.shops = shops;
         this.provinces = provinces;
         this.users = users;
         this.notifications = notifications;
         this.jdbc = jdbc;
+        this.shopBankAccounts = shopBankAccounts;
     }
 
     /**
@@ -76,6 +84,34 @@ public class OperationsShopApprovalService {
         try {
             jdbc.execute("ALTER TABLE shops ADD COLUMN seller_reviewed_at DATETIME NULL");
         } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_number VARCHAR(100) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_date DATE NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_place VARCHAR(255) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_url VARCHAR(500) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_number VARCHAR(100) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_date DATE NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_expiry DATE NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_place VARCHAR(255) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_url VARCHAR(500) NULL");
+        } catch (Exception ignored) {}
+
     }
 
     /**
@@ -124,8 +160,30 @@ public class OperationsShopApprovalService {
     /**
      * Lấy danh sách tài khoản ngân hàng chờ đối soát (Bỏ qua các shop chưa cấu hình UNCONFIGURED).
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ShopApprovalItemDto> findPayments(String status, String keyword) {
+        // Tự động đồng bộ các shop có tài khoản ngân hàng PENDING sang trạng thái PENDING
+        try {
+            List<Long> shopIdsWithPending = shopBankAccounts.findDistinctShopIdsByApprovalStatus("PENDING");
+            for (Long sId : shopIdsWithPending) {
+                shops.findById(sId).ifPresent(s -> {
+                    if (!"PENDING".equals(s.getPaymentApprovalStatus())) {
+                        s.setPaymentApprovalStatus("PENDING");
+                        shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(sId).stream()
+                                .filter(a -> "PENDING".equals(a.getApprovalStatus()))
+                                .findFirst()
+                                .ifPresent(pendingAcc -> {
+                                    s.setBankName(pendingAcc.getBankName());
+                                    s.setBankAccountNumber(pendingAcc.getBankAccountNumber());
+                                    s.setBankAccountName(pendingAcc.getBankAccountName());
+                                    s.setBankBranch(pendingAcc.getBankBranch());
+                                });
+                        shops.save(s);
+                    }
+                });
+            }
+        } catch (Exception ignored) {}
+
         List<ShopApprovalItemDto> list;
         if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
             list = shops.findAllWithOwners().stream()
@@ -155,6 +213,13 @@ public class OperationsShopApprovalService {
     public Map<String, Long> getPaymentApprovalStats() {
         Map<String, Long> stats = new HashMap<>();
         long pending = shops.countByPaymentApprovalStatus("PENDING");
+        List<Long> shopIdsWithPendingAcc = shopBankAccounts.findDistinctShopIdsByApprovalStatus("PENDING");
+        if (!shopIdsWithPendingAcc.isEmpty()) {
+            long extraPending = shops.findAllWithOwners().stream()
+                    .filter(s -> !"PENDING".equalsIgnoreCase(s.getPaymentApprovalStatus()) && shopIdsWithPendingAcc.contains(s.getId()))
+                    .count();
+            pending += extraPending;
+        }
         long approved = shops.countByPaymentApprovalStatus("APPROVED");
         long rejected = shops.countByPaymentApprovalStatus("REJECTED");
         long unconfigured = shops.countByPaymentApprovalStatus("UNCONFIGURED");
@@ -257,6 +322,17 @@ public class OperationsShopApprovalService {
         dto.setTaxName(shop.getTaxName());
         dto.setTaxEmail(shop.getTaxEmail());
         dto.setShippingMethods(shop.getShippingMethods());
+
+        dto.setBusinessLicenseNumber(shop.getBusinessLicenseNumber());
+        dto.setBusinessLicenseDate(shop.getBusinessLicenseDate() != null ? shop.getBusinessLicenseDate().toString() : null);
+        dto.setBusinessLicensePlace(shop.getBusinessLicensePlace());
+        dto.setBusinessLicenseUrl(shop.getBusinessLicenseUrl());
+        dto.setFoodSafetyCertNumber(shop.getFoodSafetyCertNumber());
+        dto.setFoodSafetyCertDate(shop.getFoodSafetyCertDate() != null ? shop.getFoodSafetyCertDate().toString() : null);
+        dto.setFoodSafetyCertExpiry(shop.getFoodSafetyCertExpiry() != null ? shop.getFoodSafetyCertExpiry().toString() : null);
+        dto.setFoodSafetyCertPlace(shop.getFoodSafetyCertPlace());
+        dto.setFoodSafetyCertUrl(shop.getFoodSafetyCertUrl());
+
         dto.setBankName(shop.getBankName());
         dto.setBankAccountNumber(shop.getBankAccountNumber());
         dto.setBankAccountName(shop.getBankAccountName());
@@ -492,14 +568,146 @@ public class OperationsShopApprovalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Thông tin thanh toán không ở trạng thái chờ duyệt.");
         }
 
-        int updated = shops.approvePaymentInfo(shopId);
-        if (updated == 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể phê duyệt thông tin thanh toán.");
+        // Cập nhật trạng thái APPROVED cho tất cả tài khoản PENDING của shop
+        List<ShopBankAccount> bankAccounts = shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(shopId);
+        for (ShopBankAccount acc : bankAccounts) {
+            if ("PENDING".equals(acc.getApprovalStatus()) || acc.isDefault()) {
+                acc.setApprovalStatus("APPROVED");
+                acc.setRejectionReason(null);
+                acc.setReviewedAt(LocalDateTime.now());
+            }
+        }
+        if (!bankAccounts.isEmpty()) {
+            shopBankAccounts.saveAll(bankAccounts);
         }
 
-        // Gửi thông báo gian hàng đã chính thức mở bán
+        // Cập nhật shop sang APPROVED và OPEN
+        shop.setPaymentApprovalStatus("APPROVED");
+        shop.setPaymentReviewedAt(LocalDateTime.now());
+        shop.setBankRejectionReason(null);
+        if ("APPROVED".equals(shop.getApprovalStatus()) && !"SUSPENDED".equals(shop.getOperatingStatus())) {
+            shop.setOperatingStatus("OPEN");
+        }
+        // Gán tài khoản mặc định lên shop
+        ShopBankAccount defaultAcc = bankAccounts.stream()
+                .filter(ShopBankAccount::isDefault)
+                .findFirst()
+                .orElse(bankAccounts.isEmpty() ? null : bankAccounts.get(0));
+        if (defaultAcc != null) {
+            shop.setBankName(defaultAcc.getBankName());
+            shop.setBankAccountNumber(defaultAcc.getBankAccountNumber());
+            shop.setBankAccountName(defaultAcc.getBankAccountName());
+            shop.setBankBranch(defaultAcc.getBankBranch());
+        }
+        shops.save(shop);
+
+        // Gửi thông báo gian hàng đã chính thức được phê duyệt thanh toán
         try {
             notifications.notifyPaymentApproved(shop.getOwnerId(), shop.getId(), shop.getName());
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Phê duyệt tài khoản ngân hàng cụ thể của Shop.
+     */
+    @Transactional
+    public void approveBankAccount(Long accountId) {
+        ShopBankAccount account = shopBankAccounts.findById(accountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản ngân hàng."));
+
+        Shop shop = shops.findById(account.getShopId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin cửa hàng."));
+
+        account.setApprovalStatus("APPROVED");
+        account.setRejectionReason(null);
+        account.setReviewedAt(LocalDateTime.now());
+        shopBankAccounts.save(account);
+
+        List<ShopBankAccount> allAccounts = shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        boolean hasPending = allAccounts.stream().anyMatch(a -> "PENDING".equals(a.getApprovalStatus()));
+
+        // Nếu không còn tài khoản nào PENDING, đổi trạng thái shop sang APPROVED và OPEN
+        if (!hasPending) {
+            shop.setPaymentApprovalStatus("APPROVED");
+            shop.setPaymentReviewedAt(LocalDateTime.now());
+            shop.setBankRejectionReason(null);
+            if ("APPROVED".equals(shop.getApprovalStatus()) && !"SUSPENDED".equals(shop.getOperatingStatus())) {
+                shop.setOperatingStatus("OPEN");
+            }
+            ShopBankAccount defaultAcc = allAccounts.stream()
+                    .filter(ShopBankAccount::isDefault)
+                    .findFirst()
+                    .orElse(account);
+            shop.setBankName(defaultAcc.getBankName());
+            shop.setBankAccountNumber(defaultAcc.getBankAccountNumber());
+            shop.setBankAccountName(defaultAcc.getBankAccountName());
+            shop.setBankBranch(defaultAcc.getBankBranch());
+            shops.save(shop);
+        }
+
+        try {
+            notifications.createNotification(
+                    shop.getOwnerId(),
+                    "PAYMENT",
+                    "Tài khoản ngân hàng đã được phê duyệt ✓",
+                    "Tài khoản " + account.getBankName() + " (" + account.getBankAccountNumber() + ") đã được Ban Quản Lý phê duyệt thành công! Bạn có thể chọn tài khoản này làm mặc định nhận doanh thu.",
+                    "PAYMENT_VERIFICATION",
+                    shop.getId()
+            );
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Từ chối tài khoản ngân hàng cụ thể của Shop (kèm lý do).
+     */
+    @Transactional
+    public void rejectBankAccount(Long accountId, String reason) {
+        ShopBankAccount account = shopBankAccounts.findById(accountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản ngân hàng."));
+
+        Shop shop = shops.findById(account.getShopId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin cửa hàng."));
+
+        String validReason = normalizeReason(reason);
+        account.setApprovalStatus("REJECTED");
+        account.setRejectionReason(validReason);
+        account.setReviewedAt(LocalDateTime.now());
+        shopBankAccounts.save(account);
+
+        List<ShopBankAccount> allAccounts = shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(shop.getId());
+        boolean hasPending = allAccounts.stream().anyMatch(a -> "PENDING".equals(a.getApprovalStatus()));
+        boolean hasApproved = allAccounts.stream().anyMatch(a -> "APPROVED".equals(a.getApprovalStatus()));
+
+        if (!hasPending) {
+            if (hasApproved) {
+                // Vẫn còn tài khoản đã duyệt trước đó -> shop vẫn duy trì APPROVED với tài khoản mặc định
+                shop.setPaymentApprovalStatus("APPROVED");
+                shop.setBankRejectionReason(null);
+                ShopBankAccount defaultAcc = allAccounts.stream()
+                        .filter(ShopBankAccount::isDefault)
+                        .filter(a -> "APPROVED".equals(a.getApprovalStatus()))
+                        .findFirst()
+                        .orElse(allAccounts.stream().filter(a -> "APPROVED".equals(a.getApprovalStatus())).findFirst().get());
+                shop.setBankName(defaultAcc.getBankName());
+                shop.setBankAccountNumber(defaultAcc.getBankAccountNumber());
+                shop.setBankAccountName(defaultAcc.getBankAccountName());
+                shop.setBankBranch(defaultAcc.getBankBranch());
+            } else {
+                shop.setPaymentApprovalStatus("REJECTED");
+                shop.setBankRejectionReason(validReason);
+            }
+            shops.save(shop);
+        }
+
+        try {
+            notifications.createNotification(
+                    shop.getOwnerId(),
+                    "PAYMENT",
+                    "Tài khoản ngân hàng bị từ chối ✕",
+                    "Tài khoản " + account.getBankName() + " (" + account.getBankAccountNumber() + ") đã bị từ chối đối soát. Lý do: " + validReason,
+                    "PAYMENT_VERIFICATION",
+                    shop.getId()
+            );
         } catch (Exception ignored) {}
     }
 
@@ -516,12 +724,24 @@ public class OperationsShopApprovalService {
         }
 
         String validReason = normalizeReason(reason);
-        int updated = shops.rejectPaymentInfo(shopId, validReason);
-        if (updated == 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể từ chối thông tin thanh toán.");
-        }
+        shop.setPaymentApprovalStatus("REJECTED");
+        shop.setBankRejectionReason(validReason);
+        shop.setPaymentReviewedAt(LocalDateTime.now());
 
-        // Gửi thông báo yêu cầu người bán sửa lại tài khoản chính chủ
+        // Đánh dấu các tài khoản PENDING của shop thành REJECTED
+        List<ShopBankAccount> bankAccounts = shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(shopId);
+        for (ShopBankAccount acc : bankAccounts) {
+            if ("PENDING".equals(acc.getApprovalStatus())) {
+                acc.setApprovalStatus("REJECTED");
+                acc.setRejectionReason(validReason);
+                acc.setReviewedAt(LocalDateTime.now());
+            }
+        }
+        if (!bankAccounts.isEmpty()) {
+            shopBankAccounts.saveAll(bankAccounts);
+        }
+        shops.save(shop);
+
         try {
             notifications.notifyPaymentRejected(shop.getOwnerId(), shop.getId(), shop.getName(), validReason);
         } catch (Exception ignored) {}
