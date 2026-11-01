@@ -87,6 +87,9 @@ public class ShopOwnerController {
                 products.shopVariantSummary(ownerId)
         );
         model.addAttribute("keyword", keyword.trim());
+        java.util.Map<String, Object> shop = products.shopDashboard(ownerId);
+        model.addAttribute("shopPaymentApprovalStatus", shop.get("paymentApprovalStatus"));
+        model.addAttribute("shopApprovalStatus", shop.get("approvalStatus"));
 
         return "shopowner/product-variants";
     }

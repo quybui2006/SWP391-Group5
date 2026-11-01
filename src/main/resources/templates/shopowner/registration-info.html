@@ -761,7 +761,7 @@
                         <h1>
                             <span>📋</span> Toàn bộ Hồ sơ Đăng ký Shop
                         </h1>
-                        <p>Xem lại chi tiết hồ sơ định danh CCCD, thông tin thuế, địa chỉ kho lấy hàng và tài khoản đối soát thanh toán đã đăng ký với FreshFruit.</p>
+                        <p>Xem lại chi tiết hồ sơ định danh CCCD, thông tin thuế, địa chỉ kho lấy hàng và thông tin tài khoản ngân hàng đã đăng ký với FreshFruit.</p>
                     </div>
 
                     <div class="reg-header-actions">
@@ -773,8 +773,8 @@
                             <span>✏️</span> Cập nhật Hồ sơ Shop
                         </a>
 
-                        <a th:href="@{/shopowner/payment-verification}" class="btn-action btn-action-blue" title="Xem hoặc đối chiếu thông tin ngân hàng">
-                            <span>💳</span> Đối soát Thanh toán
+                        <a th:href="@{/shopowner/payment-verification}" class="btn-action btn-action-blue" title="Xem hoặc cập nhật thông tin tài khoản ngân hàng">
+                            <span>💳</span> Thông tin Tài khoản Ngân hàng
                         </a>
                     </div>
                 </div>
@@ -874,9 +874,9 @@
                         <div class="step-card" th:classappend="${shop.paymentApprovalStatus == 'APPROVED'} ? ' done' : (${shop.paymentApprovalStatus == 'REJECTED'} ? ' fail' : (${shop.approvalStatus == 'APPROVED'} ? ' active-step' : ''))">
                             <span class="step-num-icon" th:text="${shop.paymentApprovalStatus == 'APPROVED' ? '✓' : (shop.paymentApprovalStatus == 'REJECTED' ? '✕' : '3')}">3</span>
                             <div class="step-card-text">
-                                <strong>3. Đối soát Ngân hàng</strong>
+                                <strong>3. Tài khoản Ngân hàng</strong>
                                 <small th:text="${paymentReviewedAtFormatted != null ? paymentReviewedAtFormatted : (shop.paymentApprovalStatus == 'APPROVED' ? 'Đã duyệt khớp CCCD' : 'Đối chiếu Tên TK với CCCD')}">
-                                    Đối soát tài khoản
+                                    Xác thực tài khoản
                                 </small>
                             </div>
                         </div>
@@ -899,7 +899,7 @@
                     <button type="button" class="tab-btn active" onclick="filterTab('all', this)">📋 Tất cả thông tin</button>
                     <button type="button" class="tab-btn" onclick="filterTab('shop-section', this)">🏪 Gian hàng & Kho bãi</button>
                     <button type="button" class="tab-btn" onclick="filterTab('legal-section', this)">🪪 Định danh & Thuế</button>
-                    <button type="button" class="tab-btn" onclick="filterTab('banking-section', this)">💳 Ngân hàng Đối soát</button>
+                    <button type="button" class="tab-btn" onclick="filterTab('banking-section', this)">💳 Tài khoản Ngân hàng</button>
                 </div>
 
                 <!-- Main Grid Layout -->
@@ -975,10 +975,10 @@
                             </div>
                         </div>
 
-                        <!-- SECTION 3: TÀI KHOẢN NGÂN HÀNG ĐỐI SOÁT & NHẬN THANH TOÁN -->
+                        <!-- SECTION 3: TÀI KHOẢN NGÂN HÀNG & NHẬN THANH TOÁN -->
                         <div class="section-card" id="banking-section">
                             <div class="section-title">
-                                <h2><span>💳</span> Tài khoản Ngân hàng Đối soát & Thanh toán</h2>
+                                <h2><span>💳</span> Thông tin Tài khoản Ngân hàng Thụ hưởng</h2>
                                 <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Nhận tiền doanh thu</span>
                             </div>
 
