@@ -8,13 +8,9 @@
 <div class="cs-main-wrapper">
     <header class="cs-topbar">
         <div>
-            <h1>Quản lý Khiếu nại</h1>
-            <p class="cs-topbar-subtitle">Mô hình tranh chấp 2 tầng: Shop xử lý trong 6h SLA → CSKH phân xử độc lập khi leo thang.</p>
+            <h1>Theo dõi & Giám sát Khiếu nại</h1>
+            <p class="cs-topbar-subtitle">Hệ thống theo dõi khiếu nại toàn sàn (Shop Owner là người trực tiếp và duy nhất quyết định xử lý khiếu nại).</p>
         </div>
-        <button type="button" onclick="document.getElementById('createTicketModal').showModal()"
-                class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; border-color: var(--cs-primary); cursor: pointer; padding: 9px 16px;">
-            + Tạo phiếu hỗ trợ
-        </button>
     </header>
 
     <main class="cs-content">
@@ -26,20 +22,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <a th:href="@{/cs/tickets(status='ALL')}" class="btn-cs-sm"
-                       th:style="${selectedStatus == 'ALL' and !overdueOnly} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
+                       th:style="${selectedStatus == 'ALL'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
                         Tất cả (<span th:text="${disputeReport['totalDisputes']}">0</span>)
-                    </a>
-                    <a th:href="@{/cs/tickets(status='ESCALATED')}" class="btn-cs-sm"
-                       th:style="${selectedStatus == 'ESCALATED' or selectedStatus == 'IN_PROGRESS'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
-                        ⚖️ CSKH phân xử (<span th:text="${disputeReport['inProgressDisputes']}">0</span>)
                     </a>
                     <a th:href="@{/cs/tickets(status='PENDING_SHOP')}" class="btn-cs-sm"
                        th:style="${selectedStatus == 'PENDING_SHOP' or selectedStatus == 'PENDING'} ? 'background:#d97706;color:#fff;border-color:#d97706;' : ''">
                         🏪 Chờ Shop xử lý (<span th:text="${disputeReport['pendingDisputes']}">0</span>)
-                    </a>
-                    <a th:href="@{/cs/tickets(overdue=true)}" class="btn-cs-sm"
-                       th:style="${overdueOnly} ? 'background:#dc2626;color:#fff;border-color:#dc2626;' : 'color:#dc2626;border-color:#fecaca;background:#fef2f2;'">
-                        🚨 Quá hạn (<span th:text="${csSlaReport['overdueActiveTickets']}">0</span>)
                     </a>
                     <a th:href="@{/cs/tickets(status='RESOLVED')}" class="btn-cs-sm"
                        th:style="${selectedStatus == 'RESOLVED'} ? 'background:#16a34a;color:#fff;border-color:#16a34a;' : ''">
@@ -47,7 +35,7 @@
                     </a>
                     <a th:href="@{/cs/tickets(status='REJECTED')}" class="btn-cs-sm"
                        th:style="${selectedStatus == 'REJECTED'} ? 'background:#475569;color:#fff;border-color:#475569;' : ''">
-                        Từ chối (<span th:text="${disputeReport['rejectedDisputes']}">0</span>)
+                        ❌ Đã từ chối (<span th:text="${disputeReport['rejectedDisputes']}">0</span>)
                     </a>
                 </div>
             </div>
@@ -90,9 +78,7 @@
                     <tbody>
                     <tr th:each="t : ${tickets}">
                         <td>
-                            <a th:href="@{/cs/tickets/{id}(id=${t['id']})}"
-                               style="font-weight: 800; color: #0284c7; text-decoration: none; display: block;"
-                               th:text="${t['complaint_code']}">KN-001</a>
+                            <a th:href="@{/cs/tickets/{id}(id=${t['id']})}" class="btn-cs-sm">Chi tiết →</a>
                             <small style="color: #475569; font-weight: 600;" th:text="${'Đơn: ' + t['order_code']}"></small>
                             <small style="display: block; color: #94a3b8; font-size: 11.5px;" th:text="${t['created_at_fmt']}"></small>
                         </td>
@@ -127,11 +113,7 @@
                                 <span th:if="${t['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
                                 <span th:if="${t['status'] == 'CANCELLED'}" class="badge-status">Đã rút</span>
                             </div>
-                            <a th:href="@{/cs/tickets/{id}(id=${t['id']})}"
-                               class="btn-cs-sm"
-                               th:style="${t['status'] == 'ESCALATED' or t['status'] == 'IN_PROGRESS'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
-                                <span th:text="${t['status'] == 'ESCALATED' or t['status'] == 'IN_PROGRESS'} ? 'Phân xử →' : 'Chi tiết'"></span>
-                            </a>
+                            <a th:href="@{/cs/tickets/{id}(id=${t['id']})}" class="btn-cs-sm">Chi tiết →</a>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(tickets)}">
@@ -146,41 +128,7 @@
     </main>
 </div>
 
-<!-- MODAL TẠO PHIẾU HỖ TRỢ THỦ CÔNG -->
-<dialog id="createTicketModal"
-        style="border: none; border-radius: 16px; padding: 24px; width: 480px; max-width: 92vw; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <h3 style="margin: 0; font-size: 17px; color: #0f172a;">➕ Tạo phiếu hỗ trợ đơn hàng</h3>
-        <button type="button" onclick="document.getElementById('createTicketModal').close()"
-                style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">✕</button>
-    </div>
-    <form th:action="@{/cs/tickets/create}" method="post" style="display: grid; gap: 12px;">
-        <input type="hidden" name="sourceType" value="CS_MANUAL">
-        <div>
-            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Mã đơn hàng *</label>
-            <input type="text" name="orderCode" required placeholder="Nhập mã đơn (VD: FF-...)"
-                   style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
-        </div>
-        <div>
-            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Lý do cần hỗ trợ *</label>
-            <select name="reasonType" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
-                <option th:each="entry : ${reasonLabels}" th:value="${entry.key}" th:text="${entry.value}"></option>
-            </select>
-        </div>
-        <div>
-            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Nội dung sự cố *</label>
-            <textarea name="description" rows="3" required minlength="5" maxlength="2000"
-                      placeholder="Ghi ngắn gọn yêu cầu hỗ trợ của khách hàng..."
-                      style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;"></textarea>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
-            <button type="button" onclick="document.getElementById('createTicketModal').close()" class="btn-cs-sm" style="cursor: pointer;">Hủy</button>
-            <button type="submit" class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; border-color: var(--cs-primary); cursor: pointer;">
-                Tạo phiếu
-            </button>
-        </div>
-    </form>
-</dialog>
+
 
 </body>
 </html>

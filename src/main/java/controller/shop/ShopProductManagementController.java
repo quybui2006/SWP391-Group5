@@ -41,6 +41,9 @@ public class ShopProductManagementController {
         Page<?> result = products.searchShopProducts(ownerId, keyword, Math.max(0, page), PAGE_SIZE);
         model.addAttribute("products", result);
         model.addAttribute("keyword", keyword.trim());
+        java.util.Map<String, Object> shop = products.shopDashboard(ownerId);
+        model.addAttribute("shopPaymentApprovalStatus", shop.get("paymentApprovalStatus"));
+        model.addAttribute("shopApprovalStatus", shop.get("approvalStatus"));
         return "shopowner/product-list";
     }
 
