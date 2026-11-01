@@ -1,5 +1,7 @@
 package dto.seller;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -35,6 +37,21 @@ public class SellerCreateShopDto {
 
     @AssertTrue(message = "Bạn cần đồng ý với Quy chế hoạt động của FreshFruit.")
     private boolean agreeTerms = true;
+
+    // --- Giấy phép kinh doanh & Giấy đảm bảo vệ sinh an toàn thực phẩm ---
+    private String businessLicenseNumber;
+    private String businessLicenseDate;
+    private String businessLicensePlace;
+    private String businessLicenseUrl;
+    private MultipartFile businessLicenseFile;
+
+    private String foodSafetyCertNumber;
+    private String foodSafetyCertDate;
+    private String foodSafetyCertExpiry;
+    private String foodSafetyCertPlace;
+    private String foodSafetyCertUrl;
+    private MultipartFile foodSafetyCertFile;
+
 
     public SellerCreateShopDto() {
     }
@@ -118,4 +135,38 @@ public class SellerCreateShopDto {
     public void setAgreeTerms(boolean agreeTerms) {
         this.agreeTerms = agreeTerms;
     }
+
+    public String getBusinessLicenseNumber() { return businessLicenseNumber; }
+    public void setBusinessLicenseNumber(String businessLicenseNumber) { this.businessLicenseNumber = businessLicenseNumber; }
+
+    public String getBusinessLicenseDate() { return businessLicenseDate; }
+    public void setBusinessLicenseDate(String businessLicenseDate) { this.businessLicenseDate = businessLicenseDate; }
+
+    public String getBusinessLicensePlace() { return businessLicensePlace; }
+    public void setBusinessLicensePlace(String businessLicensePlace) { this.businessLicensePlace = businessLicensePlace; }
+
+    public String getBusinessLicenseUrl() { return businessLicenseUrl; }
+    public void setBusinessLicenseUrl(String businessLicenseUrl) { this.businessLicenseUrl = businessLicenseUrl; }
+
+    public MultipartFile getBusinessLicenseFile() { return businessLicenseFile; }
+    public void setBusinessLicenseFile(MultipartFile businessLicenseFile) { this.businessLicenseFile = businessLicenseFile; }
+
+    public String getFoodSafetyCertNumber() { return foodSafetyCertNumber; }
+    public void setFoodSafetyCertNumber(String foodSafetyCertNumber) { this.foodSafetyCertNumber = foodSafetyCertNumber; }
+
+    public String getFoodSafetyCertDate() { return foodSafetyCertDate; }
+    public void setFoodSafetyCertDate(String foodSafetyCertDate) { this.foodSafetyCertDate = foodSafetyCertDate; }
+
+    public String getFoodSafetyCertExpiry() { return foodSafetyCertExpiry; }
+    public void setFoodSafetyCertExpiry(String foodSafetyCertExpiry) { this.foodSafetyCertExpiry = foodSafetyCertExpiry; }
+
+    public String getFoodSafetyCertPlace() { return foodSafetyCertPlace; }
+    public void setFoodSafetyCertPlace(String foodSafetyCertPlace) { this.foodSafetyCertPlace = foodSafetyCertPlace; }
+
+    public String getFoodSafetyCertUrl() { return foodSafetyCertUrl; }
+    public void setFoodSafetyCertUrl(String foodSafetyCertUrl) { this.foodSafetyCertUrl = foodSafetyCertUrl; }
+
+    public MultipartFile getFoodSafetyCertFile() { return foodSafetyCertFile; }
+    public void setFoodSafetyCertFile(MultipartFile foodSafetyCertFile) { this.foodSafetyCertFile = foodSafetyCertFile; }
+
 }

@@ -899,6 +899,7 @@
                     <button type="button" class="tab-btn active" onclick="filterTab('all', this)">📋 Tất cả thông tin</button>
                     <button type="button" class="tab-btn" onclick="filterTab('shop-section', this)">🏪 Gian hàng & Kho bãi</button>
                     <button type="button" class="tab-btn" onclick="filterTab('legal-section', this)">🪪 Định danh & Thuế</button>
+                    <button type="button" class="tab-btn" onclick="filterTab('certificates-section', this)">📑 GPKD &amp; An toàn thực phẩm</button>
                     <button type="button" class="tab-btn" onclick="filterTab('banking-section', this)">💳 Tài khoản Ngân hàng</button>
                 </div>
 
@@ -1132,6 +1133,88 @@
                                     <span class="data-val" th:text="${!#strings.isEmpty(shop.taxEmail) ? shop.taxEmail : (activation != null ? activation.email : 'Chưa cung cấp')}">
                                         seller@freshfruit.com
                                     </span>
+                                </div>
+                            </div>
+                        </div>
+
+                                                <!-- SECTION 3B: GIẤY PHÉP KINH DOANH & AN TOÀN THỰC PHẨM -->
+                        <div class="section-card" id="certificates-section">
+                            <div class="section-title">
+                                <h2><span>📑</span> Giấy phép Kinh doanh &amp; An toàn thực phẩm</h2>
+                                <span class="section-tag" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;">Bắt buộc</span>
+                            </div>
+
+                            <!-- Business License Card -->
+                            <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size: 20px;">📄</span>
+                                        <strong style="color: #0f172a; font-size: 13.5px;">GIẤY PHÉP ĐĂNG KÝ KINH DOANH</strong>
+                                    </div>
+                                    <span th:if="${!#strings.isEmpty(shop.businessLicenseNumber)}" style="background:#dcfce7; color:#15803d; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">✓ Đã nộp</span>
+                                    <span th:unless="${!#strings.isEmpty(shop.businessLicenseNumber)}" style="background:#fef2f2; color:#dc2626; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">Chưa nộp</span>
+                                </div>
+                                <div class="data-rows" style="margin-top:8px;">
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Số GPKD / MST</span>
+                                        <span class="data-val">
+                                            <span th:text="${!#strings.isEmpty(shop.businessLicenseNumber) ? shop.businessLicenseNumber : 'Chưa cập nhật'}" style="font-family:monospace; font-weight:700; color:#0f172a;">0101234567</span>
+                                            <button th:if="${!#strings.isEmpty(shop.businessLicenseNumber)}" type="button" class="copy-chip" th:onclick="|copyText('${shop.businessLicenseNumber}')|">Sao chép</button>
+                                        </span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Ngày cấp</span>
+                                        <span class="data-val" th:text="${shop.businessLicenseDate != null ? #temporals.format(shop.businessLicenseDate, 'dd/MM/yyyy') : 'Chưa có'}">01/01/2023</span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Cơ quan cấp</span>
+                                        <span class="data-val" th:text="${!#strings.isEmpty(shop.businessLicensePlace) ? shop.businessLicensePlace : 'Chưa cập nhật'}">Sở KH&amp;ĐT</span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;" th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}">
+                                        <span class="data-label">Tài liệu / Bản chụp</span>
+                                        <span class="data-val">
+                                            <a th:href="${shop.businessLicenseUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none;">📎 Xem bản chụp GPKD</a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Food Safety Certificate Card -->
+                            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size: 20px;">🛡️</span>
+                                        <strong style="color: #065f46; font-size: 13.5px;">GIẤY CHỨNG NHẬN AN TOÀN THỰC PHẨM</strong>
+                                    </div>
+                                    <span th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" style="background:#dcfce7; color:#15803d; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">✓ Đã nộp</span>
+                                    <span th:unless="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" style="background:#fef2f2; color:#dc2626; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">Chưa nộp</span>
+                                </div>
+                                <div class="data-rows" style="margin-top:8px;">
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Số chứng nhận ATTP</span>
+                                        <span class="data-val">
+                                            <span th:text="${!#strings.isEmpty(shop.foodSafetyCertNumber) ? shop.foodSafetyCertNumber : 'Chưa cập nhật'}" style="font-family:monospace; font-weight:700; color:#065f46;">123/2023/ATTP-CNĐK</span>
+                                            <button th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" type="button" class="copy-chip" th:onclick="|copyText('${shop.foodSafetyCertNumber}')|">Sao chép</button>
+                                        </span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Ngày cấp</span>
+                                        <span class="data-val" th:text="${shop.foodSafetyCertDate != null ? #temporals.format(shop.foodSafetyCertDate, 'dd/MM/yyyy') : 'Chưa có'}">01/01/2023</span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Ngày hết hạn</span>
+                                        <span class="data-val" th:text="${shop.foodSafetyCertExpiry != null ? #temporals.format(shop.foodSafetyCertExpiry, 'dd/MM/yyyy') : 'Theo quy định'}">01/01/2026</span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;">
+                                        <span class="data-label">Cơ quan cấp</span>
+                                        <span class="data-val" th:text="${!#strings.isEmpty(shop.foodSafetyCertPlace) ? shop.foodSafetyCertPlace : 'Chi cục ATVSTP'}">Chi cục ATVSTP</span>
+                                    </div>
+                                    <div class="data-row horizontal" style="padding:6px 0;" th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}">
+                                        <span class="data-label">Tài liệu / Bản chụp</span>
+                                        <span class="data-val">
+                                            <a th:href="${shop.foodSafetyCertUrl}" target="_blank" class="copy-chip" style="background:#059669; color:#fff; text-decoration:none;">📎 Xem bản chụp Giấy ATTP</a>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

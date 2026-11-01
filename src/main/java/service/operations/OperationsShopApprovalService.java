@@ -76,6 +76,34 @@ public class OperationsShopApprovalService {
         try {
             jdbc.execute("ALTER TABLE shops ADD COLUMN seller_reviewed_at DATETIME NULL");
         } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_number VARCHAR(100) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_date DATE NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_place VARCHAR(255) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN business_license_url VARCHAR(500) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_number VARCHAR(100) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_date DATE NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_expiry DATE NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_place VARCHAR(255) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE shops ADD COLUMN food_safety_cert_url VARCHAR(500) NULL");
+        } catch (Exception ignored) {}
+
     }
 
     /**
@@ -257,6 +285,17 @@ public class OperationsShopApprovalService {
         dto.setTaxName(shop.getTaxName());
         dto.setTaxEmail(shop.getTaxEmail());
         dto.setShippingMethods(shop.getShippingMethods());
+
+        dto.setBusinessLicenseNumber(shop.getBusinessLicenseNumber());
+        dto.setBusinessLicenseDate(shop.getBusinessLicenseDate() != null ? shop.getBusinessLicenseDate().toString() : null);
+        dto.setBusinessLicensePlace(shop.getBusinessLicensePlace());
+        dto.setBusinessLicenseUrl(shop.getBusinessLicenseUrl());
+        dto.setFoodSafetyCertNumber(shop.getFoodSafetyCertNumber());
+        dto.setFoodSafetyCertDate(shop.getFoodSafetyCertDate() != null ? shop.getFoodSafetyCertDate().toString() : null);
+        dto.setFoodSafetyCertExpiry(shop.getFoodSafetyCertExpiry() != null ? shop.getFoodSafetyCertExpiry().toString() : null);
+        dto.setFoodSafetyCertPlace(shop.getFoodSafetyCertPlace());
+        dto.setFoodSafetyCertUrl(shop.getFoodSafetyCertUrl());
+
         dto.setBankName(shop.getBankName());
         dto.setBankAccountNumber(shop.getBankAccountNumber());
         dto.setBankAccountName(shop.getBankAccountName());

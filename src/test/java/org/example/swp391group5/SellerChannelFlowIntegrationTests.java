@@ -160,6 +160,13 @@ class SellerChannelFlowIntegrationTests {
                         .param("shippingFast", "true")
                         .param("shippingExpress", "true")
                         .param("shippingStandard", "true")
+                        .param("businessLicenseNumber", "0109988776")
+                        .param("businessLicenseDate", "2023-01-15")
+                        .param("businessLicensePlace", "Sở KH&ĐT TP. Hà Nội")
+                        .param("foodSafetyCertNumber", "88/2023/ATTP-CNĐK")
+                        .param("foodSafetyCertDate", "2023-03-20")
+                        .param("foodSafetyCertExpiry", "2026-03-20")
+                        .param("foodSafetyCertPlace", "Chi cục An toàn Vệ sinh Thực phẩm Hà Nội")
                         .param("agreeTerms", "true"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/seller/status"));
@@ -167,6 +174,9 @@ class SellerChannelFlowIntegrationTests {
         // Check Shop created
         Long shopId = jdbc.queryForObject("SELECT id FROM shops WHERE owner_id=?", Long.class, userId);
         assertNotNull(shopId);
+        java.util.Map<String, Object> shopRow = jdbc.queryForMap("SELECT * FROM shops WHERE id=?", shopId);
+        assertEquals("0109988776", shopRow.get("business_license_number"));
+        assertEquals("88/2023/ATTP-CNĐK", shopRow.get("food_safety_cert_number"));
 
         // 6. View /seller/status -> 200 OK (PENDING)
         mvc.perform(get("/seller/status").session(session))

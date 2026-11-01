@@ -212,7 +212,77 @@
                     </div>
                 </section>
 
-                <!-- 3. TÀI KHOẢN NGÂN HÀNG & ĐỐI SOÁT THANH TOÁN -->
+                                <!-- 3. GIẤY PHÉP KINH DOANH & GIẤY CHỨNG NHẬN AN TOÀN THỰC PHẨM -->
+                <section class="panel" style="margin: 0;">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>📑 Giấy phép Kinh doanh &amp; Chứng nhận An toàn thực phẩm</h2>
+                            <p>Thẩm định tính hợp pháp của cơ sở kinh doanh nông sản và điều kiện vệ sinh ATTP</p>
+                        </div>
+                        <span th:if="${!#strings.isEmpty(shop.businessLicenseNumber) and !#strings.isEmpty(shop.foodSafetyCertNumber)}" class="status-pill approved" style="font-size: 10px;">Đã nộp đủ 2 giấy tờ</span>
+                        <span th:unless="${!#strings.isEmpty(shop.businessLicenseNumber) and !#strings.isEmpty(shop.foodSafetyCertNumber)}" class="status-pill pending" style="font-size: 10px;">Chưa đủ giấy tờ</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <!-- Box A: Giấy phép kinh doanh -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                <span>📄 Giấy phép đăng ký kinh doanh</span>
+                                <span th:if="${!#strings.isEmpty(shop.businessLicenseNumber)}" style="color: #16a34a; font-weight: 700; font-size: 11px;">✓ Hợp lệ</span>
+                                <span th:unless="${!#strings.isEmpty(shop.businessLicenseNumber)}" style="color: #dc2626; font-weight: 700; font-size: 11px;">✕ Thiếu</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                                <div>
+                                    <span style="color: var(--muted); font-size: 11px;">Số GPKD / Mã số doanh nghiệp:</span>
+                                    <strong style="color: var(--ink); font-family: monospace; display: block;" th:text="${shop.businessLicenseNumber ?: 'Chưa cập nhật'}">0101234567</strong>
+                                </div>
+                                <div>
+                                    <span style="color: var(--muted); font-size: 11px;">Ngày cấp:</span>
+                                    <span style="color: var(--ink); display: block;" th:text="${shop.businessLicenseDate ?: '—'}">01/01/2023</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--muted); font-size: 11px;">Cơ quan cấp:</span>
+                                    <span style="color: var(--ink); display: block;" th:text="${shop.businessLicensePlace ?: '—'}">Sở KH&amp;ĐT</span>
+                                </div>
+                                <div style="margin-top: 4px;" th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}">
+                                    <a th:href="${shop.businessLicenseUrl}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #2563eb; color: #fff; font-size: 11px; font-weight: 700; border-radius: 6px; text-decoration: none;">
+                                        <span>🔍</span> Xem bản chụp GPKD
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Box B: Giấy chứng nhận ATTP -->
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                <span>🛡️ Giấy chứng nhận An toàn thực phẩm</span>
+                                <span th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" style="color: #16a34a; font-weight: 700; font-size: 11px;">✓ Đã nộp</span>
+                                <span th:unless="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" style="color: #dc2626; font-weight: 700; font-size: 11px;">✕ Thiếu</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                                <div>
+                                    <span style="color: var(--muted); font-size: 11px;">Số Giấy chứng nhận ATTP:</span>
+                                    <strong style="color: #166534; font-family: monospace; display: block;" th:text="${shop.foodSafetyCertNumber ?: 'Chưa cập nhật'}">123/2023/ATTP-CNĐK</strong>
+                                </div>
+                                <div>
+                                    <span style="color: var(--muted); font-size: 11px;">Ngày cấp &amp; Hạn sử dụng:</span>
+                                    <span style="color: var(--ink); display: block;" th:text="${(shop.foodSafetyCertDate ?: '—') + ' · Hạn: ' + (shop.foodSafetyCertExpiry ?: 'Theo quy định')}">—</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--muted); font-size: 11px;">Cơ quan cấp chứng nhận:</span>
+                                    <span style="color: var(--ink); display: block;" th:text="${shop.foodSafetyCertPlace ?: '—'}">Chi cục ATVSTP</span>
+                                </div>
+                                <div style="margin-top: 4px;" th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}">
+                                    <a th:href="${shop.foodSafetyCertUrl}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #16a34a; color: #fff; font-size: 11px; font-weight: 700; border-radius: 6px; text-decoration: none;">
+                                        <span>🔍</span> Xem bản chụp Giấy ATTP
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. TÀI KHOẢN NGÂN HÀNG & ĐỐI SOÁT THANH TOÁN -->
                 <section class="panel" style="margin: 0;">
                     <div class="panel-heading">
                         <div>

@@ -122,6 +122,34 @@ public class Shop {
     @Column(name = "seller_reviewed_at")
     private LocalDateTime sellerReviewedAt;
 
+    @Column(name = "business_license_number", length = 100)
+    private String businessLicenseNumber;
+
+    @Column(name = "business_license_date")
+    private java.time.LocalDate businessLicenseDate;
+
+    @Column(name = "business_license_place", length = 255)
+    private String businessLicensePlace;
+
+    @Column(name = "business_license_url", length = 500)
+    private String businessLicenseUrl;
+
+    @Column(name = "food_safety_cert_number", length = 100)
+    private String foodSafetyCertNumber;
+
+    @Column(name = "food_safety_cert_date")
+    private java.time.LocalDate foodSafetyCertDate;
+
+    @Column(name = "food_safety_cert_expiry")
+    private java.time.LocalDate foodSafetyCertExpiry;
+
+    @Column(name = "food_safety_cert_place", length = 255)
+    private String foodSafetyCertPlace;
+
+    @Column(name = "food_safety_cert_url", length = 500)
+    private String foodSafetyCertUrl;
+
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -207,4 +235,32 @@ public class Shop {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getBusinessLicenseNumber() { return businessLicenseNumber; }
+    public void setBusinessLicenseNumber(String businessLicenseNumber) { this.businessLicenseNumber = businessLicenseNumber; }
+
+    public java.time.LocalDate getBusinessLicenseDate() { return businessLicenseDate; }
+    public void setBusinessLicenseDate(java.time.LocalDate businessLicenseDate) { this.businessLicenseDate = businessLicenseDate; }
+
+    public String getBusinessLicensePlace() { return businessLicensePlace; }
+    public void setBusinessLicensePlace(String businessLicensePlace) { this.businessLicensePlace = businessLicensePlace; }
+
+    public String getBusinessLicenseUrl() { return businessLicenseUrl; }
+    public void setBusinessLicenseUrl(String businessLicenseUrl) { this.businessLicenseUrl = businessLicenseUrl; }
+
+    public String getFoodSafetyCertNumber() { return foodSafetyCertNumber; }
+    public void setFoodSafetyCertNumber(String foodSafetyCertNumber) { this.foodSafetyCertNumber = foodSafetyCertNumber; }
+
+    public java.time.LocalDate getFoodSafetyCertDate() { return foodSafetyCertDate; }
+    public void setFoodSafetyCertDate(java.time.LocalDate foodSafetyCertDate) { this.foodSafetyCertDate = foodSafetyCertDate; }
+
+    public java.time.LocalDate getFoodSafetyCertExpiry() { return foodSafetyCertExpiry; }
+    public void setFoodSafetyCertExpiry(java.time.LocalDate foodSafetyCertExpiry) { this.foodSafetyCertExpiry = foodSafetyCertExpiry; }
+
+    public String getFoodSafetyCertPlace() { return foodSafetyCertPlace; }
+    public void setFoodSafetyCertPlace(String foodSafetyCertPlace) { this.foodSafetyCertPlace = foodSafetyCertPlace; }
+
+    public String getFoodSafetyCertUrl() { return foodSafetyCertUrl; }
+    public void setFoodSafetyCertUrl(String foodSafetyCertUrl) { this.foodSafetyCertUrl = foodSafetyCertUrl; }
+
 }

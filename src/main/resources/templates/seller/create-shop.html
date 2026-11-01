@@ -50,7 +50,7 @@
             Hoàn tất các thông tin về thương hiệu cửa hàng, địa chỉ kho xuất hàng và phương thức giao nhận để người mua có trải nghiệm tốt nhất.
         </p>
 
-        <form th:action="@{/seller/create-shop}" th:object="${form}" method="post">
+        <form th:action="@{/seller/create-shop}" th:object="${form}" method="post" enctype="multipart/form-data">
             <!-- 1. Thông tin gian hàng -->
             <div class="seller-section-title">
                 <span>🏷️</span> 1. Thông tin gian hàng
@@ -107,10 +107,120 @@
                 <div class="form-error" th:if="${#fields.hasErrors('addressDetail')}" th:errors="*{addressDetail}"></div>
             </div>
 
-            <!-- 3. Cài đặt vận chuyển -->
+                        <!-- 3. Giấy phép kinh doanh & Giấy đảm bảo an toàn thực phẩm -->
             <div class="seller-section-title">
-                <span>🚚</span> 3. Cài đặt Phương thức Vận chuyển
+                <span>📑</span> 3. Giấy phép kinh doanh &amp; Giấy chứng nhận An toàn thực phẩm
             </div>
+
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 22px; line-height: 1;">🛡️</span>
+                <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">
+                    <strong style="color: #1e40af;">Quy định pháp lý bắt buộc:</strong>
+                    Theo Nghị định 15/2018/NĐ-CP &amp; Quy chế sàn FreshFruit, Người bán nông sản tươi bắt buộc phải cung cấp đầy đủ
+                    <strong>Giấy phép kinh doanh</strong> và <strong>Giấy chứng nhận cơ sở đủ điều kiện An toàn thực phẩm</strong>
+                    để bảo vệ sức khỏe người tiêu dùng và đảm bảo nguồn gốc xuất xứ.
+                </div>
+            </div>
+
+            <!-- Block A: Giấy phép kinh doanh -->
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; font-weight:700; color:#0f172a; font-size:14px;">
+                    <span style="background:#dbeafe; color:#1d4ed8; padding:3px 8px; border-radius:6px; font-size:12px;">Mục A</span>
+                    Giấy phép đăng ký kinh doanh (GPKD / ĐKKD) <span class="req">*</span>
+                </div>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="businessLicenseNumber">Số Giấy phép ĐKKD / MST <span class="req">*</span></label>
+                        <input type="text" id="businessLicenseNumber" th:field="*{businessLicenseNumber}" placeholder="Ví dụ: 0101234567 hoặc 01A8012345" required>
+                        <span class="form-hint">Mã số ghi trên Giấy chứng nhận ĐKKD.</span>
+                        <div class="form-error" th:if="${#fields.hasErrors('businessLicenseNumber')}" th:errors="*{businessLicenseNumber}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessLicenseDate">Ngày cấp GPKD <span class="req">*</span></label>
+                        <input type="date" id="businessLicenseDate" th:field="*{businessLicenseDate}" required>
+                        <div class="form-error" th:if="${#fields.hasErrors('businessLicenseDate')}" th:errors="*{businessLicenseDate}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessLicensePlace">Cơ quan / Nơi cấp GPKD <span class="req">*</span></label>
+                        <input type="text" id="businessLicensePlace" th:field="*{businessLicensePlace}" placeholder="Ví dụ: Sở Kế hoạch &amp; Đầu tư Hà Nội" required>
+                        <div class="form-error" th:if="${#fields.hasErrors('businessLicensePlace')}" th:errors="*{businessLicensePlace}"></div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="businessLicenseFile">Bản chụp / Tệp Giấy phép kinh doanh <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
+                    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:6px;">
+                        <input type="file" id="businessLicenseFile" name="businessLicenseFile" accept="image/*,application/pdf" style="font-size:13px; max-width:320px;">
+                        <input type="hidden" th:field="*{businessLicenseUrl}">
+                        <div th:if="${form.businessLicenseUrl != null and !form.businessLicenseUrl.isBlank()}" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 10px; border-radius:6px; font-size:12px;">
+                            <span>📎 Đã có bản chụp:</span>
+                            <a th:href="${form.businessLicenseUrl}" target="_blank" style="color:#2563eb; font-weight:600; text-decoration:underline;">Xem tài liệu</a>
+                        </div>
+                    </div>
+                    <div id="licensePreviewContainer" style="display:none; margin-top:10px;">
+                        <img id="licensePreviewImg" src="" alt="Xem trước GPKD" style="max-height:120px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+                    </div>
+                    <div class="form-error" th:if="${#fields.hasErrors('businessLicenseFile')}" th:errors="*{businessLicenseFile}"></div>
+                </div>
+            </div>
+
+            <!-- Block B: Giấy chứng nhận An toàn thực phẩm -->
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; font-weight:700; color:#0f172a; font-size:14px;">
+                    <span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:12px;">Mục B</span>
+                    Giấy chứng nhận cơ sở đủ điều kiện An toàn thực phẩm (ATTP) <span class="req">*</span>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="foodSafetyCertNumber">Số Giấy chứng nhận ATTP <span class="req">*</span></label>
+                        <input type="text" id="foodSafetyCertNumber" th:field="*{foodSafetyCertNumber}" placeholder="Ví dụ: 123/2023/ATTP-CNĐK" required>
+                        <span class="form-hint">Số hiệu cấp bởi cơ quan quản lý ATTP ngành Nông nghiệp / Y tế.</span>
+                        <div class="form-error" th:if="${#fields.hasErrors('foodSafetyCertNumber')}" th:errors="*{foodSafetyCertNumber}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="foodSafetyCertPlace">Cơ quan / Đơn vị cấp chứng nhận <span class="req">*</span></label>
+                        <input type="text" id="foodSafetyCertPlace" th:field="*{foodSafetyCertPlace}" placeholder="Ví dụ: Chi cục An toàn Vệ sinh Thực phẩm" required>
+                        <div class="form-error" th:if="${#fields.hasErrors('foodSafetyCertPlace')}" th:errors="*{foodSafetyCertPlace}"></div>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="foodSafetyCertDate">Ngày cấp chứng nhận <span class="req">*</span></label>
+                        <input type="date" id="foodSafetyCertDate" th:field="*{foodSafetyCertDate}" required>
+                        <div class="form-error" th:if="${#fields.hasErrors('foodSafetyCertDate')}" th:errors="*{foodSafetyCertDate}"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="foodSafetyCertExpiry">Ngày hết hạn chứng nhận <span style="color:#64748b; font-weight:normal;">(Thường 3 năm từ ngày cấp)</span></label>
+                        <input type="date" id="foodSafetyCertExpiry" th:field="*{foodSafetyCertExpiry}">
+                        <div class="form-error" th:if="${#fields.hasErrors('foodSafetyCertExpiry')}" th:errors="*{foodSafetyCertExpiry}"></div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="foodSafetyCertFile">Bản chụp / Tệp Giấy chứng nhận ATTP <span style="color:#64748b; font-weight:normal;">(JPG, PNG, PDF, tối đa 10MB)</span></label>
+                    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:6px;">
+                        <input type="file" id="foodSafetyCertFile" name="foodSafetyCertFile" accept="image/*,application/pdf" style="font-size:13px; max-width:320px;">
+                        <input type="hidden" th:field="*{foodSafetyCertUrl}">
+                        <div th:if="${form.foodSafetyCertUrl != null and !form.foodSafetyCertUrl.isBlank()}" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 10px; border-radius:6px; font-size:12px;">
+                            <span>📎 Đã có bản chụp:</span>
+                            <a th:href="${form.foodSafetyCertUrl}" target="_blank" style="color:#2563eb; font-weight:600; text-decoration:underline;">Xem chứng nhận</a>
+                        </div>
+                    </div>
+                    <div id="foodSafetyPreviewContainer" style="display:none; margin-top:10px;">
+                        <img id="foodSafetyPreviewImg" src="" alt="Xem trước Giấy ATTP" style="max-height:120px; border-radius:8px; border:1px solid #cbd5e1; box-shadow:0 2px 4px rgba(0,0,0,0.06);">
+                    </div>
+                    <div class="form-error" th:if="${#fields.hasErrors('foodSafetyCertFile')}" th:errors="*{foodSafetyCertFile}"></div>
+                </div>
+            </div>
+
+            <!-- 4. Cài đặt vận chuyển -->
+            <div class="seller-section-title">
+                <span>🚚</span> 4. Cài đặt Phương thức Vận chuyển
+            </div>
+            
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
                 <div style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;">
                     <input type="checkbox" id="shippingFast" th:field="*{shippingFast}" style="width:18px;height:18px;margin-top:2px;">
@@ -145,7 +255,7 @@
 
             <!-- 4. Cam kết & Điều khoản -->
             <div class="seller-section-title">
-                <span>📜</span> 4. Điều khoản & Cam kết
+                <span>📜</span> 5. Điều khoản & Cam kết
             </div>
             <div style="margin-bottom:24px;">
                 <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">
@@ -168,6 +278,35 @@
 </main>
 
 <script th:src="@{/js/address-ward-selector.js}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function setupPreview(fileInputId, previewContainerId, previewImgId) {
+        const input = document.getElementById(fileInputId);
+        const container = document.getElementById(previewContainerId);
+        const img = document.getElementById(previewImgId);
+        if (!input || !container || !img) return;
+
+        input.addEventListener('change', function(e) {
+            const file = e.target.files && e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    img.src = evt.target.result;
+                    container.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                container.style.display = 'none';
+            }
+        });
+    }
+
+    setupPreview('businessLicenseFile', 'licensePreviewContainer', 'licensePreviewImg');
+    setupPreview('foodSafetyCertFile', 'foodSafetyPreviewContainer', 'foodSafetyPreviewImg');
+});
+</script>
+
 </body>
 </html>
 

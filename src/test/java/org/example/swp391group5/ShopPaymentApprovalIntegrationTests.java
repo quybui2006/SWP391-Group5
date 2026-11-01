@@ -259,4 +259,53 @@ class ShopPaymentApprovalIntegrationTests {
         assertDoesNotThrow(() -> cartService.add(customerId, variantId, 1));
         assertEquals(1, cartService.itemCount(customerId));
     }
+
+    @Test
+    void testShopRegistrationWithBusinessLicenseAndFoodSafetyCert() {
+        String code = "P-CERT-TEST";
+        ensureProvince(code, "Lâm Đồng");
+
+        Long ownerId = createTestUser("seller-cert@example.com", "Hoàng Văn Tuấn");
+
+        ShopRegistrationDto regDto = new ShopRegistrationDto();
+        regDto.setName("Nông Trại Trái Cây Đà Lạt");
+        regDto.setDescription("Chuyên dâu tây và bơ sáp tươi ngon");
+        regDto.setPhone("0944556677");
+        regDto.setProvinceCode(code);
+        regDto.setWardName("Phường 1");
+        regDto.setAddressDetail("Số 12 Mai Anh Đào");
+        regDto.setIdCardNumber("068195009876");
+        regDto.setIdCardName("Hoàng Văn Tuấn");
+        regDto.setAgreeTerms(true);
+
+        // Giấy phép kinh doanh
+        regDto.setBusinessLicenseNumber("5801234567");
+        regDto.setBusinessLicenseDate("2022-06-10");
+        regDto.setBusinessLicensePlace("Sở Kế hoạch và Đầu tư tỉnh Lâm Đồng");
+        regDto.setBusinessLicenseUrl("/uploads/licenses/gpkd-dalat.png");
+
+        // Giấy chứng nhận vệ sinh an toàn thực phẩm
+        regDto.setFoodSafetyCertNumber("105/2023/ATTP-LĐ");
+        regDto.setFoodSafetyCertDate("2023-01-20");
+        regDto.setFoodSafetyCertExpiry("2026-01-20");
+        regDto.setFoodSafetyCertPlace("Chi cục Quản lý Chất lượng Nông lâm sản và Thủy sản Lâm Đồng");
+        regDto.setFoodSafetyCertUrl("/uploads/licenses/attp-dalat.png");
+
+        Shop shop = customerShopService.registerShop(ownerId, regDto);
+        assertNotNull(shop.getId());
+
+        // Kiểm tra database lưu trữ đúng và Operations xem được
+        ShopApprovalDetailDto detail = operationsShopService.getShopDetail(shop.getId());
+        assertEquals("5801234567", detail.getBusinessLicenseNumber());
+        assertEquals("2022-06-10", detail.getBusinessLicenseDate());
+        assertEquals("Sở Kế hoạch và Đầu tư tỉnh Lâm Đồng", detail.getBusinessLicensePlace());
+        assertEquals("/uploads/licenses/gpkd-dalat.png", detail.getBusinessLicenseUrl());
+
+        assertEquals("105/2023/ATTP-LĐ", detail.getFoodSafetyCertNumber());
+        assertEquals("2023-01-20", detail.getFoodSafetyCertDate());
+        assertEquals("2026-01-20", detail.getFoodSafetyCertExpiry());
+        assertEquals("Chi cục Quản lý Chất lượng Nông lâm sản và Thủy sản Lâm Đồng", detail.getFoodSafetyCertPlace());
+        assertEquals("/uploads/licenses/attp-dalat.png", detail.getFoodSafetyCertUrl());
+    }
+
 }
