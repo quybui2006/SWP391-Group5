@@ -41,7 +41,6 @@ public class VariantInventory {
     @Column(name = "available_quantity", insertable = false, updatable = false)
     private Integer availableQuantity;
 
-    /** Ngưỡng cảnh báo theo đơn vị cơ sở của biến thể; 0 nghĩa là tắt cảnh báo. */
     @Column(name = "low_stock_threshold_quantity", nullable = false)
     private Integer lowStockThresholdQuantity = 0;
 

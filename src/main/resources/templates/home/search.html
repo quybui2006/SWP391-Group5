@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -40,7 +40,6 @@
         <nav class="main-nav" aria-label="Điều hướng chính">
             <a th:href="@{/}">Trang chủ</a>
             <a class="active" th:href="@{/search}">Sản phẩm</a>
-            <a th:if="${session.role == null}" th:href="@{/order/tracking}">Tra cứu đơn hàng</a>
             <a th:href="@{/#categories}">Danh mục</a>
             <a th:href="@{/#about}">Về chúng tôi</a>
         </nav>

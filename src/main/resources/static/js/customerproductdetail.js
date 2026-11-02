@@ -25,9 +25,8 @@ function getQuantity() {
     const input = document.getElementById("quantity");
     if (!input) return 1;
     let quantity = parseInt(input.value, 10);
-    const maxVal = parseInt(input.getAttribute("max") || "99", 10);
     if (isNaN(quantity) || quantity < 1) quantity = 1;
-    if (quantity > maxVal) quantity = maxVal;
+    if (quantity > 99) quantity = 99;
     input.value = quantity;
     return quantity;
 }
@@ -35,9 +34,8 @@ function getQuantity() {
 function increaseQuantity() {
     const input = document.getElementById("quantity");
     if (!input) return;
-    const maxVal = parseInt(input.getAttribute("max") || "99", 10);
     let quantity = getQuantity();
-    if (quantity < maxVal) quantity++;
+    if (quantity < 99) quantity++;
     input.value = quantity;
 }
 

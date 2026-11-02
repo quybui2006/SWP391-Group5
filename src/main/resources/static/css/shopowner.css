@@ -72,17 +72,8 @@ button, input, select, textarea {
     color: #0f172a;
 }
 
-.brand-copy {
-    display: block;
-    min-width: 0;
-    white-space: nowrap;
-}
-
-.brand-name {
-    display: block;
-    line-height: 1.15;
-}
-
+.brand-copy { display: block; min-width: 0; white-space: nowrap; }
+.brand-name { display: block; line-height: 1.15; }
 .brand-name > span {
     color: var(--green);
 }
@@ -202,27 +193,9 @@ button, input, select, textarea {
     flex-shrink: 0;
 }
 
-.side-nav a > .notification-nav-label {
-    width: auto;
-    flex: 1;
-    text-align: left;
-    font-size: inherit;
-}
-.side-nav a > .notification-unread-badge {
-    width: auto;
-    min-width: 17px;
-    height: 17px;
-    margin-left: auto;
-    padding: 0 5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: #dc2626;
-    color: #fff;
-    font-size: 9px;
-    font-weight: 800;
-}
+.side-nav a > .notification-nav-label { width: auto; flex: 1; text-align: left; font-size: inherit; }
+.side-nav a > .notification-unread-badge { width: auto; min-width: 17px; height: 17px; margin-left: auto; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #dc2626; color: #fff; font-size: 9px; font-weight: 800; }
+.notification-unread-badge[hidden] { display: none; }
 
 .nav-count {
     margin-left: auto;
@@ -312,6 +285,7 @@ button, input, select, textarea {
     color: #eab308;
     font-size: 15px;
 }
+.topbar h1 .topbar-owner-name { color: #0f172a; font-size: inherit; }
 
 .muted {
     color: var(--muted);
@@ -775,62 +749,6 @@ td:first-child, th:first-child {
     box-shadow: 0 3px 12px rgba(220, 38, 38, 0.06);
 }
 
-.shop-setup-banner.payment-required {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
-}
-
-.payment-status-banner {
-    display: block;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #fff;
-}
-
-.payment-status-banner h2 {
-    margin: 0 0 4px;
-    font: 700 14px var(--font-ui);
-}
-
-.payment-status-banner p {
-    margin: 0;
-    color: #475569;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.payment-status-banner.approved { background: #f0fdf4; border-color: #bbf7d0; }
-.payment-status-banner.pending { background: #fffbeb; border-color: #fde68a; }
-.payment-status-banner.rejected { background: #fef2f2; border-color: #fecaca; }
-.payment-status-banner.unconfigured { background: #f8fafc; border-color: #cbd5e1; }
-.payment-status-banner.approved h2 { color: #166534; }
-.payment-status-banner.pending h2 { color: #92400e; }
-.payment-status-banner.rejected h2 { color: #991b1b; }
-.payment-status-banner.unconfigured h2 { color: #334155; }
-.payment-verify-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-    gap: 14px;
-    margin-top: 14px;
-    align-items: start;
-}
-
-.payment-verify-grid .info-card {
-    border-radius: 10px;
-    padding: 18px;
-    gap: 14px;
-}
-
-@media (max-width: 980px) {
-    .payment-verify-grid { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 600px) {
-    .stats-grid { grid-template-columns: 1fr; }
-}
-
 .setup-banner-left {
     flex: 1;
 }
@@ -1015,4 +933,34 @@ td:first-child, th:first-child {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Shop Owner notification list and shared inventory warning details. */
+.notification-page { max-width: 1400px; }
+.notification-tools { padding: 14px 16px; margin-bottom: 14px; }
+.notification-filter-form { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+.notification-filter-form label { display: grid; gap: 5px; color: #475569; font-size: 11px; font-weight: 700; }
+.notification-search { flex: 1 1 280px; }
+.notification-status-filter { flex: 0 0 170px; }
+.notification-filter-form input, .notification-filter-form select { min-width: 0; height: 36px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #1e293b; padding: 0 10px; }
+.notification-filter-form input:focus, .notification-filter-form select:focus { outline: 2px solid #86efac; outline-offset: 1px; border-color: #16a34a; }
+.notification-result-count { margin: 10px 0 0; color: #64748b; font-size: 11px; }
+.notification-list-panel { padding: 12px 16px; }
+.notification-list-panel .table-wrap { margin-top: 0; }
+.notification-list-panel table { min-width: 680px; }
+.notification-list-panel td { padding: 12px 8px; vertical-align: top; }
+.notification-list-panel .secondary-cell { max-width: 680px; margin-top: 4px; line-height: 1.55; white-space: normal; }
+.notification-actions { white-space: nowrap; }
+.notification-actions .button { margin: 0 4px 4px 0; }
+.button-delete { border: 1px solid #fecaca; border-radius: 6px; padding: 6px 9px; background: #fff; color: #b91c1c; cursor: pointer; }
+.button-delete:hover { background: #fef2f2; }
+.notification-empty { padding: 28px 12px; text-align: center; color: #64748b; }
+.inventory-threshold { display: block; color: #64748b; font-size: 10px; }
+.inventory-stock-status.is-low { background: #fff7ed; color: #c2410c; }
+.inventory-create-batch { min-height: 40px; padding: 0 16px; font-weight: 800; box-shadow: 0 2px 0 #166534; }
+
+@media (max-width: 768px) {
+    .notification-status-filter { flex-basis: 100%; }
+    .notification-filter-form > .button { flex: 1 1 auto; }
+    .notification-list-panel { padding: 8px; }
 }

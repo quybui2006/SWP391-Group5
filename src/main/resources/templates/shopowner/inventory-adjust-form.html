@@ -5,37 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Điều chỉnh tồn kho | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
-    <link rel="stylesheet" th:href="@{/css/inventory-management.css(v=20261103)}">
+    <link rel="stylesheet" th:href="@{/css/inventory-management.css}">
 </head>
 <body>
 <div class="app-shell inventory-app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('inventory')}"></aside>
     <main class="main-content inventory-page">
         <header class="topbar inventory-topbar">
-            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Điều chỉnh</span></p><h1>Điều chỉnh tồn kho</h1><p class="muted">Thêm hoặc bớt số lượng trong một lô hàng.</p></div>
+            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Điều chỉnh</span></p><h1>Điều chỉnh lô hàng</h1><p class="muted">Chỉ giảm số lượng của lô hiện có. Muốn tăng tồn, hãy tạo lô hàng mới.</p></div>
         </header>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
         <form class="inventory-form" method="post" th:action="@{/shopowner/inventory/adjust}" th:object="${form}">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
-            <input type="hidden" th:field="*{inventoryId}" th:if="${form.inventoryId != null}">
+            <input type="hidden" th:field="*{inventoryId}">
             <div class="inventory-form-grid">
-                <label class="inventory-field inventory-field-wide"><span>Lô hàng cần điều chỉnh</span>
+                <label class="inventory-field inventory-field-wide"><span>Batch cần điều chỉnh</span>
                     <select th:field="*{batchId}" required>
-                        <option value="">Chọn lô hàng</option>
-                        <option th:each="batch : ${batches}" th:value="${batch.id}" th:text="${batch.code + ' · ' + batch.productName + ' / ' + batch.variantName + ' · còn bán ' + batch.available + ' ' + batch.unitName}"></option>
+                        <option value="">Chọn batch</option>
+                        <option th:each="batch : ${batches}" th:value="${batch.id}" th:text="${batch.code + ' · ' + batch.productName + ' / ' + batch.variantName + ' · SKU ' + batch.sku + ' · còn ' + batch.available + ' ' + batch.unitName}"></option>
                     </select>
                     <small th:if="${#fields.hasErrors('batchId')}" th:errors="*{batchId}"></small>
                 </label>
-                <fieldset class="inventory-direction"><legend>Thao tác</legend>
-                    <label><input type="radio" th:field="*{direction}" value="DECREASE" required> Bớt số lượng</label>
-                    <small th:if="${#fields.hasErrors('direction')}" th:errors="*{direction}"></small>
-                </fieldset>
+                <input type="hidden" th:field="*{direction}" value="DECREASE">
                 <label class="inventory-field"><span>Số lượng</span><input type="number" min="1" step="1" th:field="*{quantity}" required><small th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></small></label>
                 <label class="inventory-field inventory-field-wide"><span>Lý do</span><textarea rows="3" maxlength="1000" th:field="*{reason}" required></textarea><small th:if="${#fields.hasErrors('reason')}" th:errors="*{reason}"></small></label>
             </div>
-            <p class="inventory-form-note">Không thể bớt số lượng đang giữ trong đơn hàng.</p>
-            <div class="inventory-form-actions"><a class="btn btn-outline-secondary" th:href="@{/shopowner/inventory}">Hủy</a><a class="btn btn-outline-success" th:href="@{/shopowner/inventory/batches/new}">Tạo lô hàng mới</a><button class="btn btn-success" type="submit" th:disabled="${#lists.isEmpty(batches)}">Lưu điều chỉnh</button></div>
-            <p class="inventory-no-batch" th:if="${#lists.isEmpty(batches)}">Chưa có lô để điều chỉnh. Hãy tạo lô hàng trước.</p>
+            <p class="inventory-form-note">Không thể giảm phần hàng đang được giữ cho đơn. Muốn tăng tồn, hãy tạo lô hàng mới.</p>
+            <div class="inventory-form-actions"><a class="btn btn-outline-secondary" th:href="@{/shopowner/inventory}">Hủy</a><button class="btn btn-success" type="submit">Lưu điều chỉnh</button></div>
         </form>
     </main>
 </div>

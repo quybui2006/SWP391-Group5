@@ -9,14 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class InventoryBatchService {
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
 
     public InventoryBatchService(JdbcTemplate jdbc) {
@@ -26,7 +24,7 @@ public class InventoryBatchService {
     @Transactional
     public Long receive(Long inventoryId, int quantity, LocalDateTime receivedAt, String note, Long ownerId) {
         if (quantity <= 0) throw new InventoryActionException("Số lượng nhập phải lớn hơn 0.");
-        if (receivedAt == null || receivedAt.isAfter(LocalDateTime.now(BUSINESS_ZONE)))
+        if (receivedAt == null || receivedAt.isAfter(LocalDateTime.now()))
             throw new InventoryActionException("Thời điểm nhập không được để trống hoặc ở tương lai.");
         if (note != null && note.length() > 1000) throw new InventoryActionException("Ghi chú không được vượt quá 1000 ký tự.");
 
@@ -66,13 +64,13 @@ public class InventoryBatchService {
 
     @Transactional
     public void adjust(Long batchId, String direction, int quantity, String reason, Long ownerId) {
-        if (batchId == null) throw new InventoryActionException("Vui lòng chọn lô cần điều chỉnh.");
+        if (batchId == null) throw new InventoryActionException("Vui lòng chọn batch cần điều chỉnh.");
         if (quantity <= 0) throw new InventoryActionException("Số lượng điều chỉnh phải lớn hơn 0.");
         String cleanReason = clean(reason);
         if (cleanReason == null) throw new InventoryActionException("Vui lòng nhập lý do điều chỉnh.");
         if (cleanReason.length() > 1000) throw new InventoryActionException("Lý do không được vượt quá 1000 ký tự.");
         if (!"DECREASE".equals(direction))
-            throw new InventoryActionException("Điều chỉnh chỉ dùng để bớt hàng. Hàng mới cần tạo lô mới.");
+            throw new InventoryActionException("Điều chỉnh chỉ được giảm tồn; muốn tăng số lượng, hãy tạo lô hàng mới.");
 
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 SELECT b.*,vi.quantity_on_hand AS aggregate_on_hand,vi.reserved_quantity AS aggregate_reserved,
@@ -83,28 +81,25 @@ public class InventoryBatchService {
                 JOIN shops s ON s.id=pv.shop_id
                 WHERE b.id=? FOR UPDATE
                 """, batchId);
-        if (rows.isEmpty()) throw new InventoryActionException("Lô hàng không tồn tại.");
+        if (rows.isEmpty()) throw new InventoryActionException("Batch không tồn tại.");
         Map<String, Object> batch = rows.get(0);
         if (ownerId == null || ((Number) batch.get("owner_id")).longValue() != ownerId)
-            throw new InventoryActionException("Bạn không có quyền điều chỉnh lô hàng này.");
+            throw new InventoryActionException("Bạn không có quyền điều chỉnh batch này.");
         long inventoryId = ((Number) batch.get("inventory_id")).longValue();
         int stock = ((Number) batch.get("quantity_on_hand")).intValue();
         int reserved = ((Number) batch.get("reserved_quantity")).intValue();
         int aggregateOnHand = ((Number) batch.get("aggregate_on_hand")).intValue();
         int aggregateReserved = ((Number) batch.get("aggregate_reserved")).intValue();
         int delta = -quantity;
-        if (delta < 0 && quantity > stock - reserved)
+        if (quantity > stock - reserved)
             throw new InventoryActionException("Không thể giảm quá số lượng chưa giữ của batch này (" + (stock - reserved) + ").");
         int after = checkedAdd(stock, delta, "Số lượng batch vượt giới hạn cho phép.");
         if (after < reserved) throw new InventoryActionException("Tồn sau điều chỉnh không thể thấp hơn số lượng đang giữ.");
 
+        jdbc.update("UPDATE inventory_batches SET quantity_on_hand=?,status=? WHERE id=?",
+                after, after == 0 ? "CLOSED" : "ACTIVE", batchId);
+        jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", delta, inventoryId);
         int aggregateAfter = checkedAdd(aggregateOnHand, delta, "Tổng tồn kho vượt giới hạn cho phép.");
-        if (jdbc.update("UPDATE inventory_batches SET quantity_on_hand=?,status=? WHERE id=?",
-                after, after == 0 ? "CLOSED" : "ACTIVE", batchId) != 1)
-            throw new InventoryActionException("Không cập nhật được lô hàng.");
-        if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=? WHERE id=? AND quantity_on_hand=?",
-                aggregateAfter, inventoryId, aggregateOnHand) != 1)
-            throw new InventoryActionException("Tổng tồn kho vừa thay đổi. Tải lại trang rồi thử lại.");
         String event = UUID.randomUUID().toString();
         jdbc.update("INSERT INTO inventory_transactions(inventory_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,'ADJUST',?,0,?,?,?, ?,?)",
                 inventoryId, delta, aggregateAfter, aggregateReserved, "batch-adjust-" + event, cleanReason, ownerId);
@@ -114,13 +109,25 @@ public class InventoryBatchService {
     @Transactional
     public void reserveOrderItem(Long orderItemId, Long inventoryId, int quantity, Long createdBy) {
         if (quantity <= 0) throw new IllegalArgumentException("Số lượng cần giữ phải lớn hơn 0.");
-        Integer alreadyReserved = jdbc.queryForObject("SELECT COUNT(*) FROM order_item_batch_allocations WHERE order_item_id=? AND status='RESERVED'", Integer.class, orderItemId);
-        if (alreadyReserved != null && alreadyReserved > 0) return;
-        // FIFO takes stock from the earliest receipt first.
+        lockInventory(inventoryId);
+        List<Map<String, Object>> existing = jdbc.queryForList(
+                "SELECT status,quantity FROM order_item_batch_allocations WHERE order_item_id=? FOR UPDATE", orderItemId);
+        int reservedForItem = 0;
+        for (Map<String, Object> allocation : existing) {
+            String status = String.valueOf(allocation.get("status"));
+            if ("CONSUMED".equals(status)) throw new IllegalStateException("Đơn này đã ghi nhận bán, không thể giữ tồn lần nữa.");
+            if ("RESERVED".equals(status)) reservedForItem += ((Number) allocation.get("quantity")).intValue();
+        }
+        if (reservedForItem > 0) {
+            if (reservedForItem == quantity) return;
+            throw new IllegalStateException("Số lượng đang giữ không khớp với dòng hàng của đơn.");
+        }
+        // Reserve the oldest received stock first so all order holds follow FIFO.
         List<Map<String, Object>> batches = jdbc.queryForList("""
                 SELECT id,quantity_on_hand,reserved_quantity
                 FROM inventory_batches
-                WHERE inventory_id=? AND status='ACTIVE' AND quantity_on_hand>reserved_quantity
+                WHERE inventory_id=? AND status='ACTIVE'
+                  AND quantity_on_hand>reserved_quantity
                 ORDER BY received_at, id
                 FOR UPDATE
                 """, inventoryId);
@@ -133,18 +140,21 @@ public class InventoryBatchService {
             int take = Math.min(remaining, onHand - reserved);
             if (jdbc.update("UPDATE inventory_batches SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", take, batchId, take) != 1)
                 throw new IllegalArgumentException("Tồn kho vừa thay đổi. Vui lòng thử lại.");
-            jdbc.update("INSERT INTO order_item_batch_allocations(order_item_id,batch_id,quantity,status) VALUES(?,?,?,'RESERVED') ON DUPLICATE KEY UPDATE quantity=VALUES(quantity),status='RESERVED'", orderItemId, batchId, take);
+            jdbc.update("INSERT INTO order_item_batch_allocations(order_item_id,batch_id,quantity,status) VALUES(?,?,?,'RESERVED') ON DUPLICATE KEY UPDATE quantity=IF(status='RELEASED',VALUES(quantity),quantity),status=IF(status='RELEASED','RESERVED',status)", orderItemId, batchId, take);
+            String allocationStatus = jdbc.queryForObject("SELECT status FROM order_item_batch_allocations WHERE order_item_id=? AND batch_id=?", String.class, orderItemId, batchId);
+            if (!"RESERVED".equals(allocationStatus)) throw new IllegalStateException("Không thể tạo lại phần hàng giữ cho đơn.");
             batchTransaction(batchId, orderItemId, "RESERVE", 0, take, onHand, reserved + take,
                     "reserve-" + orderItemId + "-" + batchId + "-" + UUID.randomUUID(), "Giữ hàng cho đơn", createdBy);
             remaining -= take;
         }
-        if (remaining > 0) throw new IllegalArgumentException("Các lô hàng hiện có không đủ để giữ cho đơn.");
+        if (remaining > 0) throw new IllegalArgumentException("Các lô hiện có không đủ hàng để giữ cho đơn.");
         if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
             throw new IllegalArgumentException("Tồn kho tổng vừa thay đổi. Vui lòng thử lại.");
     }
 
     @Transactional
     public void releaseOrderItem(Long orderItemId, String eventPrefix) {
+        // Release only live reservations; a retry sees no RESERVED rows and cannot release twice.
         List<Map<String, Object>> allocations = jdbc.queryForList("SELECT a.batch_id,a.quantity,b.quantity_on_hand,b.reserved_quantity FROM order_item_batch_allocations a JOIN inventory_batches b ON b.id=a.batch_id WHERE a.order_item_id=? AND a.status='RESERVED' ORDER BY a.batch_id FOR UPDATE", orderItemId);
         for (Map<String, Object> allocation : allocations) {
             long batchId = ((Number) allocation.get("batch_id")).longValue();
@@ -168,6 +178,7 @@ public class InventoryBatchService {
 
     @Transactional
     public void consumeOrderItem(Long orderItemId, String orderCode) {
+        // Consume only after explicit customer receipt confirmation; CONSUMED allocations make retries idempotent.
         List<Map<String, Object>> allocations = jdbc.queryForList("SELECT a.batch_id,a.quantity,b.quantity_on_hand,b.reserved_quantity FROM order_item_batch_allocations a JOIN inventory_batches b ON b.id=a.batch_id WHERE a.order_item_id=? AND a.status='RESERVED' ORDER BY a.batch_id FOR UPDATE", orderItemId);
         if (allocations.isEmpty()) {
             Integer consumed = jdbc.queryForObject("SELECT COUNT(*) FROM order_item_batch_allocations WHERE order_item_id=? AND status='CONSUMED'", Integer.class, orderItemId);

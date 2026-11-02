@@ -67,7 +67,7 @@
                 <div class="product-overview">
                     <img class="product-cover" th:if="${product.imageUrls != null and !product.imageUrls.isEmpty()}"
                          th:src="${product.imageUrls[0]}" th:alt="${product.name}">
-                    <div class="product-cover product-cover-placeholder" th:unless="${product.imageUrls != null and !product.imageUrls.isEmpty()}">🍃</div>
+                    <div class="product-cover product-cover-placeholder" th:unless="${product.imageUrls != null and !product.imageUrls.isEmpty()}">Ảnh</div>
                     <div class="detail-list">
                         <div><span>Tên sản phẩm</span><strong th:text="${product.name}">-</strong></div>
                         <div><span>Danh mục</span><strong th:text="${product.categoryName ?: '-'}">-</strong></div>

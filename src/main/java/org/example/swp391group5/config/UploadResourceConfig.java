@@ -13,15 +13,12 @@ public class UploadResourceConfig implements WebMvcConfigurer {
 
     private final String uploadLocation;
     private final String complaintUploadLocation;
-    private final String licenseUploadLocation;
 
     public UploadResourceConfig(
             @Value("${app.upload.product-dir:uploads/products}") String uploadDirectory,
-            @Value("${app.upload.complaint-dir:uploads/complaints}") String complaintDirectory,
-            @Value("${app.upload.license-dir:uploads/licenses}") String licenseDirectory) {
+            @Value("${app.upload.complaint-dir:uploads/complaints}") String complaintDirectory) {
         this.uploadLocation = Path.of(uploadDirectory).toAbsolutePath().normalize().toUri().toString();
         this.complaintUploadLocation = Path.of(complaintDirectory).toAbsolutePath().normalize().toUri().toString();
-        this.licenseUploadLocation = Path.of(licenseDirectory).toAbsolutePath().normalize().toUri().toString();
     }
 
     @Override
@@ -30,7 +27,5 @@ public class UploadResourceConfig implements WebMvcConfigurer {
                 .addResourceLocations(uploadLocation.endsWith("/") ? uploadLocation : uploadLocation + "/");
         registry.addResourceHandler("/uploads/complaints/**")
                 .addResourceLocations(complaintUploadLocation.endsWith("/") ? complaintUploadLocation : complaintUploadLocation + "/");
-        registry.addResourceHandler("/uploads/licenses/**")
-                .addResourceLocations(licenseUploadLocation.endsWith("/") ? licenseUploadLocation : licenseUploadLocation + "/");
     }
 }

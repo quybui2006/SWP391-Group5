@@ -226,29 +226,6 @@ public class CustomerShopRegistrationService {
         shop.setTaxCode(dto.getTaxCode() != null ? dto.getTaxCode().trim() : null);
         shop.setTaxName(dto.getTaxName() != null ? dto.getTaxName().trim() : null);
         shop.setTaxEmail(dto.getTaxEmail() != null ? dto.getTaxEmail().trim() : null);
-        shop.setBusinessLicenseNumber(dto.getBusinessLicenseNumber() != null ? dto.getBusinessLicenseNumber().trim() : null);
-        if (dto.getBusinessLicenseDate() != null && !dto.getBusinessLicenseDate().isBlank()) {
-            try {
-                shop.setBusinessLicenseDate(java.time.LocalDate.parse(dto.getBusinessLicenseDate().trim()));
-            } catch (Exception ignored) {}
-        }
-        shop.setBusinessLicensePlace(dto.getBusinessLicensePlace() != null ? dto.getBusinessLicensePlace().trim() : null);
-        shop.setBusinessLicenseUrl(dto.getBusinessLicenseUrl() != null ? dto.getBusinessLicenseUrl().trim() : null);
-
-        shop.setFoodSafetyCertNumber(dto.getFoodSafetyCertNumber() != null ? dto.getFoodSafetyCertNumber().trim() : null);
-        if (dto.getFoodSafetyCertDate() != null && !dto.getFoodSafetyCertDate().isBlank()) {
-            try {
-                shop.setFoodSafetyCertDate(java.time.LocalDate.parse(dto.getFoodSafetyCertDate().trim()));
-            } catch (Exception ignored) {}
-        }
-        if (dto.getFoodSafetyCertExpiry() != null && !dto.getFoodSafetyCertExpiry().isBlank()) {
-            try {
-                shop.setFoodSafetyCertExpiry(java.time.LocalDate.parse(dto.getFoodSafetyCertExpiry().trim()));
-            } catch (Exception ignored) {}
-        }
-        shop.setFoodSafetyCertPlace(dto.getFoodSafetyCertPlace() != null ? dto.getFoodSafetyCertPlace().trim() : null);
-        shop.setFoodSafetyCertUrl(dto.getFoodSafetyCertUrl() != null ? dto.getFoodSafetyCertUrl().trim() : null);
-
 
         java.util.List<String> shipping = new java.util.ArrayList<>();
         if (dto.isShippingFast()) shipping.add("FAST");
@@ -307,29 +284,6 @@ public class CustomerShopRegistrationService {
         shop.setTaxCode(dto.getTaxCode() != null ? dto.getTaxCode().trim() : null);
         shop.setTaxName(dto.getTaxName() != null ? dto.getTaxName().trim() : null);
         shop.setTaxEmail(dto.getTaxEmail() != null ? dto.getTaxEmail().trim() : null);
-        shop.setBusinessLicenseNumber(dto.getBusinessLicenseNumber() != null ? dto.getBusinessLicenseNumber().trim() : null);
-        if (dto.getBusinessLicenseDate() != null && !dto.getBusinessLicenseDate().isBlank()) {
-            try {
-                shop.setBusinessLicenseDate(java.time.LocalDate.parse(dto.getBusinessLicenseDate().trim()));
-            } catch (Exception ignored) {}
-        }
-        shop.setBusinessLicensePlace(dto.getBusinessLicensePlace() != null ? dto.getBusinessLicensePlace().trim() : null);
-        shop.setBusinessLicenseUrl(dto.getBusinessLicenseUrl() != null ? dto.getBusinessLicenseUrl().trim() : null);
-
-        shop.setFoodSafetyCertNumber(dto.getFoodSafetyCertNumber() != null ? dto.getFoodSafetyCertNumber().trim() : null);
-        if (dto.getFoodSafetyCertDate() != null && !dto.getFoodSafetyCertDate().isBlank()) {
-            try {
-                shop.setFoodSafetyCertDate(java.time.LocalDate.parse(dto.getFoodSafetyCertDate().trim()));
-            } catch (Exception ignored) {}
-        }
-        if (dto.getFoodSafetyCertExpiry() != null && !dto.getFoodSafetyCertExpiry().isBlank()) {
-            try {
-                shop.setFoodSafetyCertExpiry(java.time.LocalDate.parse(dto.getFoodSafetyCertExpiry().trim()));
-            } catch (Exception ignored) {}
-        }
-        shop.setFoodSafetyCertPlace(dto.getFoodSafetyCertPlace() != null ? dto.getFoodSafetyCertPlace().trim() : null);
-        shop.setFoodSafetyCertUrl(dto.getFoodSafetyCertUrl() != null ? dto.getFoodSafetyCertUrl().trim() : null);
-
 
         java.util.List<String> resubmitShipping = new java.util.ArrayList<>();
         if (dto.isShippingFast()) resubmitShipping.add("FAST");
@@ -496,17 +450,6 @@ public class CustomerShopRegistrationService {
         fullDto.setTaxCode(activation.getTaxCode());
         fullDto.setTaxName(activation.getTaxName());
         fullDto.setTaxEmail(activation.getTaxEmail());
-
-        fullDto.setBusinessLicenseNumber(shopDto.getBusinessLicenseNumber());
-        fullDto.setBusinessLicenseDate(shopDto.getBusinessLicenseDate());
-        fullDto.setBusinessLicensePlace(shopDto.getBusinessLicensePlace());
-        fullDto.setBusinessLicenseUrl(shopDto.getBusinessLicenseUrl());
-        fullDto.setFoodSafetyCertNumber(shopDto.getFoodSafetyCertNumber());
-        fullDto.setFoodSafetyCertDate(shopDto.getFoodSafetyCertDate());
-        fullDto.setFoodSafetyCertExpiry(shopDto.getFoodSafetyCertExpiry());
-        fullDto.setFoodSafetyCertPlace(shopDto.getFoodSafetyCertPlace());
-        fullDto.setFoodSafetyCertUrl(shopDto.getFoodSafetyCertUrl());
-
 
         return registerShop(userId, fullDto);
     }

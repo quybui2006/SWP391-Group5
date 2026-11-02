@@ -29,8 +29,7 @@ public class ShopInventoryController {
     private final InventoryHistoryExcelExporter excelExporter;
     private final CategoryRepository categoryRepository;
 
-    public ShopInventoryController(InventoryService inventoryService,
-                                   InventoryHistoryExcelExporter excelExporter,
+    public ShopInventoryController(InventoryService inventoryService, InventoryHistoryExcelExporter excelExporter,
                                    CategoryRepository categoryRepository) {
         this.inventoryService = inventoryService;
         this.excelExporter = excelExporter;
@@ -92,12 +91,12 @@ public class ShopInventoryController {
         if (ownerId == null) return "redirect:/login";
         if (binding.hasErrors()) {
             model.addAttribute("variants", inventoryService.getVariantOptions(ownerId));
-            model.addAttribute("error", "Kiểm tra biến thể, số lượng và thời điểm nhập.");
+            model.addAttribute("error", "Kiểm tra số lượng và thời điểm nhập.");
             return "shopowner/inventory-batch-form";
         }
         try {
             inventoryService.receiveBatch(form, ownerId);
-            redirect.addFlashAttribute("success", "Đã tạo lô hàng mới và ghi lịch sử nhập kho.");
+            redirect.addFlashAttribute("success", "Đã tạo batch mới và ghi lịch sử nhập kho.");
             return "redirect:/shopowner/inventory";
         } catch (InventoryActionException ex) {
             model.addAttribute("variants", inventoryService.getVariantOptions(ownerId));
@@ -111,6 +110,15 @@ public class ShopInventoryController {
                                  @RequestParam(required = false) Long inventoryId,
                                  HttpServletRequest request, Model model) {
         if (ownerId(request) == null) return "redirect:/login";
+        if (batchId != null) {
+            inventoryId = inventoryService.getBatchInventoryId(ownerId(request), batchId);
+            if (inventoryId == null) {
+                model.addAttribute("error", "Không tìm thấy lô hàng thuộc cửa hàng của bạn.");
+                model.addAttribute("form", new InventoryAdjustmentForm());
+                model.addAttribute("batches", java.util.List.of());
+                return "shopowner/inventory-adjust-form";
+            }
+        }
         InventoryAdjustmentForm form = new InventoryAdjustmentForm();
         form.setBatchId(batchId);
         form.setInventoryId(inventoryId);
@@ -128,8 +136,11 @@ public class ShopInventoryController {
         Long ownerId = ownerId(request);
         if (ownerId == null) return "redirect:/login";
         if (binding.hasErrors()) {
-            model.addAttribute("batches", inventoryService.getBatchOptions(ownerId, form.getInventoryId()));
-            model.addAttribute("error", "Chọn batch, hướng điều chỉnh, số lượng và lý do hợp lệ.");
+            Long inventoryId = inventoryService.getBatchInventoryId(ownerId, form.getBatchId());
+            form.setInventoryId(inventoryId);
+            model.addAttribute("batches", form.getBatchId() != null && inventoryId == null
+                    ? java.util.List.of() : inventoryService.getBatchOptions(ownerId, inventoryId));
+            model.addAttribute("error", "Chọn lô hàng, nhập số lượng giảm và lý do hợp lệ.");
             return "shopowner/inventory-adjust-form";
         }
         try {
@@ -137,7 +148,10 @@ public class ShopInventoryController {
             redirect.addFlashAttribute("success", "Đã điều chỉnh batch và lưu lịch sử giao dịch.");
             return "redirect:/shopowner/inventory?tab=history";
         } catch (InventoryActionException ex) {
-            model.addAttribute("batches", inventoryService.getBatchOptions(ownerId, form.getInventoryId()));
+            Long inventoryId = inventoryService.getBatchInventoryId(ownerId, form.getBatchId());
+            form.setInventoryId(inventoryId);
+            model.addAttribute("batches", inventoryId == null ? java.util.List.of()
+                    : inventoryService.getBatchOptions(ownerId, inventoryId));
             model.addAttribute("error", ex.getMessage());
             return "shopowner/inventory-adjust-form";
         }

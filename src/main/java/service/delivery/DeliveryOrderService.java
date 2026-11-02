@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import service.shop.VoucherUsageService;
 import service.shop.InventoryBatchService;
 
 @Service
@@ -19,10 +20,12 @@ public class DeliveryOrderService {
 
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
+    private final VoucherUsageService voucherUsage;
     private final InventoryBatchService inventoryBatches;
 
-    public DeliveryOrderService(JdbcTemplate jdbc, InventoryBatchService inventoryBatches) {
+    public DeliveryOrderService(JdbcTemplate jdbc, VoucherUsageService voucherUsage, InventoryBatchService inventoryBatches) {
         this.jdbc = jdbc;
+        this.voucherUsage = voucherUsage;
         this.inventoryBatches = inventoryBatches;
     }
 
@@ -195,6 +198,7 @@ public class DeliveryOrderService {
     /**
      * Cập nhật trạng thái giao hàng của đơn hàng
      */
+    /** Cập nhật giao hàng; đơn giao thất bại được hủy và trả lượt voucher giảm tiền. */
     @Transactional
     public void updateDeliveryStatus(Long orderId, String newStatus, String cancelReason) {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM orders WHERE id = ? FOR UPDATE", orderId);
@@ -217,25 +221,25 @@ public class DeliveryOrderService {
         }
         if ("DELIVERED".equals(target)) {
             if (!"SHIPPING".equals(currentStatus)) throw new IllegalStateException("Chỉ xác nhận đã giao đối với đơn đang vận chuyển.");
-            // The customer confirmation is the event that records the sale from the reserved batch.
+            // Giao thành công vẫn giữ lô cho đến khi khách xác nhận đã nhận hàng.
             if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
                 jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
-                jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now.plusDays(3), now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
             } else {
-                jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now.plusDays(3), now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, orderId);
             }
             return;
         }
         if ("COMPLETED".equals(target)) {
-            throw new IllegalStateException("Đơn chỉ được hoàn tất sau khi khách xác nhận đã nhận hàng.");
+            throw new IllegalStateException("Đơn chỉ được hoàn tất sau khi khách hàng xác nhận đã nhận hàng.");
         }
         if ("CANCELLED".equals(target)) {
             String reason = cancelReason == null || cancelReason.isBlank()
                     ? "Giao hàng không thành công / Khách từ chối nhận" : cancelReason.trim();
             if (reason.length() > 1000) throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
-            int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',delivery_status='FAILED',delivery_failure_reason=?,delivery_updated_at=?,cancelled_at=?,cancellation_reason=? WHERE id=? AND status IN ('CONFIRMED','SHIPPING')", reason, now, now, reason, orderId);
-            if (cancelled != 1) throw new IllegalStateException("Trạng thái đơn hàng vừa thay đổi. Tải lại trang rồi thử lại.");
             releaseReservedItems(orderId);
+            int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',delivery_status='FAILED',delivery_failure_reason=?,delivery_updated_at=?,cancelled_at=?,cancellation_reason=? WHERE id=? AND status IN ('CONFIRMED','SHIPPING')", reason, now, now, reason, orderId);
+            if (cancelled == 1) voucherUsage.returnDiscountUse(orderId);
             jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
             return;
         }
@@ -243,16 +247,12 @@ public class DeliveryOrderService {
     }
 
     private void releaseReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status='RESERVED' ORDER BY oi.inventory_id FOR UPDATE", orderId);
+        // A failed delivery releases the existing hold so the quantity returns to sellable stock.
+        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.allocation_status FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status='RESERVED' ORDER BY oi.id FOR UPDATE", orderId);
         for (Map<String, Object> item : items) {
-            long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
-            int quantity = ((Number) item.get("quantity")).intValue();
-            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
             inventoryBatches.releaseOrderItem(itemId, "delivery-failed");
             jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
-            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT IGNORE INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,NULL)", inventoryId, itemId, -quantity, onHand, reserved, "release-delivery-" + itemId);
         }
     }
 }

@@ -36,14 +36,10 @@ public class NotificationDto {
         // Target URL
         if ("PRODUCT".equalsIgnoreCase(n.getTargetType()) && n.getTargetId() != null) {
             dto.setTargetUrl("/product/" + n.getTargetId());
-        } else if ("ORDER".equalsIgnoreCase(n.getTargetType()) && n.getTargetId() != null) {
-            dto.setTargetUrl("/customer/account/orders/" + n.getTargetId());
         } else if ("ORDER".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account/orders");
         } else if ("ACCOUNT".equalsIgnoreCase(n.getTargetType())) {
             dto.setTargetUrl("/customer/account");
-        } else if ("CUSTOMER_REFUND".equalsIgnoreCase(n.getTargetType()) || "CUSTOMER_REFUND".equalsIgnoreCase(n.getType())) {
-            dto.setTargetUrl("/operations/finance");
         } else if ("OP_PAYMENT".equalsIgnoreCase(n.getTargetType()) || "OP_PAYMENT".equalsIgnoreCase(n.getType())
                 || (n.getEventKey() != null && n.getEventKey().startsWith("OP-PAYMENT-"))) {
             dto.setTargetUrl(n.getTargetId() != null ? "/operations/shops/" + n.getTargetId() : "/operations/payments");

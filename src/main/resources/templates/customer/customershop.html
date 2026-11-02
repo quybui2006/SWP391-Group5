@@ -178,7 +178,7 @@
                     <span class="metric-icon">📦</span>
                     <div class="metric-info">
                         <span class="metric-lbl">Sản Phẩm:</span>
-                        <strong class="metric-num green" th:text="${shopTotalProducts != null ? shopTotalProducts : resultCount}">0</strong>
+                        <strong class="metric-num green" th:text="${resultCount != null ? resultCount : 86}">86</strong>
                     </div>
                 </div>
 
@@ -186,7 +186,7 @@
                     <span class="metric-icon">👥</span>
                     <div class="metric-info">
                         <span class="metric-lbl">Người Theo Dõi:</span>
-                        <strong class="metric-num green" th:text="${shopFollowerCount != null ? shopFollowerCount : '128'}">128</strong>
+                        <strong class="metric-num green">12.8k</strong>
                     </div>
                 </div>
 
@@ -194,8 +194,8 @@
                     <span class="metric-icon">💬</span>
                     <div class="metric-info">
                         <span class="metric-lbl">Tỉ Lệ Phản Hồi:</span>
-                        <strong class="metric-num green" th:text="${shopResponseRate != null ? shopResponseRate : '100%'}">100%</strong>
-                        <small class="metric-sub" th:text="'(' + (${shopResponseTime != null ? shopResponseTime : 'trong vài phút'}) + ')'">(trong vài phút)</small>
+                        <strong class="metric-num green">100%</strong>
+                        <small class="metric-sub">(Trong vài phút)</small>
                     </div>
                 </div>
 
@@ -203,8 +203,8 @@
                     <span class="metric-icon">⭐</span>
                     <div class="metric-info">
                         <span class="metric-lbl">Đánh Giá:</span>
-                        <strong class="metric-num green" th:text="${shopAverageRatingFormatted != null ? shopAverageRatingFormatted : '5.0'}">5.0</strong>
-                        <small class="metric-sub" th:text="'(' + (${shopTotalReviewsFormatted != null ? shopTotalReviewsFormatted : '0'}) + ' Đánh Giá)'">(0 Đánh Giá)</small>
+                        <strong class="metric-num green">4.9</strong>
+                        <small class="metric-sub">(4.9k Đánh Giá)</small>
                     </div>
                 </div>
 
@@ -212,7 +212,7 @@
                     <span class="metric-icon">🕒</span>
                     <div class="metric-info">
                         <span class="metric-lbl">Tham Gia:</span>
-                        <strong class="metric-num green" th:text="${shopJoinTime != null ? shopJoinTime : 'Mới tham gia'}">Mới tham gia</strong>
+                        <strong class="metric-num green">2 năm trước</strong>
                     </div>
                 </div>
 
@@ -220,7 +220,7 @@
                     <span class="metric-icon">📍</span>
                     <div class="metric-info">
                         <span class="metric-lbl">Khu Vực:</span>
-                        <strong class="metric-num green" th:text="${shopProvinceName != null && !shopProvinceName.isEmpty() ? shopProvinceName : 'Hà Nội'}">Hà Nội</strong>
+                        <strong class="metric-num green" th:text="${shopProvinceName}">Hà Nội</strong>
                     </div>
                 </div>
             </div>

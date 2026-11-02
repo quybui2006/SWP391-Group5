@@ -84,20 +84,19 @@ public class NotificationService {
 
     @Transactional
     public boolean deleteNotification(Long notificationId, Long userId) {
-        if (notificationId == null || userId == null) {
-            return false;
-        }
-        // Scope deletion by owner so a caller cannot remove another user's notification.
+        if (notificationId == null || userId == null) return false;
         return notificationRepository.deleteByIdAndUserId(notificationId, userId) == 1;
     }
 
     @Transactional
     public void removeCustomerSampleNotificationsForShopOwner(Long userId) {
-        if (userId == null || !userRoleRepository.existsByUser_IdAndRole_Code(userId, "SHOP_OWNER")) {
-            return;
-        }
-        // Remove only seeded customer examples accidentally attached to a Shop Owner account.
-        notificationRepository.deleteCustomerSampleNotificationsByUserId(userId);
+        if (userId == null || !userRoleRepository.existsByUser_IdAndRole_Code(userId, "SHOP_OWNER")) return;
+        notificationRepository.deleteByUserAndEventKeys(userId, List.of(
+                "WELCOME-" + userId,
+                "ORDER-DEMO-" + userId,
+                "PROD-ARRIVE-" + userId,
+                "SYSTEM-TIP-" + userId
+        ));
     }
 
     @Transactional

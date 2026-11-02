@@ -1,9 +1,7 @@
-@import url('/css/design-system.css');
-
 :root {
-    --green: #16a34a;
-    --green-dark: #15803d;
-    --green-light: #f0fdf4;
+    --green: #2f8f46;
+    --green-dark: #176b30;
+    --green-light: #eaf7ed;
     --ink: #17221a;
     --muted: #6e786f;
     --line: #e8ece8;

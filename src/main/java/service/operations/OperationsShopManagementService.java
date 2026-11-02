@@ -13,9 +13,9 @@ import service.customer.NotificationService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -59,7 +59,6 @@ public class OperationsShopManagementService {
 
     public List<ManagedShopVariant> listShopVariants(Long shopId) {
         getShop(shopId);
-        // Count sold units only from completed orders, including orders created before batch tracking.
         return jdbc.query("""
                 SELECT pv.id AS variant_id, p.name AS product_name, pv.name AS variant_name, pv.sku,
                        COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi
@@ -95,7 +94,7 @@ public class OperationsShopManagementService {
         getShop(shopId);
         Map<Long, ProductWithVariants> products = new LinkedHashMap<>();
         jdbc.query("""
-                SELECT p.id AS product_id, p.name AS product_name, p.batch_code,
+                SELECT p.id AS product_id, p.name AS product_name,
                        (SELECT pi.image_url FROM product_images pi
                         WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS product_image_url,
                        pv.id AS variant_id, pv.name AS variant_name, pv.sku,
@@ -122,24 +121,23 @@ public class OperationsShopManagementService {
                 """, rs -> {
             long productId = rs.getLong("product_id");
             ProductWithVariants product = products.computeIfAbsent(productId, ignored ->
-                    new ProductWithVariants(productId, rsString(rs, "product_name"),
-                            rsString(rs, "product_image_url"), rsString(rs, "batch_code")));
+                    new ProductWithVariants(productId, getString(rs, "product_name"),
+                            getString(rs, "product_image_url")));
             Long variantId = nullableLong(rs, "variant_id");
             if (variantId != null) {
                 product.variants.add(new ManagedShopVariant(
-                        variantId, product.name, rsString(rs, "variant_name"), rsString(rs, "sku"),
-                        rsString(rs, "image_url"), rs.getBigDecimal("price"), rsString(rs, "unit_name"),
-                        rsString(rs, "variant_status"), rsString(rs, "approval_status"),
+                        variantId, product.name, getString(rs, "variant_name"), getString(rs, "sku"),
+                        getString(rs, "image_url"), rs.getBigDecimal("price"), getString(rs, "unit_name"),
+                        getString(rs, "variant_status"), getString(rs, "approval_status"),
                         nullableInt(rs, "quantity_on_hand"), nullableInt(rs, "available_quantity"),
-                        nullableLong(rs, "sold_quantity"),
-                        product.batchCode));
+                        nullableLong(rs, "sold_quantity"), null));
             }
         }, shopId);
 
-        // Keep products without variants visible so Operations can see the shop's full catalog.
+        // Group every product with its variants and preserve products that have none yet.
         return products.values().stream()
                 .map(product -> new ManagedShopProduct(product.id, product.name, product.imageUrl,
-                        product.batchCode, List.copyOf(product.variants)))
+                        List.copyOf(product.variants)))
                 .toList();
     }
 
@@ -192,11 +190,11 @@ public class OperationsShopManagementService {
         return value == null ? null : ((Number) value).longValue();
     }
 
-    private static String rsString(ResultSet rs, String column) {
+    private static String getString(ResultSet rs, String column) {
         try {
             return rs.getString(column);
         } catch (SQLException ex) {
-            throw new IllegalStateException("Không thể đọc dữ liệu hậu kiểm của cửa hàng.", ex);
+            throw new IllegalStateException("Không thể đọc dữ liệu hậu kiểm cửa hàng.", ex);
         }
     }
 
@@ -204,14 +202,12 @@ public class OperationsShopManagementService {
         private final Long id;
         private final String name;
         private final String imageUrl;
-        private final String batchCode;
         private final List<ManagedShopVariant> variants = new ArrayList<>();
 
-        private ProductWithVariants(Long id, String name, String imageUrl, String batchCode) {
+        private ProductWithVariants(Long id, String name, String imageUrl) {
             this.id = id;
             this.name = name;
             this.imageUrl = imageUrl;
-            this.batchCode = batchCode;
         }
     }
 

@@ -36,7 +36,7 @@ INSERT INTO provinces (code, name, is_active)
 VALUES ('DEMO', 'Demo Province', 1)
 ON DUPLICATE KEY UPDATE code = VALUES(code);
 
-INSERT INTO shops (owner_id, name, phone, province_code, ward_name, address_detail, approval_status, operating_status, bank_name, bank_account_number, bank_account_name, bank_branch, payment_approval_status, reviewed_at, payment_reviewed_at)
-SELECT id, 'Demo Fresh Shop', '0900000000', 'DEMO', 'Demo Ward', 'Demo Address', 'APPROVED', 'OPEN', 'Demo Bank', '0000000000', 'DEMO SHOP OWNER', 'Demo Branch', 'APPROVED', NOW(3), NOW(3)
+INSERT INTO shops (owner_id, name, phone, province_code, ward_name, address_detail, approval_status, operating_status, reviewed_at)
+SELECT id, 'Demo Fresh Shop', '0900000000', 'DEMO', 'Demo Ward', 'Demo Address', 'APPROVED', 'OPEN', NOW(3)
 FROM users WHERE email = 'owner.demo@freshfruit.example'
 ON DUPLICATE KEY UPDATE owner_id = VALUES(owner_id);

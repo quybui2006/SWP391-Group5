@@ -1,26 +1,10 @@
 (() => {
     const buttons = [...document.querySelectorAll('[data-favorite-id]')];
     const render = (button, saved) => {
-        const wasSaved = button.dataset.saved === 'true';
         button.dataset.saved = String(saved);
         button.classList.toggle('active', saved);
         button.classList.toggle('liked', saved);
-        const heart = button.querySelector('.heart-icon');
-        if (heart) {
-            heart.textContent = saved ? '♥' : '♡';
-        } else {
-            button.textContent = saved ? '♥' : '♡';
-        }
-        const textSpan = button.querySelector('.favorite-text');
-        if (textSpan && wasSaved !== saved && button.dataset.initialized === 'true') {
-            const match = textSpan.textContent.match(/\((\d+)\)/);
-            if (match) {
-                let cnt = parseInt(match[1], 10);
-                cnt = saved ? cnt + 1 : Math.max(0, cnt - 1);
-                textSpan.textContent = 'Đã thích (' + cnt + ')';
-            }
-        }
-        button.dataset.initialized = 'true';
+        button.textContent = saved ? '♥' : '♡';
         button.setAttribute('aria-pressed', String(saved));
         button.setAttribute('aria-label', saved ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích');
     };

@@ -17,32 +17,13 @@
             <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
         </header>
 
-        <div class="policy-notice-banner" th:if="${shopPaymentApprovalStatus != 'APPROVED'}" style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);">
-            <div style="font-size: 1.6rem; line-height: 1;">⚖️</div>
-            <div style="flex: 1;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
-                    <strong style="color: #1e40af; font-size: 0.95rem;">Nguyên tắc bán hàng FreshFruit:</strong>
-                    <span style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid #fde68a;">Quản lý danh mục nội bộ</span>
-                </div>
-                <p style="margin: 0; color: #334155; font-size: 0.88rem; line-height: 1.5;">
-                    Cửa hàng đã được duyệt hồ sơ! Bạn có thể thêm sản phẩm và chuẩn bị danh sách hàng hóa nội bộ của shop.
-                    <strong>Sản phẩm chưa được đẩy lên sàn thương mại FreshFruit</strong> để khách hàng tìm kiếm và mua sắm cho tới khi hoàn tất và được duyệt <em>Thông tin tài khoản ngân hàng</em>.
-                </p>
-                <div style="margin-top: 10px;">
-                    <a th:href="@{/shopowner/payment-verification}" class="button button-sm" style="background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem;">
-                        <span>💳</span> Thêm thông tin tài khoản ngân hàng ngay ➔
-                    </a>
-                </div>
-            </div>
-        </div>
-
         <p class="alert alert-success" th:if="${success}" th:text="${success}">Đã lưu sản phẩm thành công.</p>
 
         <section class="panel">
             <form class="search-bar" method="get" th:action="@{/shop/products}">
                 <label class="sr-only" for="keyword">Tìm sản phẩm hoặc mã hàng</label>
                 <input id="keyword" name="keyword" type="search" th:value="${keyword}"
-                       placeholder="Tìm theo tên sản phẩm hoặc mã hàng">
+                       aria-label="Tìm theo tên sản phẩm hoặc mã hàng">
                 <button class="button button-dark" type="submit">Tìm kiếm</button>
                 <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shop/products}">Bỏ lọc</a>
             </form>
@@ -66,7 +47,7 @@
                             <div class="product-cell">
                                 <img th:if="${product.imageUrl != null}" th:src="${product.imageUrl}"
                                      th:alt="${product.name}" onerror="this.hidden=true">
-                                <span class="image-placeholder" th:unless="${product.imageUrl != null}">🍊</span>
+                                <span class="image-placeholder" th:unless="${product.imageUrl != null}">Ảnh</span>
                                 <a th:href="@{/shop/product/{id}(id=${product.id})}" th:text="${product.name}">Tên sản phẩm</a>
                             </div>
                         </td>

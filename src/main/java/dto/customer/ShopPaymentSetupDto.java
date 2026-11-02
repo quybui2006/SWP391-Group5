@@ -19,8 +19,6 @@ public class ShopPaymentSetupDto {
     @Size(max = 150, message = "Chi nhánh không quá 150 ký tự.")
     private String bankBranch;
 
-    private boolean isDefault = false;
-
     public ShopPaymentSetupDto() {
     }
 
@@ -54,13 +52,5 @@ public class ShopPaymentSetupDto {
 
     public void setBankBranch(String bankBranch) {
         this.bankBranch = bankBranch;
-    }
-
-    public boolean isDefault() {
-        return isDefault;
-    }
-
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
     }
 }

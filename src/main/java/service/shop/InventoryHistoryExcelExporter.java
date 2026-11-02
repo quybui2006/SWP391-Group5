@@ -14,9 +14,8 @@ import java.util.zip.ZipOutputStream;
 @Component
 public class InventoryHistoryExcelExporter {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final List<String> HEADERS = List.of(
-            "Thời điểm", "Sản phẩm", "Biến thể", "Mã SKU", "Mã lô", "Giao dịch",
-            "Thay đổi tồn", "Thay đổi đang giữ", "Tồn sau giao dịch", "Đang giữ sau giao dịch", "Mã đơn", "Ghi chú");
+    private static final List<String> HEADERS = List.of("Thời điểm", "Sản phẩm", "Biến thể", "Mã SKU", "Mã lô",
+            "Giao dịch", "Thay đổi tồn", "Thay đổi đang giữ", "Tồn sau giao dịch", "Đang giữ sau giao dịch", "Mã đơn", "Ghi chú");
 
     public byte[] export(List<InventoryBatchHistoryRow> rows) {
         try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -26,13 +25,11 @@ public class InventoryHistoryExcelExporter {
             add(zip, "xl/workbook.xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets><sheet name=\"Lịch sử tồn kho\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>");
             add(zip, "xl/_rels/workbook.xml.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/></Relationships>");
 
-            // Inline text cells keep user-entered notes from being interpreted as spreadsheet formulas.
             StringBuilder sheet = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");
             appendRow(sheet, 1, HEADERS);
-            for (int index = 0; index < rows.size(); index++) {
-                InventoryBatchHistoryRow row = rows.get(index);
-                appendRow(sheet, index + 2, List.of(
-                        row.createdAt() == null ? "" : row.createdAt().format(DATE_FORMAT),
+            for (int i = 0; i < rows.size(); i++) {
+                InventoryBatchHistoryRow row = rows.get(i);
+                appendRow(sheet, i + 2, List.of(row.createdAt() == null ? "" : row.createdAt().format(DATE_FORMAT),
                         text(row.productName()), text(row.variantName()), text(row.sku()), text(row.batchCode()), row.typeLabel(),
                         quantity(row.onHandDelta(), row.unitName()), quantity(row.reservedDelta(), row.unitName()),
                         quantity(row.onHandAfter(), row.unitName()), quantity(row.reservedAfter(), row.unitName()),
@@ -49,10 +46,10 @@ public class InventoryHistoryExcelExporter {
 
     private void appendRow(StringBuilder xml, int rowNumber, List<String> values) {
         xml.append("<row r=\"").append(rowNumber).append("\">");
-        for (int index = 0; index < values.size(); index++) {
-            xml.append("<c r=\"").append(columnName(index + 1)).append(rowNumber)
+        for (int i = 0; i < values.size(); i++) {
+            xml.append("<c r=\"").append(columnName(i + 1)).append(rowNumber)
                     .append("\" t=\"inlineStr\"><is><t xml:space=\"preserve\">")
-                    .append(escape(values.get(index))).append("</t></is></c>");
+                    .append(escape(values.get(i))).append("</t></is></c>");
         }
         xml.append("</row>");
     }
@@ -61,9 +58,7 @@ public class InventoryHistoryExcelExporter {
         return (value > 0 ? "+" : "") + value + (unit == null || unit.isBlank() ? "" : " " + unit);
     }
 
-    private String text(String value) {
-        return value == null ? "" : value;
-    }
+    private String text(String value) { return value == null ? "" : value; }
 
     private String columnName(int column) {
         StringBuilder name = new StringBuilder();
