@@ -44,6 +44,7 @@ public class InventoryService {
                        pv.id AS variant_id,pv.name AS variant_name,
                        COALESCE(NULLIF(pv.image_url,''),(SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1)) AS variant_image_url,
                        pv.sku,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.reserved_quantity,
+                       vi.low_stock_threshold_quantity,
                        vi.available_quantity,COALESCE(sold.quantity,0) AS sold_quantity,b.id AS batch_id,b.batch_code,
                        COALESCE(batch_sold.quantity,0) AS batch_sold_quantity,
                        b.received_quantity,b.quantity_on_hand AS batch_on_hand,b.reserved_quantity AS batch_reserved,
@@ -97,7 +98,8 @@ public class InventoryService {
                     longNumber(row, "inventory_id"), variantId, String.valueOf(row.get("variant_name")),
                     String.valueOf(row.get("sku")), (String) row.get("variant_image_url"), String.valueOf(row.get("unit_name")),
                     number(row, "quantity_on_hand"), number(row, "reserved_quantity"),
-                    number(row, "available_quantity"), number(row, "sold_quantity")));
+                    number(row, "available_quantity"), number(row, "sold_quantity"),
+                    number(row, "low_stock_threshold_quantity")));
             if (row.get("batch_id") != null) {
                 variant.batches.add(new InventoryBatchView(longNumber(row, "batch_id"), String.valueOf(row.get("batch_code")),
                         number(row, "received_quantity"), number(row, "batch_on_hand"), number(row, "batch_reserved"),
@@ -260,18 +262,19 @@ public class InventoryService {
         private final int reserved;
         private final int available;
         private final int sold;
+        private final int lowStockThreshold;
         private final List<InventoryBatchView> batches = new ArrayList<>();
 
         private VariantBuilder(Long inventoryId, Long id, String name, String sku, String imageUrl, String unitName,
-                                int onHand, int reserved, int available, int sold) {
+                                int onHand, int reserved, int available, int sold, int lowStockThreshold) {
             this.inventoryId = inventoryId; this.id = id; this.name = name; this.sku = sku; this.imageUrl = imageUrl;
             this.unitName = unitName; this.onHand = onHand; this.reserved = reserved;
-            this.available = available; this.sold = sold;
+            this.available = available; this.sold = sold; this.lowStockThreshold = lowStockThreshold;
         }
 
         private InventoryVariantView toView() {
             return new InventoryVariantView(inventoryId, id, name, sku, imageUrl, unitName, onHand, reserved,
-                    available, sold, List.copyOf(batches));
+                    available, sold, lowStockThreshold, List.copyOf(batches));
         }
     }
 }

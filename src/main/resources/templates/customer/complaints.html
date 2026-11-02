@@ -123,7 +123,7 @@
                 </div>
 
                 <!-- Case 3: Đang xử lý -->
-                <div th:if="${c['status'] == 'PENDING_SHOP' or c['status'] == 'ESCALATED' or c['status'] == 'PENDING' or c['status'] == 'IN_PROGRESS'}"
+                <div th:if="${c['status'] == 'PENDING_OPERATIONS' or c['status'] == 'PENDING_SHOP' or c['status'] == 'ESCALATED' or c['status'] == 'PENDING' or c['status'] == 'IN_PROGRESS'}"
                      style="margin-top: 10px; padding: 8px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12.5px; color: #475569;">
                     ⏳ Yêu cầu của bạn đang được tiếp nhận và xử lý.
                 </div>
@@ -135,7 +135,7 @@
                     <span th:text="${'Ngày gửi: ' + c['created_at_fmt']}"></span>
                 </div>
                 <div class="order-actions" style="display: flex; gap: 8px; align-items: center;">
-                    <form th:if="${c['status'] == 'PENDING_SHOP' or c['status'] == 'ESCALATED' or c['status'] == 'PENDING' or c['status'] == 'IN_PROGRESS'}"
+                    <form th:if="${c['status'] == 'PENDING_OPERATIONS' or c['status'] == 'PENDING_SHOP' or c['status'] == 'ESCALATED' or c['status'] == 'PENDING' or c['status'] == 'IN_PROGRESS'}"
                           th:action="@{/customer/account/complaints/{id}/cancel(id=${c['id']})}" method="post"
                           onsubmit="return confirm('Bạn có chắc muốn rút lại yêu cầu khiếu nại này?');" style="margin: 0;">
                         <button type="submit"

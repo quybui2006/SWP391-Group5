@@ -174,6 +174,8 @@ public class ShopOrderService {
                        vi.available_quantity,
                        CASE
                            WHEN vi.quantity_on_hand - vi.reserved_quantity = 0 THEN 'Hết hàng'
+                           WHEN vi.low_stock_threshold_quantity > 0
+                                AND vi.quantity_on_hand - vi.reserved_quantity <= vi.low_stock_threshold_quantity THEN 'Sắp hết hàng'
                            ELSE 'Đủ hàng'
                        END AS stock_status
                 FROM product_variants pv
@@ -182,7 +184,10 @@ public class ShopOrderService {
                 JOIN units u ON u.id = pv.base_unit_id
                 JOIN variant_inventory vi ON vi.variant_id = pv.id
                 WHERE s.owner_id = ?
-                ORDER BY CASE WHEN vi.quantity_on_hand - vi.reserved_quantity = 0 THEN 1 ELSE 0 END DESC,
+                ORDER BY CASE WHEN vi.quantity_on_hand - vi.reserved_quantity = 0 THEN 2
+                              WHEN vi.low_stock_threshold_quantity > 0
+                                   AND vi.quantity_on_hand - vi.reserved_quantity <= vi.low_stock_threshold_quantity THEN 1
+                              ELSE 0 END DESC,
                          vi.quantity_on_hand ASC
                 LIMIT 10
                 """, ownerId);
@@ -252,7 +257,9 @@ public class ShopOrderService {
                 SELECT
                     COALESCE(SUM(vi.quantity_on_hand), 0) AS total_quantity,
                     COALESCE(SUM(CASE WHEN vi.quantity_on_hand = 0 THEN 1 ELSE 0 END), 0) AS out_of_stock_count,
-                    0 AS low_stock_count
+                    COALESCE(SUM(CASE WHEN vi.low_stock_threshold_quantity > 0
+                        AND vi.available_quantity > 0
+                        AND vi.available_quantity <= vi.low_stock_threshold_quantity THEN 1 ELSE 0 END), 0) AS low_stock_count
                 FROM variant_inventory vi
                 JOIN product_variants pv ON pv.id = vi.variant_id
                 JOIN shops s ON s.id = pv.shop_id

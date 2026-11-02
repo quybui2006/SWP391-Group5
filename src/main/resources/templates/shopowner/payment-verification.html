@@ -6,27 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yêu cầu Đối soát thanh toán | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
-    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
-    <script th:src="@{/js/notification-dropdown.js}" defer></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
-        rel="stylesheet">
     <style>
-        .payment-verify-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.15fr;
-            gap: 20px;
-            margin-top: 16px;
-        }
-
-        @media (max-width: 980px) {
-            .payment-verify-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .info-card {
             background: #ffffff;
             border: 1px solid var(--line, #e2e8f0);
@@ -39,7 +19,7 @@
         }
 
         .info-card h2 {
-            font: 700 16px 'Plus Jakarta Sans', sans-serif;
+            font: 700 16px var(--font-ui);
             color: #0f172a;
             margin: 0;
             display: flex;
@@ -50,20 +30,20 @@
         .purpose-box {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-left: 3.5px solid #2563eb;
+            border-left: 3.5px solid #16a34a;
             border-radius: 8px;
             padding: 12px 14px;
         }
 
         .purpose-box h3 {
-            font: 700 13px 'Plus Jakarta Sans', sans-serif;
-            color: #1e40af;
+            font: 700 13px var(--font-ui);
+            color: #15803d;
             margin: 0 0 6px;
         }
 
         .purpose-list {
             margin: 0;
-            padding-left: 18px;
+            padding-left: 0;
             font-size: 12.5px;
             color: #475569;
             line-height: 1.6;
@@ -263,7 +243,7 @@
         <!-- Sidebar dùng chung -->
         <aside th:replace="~{shopowner/fragments :: sidebar('payment-verification')}"></aside>
 
-        <main class="main-content">
+        <main class="main-content payment-verification-page">
 
             <!-- Top Header -->
             <header class="topbar">
@@ -278,69 +258,25 @@
                     </p>
                 </div>
 
-                <div class="topbar-actions">
-                    <!-- In-web notification center dropdown -->
-                    <div class="notification-dropdown-wrapper">
-                        <button type="button" class="notif-btn" id="notifBellBtn" aria-label="Thông báo"
-                            aria-expanded="false">
-                            <span class="bell-icon">🔔</span>
-                            <span class="notif-badge" id="notifUnreadBadge" style="display: none;">0</span>
-                        </button>
-                        <div class="notification-panel" id="notificationPanel" role="region" aria-label="Bảng thông báo"
-                            hidden>
-                            <div class="notif-panel-header">
-                                <div class="notif-header-title">
-                                    <h3>Thông báo</h3>
-                                    <span class="notif-unread-count" id="notifHeaderCount">0 chưa đọc</span>
-                                </div>
-                                <button type="button" class="notif-mark-all-btn" id="notifMarkAllReadBtn">Đã đọc tất
-                                    cả</button>
-                            </div>
-                            <div class="notif-panel-body" id="notifListContainer">
-                                <div class="notif-loading">Đang tải...</div>
-                            </div>
-                            <div class="notif-panel-footer">
-                                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="user-chip">
-                        <div class="avatar" style="background:#e9f8ee;color:#28a866;font-weight:700;">SO</div>
-                        <span th:text="${ownerName ?: 'Chủ cửa hàng'}">Chủ cửa hàng</span>
-                    </div>
-
-                    <form th:action="@{/logout}" method="post" style="margin: 0;">
-                        <button type="submit" class="button"
-                            style="border:1px solid #fee2e2;background:#fff5f5;color:#dc2626;padding:6px 12px;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;">
-                            🚪 Đăng xuất
-                        </button>
-                    </form>
-                </div>
             </header>
 
             <!-- Flash messages -->
             <div th:if="${successMessage}"
                 style="background:#ecfdf5;border:1px solid #bbf7d0;color:#166534;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-                <span>✓</span>
                 <span th:text="${successMessage}">Thao tác thành công!</span>
             </div>
             <div th:if="${errorMessage}"
                 style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-                <span>⚠️</span>
                 <span th:text="${errorMessage}">Đã xảy ra lỗi!</span>
             </div>
 
             <!-- Status Alert Banners -->
             <!-- 1. Trạng thái ĐÃ DUYỆT (APPROVED) -->
             <div th:if="${paymentApprovalStatus == 'APPROVED'}"
-                style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">🎉</div>
+                class="payment-status-banner approved">
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #166534; margin: 0 0 4px;">
-                        Tài khoản ngân hàng đã được phê duyệt thành công (APPROVED)
-                    </h3>
-                    <p style="font-size: 12.5px; color: #14532d; margin: 0 0 6px; line-height: 1.5;">
+                    <h2>Tài khoản ngân hàng đã được duyệt</h2>
+                    <p>
                         Thông tin tài khoản ngân hàng của bạn đã được Ban Quản Lý (Operations) đối chiếu trùng khớp hoàn
                         toàn với hồ sơ CCCD. Cửa hàng hiện đang ở trạng thái <strong>MỞ BÁN (Hoạt động: OPEN)</strong>.
                     </p>
@@ -357,20 +293,17 @@
 
             <!-- 2. Trạng thái ĐANG CHỜ DUYỆT (PENDING) -->
             <div th:if="${paymentApprovalStatus == 'PENDING'}"
-                style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">⏳</div>
+                class="payment-status-banner pending">
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #92400e; margin: 0 0 4px;">
-                        Yêu cầu đối soát thanh toán đang chờ Ban Quản Lý thẩm định (PENDING)
-                    </h3>
-                    <p style="font-size: 12.5px; color: #78350f; margin: 0; line-height: 1.5;">
+                    <h2>Yêu cầu đối soát thanh toán đang chờ duyệt</h2>
+                    <p>
                         Hồ sơ khai báo tài khoản ngân hàng của bạn đã được chuyển tới Ban Quản Lý (Operations). Nhân
                         viên thẩm định đang tiến hành đối chiếu tên chủ tài khoản với CCCD <strong>"<span
                                 th:text="${shop.idCardName}">HỌ TÊN CCCD</span>"</strong>. Cửa hàng sẽ tự động chuyển
                         sang <strong>OPEN</strong> ngay khi hoàn tất.
                     </p>
                     <small style="color: #b45309; display: block; margin-top: 4px; font-size: 11.5px;">
-                        ℹ️ Bạn vẫn có thể chỉnh sửa và cập nhật lại thông tin ngân hàng bên dưới nếu phát hiện có sai
+                        Bạn vẫn có thể chỉnh sửa và cập nhật lại thông tin ngân hàng bên dưới nếu phát hiện có sai
                         sót.
                     </small>
                 </div>
@@ -378,12 +311,9 @@
 
             <!-- 3. Trạng thái BỊ TỪ CHỐI (REJECTED) -->
             <div th:if="${paymentApprovalStatus == 'REJECTED'}"
-                style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">❌</div>
+                class="payment-status-banner rejected">
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #991b1b; margin: 0 0 4px;">
-                        Yêu cầu đối soát thanh toán chưa được phê duyệt (REJECTED)
-                    </h3>
+                    <h2>Yêu cầu đối soát thanh toán chưa được duyệt</h2>
                     <p style="font-size: 12.5px; color: #7f1d1d; margin: 0 0 6px;">
                         Ban Quản Lý phản hồi nội dung chưa đạt chuẩn:
                     </p>
@@ -400,13 +330,10 @@
 
             <!-- 4. Trạng thái CHƯA KHAI BÁO (UNCONFIGURED) -->
             <div th:if="${paymentApprovalStatus == 'UNCONFIGURED' or paymentApprovalStatus == null}"
-                style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">💳</div>
+                class="payment-status-banner unconfigured">
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #1e40af; margin: 0 0 4px;">
-                        Cửa hàng đã được duyệt hồ sơ! Vui lòng hoàn tất Yêu cầu Đối soát thanh toán
-                    </h3>
-                    <p style="font-size: 12.5px; color: #1e3a8a; margin: 0; line-height: 1.5;">
+                    <h2>Cửa hàng đã được duyệt hồ sơ. Hãy khai báo tài khoản ngân hàng.</h2>
+                    <p>
                         Để kích hoạt cửa hàng sang trạng thái <strong>MỞ BÁN (Hoạt động: OPEN)</strong>, bạn cần khai
                         báo tài khoản ngân hàng thụ hưởng chính chủ. Ban Quản Lý (Operations) sẽ tiến hành đối chiếu với
                         CCCD để đảm bảo an toàn giao dịch.
@@ -423,31 +350,27 @@
                     <!-- KHỐI 1: MỤC ĐÍCH ĐỐI SOÁT -->
                     <div class="info-card">
                         <h2>
-                            <span>🎯</span> Mục đích đối soát thanh toán
+                            Mục đích đối soát thanh toán
                         </h2>
 
                         <div class="purpose-box">
-                            <h3>1. Bảo vệ tài chính &amp; Chống gian lận (KYC/AML)</h3>
+                            <h3>Xác minh chủ tài khoản</h3>
                             <p class="purpose-list">
-                                Đảm bảo tài khoản ngân hàng nhận tiền quyết toán thuộc quyền sở hữu của chính người đứng
-                                tên mở Shop, ngăn chặn hành vi sử dụng danh tính người khác để trục lợi.
+                                Tên chủ tài khoản phải trùng với tên trên CCCD của chủ cửa hàng.
                             </p>
                         </div>
 
-                        <div class="purpose-box" style="border-left-color: #16a34a;">
-                            <h3 style="color: #15803d;">2. Nhận tiền doanh thu tự động (Payout)</h3>
+                        <div class="purpose-box">
+                            <h3>Nhận tiền bán hàng</h3>
                             <p class="purpose-list">
-                                Khi khách hàng thanh toán đơn hàng hoa quả thành công, hệ thống FreshFruit sẽ tự động
-                                chuyển tiền doanh thu về đúng tài khoản ngân hàng này theo kỳ thanh toán.
+                                Tiền từ đơn hàng sẽ được chuyển vào tài khoản đã xác minh.
                             </p>
                         </div>
 
-                        <div class="purpose-box" style="border-left-color: #ea580c;">
-                            <h3 style="color: #c2410c;">3. Điều kiện tiên quyết để Mở bán (OPEN)</h3>
+                        <div class="purpose-box">
+                            <h3>Điều kiện mở bán</h3>
                             <p class="purpose-list">
-                                Chỉ sau khi thông tin tài khoản ngân hàng được Thẩm định viên duyệt trùng khớp, trạng
-                                thái hoạt động của Shop mới được chuyển từ <strong>CLOSED</strong> sang
-                                <strong>OPEN</strong> để người tiêu dùng có thể mua hàng.
+                                Cửa hàng chỉ mở bán sau khi tài khoản ngân hàng được duyệt.
                             </p>
                         </div>
                     </div>
@@ -455,16 +378,15 @@
                     <!-- KHỐI 2: HỒ SƠ ĐỐI CHIẾU GỐC TỪ HỆ THỐNG -->
                     <div class="info-card">
                         <h2>
-                            <span>🪪</span> Thông tin đối chiếu gốc (Từ hồ sơ thẩm định)
+                            Thông tin đã xác minh
                         </h2>
                         <p style="font-size: 12px; color: #64748b; margin: 0;">
-                            Dữ liệu căn cước công dân và thông tin đăng ký gian hàng đã được xác minh. Thẩm định viên sẽ
-                            dùng thông tin này làm mốc so sánh với tài khoản ngân hàng.
+                            Thông tin này được dùng để đối chiếu với tài khoản ngân hàng.
                         </p>
 
                         <div class="cccd-proof-card">
                             <div class="cccd-proof-header">
-                                <strong><span>🔒</span> DỮ LIỆU ĐÃ ĐỊNH DANH</strong>
+                                <strong>THÔNG TIN ĐÃ XÁC MINH</strong>
                                 <span class="cccd-proof-badge">ĐÃ XÁC THỰC</span>
                             </div>
 
@@ -500,7 +422,6 @@
 
                         <div
                             style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 11.5px; color: #92400e; display: flex; gap: 8px; align-items: flex-start;">
-                            <span>⚠️</span>
                             <span>
                                 <strong>Quy định bắt buộc:</strong> Tên chủ tài khoản ngân hàng bạn khai báo phải
                                 <strong>trùng khớp hoàn toàn</strong> với họ tên CCCD ở trên. Không chấp nhận mượn tài
@@ -515,7 +436,7 @@
                 <div>
                     <div class="info-card">
                         <h2>
-                            <span>🏦</span> Form khai báo tài khoản ngân hàng thụ hưởng
+                            Khai báo tài khoản ngân hàng
                         </h2>
                         <p style="font-size: 12px; color: #64748b; margin: 0 0 10px;">
                             Điền đầy đủ và chính xác thông tin tài khoản ngân hàng chính chủ của bạn để gửi yêu cầu cho
@@ -579,8 +500,7 @@
                                 </div>
                                 <div
                                     style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                                    <span class="field-helper">Viết hoa không dấu, đúng như tên đăng ký tài khoản ngân
-                                        hàng.</span>
+                                    <span class="field-helper">Nhập tên không dấu như tên đăng ký tài khoản ngân hàng.</span>
                                     <button type="button" id="btnFillName"
                                         style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; color: #2563eb; cursor: pointer;">
                                         Điền theo tên CCCD
@@ -588,7 +508,7 @@
                                 </div>
                                 <div id="matchAlertText"
                                     style="display:none;font-size:11.5px;color:#b45309;margin-top:3px;font-weight:600;">
-                                    ⚠️ Cảnh báo: Tên chủ tài khoản đang khác với họ tên trên CCCD. Ban Quản Lý sẽ từ
+                                    Cảnh báo: Tên chủ tài khoản đang khác với họ tên trên CCCD. Ban Quản Lý sẽ từ
                                     chối nếu tên không trùng khớp.
                                 </div>
                             </div>
@@ -617,7 +537,7 @@
 
                             <!-- Nút gửi yêu cầu -->
                             <button type="submit" class="btn-submit-verify" id="btnSubmitVerify">
-                                <span>🚀</span> Gửi Yêu cầu Đối soát
+                                Gửi yêu cầu đối soát
                             </button>
                         </form>
 
@@ -668,16 +588,14 @@
                     if (matchAlert) matchAlert.style.display = 'none';
                 } else {
                     matchBadge.className = 'match-badge unmatched';
-                    matchBadge.textContent = '⚠️ Chưa khớp CCCD';
+                    matchBadge.textContent = 'Chưa khớp CCCD';
                     if (matchAlert) matchAlert.style.display = 'block';
                 }
             }
 
             if (inputNameElem) {
-                inputNameElem.addEventListener('input', function () {
-                    this.value = this.value.toUpperCase();
-                    checkMatch();
-                });
+                // Keep the caret stable while typing; CSS and server validation handle uppercase formatting.
+                inputNameElem.addEventListener('input', checkMatch);
                 // Initial check
                 checkMatch();
             }

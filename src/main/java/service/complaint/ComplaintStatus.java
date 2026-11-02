@@ -6,6 +6,7 @@ import java.util.Locale;
  * Mô hình trạng thái khiếu nại 2 tầng (Shop xử lý trước -> CSKH phân xử sau).
  */
 public enum ComplaintStatus {
+    PENDING_OPERATIONS("PENDING_OPERATIONS", "Chờ Vận hành duyệt"),
     PENDING_SHOP("PENDING_SHOP", "Chờ Shop phản hồi"),
     ESCALATED("ESCALATED", "Chuyển CSKH phân xử"),
     RESOLVED("RESOLVED", "Đã giải quyết"),
@@ -29,7 +30,7 @@ public enum ComplaintStatus {
     }
 
     public boolean isActive() {
-        return this == PENDING_SHOP || this == ESCALATED;
+        return this == PENDING_OPERATIONS || this == PENDING_SHOP || this == ESCALATED;
     }
 
     public boolean isTerminal() {
@@ -42,6 +43,7 @@ public enum ComplaintStatus {
         }
         String normalized = raw.trim().toUpperCase(Locale.ROOT);
         return switch (normalized) {
+            case "PENDING_OPERATIONS", "PENDING_OPS" -> PENDING_OPERATIONS;
             case "PENDING_SHOP", "PENDING" -> PENDING_SHOP;
             case "ESCALATED", "IN_PROGRESS" -> ESCALATED;
             case "RESOLVED" -> RESOLVED;

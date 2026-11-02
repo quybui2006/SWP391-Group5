@@ -71,6 +71,12 @@
                         <input type="number" th:field="*{stockQuantity}" min="1" step="1" required>
                         <em th:errors="*{stockQuantity}"></em>
                     </label>
+                    <label class="field">
+                        <span>Ngưỡng cảnh báo tồn thấp</span>
+                        <input type="number" th:field="*{lowStockThresholdQuantity}" min="0" step="1">
+                        <small>Cảnh báo khi số lượng có thể bán bằng hoặc thấp hơn ngưỡng. Để trống để tắt.</small>
+                        <em th:errors="*{lowStockThresholdQuantity}"></em>
+                    </label>
                 </div>
             </section>
 

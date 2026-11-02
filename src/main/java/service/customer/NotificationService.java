@@ -83,6 +83,23 @@ public class NotificationService {
     }
 
     @Transactional
+    public boolean deleteNotification(Long notificationId, Long userId) {
+        if (notificationId == null || userId == null) return false;
+        return notificationRepository.deleteByIdAndUserId(notificationId, userId) == 1;
+    }
+
+    @Transactional
+    public void removeCustomerSampleNotificationsForShopOwner(Long userId) {
+        if (userId == null || !userRoleRepository.existsByUser_IdAndRole_Code(userId, "SHOP_OWNER")) return;
+        notificationRepository.deleteByUserAndEventKeys(userId, List.of(
+                "WELCOME-" + userId,
+                "ORDER-DEMO-" + userId,
+                "PROD-ARRIVE-" + userId,
+                "SYSTEM-TIP-" + userId
+        ));
+    }
+
+    @Transactional
     public void markAllAsRead(Long userId) {
         if (userId == null) {
             return;
@@ -109,6 +126,11 @@ public class NotificationService {
 
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
+            return;
+        }
+
+        if (userRoleRepository.existsByUser_IdAndRole_Code(userId, "SHOP_OWNER")) {
+            removeCustomerSampleNotificationsForShopOwner(userId);
             return;
         }
 

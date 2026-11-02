@@ -580,7 +580,7 @@ public class OrderCheckoutService {
               AND COALESCE(o.delivered_at, o.created_at) <= ?
               AND NOT EXISTS (
                   SELECT 1 FROM complaints c
-                  WHERE c.order_id = o.id AND c.status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+                  WHERE c.order_id = o.id AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
               )
             ORDER BY o.id
         """, Long.class, deliveredCutoff);
@@ -598,7 +598,7 @@ public class OrderCheckoutService {
             }
             Integer activeComplaints = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM complaints
-                WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+                WHERE order_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
             """, Integer.class, orderId);
             if (activeComplaints != null && activeComplaints > 0) {
                 continue;
@@ -686,7 +686,7 @@ public class OrderCheckoutService {
 
         Integer activeComplaints = jdbc.queryForObject("""
             SELECT COUNT(*) FROM complaints
-            WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+            WHERE order_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
         """, Integer.class, orderId);
         if (activeComplaints != null && activeComplaints > 0) {
             throw new IllegalArgumentException("Đơn hàng đang có khiếu nại chờ xử lý (PENDING_SHOP / ESCALATED). Vui lòng chờ giải quyết xong hoặc hủy khiếu nại trước khi hoàn tất đơn hàng.");

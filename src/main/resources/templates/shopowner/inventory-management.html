@@ -79,8 +79,10 @@
                                 <span class="inventory-summary-value"><small>Đang giữ</small><strong th:text="${variant.reserved + ' ' + variant.unitName}">0</strong></span>
                                 <span class="inventory-summary-value"><small>Có thể bán</small><strong th:text="${variant.available + ' ' + variant.unitName}">0</strong></span>
                                 <span class="inventory-summary-value"><small>Đã bán</small><strong th:text="${variant.sold + ' ' + variant.unitName}">0</strong></span>
-                                <span class="inventory-stock-status" th:classappend="${variant.available == 0} ? ' is-empty' : ''"
-                                      th:text="${variant.available == 0 ? 'Hết hàng' : 'Đủ hàng'}">Đủ hàng</span>
+                                <span class="inventory-stock-status" th:classappend="${variant.available == 0 ? ' is-empty' : (variant.lowStockThreshold > 0 and variant.available <= variant.lowStockThreshold ? ' is-low' : '')}"
+                                      th:text="${variant.available == 0 ? 'Hết hàng' : (variant.lowStockThreshold > 0 and variant.available <= variant.lowStockThreshold ? 'Sắp hết hàng' : 'Đủ hàng')}">Đủ hàng</span>
+                                <small class="inventory-threshold" th:if="${variant.lowStockThreshold > 0}"
+                                       th:text="${'Ngưỡng: ' + variant.lowStockThreshold + ' ' + variant.unitName}">Ngưỡng: 5 kg</small>
                             </summary>
                             <div class="inventory-batch-area">
                                 <div class="inventory-batch-heading">
@@ -118,7 +120,11 @@
         </section>
 
         <section class="inventory-tab-content" th:if="${activeTab == 'history'}">
-            <div class="inventory-panel-heading"><div><h2>Lịch sử giao dịch</h2></div></div>
+            <div class="inventory-panel-heading">
+                <div><h2>Lịch sử giao dịch</h2></div>
+                <a class="btn btn-outline-success" th:if="${!#lists.isEmpty(transactionRows)}"
+                   th:href="@{/shopowner/inventory/history/export.xlsx}">Xuất Excel</a>
+            </div>
             <div class="table-responsive inventory-table-wrap" th:if="${!#lists.isEmpty(transactionRows)}">
                 <table class="table align-middle inventory-history-table">
                     <thead><tr><th>Thời điểm</th><th>Sản phẩm / loại hàng</th><th>Mã lô</th><th>Thao tác</th><th>Thay đổi</th><th>Ghi chú</th></tr></thead>

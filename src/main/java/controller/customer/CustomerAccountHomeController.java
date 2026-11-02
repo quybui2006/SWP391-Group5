@@ -114,7 +114,9 @@ public class CustomerAccountHomeController {
         model.addAttribute("order", account.orderDetail(customerId, id));
         var orderComplaints = complaintService.listComplaintsByOrder(id);
         boolean hasActiveComplaint = orderComplaints.stream()
-                .anyMatch(c -> "PENDING_SHOP".equals(c.get("status")) || "ESCALATED".equals(c.get("status")) || "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
+                .anyMatch(c -> "PENDING_OPERATIONS".equals(c.get("status")) || "PENDING_OPS".equals(c.get("status"))
+                        || "PENDING_SHOP".equals(c.get("status")) || "ESCALATED".equals(c.get("status"))
+                        || "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
         model.addAttribute("orderComplaints", orderComplaints);
         model.addAttribute("hasActiveComplaint", hasActiveComplaint);
         Map<String, Object> eligibility = complaintService.getOrderComplaintEligibility(customerId, id);

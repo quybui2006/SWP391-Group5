@@ -34,6 +34,7 @@ public class ComplaintService {
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter CODE_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
+    public static final String STATUS_PENDING_OPERATIONS = "PENDING_OPERATIONS";
     public static final String STATUS_PENDING_SHOP = ComplaintStatus.PENDING_SHOP.getCode();
     public static final String STATUS_ESCALATED = ComplaintStatus.ESCALATED.getCode();
     public static final String STATUS_RESOLVED = ComplaintStatus.RESOLVED.getCode();
@@ -76,6 +77,8 @@ public class ComplaintService {
         RESOLUTION_LABELS.put("EXPLANATION_ONLY", "Ghi nhận phản ánh dịch vụ & Nhắc nhở Shop");
         RESOLUTION_LABELS.put("REJECTED", "Bác bỏ khiếu nại (Không đủ căn cứ)");
 
+        STATUS_LABELS.put(STATUS_PENDING_OPERATIONS, "Chờ Vận hành duyệt");
+        STATUS_LABELS.put("PENDING_OPS", "Chờ Vận hành duyệt");
         STATUS_LABELS.put(STATUS_PENDING_SHOP, ComplaintStatus.PENDING_SHOP.getLabel());
         STATUS_LABELS.put(STATUS_ESCALATED, ComplaintStatus.ESCALATED.getLabel());
         STATUS_LABELS.put(STATUS_RESOLVED, ComplaintStatus.RESOLVED.getLabel());
@@ -204,6 +207,9 @@ public class ComplaintService {
         safeExecuteAlter("ALTER TABLE complaints ADD COLUMN cs_shop_request_note VARCHAR(1000) NULL");
         safeExecuteAlter("ALTER TABLE complaints ADD COLUMN fault_party VARCHAR(25) NOT NULL DEFAULT 'SHOP'");
         safeExecuteAlter("ALTER TABLE complaints ADD COLUMN gifted_freeship_voucher VARCHAR(50) NULL");
+        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN operations_decision VARCHAR(25) NULL");
+        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN operations_note VARCHAR(1500) NULL");
+        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN operations_reviewed_at TIMESTAMP NULL");
         safeExecuteAlter("ALTER TABLE shops ADD COLUMN reputation_score INT NOT NULL DEFAULT 100");
 
         try {
@@ -351,7 +357,7 @@ public class ComplaintService {
                 orderId
         );
         long activeCount = queryCount(
-                "SELECT COUNT(*) FROM complaints WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')",
+                "SELECT COUNT(*) FROM complaints WHERE order_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')",
                 orderId
         );
         boolean hasActiveComplaint = activeCount > 0;
@@ -513,7 +519,7 @@ public class ComplaintService {
         Long shopId = ((Number) order.get("shop_id")).longValue();
         BigDecimal totalAmount = toBigDecimal(order.get("total_amount"));
         String priority = determineAutoPriority(cleanReason, totalAmount);
-        // SLA tầng 1 (PENDING_SHOP): 6 giờ để Shop phản hồi
+        // SLA của Shop chỉ bắt đầu khi Operations duyệt hồ sơ.
         LocalDateTime slaDueAt = now.plusHours(SHOP_SLA_HOURS);
         String complaintCode = generateComplaintCode(now);
 
@@ -528,7 +534,7 @@ public class ComplaintService {
                     reason_type, title, description, evidence_image_url,
                     priority, status, source_type, requested_refund_amount, final_refund_amount,
                     sla_due_at, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_SHOP', 'CUSTOMER', ?, 0, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_OPERATIONS', 'CUSTOMER', ?, 0, ?, ?, ?)
             """, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, complaintCode);
             ps.setLong(2, orderId);
@@ -549,29 +555,25 @@ public class ComplaintService {
 
         Long complaintId = extractKey(keyHolder, complaintCode);
         String orderCode = String.valueOf(order.get("order_code"));
-        Long shopOwnerId = order.get("shop_owner_id") instanceof Number n ? n.longValue() : null;
-
         createNotificationSafe(customerId,
                 "COMPLAINT_CREATED_CUST_" + complaintId,
                 "COMPLAINT",
                 "Đã gửi khiếu nại " + complaintCode,
-                "Khiếu nại cho đơn hàng " + orderCode + " đang chờ Cửa hàng phản hồi (Hạn SLA 6h: trước " + slaDueAt.format(DT_FMT) + ").",
+                "Khiếu nại cho đơn hàng " + orderCode + " đang chờ Ban Vận hành kiểm tra.",
                 "COMPLAINT", complaintId);
 
-        if (shopOwnerId != null) {
-            createNotificationSafe(shopOwnerId,
-                    "COMPLAINT_CREATED_SHOP_" + complaintId,
-                    "COMPLAINT",
-                    "Đơn hàng " + orderCode + " có khiếu nại mới (" + complaintCode + ")",
-                    "Khách hàng gửi khiếu nại: '" + finalTitle + "' (Yêu cầu hoàn: " + refundToInsert + " điểm). Vui lòng xử lý trong 6h (trước " + slaDueAt.format(DT_FMT) + ").",
-                    "ORDER", orderId);
-        }
+        notifyRoleUsers("OPERATIONS_MANAGER",
+                "COMPLAINT_CREATED_OPS_" + complaintId,
+                "COMPLAINT",
+                "Khiếu nại mới cần kiểm tra (" + complaintCode + ")",
+                "Khách hàng gửi khiếu nại cho đơn " + orderCode + ". Vui lòng kiểm tra hồ sơ trước khi chuyển cho cửa hàng.",
+                "COMPLAINT", complaintId);
 
         return complaintId;
     }
 
     /**
-     * Customer tự hủy: Khi đang ở PENDING_SHOP hoặc ESCALATED, Customer có quyền bấm hủy -> chuyển sang CANCELLED.
+     * Customer được rút khiếu nại trước khi hồ sơ kết thúc.
      * Chống xung đột thao tác (Race Condition) bằng FOR UPDATE.
      */
     @Transactional
@@ -587,15 +589,16 @@ public class ComplaintService {
             throw new IllegalArgumentException("Không tìm thấy yêu cầu khiếu nại của bạn.");
         }
         String currentStatus = String.valueOf(rows.get(0).get("status"));
-        if (!STATUS_PENDING_SHOP.equals(currentStatus) && !STATUS_ESCALATED.equals(currentStatus)
+        if (!STATUS_PENDING_OPERATIONS.equals(currentStatus) && !"PENDING_OPS".equals(currentStatus)
+                && !STATUS_PENDING_SHOP.equals(currentStatus) && !STATUS_ESCALATED.equals(currentStatus)
                 && !"PENDING".equals(currentStatus) && !"IN_PROGRESS".equals(currentStatus)) {
-            throw new IllegalArgumentException("Chỉ có thể rút lại khiếu nại khi đang ở trạng thái Chờ Shop phản hồi hoặc Chuyển CSKH phân xử.");
+            throw new IllegalArgumentException("Chỉ có thể rút khiếu nại khi hồ sơ chưa kết thúc.");
         }
 
         int updated = jdbc.update("""
             UPDATE complaints
             SET status = 'CANCELLED', updated_at = ?
-            WHERE id = ? AND user_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+            WHERE id = ? AND user_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
         """, Timestamp.valueOf(LocalDateTime.now()), complaintId, customerId);
         if (updated == 0) {
             throw new IllegalArgumentException("Trạng thái khiếu nại vừa thay đổi, không thể hủy.");
@@ -605,6 +608,118 @@ public class ComplaintService {
     // =========================================================================
     // 2. SHOP XỬ LÝ KHIẾU NẠI (TẦNG 1 - PENDING_SHOP) & SCHEDULED JOB SLA 6H
     // =========================================================================
+
+    /**
+     * Operations kiểm tra khiếu nại trước khi chuyển hồ sơ hợp lệ cho Shop.
+     */
+    @Transactional
+    public void approveComplaintByOperations(Long operationsUserId, Long complaintId, String note) {
+        validateOperationsUser(operationsUserId);
+        Map<String, Object> complaint = findComplaintForOperations(complaintId);
+        String status = String.valueOf(complaint.get("status"));
+        if (!STATUS_PENDING_OPERATIONS.equals(status) && !"PENDING_OPS".equals(status) && !"PENDING".equals(status)) {
+            throw new IllegalArgumentException("Chỉ có thể duyệt hồ sơ đang chờ Vận hành kiểm tra.");
+        }
+
+        String cleanNote = note == null ? "" : note.trim();
+        if (cleanNote.length() > 1500) {
+            throw new IllegalArgumentException("Ghi chú không được vượt quá 1500 ký tự.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Timestamp reviewedAt = Timestamp.valueOf(now);
+        Timestamp shopSlaDueAt = Timestamp.valueOf(now.plusHours(SHOP_SLA_HOURS));
+        int updated = jdbc.update("""
+            UPDATE complaints
+            SET status = 'PENDING_SHOP', operations_decision = 'APPROVED', operations_note = ?,
+                operations_reviewed_at = ?, sla_due_at = ?, updated_at = ?
+            WHERE id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING')
+        """, cleanNote.isBlank() ? null : cleanNote, reviewedAt, shopSlaDueAt, reviewedAt, complaintId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("Hồ sơ vừa được cập nhật. Hãy tải lại trang.");
+        }
+
+        Long customerId = toNullableLong(complaint.get("user_id"));
+        Long shopOwnerId = toNullableLong(complaint.get("shop_owner_id"));
+        String complaintCode = String.valueOf(complaint.get("complaint_code"));
+        String orderCode = String.valueOf(complaint.get("order_code"));
+        createNotificationSafe(customerId,
+                "COMPLAINT_OPS_APPROVED_CUST_" + complaintId, "COMPLAINT",
+                "Khiếu nại " + complaintCode + " đã được tiếp nhận",
+                "Ban Vận hành đã duyệt hồ sơ cho đơn " + orderCode + " và chuyển đến cửa hàng xử lý.",
+                "COMPLAINT", complaintId);
+        createNotificationSafe(shopOwnerId,
+                "COMPLAINT_OPS_APPROVED_SHOP_" + complaintId, "COMPLAINT",
+                "Cửa hàng có khiếu nại cần xử lý (" + complaintCode + ")",
+                "Ban Vận hành đã duyệt khiếu nại cho đơn " + orderCode + ". Vui lòng phản hồi trong 6 giờ.",
+                "ORDER", toNullableLong(complaint.get("order_id")));
+    }
+
+    /**
+     * Operations từ chối hồ sơ không đủ căn cứ và lưu lý do để khách hàng tra cứu.
+     */
+    @Transactional
+    public void rejectComplaintByOperations(Long operationsUserId, Long complaintId, String reason) {
+        validateOperationsUser(operationsUserId);
+        Map<String, Object> complaint = findComplaintForOperations(complaintId);
+        String status = String.valueOf(complaint.get("status"));
+        if (!STATUS_PENDING_OPERATIONS.equals(status) && !"PENDING_OPS".equals(status) && !"PENDING".equals(status)) {
+            throw new IllegalArgumentException("Chỉ có thể từ chối hồ sơ đang chờ Vận hành kiểm tra.");
+        }
+
+        String cleanReason = reason == null ? "" : reason.trim();
+        if (cleanReason.length() < 5 || cleanReason.length() > 1500) {
+            throw new IllegalArgumentException("Lý do từ chối phải từ 5 đến 1500 ký tự.");
+        }
+
+        Timestamp reviewedAt = Timestamp.valueOf(LocalDateTime.now());
+        int updated = jdbc.update("""
+            UPDATE complaints
+            SET status = 'REJECTED', operations_decision = 'REJECTED', operations_note = ?,
+                operations_reviewed_at = ?, resolution_type = 'REJECTED', resolution_note = ?,
+                final_refund_amount = 0, compensated_points = 0, is_shop_fault = 0, fault_party = 'NONE',
+                resolved_by = ?, resolved_at = ?, updated_at = ?
+            WHERE id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING')
+        """, cleanReason, reviewedAt, cleanReason, operationsUserId, reviewedAt, reviewedAt, complaintId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("Hồ sơ vừa được cập nhật. Hãy tải lại trang.");
+        }
+
+        Long customerId = toNullableLong(complaint.get("user_id"));
+        String complaintCode = String.valueOf(complaint.get("complaint_code"));
+        String orderCode = String.valueOf(complaint.get("order_code"));
+        createNotificationSafe(customerId,
+                "COMPLAINT_OPS_REJECTED_CUST_" + complaintId, "COMPLAINT",
+                "Khiếu nại " + complaintCode + " đã bị từ chối",
+                "Ban Vận hành từ chối khiếu nại cho đơn " + orderCode + ". Lý do: " + cleanReason,
+                "COMPLAINT", complaintId);
+        createNotificationSafe(toNullableLong(complaint.get("shop_owner_id")),
+                "COMPLAINT_OPS_REJECTED_SHOP_" + complaintId, "COMPLAINT",
+                "Khiếu nại " + complaintCode + " đã được khép lại",
+                "Ban Vận hành đã từ chối hồ sơ khiếu nại cho đơn " + orderCode + ".",
+                "ORDER", toNullableLong(complaint.get("order_id")));
+    }
+
+    private Map<String, Object> findComplaintForOperations(Long complaintId) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT c.*, o.order_code, s.owner_id AS shop_owner_id
+            FROM complaints c
+            JOIN orders o ON o.id = c.order_id
+            JOIN shops s ON s.id = c.shop_id
+            WHERE c.id = ?
+            FOR UPDATE
+        """, complaintId);
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId + ".");
+        }
+        return rows.get(0);
+    }
+
+    private void validateOperationsUser(Long operationsUserId) {
+        if (operationsUserId == null || operationsUserId <= 0) {
+            throw new IllegalArgumentException("Không xác định được tài khoản Vận hành.");
+        }
+    }
 
     /**
      * Shop xử lý khiếu nại (chỉ thực hiện được khi đơn đang ở PENDING_SHOP):
@@ -995,8 +1110,8 @@ public class ComplaintService {
 
         if (statusFilter != null && !statusFilter.isBlank() && !"all".equalsIgnoreCase(statusFilter)) {
             String normalized = statusFilter.trim().toUpperCase(Locale.ROOT);
-            if ("PROCESSING".equals(normalized) || "PENDING".equals(normalized) || STATUS_PENDING_SHOP.equals(normalized) || STATUS_ESCALATED.equals(normalized) || "IN_PROGRESS".equals(normalized)) {
-                sql.append(" AND c.status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS') ");
+            if ("PROCESSING".equals(normalized) || "PENDING".equals(normalized) || STATUS_PENDING_OPERATIONS.equals(normalized) || STATUS_PENDING_SHOP.equals(normalized) || STATUS_ESCALATED.equals(normalized) || "IN_PROGRESS".equals(normalized)) {
+                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS') ");
             } else if ("PROCESSED".equals(normalized)) {
                 sql.append(" AND c.status IN ('RESOLVED', 'REJECTED') ");
             } else {
@@ -1014,13 +1129,15 @@ public class ComplaintService {
     public Map<String, Long> countCustomerComplaintsByStatus(Long customerId) {
         Map<String, Long> counts = new LinkedHashMap<>();
         counts.put("all", queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ?", customerId));
+        long pendingOps = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS')", customerId);
         long pendingShop = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status IN ('PENDING_SHOP', 'PENDING')", customerId);
         long escalated = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status IN ('ESCALATED', 'IN_PROGRESS')", customerId);
         long resolved = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status = 'RESOLVED'", customerId);
         long rejected = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status = 'REJECTED'", customerId);
         long cancelled = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status = 'CANCELLED'", customerId);
 
-        counts.put("processing", pendingShop + escalated);
+        counts.put("processing", pendingOps + pendingShop + escalated);
+        counts.put("pending_operations", pendingOps);
         counts.put("processed", resolved + rejected);
         counts.put("cancelled", cancelled);
 
@@ -1060,7 +1177,9 @@ public class ComplaintService {
         if (statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter)) {
             String norm = statusFilter.trim().toUpperCase(Locale.ROOT);
             if ("ACTIVE".equals(norm)) {
-                sql.append(" AND c.status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS') ");
+                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS') ");
+            } else if (STATUS_PENDING_OPERATIONS.equals(norm) || "PENDING_OPS".equals(norm)) {
+                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS') ");
             } else if ("PENDING".equals(norm) || STATUS_PENDING_SHOP.equals(norm)) {
                 sql.append(" AND c.status IN ('PENDING_SHOP', 'PENDING') ");
             } else if ("IN_PROGRESS".equals(norm) || STATUS_ESCALATED.equals(norm)) {
@@ -1093,9 +1212,10 @@ public class ComplaintService {
 
         sql.append("""
             ORDER BY
-                CASE WHEN c.status IN ('ESCALATED', 'IN_PROGRESS') THEN 0
-                     WHEN c.status IN ('PENDING_SHOP', 'PENDING') THEN 1
-                     ELSE 2 END ASC,
+                CASE WHEN c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS') THEN 0
+                     WHEN c.status IN ('ESCALATED', 'IN_PROGRESS') THEN 1
+                     WHEN c.status IN ('PENDING_SHOP', 'PENDING') THEN 2
+                     ELSE 3 END ASC,
                 CASE WHEN c.priority = 'HIGH' THEN 0 ELSE 1 END ASC,
                 c.sla_due_at ASC,
                 c.created_at DESC
@@ -1549,7 +1669,7 @@ public class ComplaintService {
 
         long totalOrders = queryCount("SELECT COUNT(*) FROM orders");
         long totalDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status <> 'CANCELLED'");
-        long pendingDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('PENDING_SHOP', 'PENDING')");
+        long pendingDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'PENDING')");
         long inProgressDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('ESCALATED', 'IN_PROGRESS')");
         long resolvedDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'RESOLVED'");
         long rejectedDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'REJECTED'");
@@ -1895,7 +2015,8 @@ public class ComplaintService {
         // Trạng thái rút gọn cho Khách hàng (Customer Facing)
         String customerStatus;
         String customerStatusBadgeClass;
-        if (STATUS_PENDING_SHOP.equals(status) || STATUS_ESCALATED.equals(status)) {
+        if (STATUS_PENDING_OPERATIONS.equals(status) || "PENDING_OPS".equals(status)
+                || STATUS_PENDING_SHOP.equals(status) || STATUS_ESCALATED.equals(status)) {
             customerStatus = "Đang xử lý";
             customerStatusBadgeClass = "processing";
         } else if (STATUS_RESOLVED.equals(status)) {
@@ -1945,6 +2066,8 @@ public class ComplaintService {
         row.put("shop_responded_at_fmt", shopRespondedAt != null ? shopRespondedAt.format(DT_FMT) : "—");
         row.put("escalated_at_fmt", escalatedAt != null ? escalatedAt.format(DT_FMT) : "—");
         row.put("last_reminded_at_fmt", lastRemindedAt != null ? lastRemindedAt.format(DT_FMT) : "—");
+        LocalDateTime operationsReviewedAt = toLocalDateTime(row.get("operations_reviewed_at"));
+        row.put("operations_reviewed_at_fmt", operationsReviewedAt != null ? operationsReviewedAt.format(DT_FMT) : "—");
 
         long remindCount = toLong(row.get("shop_remind_count"));
         row.put("shop_remind_count", remindCount);
@@ -1966,6 +2089,9 @@ public class ComplaintService {
                     slaState = "BREACHED_SLA";
                     slaBadgeText = "Trễ hạn (" + hoursTaken + "h)";
                 }
+            } else if (STATUS_PENDING_OPERATIONS.equals(status) || "PENDING_OPS".equals(status)) {
+                slaState = "OPS_REVIEW";
+                slaBadgeText = "Chờ Vận hành duyệt";
             } else if (STATUS_PENDING_SHOP.equals(status) || STATUS_ESCALATED.equals(status)) {
                 long minsRemaining = Duration.between(now, slaDueAt).toMinutes();
                 if (minsRemaining < 0) {
@@ -2111,6 +2237,10 @@ public class ComplaintService {
 
     private long toLong(Object val) {
         return val instanceof Number n ? n.longValue() : 0L;
+    }
+
+    private Long toNullableLong(Object val) {
+        return val instanceof Number n ? n.longValue() : null;
     }
 
     private long queryCount(String sql, Object... args) {

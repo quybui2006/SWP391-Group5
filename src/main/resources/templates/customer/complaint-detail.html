@@ -68,7 +68,7 @@
                     </div>
 
                     <!-- Nút rút khiếu nại khi còn đang xử lý -->
-                    <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}"
+                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS' or complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}"
                          style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
                         <form th:action="@{/customer/account/complaints/{id}/cancel(id=${complaint['id']})}" method="post"
                               onsubmit="return confirm('Bạn có chắc muốn rút lại yêu cầu khiếu nại này?');">
@@ -136,7 +136,7 @@
                     </div>
 
                     <!-- Case: Đang xử lý -->
-                    <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}">
+                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS' or complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}">
                         <p style="margin: 0; font-size: 13.5px; color: #0284c7; line-height: 1.5;">
                             ⏳ Yêu cầu khiếu nại của bạn đang được tiếp nhận và xử lý. Kết quả và mức bồi hoàn sẽ được cập nhật sớm nhất tại đây.
                         </p>

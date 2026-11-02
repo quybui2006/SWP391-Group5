@@ -21,6 +21,7 @@
             <label class="field field-wide"><span>Quy cách</span><input type="text" th:field="*{specification}" maxlength="1000"></label>
             <label class="field"><span>Đơn vị <b>*</b></span><select th:field="*{unitId}"><option th:each="unit : ${form.units}" th:value="${unit.id}" th:text="${unit.name}"></option></select><em th:if="${errors.containsKey('unitId')}" th:text="${errors.get('unitId')}"></em></label>
             <label class="field"><span>Giá bán (VNĐ) <b>*</b></span><input type="number" th:field="*{price}" min="1" step="1" required><em th:if="${errors.containsKey('price')}" th:text="${errors.get('price')}"></em></label>
+            <label class="field"><span>Ngưỡng cảnh báo tồn thấp</span><input type="number" th:field="*{lowStockThresholdQuantity}" min="0" step="1"><small>Cảnh báo theo đơn vị của biến thể. Để trống để tắt.</small><em th:if="${errors.containsKey('lowStockThresholdQuantity')}" th:text="${errors.get('lowStockThresholdQuantity')}"></em></label>
             <label class="field" th:unless="${form.approvalStatus == 'REJECTED'}"><span>Trạng thái</span>
                 <select th:field="*{status}">
                     <option value="ACTIVE">Đang bán</option>

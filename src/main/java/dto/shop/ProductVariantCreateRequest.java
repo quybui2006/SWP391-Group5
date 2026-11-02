@@ -15,6 +15,7 @@ public class ProductVariantCreateRequest {
     @NotNull private Long unitId;
     @NotNull @jakarta.validation.constraints.DecimalMin("1") private BigDecimal price;
     @NotNull @Positive private Integer stockQuantity;
+    @jakarta.validation.constraints.PositiveOrZero private Integer lowStockThresholdQuantity;
     @NotNull private MultipartFile imageFile;
 
     public Long getProductId() { return productId; }
@@ -27,6 +28,8 @@ public class ProductVariantCreateRequest {
     public void setPrice(BigDecimal price) { this.price = price; }
     public Integer getStockQuantity() { return stockQuantity; }
     public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
+    public Integer getLowStockThresholdQuantity() { return lowStockThresholdQuantity; }
+    public void setLowStockThresholdQuantity(Integer value) { this.lowStockThresholdQuantity = value; }
     public MultipartFile getImageFile() { return imageFile; }
     public void setImageFile(MultipartFile imageFile) { this.imageFile = imageFile; }
 }

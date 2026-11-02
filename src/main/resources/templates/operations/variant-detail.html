@@ -49,7 +49,7 @@
                         <tr><th>Hiện có</th><td th:text="${variant.quantityOnHand ?: 0}">0</td></tr>
                         <tr><th>Đang giữ cho đơn</th><td th:text="${variant.reservedQuantity ?: 0}">0</td></tr>
                         <tr><th>Có thể bán</th><td th:text="${variant.availableQuantity ?: 0}">0</td></tr>
-                        <tr><th>Ngưỡng cảnh báo tồn thấp</th><td th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '—'}">—</td></tr>
+                        <tr><th>Ngưỡng cảnh báo tồn thấp</th><td th:text="${variant.lowStockThresholdQuantity != null ? variant.lowStockThresholdQuantity + ' ' + variant.unitName : '—'}">—</td></tr>
                         <tr><th>Trạng thái tồn kho</th><td th:text="${variant.inventoryStatus ?: 'Chưa cấu hình'}">-</td></tr>
                     </tbody></table>
                 </section>

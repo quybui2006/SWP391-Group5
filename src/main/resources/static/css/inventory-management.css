@@ -132,6 +132,7 @@ details[open] > summary .inventory-expander { transform: rotate(90deg); }
 .inventory-stock-status { padding: 5px 8px; border-radius: 6px; background: #eaf8ef; color: #197345; }
 .inventory-stock-status.is-low { background: #fff5df; color: #936511; }
 .inventory-stock-status.is-empty { background: #fff0f0; color: #bd3030; }
+.inventory-threshold { grid-column: 8; justify-self: end; color: #738277; font-size: .7rem; white-space: nowrap; }
 .inventory-variant-list { display: grid; gap: 8px; padding: 0 12px 12px 26px; }
 .inventory-variant-summary { grid-template-columns: 22px 36px minmax(180px, 1fr) repeat(4, minmax(95px, auto)) auto; padding: 12px; background: #fff; }
 .inventory-batch-area { padding: 12px 14px 14px 46px; }
@@ -175,7 +176,7 @@ details[open] > summary .inventory-expander { transform: rotate(90deg); }
     .inventory-tabs .nav-link { padding: 11px 12px; font-size: .83rem; }
     .inventory-panel-heading { flex-direction: column; gap: 10px; }
     .inventory-product-summary, .inventory-variant-summary { grid-template-columns: 20px 36px minmax(150px, 1fr) repeat(4, minmax(70px, auto)); }
-    .inventory-variant-count, .inventory-stock-status { grid-column: 2 / -1; justify-self: start; }
+    .inventory-variant-count, .inventory-stock-status, .inventory-threshold { grid-column: 2 / -1; justify-self: start; }
     .inventory-batch-area { padding-left: 34px; }
 }
 @media (max-width: 575.98px) {
@@ -187,6 +188,7 @@ details[open] > summary .inventory-expander { transform: rotate(90deg); }
     .inventory-product-summary, .inventory-variant-summary { grid-template-columns: 18px 36px minmax(0, 1fr); gap: 9px; padding: 12px 10px; }
     .inventory-product-summary .inventory-summary-value, .inventory-variant-summary .inventory-summary-value { grid-column: 3; display: flex; justify-content: space-between; text-align: left; }
     .inventory-product-summary .inventory-variant-count, .inventory-variant-summary .inventory-stock-status { grid-column: 3; justify-self: start; }
+    .inventory-variant-summary .inventory-threshold { grid-column: 3; justify-self: start; }
     .inventory-variant-list { padding-left: 10px; }
     .inventory-batch-area { padding: 10px; }
     .inventory-batch-heading { align-items: flex-start; flex-direction: column; }

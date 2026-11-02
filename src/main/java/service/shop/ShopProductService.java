@@ -133,6 +133,7 @@ public class ShopProductService {
         form.setStatus("REJECTED".equals(variant.getApprovalStatus()) || "INACTIVE".equals(variant.getStatus()) ? "INACTIVE" : "ACTIVE");
         form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice());
         form.setQuantityOnHand(inventory.getQuantityOnHand());
+        form.setLowStockThresholdQuantity(inventory.getLowStockThresholdQuantity() == 0 ? null : inventory.getLowStockThresholdQuantity());
         form.setUnits(activeUnitOptions());
         return form;
     }
@@ -170,6 +171,7 @@ public class ShopProductService {
             errors.put("variantName", "Tên biến thể này đã tồn tại trong sản phẩm.");
         }
         if (form.getPrice() == null || form.getPrice().signum() <= 0 || (form.getPrice() != null && form.getPrice().stripTrailingZeros().scale() > 0)) errors.put("price", "Giá bán phải là số nguyên VNĐ lớn hơn 0.");
+        if (form.getLowStockThresholdQuantity() != null && form.getLowStockThresholdQuantity() < 0) errors.put("lowStockThresholdQuantity", "Ngưỡng cảnh báo phải là số nguyên từ 0 trở lên.");
         String requestedStatus = upperOrNull(form.getStatus());
         if (requestedStatus == null || !Set.of("ACTIVE", "INACTIVE").contains(requestedStatus)) {
             errors.put("status", "Trạng thái biến thể không hợp lệ.");
@@ -196,6 +198,8 @@ public class ShopProductService {
         }
         // Keep a rejected listing offline until Operations approves the edited version.
         variant.setStatus(rejectedBeforeEdit ? "INACTIVE" : requestedStatus);
+        // Ô trống tương đương với tắt cảnh báo tồn thấp.
+        inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
         variantRepository.save(variant); inventoryRepository.save(inventory);
     }
 
@@ -422,6 +426,7 @@ public class ShopProductService {
             inventory.setVariantId(variant.getId());
             inventory.setInitialQuantity(form.getStockQuantity());
             inventory.setQuantityOnHand(form.getStockQuantity());
+            inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
             inventory.setReservedQuantity(0);
             inventory.setStatus("ACTIVE");
             inventory.setCreatedBy(ownerUserId);

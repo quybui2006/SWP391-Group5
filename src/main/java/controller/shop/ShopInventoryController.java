@@ -5,6 +5,9 @@ import dto.shop.InventoryBatchForm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import repository.CategoryRepository;
 import service.shop.InventoryActionException;
+import service.shop.InventoryHistoryExcelExporter;
 import service.shop.InventoryService;
 
 import java.time.LocalDateTime;
@@ -22,11 +26,26 @@ import java.time.LocalDateTime;
 @Controller
 public class ShopInventoryController {
     private final InventoryService inventoryService;
+    private final InventoryHistoryExcelExporter excelExporter;
     private final CategoryRepository categoryRepository;
 
-    public ShopInventoryController(InventoryService inventoryService, CategoryRepository categoryRepository) {
+    public ShopInventoryController(InventoryService inventoryService,
+                                   InventoryHistoryExcelExporter excelExporter,
+                                   CategoryRepository categoryRepository) {
         this.inventoryService = inventoryService;
+        this.excelExporter = excelExporter;
         this.categoryRepository = categoryRepository;
+    }
+
+    @GetMapping({"/shop/inventory/history/export.xlsx", "/shopowner/inventory/history/export.xlsx"})
+    public ResponseEntity<byte[]> exportHistory(HttpServletRequest request) {
+        Long ownerId = ownerId(request);
+        if (ownerId == null) return ResponseEntity.status(401).build();
+        byte[] workbook = excelExporter.export(inventoryService.getTransactionHistory(ownerId));
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=shop-inventory-history.xlsx")
+                .body(workbook);
     }
 
     @GetMapping({"/shop/inventory", "/shopowner/inventory"})

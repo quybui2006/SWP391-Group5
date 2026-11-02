@@ -97,7 +97,7 @@ class ComplaintAndOperationsReportingIntegrationTests {
         Long customerId = createUser("buyer-complaint@test.local", "Nguyễn Văn Mua", "CUSTOMER");
         Long sellerId = createUser("seller-complaint@test.local", "Trần Chủ Vựa", "SHOP_OWNER");
         Long csId = createUser("cs-complaint@test.local", "Lê CSKH", "CS_STAFF");
-        createUser("ops-complaint@test.local", "Phạm Vận Hành", "OPERATIONS_MANAGER");
+        Long opsId = createUser("ops-complaint@test.local", "Phạm Vận Hành", "OPERATIONS_MANAGER");
 
         Long shopId = createTestShop(sellerId, "Nông Sản Tươi Đà Lạt");
         // DELIVERED just 2 hours ago
@@ -118,9 +118,13 @@ class ComplaintAndOperationsReportingIntegrationTests {
         );
         assertNotNull(complaintId);
 
-        // 2. Verify status is PENDING_SHOP and priority is HIGH
+        // Hồ sơ mới phải chờ Operations duyệt trước khi chuyển cho Shop.
         List<Map<String, Object>> customerComplaints = complaintService.listCustomerComplaints(customerId, "ALL");
         assertEquals(1, customerComplaints.size());
+        Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
+        assertEquals("PENDING_OPERATIONS", detail.get("status"));
+
+        complaintService.approveComplaintByOperations(opsId, complaintId, "Đủ thông tin để cửa hàng kiểm tra.");
 
         // Verify Shop Order list shows complaint badge and pending count
         Map<String, Object> counts = shopOrderService.countComplaints(sellerId);
@@ -128,13 +132,13 @@ class ComplaintAndOperationsReportingIntegrationTests {
         List<Map<String, Object>> shopOrders = shopOrderService.list(sellerId, "complaint");
         assertEquals(1, shopOrders.size());
         assertEquals("PENDING_SHOP", shopOrders.get(0).get("complaint_status"));
-        Map<String, Object> detail = complaintService.getComplaintDetail(complaintId);
+        detail = complaintService.getComplaintDetail(complaintId);
         assertNotNull(detail);
         assertEquals("HIGH", detail.get("priority"));
         assertEquals("PENDING_SHOP", detail.get("status"));
         assertEquals(50000L, ((Number) detail.get("requested_refund_amount")).longValue());
 
-        // 2b. CS cannot resolve directly while ticket is in PENDING_SHOP
+        // CSKH cannot resolve until Shop has responded or its SLA expires.
         IllegalArgumentException csBlockedEx = assertThrows(IllegalArgumentException.class, () ->
                 complaintService.resolveComplaint(
                         complaintId, csId, "RESOLVED", "COMPENSATE_POINTS", "CS can thiệp", 50000L, true, false

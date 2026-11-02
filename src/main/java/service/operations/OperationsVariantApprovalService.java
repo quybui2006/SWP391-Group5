@@ -67,7 +67,7 @@ public class OperationsVariantApprovalService {
                        CONCAT_WS(', ', s.address_detail, s.ward_name, s.province_code) AS shop_address,
                        u.name AS unit_name,
                        vi.initial_quantity, vi.quantity_on_hand, vi.reserved_quantity, vi.available_quantity,
-                       vi.low_stock_threshold_pct, vi.status AS inventory_status
+                       vi.low_stock_threshold_quantity, vi.status AS inventory_status
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 JOIN shops s ON s.id = pv.shop_id
@@ -86,7 +86,7 @@ public class OperationsVariantApprovalService {
                 rs.getString("shop_name"), rs.getString("shop_phone"), rs.getString("shop_address"),
                 nullableInt(rs, "initial_quantity"), nullableInt(rs, "quantity_on_hand"),
                 nullableInt(rs, "reserved_quantity"), nullableInt(rs, "available_quantity"),
-                rs.getBigDecimal("low_stock_threshold_pct"), rs.getString("inventory_status")), variantId);
+                nullableInt(rs, "low_stock_threshold_quantity"), rs.getString("inventory_status")), variantId);
         if (rows.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy biến thể sản phẩm.");
         return rows.get(0);
     }

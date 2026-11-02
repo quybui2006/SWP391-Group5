@@ -511,4 +511,28 @@ class CartCheckoutIntegrationTests {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"));
     }
+
+    @Test
+    void shopOwnerCanDownloadTheirInventoryTransactionHistory() throws Exception {
+        long owner = seed();
+        long inventoryId = jdbc.queryForObject("SELECT id FROM variant_inventory WHERE variant_id=(SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT')", Long.class);
+        jdbc.update("INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,note,created_by) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP,'ACTIVE',?,?)",
+                inventoryId, "LOT-EXPORT-01", 10, 10, 0, "Test batch", owner);
+        long batchId = jdbc.queryForObject("SELECT id FROM inventory_batches WHERE batch_code='LOT-EXPORT-01'", Long.class);
+        jdbc.update("INSERT INTO inventory_batch_transactions(batch_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES (?,'RECEIVE',10,0,10,0,?,?,?)",
+                batchId, "export-test-event", "Nhập lô kiểm thử", owner);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", owner);
+        session.setAttribute("role", "SHOP_OWNER");
+
+        var response = mvc.perform(get("/shopowner/inventory/history/export.xlsx").session(session))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", org.hamcrest.Matchers.containsString("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("shop-inventory-history.xlsx")))
+                .andReturn().getResponse();
+        byte[] file = response.getContentAsByteArray();
+        assertEquals('P', file[0]);
+        assertEquals('K', file[1]);
+    }
 }
