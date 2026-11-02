@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biến thể và tồn kho | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('variants')}"></aside>
+    <main class="main-content product-management">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Thêm mới</span></p>
+                <h1>Biến thể và tồn kho</h1>
+                <p class="muted">Chọn hồ sơ nhóm, nhập thông tin bán và tồn kho. Biến thể sẽ được đăng bán ngay để Operations hậu kiểm.</p>
+            </div>
+            <a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách biến thể</a>
+        </header>
+
+        <p class="alert alert-error" th:if="${serviceError}" th:text="${serviceError}">Lỗi hệ thống</p>
+
+        <form class="product-form" method="post" enctype="multipart/form-data"
+              th:action="@{/shopowner/product-variants/add}" th:object="${variantCreateRequest}">
+            <section class="form-card">
+                <h2>Thông tin biến thể</h2>
+                <div class="form-grid">
+                    <label class="field field-wide">
+                        <span>Sản phẩm <b>*</b></span>
+                        <select th:field="*{productId}" required>
+                            <option value="">Chọn sản phẩm</option>
+                            <option th:each="product : ${products}" th:value="${product.id}" th:text="${product.name}"></option>
+                        </select>
+                        <small>Chọn sản phẩm vừa tạo hoặc một sản phẩm đã có.</small>
+                        <em th:errors="*{productId}"></em>
+                    </label>
+                    <label class="field">
+                        <span>Tên biến thể <b>*</b></span>
+                        <input type="text" th:field="*{variantName}" maxlength="150" placeholder="Ví dụ: 1 kg" required>
+                        <em th:errors="*{variantName}"></em>
+                    </label>
+                    <label class="field">
+                        <span>SKU <b>*</b></span>
+                        <input type="text" th:field="*{sku}" maxlength="80" placeholder="Ví dụ: CAM-SANH-1KG" required>
+                        <em th:errors="*{sku}"></em>
+                    </label>
+                    <label class="field">
+                        <span>Đơn vị <b>*</b></span>
+                        <select th:field="*{unitId}" required>
+                            <option value="">Chọn đơn vị</option>
+                            <option th:each="unit : ${units}" th:value="${unit.id}" th:text="${unit.name}"></option>
+                        </select>
+                        <em th:errors="*{unitId}"></em>
+                    </label>
+                    <label class="field">
+                        <span>Giá bán (VNĐ) <b>*</b></span>
+                        <input type="number" th:field="*{price}" min="1" step="1" placeholder="50000" required>
+                        <em th:errors="*{price}"></em>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-card">
+                <h2>Tồn kho ban đầu</h2>
+                <div class="form-grid">
+                    <label class="field">
+                        <span>Số lượng nhập <b>*</b></span>
+                        <input type="number" th:field="*{stockQuantity}" min="1" step="1" placeholder="100" required>
+                        <em th:errors="*{stockQuantity}"></em>
+                    </label>
+                    <label class="field">
+                        <span>Ngưỡng cảnh báo (%) <b>*</b></span>
+                        <input type="number" th:field="*{lowStockThresholdPct}" min="0" max="100" step="0.01" placeholder="10" required>
+                        <em th:errors="*{lowStockThresholdPct}"></em>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-card">
+                <h2>Hình ảnh biến thể</h2>
+                <div class="upload-row upload-validation-row">
+                    <label class="upload-box" for="imageFile">
+                        <input id="imageFile" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" required
+                               aria-describedby="variantImageHelp variantImageValidationError"
+                               data-upload-max-bytes="5242880" data-upload-allowed-types="image/jpeg,image/png"
+                               data-upload-label="Ảnh biến thể" data-upload-error-id="variantImageValidationError">
+                        <span>Chọn ảnh JPG hoặc PNG</span>
+                        <small id="variantImageHelp">Dung lượng tối đa 5 MB. Ảnh vượt giới hạn sẽ bị chặn trước khi gửi biểu mẫu.</small>
+                    </label>
+                    <small id="variantImageValidationError" class="upload-validation-error" role="alert" aria-live="polite" hidden></small>
+                </div>
+                <em class="field-error" th:errors="*{imageFile}"></em>
+            </section>
+
+            <div class="form-actions">
+                <a class="button button-ghost" th:href="@{/shopowner/product-variants}">Hủy</a>
+                <button class="button button-primary" type="submit">Lưu loại hàng</button>
+            </div>
+        </form>
+    </main>
+</div>
+<script th:src="@{/js/shop-product.js}"></script>
+<script th:src="@{/js/upload-validation.js?v=20261017}"></script>
+</body>
+</html>

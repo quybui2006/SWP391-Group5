@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Truy cập bị từ chối | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --fresh-green: #16803c;
+            --fresh-green-dark: #14532d;
+            --fresh-green-grad: linear-gradient(135deg, #16803c 0%, #22c55e 100%);
+            --danger-color: #ef4444;
+            --danger-bg: #fef2f2;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8faf9;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .error-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .error-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            max-width: 520px;
+            width: 100%;
+            padding: 48px 36px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .badge-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--danger-bg);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            color: var(--danger-color);
+            margin-bottom: 24px;
+            box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.1);
+        }
+
+        .error-code {
+            font-size: 42px;
+            font-weight: 800;
+            color: #111827;
+            margin: 0 0 10px;
+            letter-spacing: -1px;
+        }
+
+        .error-title {
+            font-size: 19px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .error-desc {
+            font-size: 15px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 32px;
+        }
+
+        .error-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            display: block;
+            padding: 13px 24px;
+            background: var(--fresh-green);
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--fresh-green-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            display: block;
+            padding: 12px 24px;
+            background: #ffffff;
+            border: 1.5px solid #d1d5db;
+            color: #374151;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">F</span>
+            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
+        </a>
+    </div>
+</header>
+
+<main class="error-main">
+    <div class="error-card">
+        <div class="badge-icon">🔒</div>
+        <h1 class="error-code">403</h1>
+        <div class="error-title">Truy cập bị từ chối</div>
+        <p class="error-desc">
+            Bạn không có quyền truy cập vào trang này.<br>
+            Khu vực này được bảo vệ và chỉ dành cho tài khoản có vai trò tương ứng.
+        </p>
+
+        <div class="error-actions">
+            <a th:href="@{/}" class="btn-primary">Về trang chủ</a>
+            <a th:href="@{/login}" class="btn-outline">Đăng nhập tài khoản khác</a>
+            <a href="javascript:history.back()" class="btn-outline">Quay lại trang trước</a>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner" style="justify-content: center; text-align: center;">
+        <small>© 2026 FreshFruit. All rights reserved.</small>
+    </div>
+</footer>
+
+</body>
+</html>

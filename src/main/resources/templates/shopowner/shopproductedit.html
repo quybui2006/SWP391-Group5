@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Chỉnh sửa ' + form.name + ' | FreshFruit'}">Chỉnh sửa sản phẩm | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+    <link rel="stylesheet" th:href="@{/css/shopproductedit.css}">
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{shopowner/fragments :: sidebar('products')}"></aside>
+
+    <main class="main-content product-management edit-product-page">
+        <header class="topbar edit-hero">
+            <div>
+                <p class="breadcrumb"><a th:href="@{/shopowner/home}">Tổng quan</a> / <a th:href="@{/shop/products}">Sản phẩm</a> / <span>Chỉnh sửa</span></p>
+                <p class="edit-eyebrow">QUẢN LÝ SẢN PHẨM</p>
+                <h1>Chỉnh sửa sản phẩm</h1>
+                <p class="muted">Cập nhật thông tin cho <strong th:text="${form.name}">sản phẩm</strong>. Hồ sơ này chỉ nhóm và quản lý các biến thể.</p>
+            </div>
+            <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">← Xem chi tiết</a>
+        </header>
+
+        <div class="edit-alert edit-alert-error" th:if="${!errors.isEmpty()}">
+            <span class="edit-alert-icon">!</span>
+            <div><strong>Chưa thể lưu thay đổi</strong><p>Vui lòng kiểm tra lại các trường được đánh dấu bên dưới.</p></div>
+        </div>
+
+        <form class="product-form edit-product-form" method="post"
+              th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
+            <section class="form-card edit-section">
+                <div class="edit-section-heading">
+                    <div class="edit-section-icon">✎</div>
+                    <div><h2>Thông tin cơ bản</h2><p>Những thông tin giúp khách hàng nhận biết sản phẩm.</p></div>
+                    <span class="edit-required-note"><b>*</b> Bắt buộc</span>
+                </div>
+
+
+                <div class="form-grid edit-fields-grid">
+
+                    <label class="field field-wide">
+                        <span>Tên sản phẩm <b>*</b></span>
+                        <input type="text" th:field="*{name}" maxlength="200" placeholder="Nhập tên sản phẩm" required
+                               th:classappend="${errors.containsKey('name')} ? ' is-invalid' : ''">
+                        <em th:if="${errors.containsKey('name')}" th:text="${errors.get('name')}"></em>
+                    </label>
+
+                    <label class="field">
+                        <span>Mã lô</span>
+                        <input type="text" th:field="*{batchCode}" readonly>
+                        <small><span class="edit-info-dot">i</span> Mã lô được cố định sau khi tạo sản phẩm.</small>
+                    </label>
+
+                    <label class="field">
+                        <span>Xuất xứ</span>
+                        <input type="text" th:field="*{origin}" maxlength="150" placeholder="Ví dụ: Đà Lạt, Việt Nam"
+                               th:classappend="${errors.containsKey('origin')} ? ' is-invalid' : ''">
+                        <em th:if="${errors.containsKey('origin')}" th:text="${errors.get('origin')}"></em>
+                    </label>
+
+                    <label class="field">
+                        <span>Danh mục</span>
+                        <select th:field="*{categoryId}" th:classappend="${errors.containsKey('categoryId')} ? ' is-invalid' : ''">
+                            <option value="">Chọn danh mục</option>
+                            <option th:each="category : ${form.categories}" th:value="${category.id}" th:text="${category.name}"></option>
+                        </select>
+                        <em th:if="${errors.containsKey('categoryId')}" th:text="${errors.get('categoryId')}"></em>
+                    </label>
+
+                </div>
+            </section>
+
+            <section class="form-card edit-section">
+                <div class="form-grid edit-fields-grid">
+                    <label class="field field-wide">
+                        <span>Mô tả sản phẩm</span>
+                        <textarea th:field="*{description}" rows="5" maxlength="2000" placeholder="Mô tả đặc điểm, hương vị, cách bảo quản..."
+                                  th:classappend="${errors.containsKey('description')} ? ' is-invalid' : ''"></textarea>
+                        <div class="edit-field-footer"><small>Nội dung tối đa 2.000 ký tự.</small><em th:if="${errors.containsKey('description')}" th:text="${errors.get('description')}"></em></div>
+                    </label>
+                </div>
+            </section>
+
+            <div class="edit-form-footer">
+                <div class="edit-footer-copy"><strong>Kiểm tra thông tin trước khi lưu</strong><span>Bạn có thể xem lại toàn bộ thông tin tại trang chi tiết sản phẩm.</span></div>
+                <div class="form-actions">
+                    <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">Hủy</a>
+                    <button class="button button-primary edit-save-button" type="submit"><span>✓</span> Lưu thay đổi</button>
+                </div>
+            </div>
+        </form>
+    </main>
+</div>
+</body>
+</html>

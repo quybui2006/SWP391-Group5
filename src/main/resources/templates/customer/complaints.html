@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{customer/account-fragments :: head('Khiếu nại & Hỗ trợ')}"></head>
+<body>
+<div class="customer-shell">
+<aside th:replace="~{customer/account-fragments :: sidebar('complaints')}"></aside>
+<main class="customer-main">
+    <header th:replace="~{customer/account-fragments :: topbar('Khiếu nại & Hỗ trợ')}"></header>
+
+    <section class="account-panel orders-panel">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
+            <div class="account-heading" style="margin-bottom: 0;">
+                <h1>Khiếu nại &amp; Hỗ trợ đơn hàng</h1>
+                <p>Theo dõi yêu cầu khiếu nại và kết quả xử lý bồi hoàn.</p>
+            </div>
+            <a class="btn-outline" th:href="@{/customer/account/orders}"
+               style="padding: 9px 16px; border-radius: 9px; font-weight: 600; text-decoration: none;">
+                📦 Chọn đơn hàng để gửi khiếu nại
+            </a>
+        </div>
+
+        <div th:if="${message}" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600;" th:text="${message}"></div>
+        <div th:if="${error}" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600;" th:text="${error}"></div>
+
+        <!-- Thanh lọc theo 3 trạng thái chuẩn -->
+        <nav class="order-tabs" style="margin-bottom: 20px;">
+            <a th:href="@{/customer/account/complaints}"
+               th:classappend="${currentStatus == 'all'} ? 'active' : ''">
+                Tất cả
+                <span class="tab-count" th:if="${statusCounts['all'] > 0}" th:text="${statusCounts['all']}"></span>
+            </a>
+            <a th:href="@{/customer/account/complaints(status='processing')}"
+               th:classappend="${currentStatus == 'processing' or currentStatus == 'pending_operations' or currentStatus == 'pending_shop' or currentStatus == 'escalated'} ? 'active' : ''">
+                ⏳ Đang xử lý
+                <span class="tab-count" th:if="${statusCounts['processing'] > 0}" th:text="${statusCounts['processing']}"></span>
+            </a>
+            <a th:href="@{/customer/account/complaints(status='processed')}"
+               th:classappend="${currentStatus == 'processed' or currentStatus == 'resolved' or currentStatus == 'rejected'} ? 'active' : ''">
+                ✅ Đã xử lý
+                <span class="tab-count" th:if="${statusCounts['processed'] > 0}" th:text="${statusCounts['processed']}"></span>
+            </a>
+            <a th:href="@{/customer/account/complaints(status='cancelled')}"
+               th:classappend="${currentStatus == 'cancelled'} ? 'active' : ''">
+                ✕ Đã rút khiếu nại
+                <span class="tab-count" th:if="${statusCounts['cancelled'] > 0}" th:text="${statusCounts['cancelled']}"></span>
+            </a>
+        </nav>
+
+        <!-- Danh sách phiếu khiếu nại -->
+        <div class="order-card" th:each="c : ${complaints}" style="padding: 18px 20px; margin-bottom: 16px;">
+            <!-- Header: Mã khiếu nại, Đơn, Cửa hàng & Trạng thái -->
+            <div class="order-card-header" style="padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <strong style="color: #0284c7; font-size: 15px;" th:text="${c['complaint_code']}">KN-001</strong>
+                    <span style="color: #94a3b8;">|</span>
+                    <a th:href="@{/customer/account/orders/{oid}(oid=${c['order_id']})}"
+                       style="font-weight: 600; color: #334155; text-decoration: none;"
+                       th:text="${'Đơn ' + c['order_code']}">Đơn FF-01</a>
+                    <span style="color: #94a3b8;">•</span>
+                    <span style="font-size: 13.5px; color: #16a34a; font-weight: 600;" th:text="${'🏪 ' + c['shop_name']}">Tên Shop</span>
+                </div>
+                <div style="text-align: right;">
+                    <span class="order-status"
+                          th:classappend="${c['status'] == 'RESOLVED'} ? ' completed' : (${c['status'] == 'REJECTED' or c['status'] == 'CANCELLED'} ? ' cancelled' : ' pending')"
+                          th:text="${c['status'] == 'RESOLVED' ? '✅ Đã giải quyết' : (c['status'] == 'REJECTED' ? '❌ Đã từ chối' : (c['status'] == 'CANCELLED' ? '✕ Đã rút khiếu nại' : c['status_label']))}">
+                        Trạng thái
+                    </span>
+                </div>
+            </div>
+
+            <!-- Body: Bạn khiếu nại gì & Kết quả nhận được -->
+            <div style="padding: 14px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <!-- Vấn đề & Sản phẩm -->
+                        <div style="font-size: 13.5px; margin-bottom: 6px;">
+                            <span style="background: #fef2f2; color: #dc2626; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;"
+                                  th:text="${c['reason_label']}">Lý do</span>
+                            <strong th:if="${c['item_product_name'] != null}"
+                                    style="color: #0f172a; margin-left: 6px;"
+                                    th:text="${c['item_product_name'] + ' (' + c['item_variant_name'] + ')'}"></strong>
+                            <strong th:if="${c['item_product_name'] == null}"
+                                    style="color: #0f172a; margin-left: 6px;">Toàn bộ đơn hàng</strong>
+                        </div>
+
+                        <!-- Nội dung khiếu nại -->
+                        <p style="margin: 6px 0 8px; font-size: 13.5px; color: #334155; line-height: 1.5;" th:text="${c['description']}">Mô tả chi tiết</p>
+                    </div>
+
+                    <!-- Ảnh bằng chứng -->
+                    <a th:if="${c['evidence_image_url'] != null}" th:href="${c['evidence_image_url']}" target="_blank">
+                        <img th:src="${c['evidence_image_url']}"
+                             alt="Ảnh minh chứng"
+                             style="width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
+                    </a>
+                </div>
+
+                <!-- KHỐI KẾT QUẢ XỬ LÝ (Chỉ hiện kết quả khiếu nại) -->
+                <!-- Case 1: Đã giải quyết thành công -->
+                <div th:if="${c['status'] == 'RESOLVED'}"
+                     style="margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; font-size: 13px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px;">
+                        <strong style="color: #15803d; font-size: 13.5px;" th:text="${'✓ Kết quả: ' + (c['resolution_label'] ?: 'Đã giải quyết')}">✓ Kết quả: Đã giải quyết</strong>
+                    </div>
+                    <div th:if="${c['replacement_order_code'] != null}" style="margin-top: 4px; color: #047857;">
+                        📦 Đơn hàng giao bù 0₫:
+                        <a th:href="@{/customer/account/orders/{id}(id=${c['replacement_order_id']})}"
+                           style="font-weight: 700; color: #0284c7; text-decoration: underline;"
+                           th:text="${c['replacement_order_code']}"></a>
+                        <span th:if="${c['replacement_order_status'] != null}" th:text="${' (' + c['replacement_order_status'] + ')'}"></span>
+                    </div>
+                    <div th:if="${c['voucher_code'] != null}" style="margin-top: 4px; color: #86198f;">
+                        🎟️ Voucher đền bù:
+                        <strong style="font-family: monospace; background: #fae8ff; padding: 2px 6px; border-radius: 4px;" th:text="${c['voucher_code']}"></strong>
+                        <span style="font-size: 12px; color: #6b21a8;">(Đã lưu vào ví voucher của bạn)</span>
+                    </div>
+                    <p style="margin: 4px 0 0; color: #1e293b; line-height: 1.4;" th:text="${c['shop_response'] ?: c['resolution_note']}"></p>
+                </div>
+
+                <!-- Case 2: Đã từ chối -->
+                <div th:if="${c['status'] == 'REJECTED'}"
+                     style="margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; font-size: 13px;">
+                    <strong style="color: #b91c1c; font-size: 13.5px; display: block; margin-bottom: 4px;">✕ Kết quả: Khiếu nại bị từ chối</strong>
+                    <p style="margin: 0; color: #7f1d1d; line-height: 1.4;" th:text="${c['resolution_note'] ?: 'Yêu cầu không đủ điều kiện giải quyết theo chính sách đổi trả.'}"></p>
+                </div>
+
+                <!-- Case 3: Đang xử lý -->
+                <div th:if="${c['status'] == 'PENDING_OPERATIONS' or c['status'] == 'PENDING_SHOP' or c['status'] == 'ESCALATED' or c['status'] == 'PENDING' or c['status'] == 'IN_PROGRESS'}"
+                     style="margin-top: 10px; padding: 8px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12.5px; color: #475569;">
+                    <span th:if="${c['status'] == 'PENDING_OPERATIONS'}">⏳ Yêu cầu của bạn đang chờ Ban Vận hành thẩm định tính hợp lệ.</span>
+                    <span th:if="${c['status'] != 'PENDING_OPERATIONS'}">⏳ Ban Vận hành đã phê duyệt và đang chờ Cửa hàng xử lý bồi hoàn.</span>
+                </div>
+            </div>
+
+            <!-- Footer: Ngày gửi + Nút thao tác -->
+            <div class="order-card-footer" style="padding-top: 10px; border-top: 1px solid #f1f5f9;">
+                <div class="order-total" style="font-size: 12.5px; color: #64748b;">
+                    <span th:text="${'Ngày gửi: ' + c['created_at_fmt']}"></span>
+                </div>
+                <div class="order-actions" style="display: flex; gap: 8px; align-items: center;">
+                    <form th:if="${c['status'] == 'PENDING_OPERATIONS' or c['status'] == 'PENDING_SHOP' or c['status'] == 'ESCALATED' or c['status'] == 'PENDING' or c['status'] == 'IN_PROGRESS'}"
+                          th:action="@{/customer/account/complaints/{id}/cancel(id=${c['id']})}" method="post"
+                          onsubmit="return confirm('Bạn có chắc muốn rút lại yêu cầu khiếu nại này?');" style="margin: 0;">
+                        <button type="submit"
+                                style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 7px; font-weight: 600; font-size: 12.5px; cursor: pointer;">
+                            ✕ Rút khiếu nại
+                        </button>
+                    </form>
+                    <a class="btn-outline" th:href="@{/customer/account/orders/{oid}(oid=${c['order_id']})}">Xem đơn hàng</a>
+                    <a class="btn-primary-sm" th:href="@{/customer/account/complaints/{id}(id=${c['id']})}">Chi tiết →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trạng thái trống -->
+        <div class="account-empty" th:if="${#lists.isEmpty(complaints)}">
+            <p>Bạn chưa có khiếu nại nào ở mục này.</p>
+            <p style="font-size: 13px; color: #64748b; margin-top: -6px;">Để gửi khiếu nại, vui lòng vào <strong>Đơn hàng của tôi</strong> và chọn đơn hàng cần hỗ trợ.</p>
+            <a class="primary-button" th:href="@{/customer/account/orders}">Tới Đơn hàng của tôi</a>
+        </div>
+    </section>
+</main>
+</div>
+<script th:src="@{/js/customer-account-pages.js}"></script>
+</body>
+</html>

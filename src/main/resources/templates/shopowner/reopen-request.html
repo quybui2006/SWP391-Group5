@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Yêu cầu mở lại Shop | FreshFruit</title><link rel="stylesheet" th:href="@{/css/shopowner.css}"><link rel="stylesheet" th:href="@{/css/shop-product.css}"></head>
+<body><div class="app-shell"><aside th:replace="~{shopowner/fragments :: sidebar('reopen-request')}"></aside>
+<main class="main-content product-management"><header class="topbar"><div><p class="breadcrumb">Shop Owner / <span>Yêu cầu mở lại Shop</span></p><h1>Yêu cầu mở lại Shop</h1><p class="muted" th:text="${shop.name}">Cửa hàng</p></div></header>
+<p class="alert alert-success" th:if="${success}" th:text="${success}"></p><p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
+<section class="form-card" style="margin-bottom:20px"><h2>Trạng thái cửa hàng</h2><div class="detail-list">
+<div><span>Trạng thái hoạt động</span><strong th:text="${shop.operating_status}">SUSPENDED</strong></div><div><span>Trạng thái đăng ký</span><strong th:text="${shop.approval_status}">APPROVED</strong></div>
+<div class="field-wide" th:if="${shop.suspension_reason != null}"><span>Lý do chặn</span><strong th:text="${shop.suspension_reason}">Lý do</strong></div></div>
+<form th:if="${shop.operating_status == 'SUSPENDED' and (requests.isEmpty() or requests[0].status != 'PENDING')}" method="post" th:action="@{/shopowner/reopen-request}" style="margin-top:20px">
+<label class="field"><span>Giải trình <b>*</b></span><textarea name="explanation" rows="5" minlength="10" maxlength="1000" required placeholder="Trình bày cách khắc phục và đề nghị mở lại cửa hàng"></textarea></label><button class="button button-primary" type="submit" style="margin-top:12px">Gửi yêu cầu mở lại</button></form>
+<p class="alert" th:if="${shop.operating_status == 'SUSPENDED' and !requests.isEmpty() and requests[0].status == 'PENDING'}">Yêu cầu mở lại của bạn đang chờ Operations xử lý.</p>
+<p class="muted" th:if="${shop.operating_status != 'SUSPENDED'}">Cửa hàng hiện không bị chặn nên chưa cần gửi yêu cầu mở lại.</p>
+</section>
+<section class="panel"><h2>Lịch sử giải trình</h2><div class="table-wrap"><table><thead><tr><th>NGÀY GỬI</th><th>GIẢI TRÌNH</th><th>TRẠNG THÁI</th><th>PHẢN HỒI</th></tr></thead><tbody>
+<tr th:each="item : ${requests}"><td th:text="${item.requestedAt != null ? #temporals.format(item.requestedAt,'dd/MM/yyyy HH:mm') : '—'}">—</td><td th:text="${item.explanation}">Giải trình</td><td th:text="${item.status}">PENDING</td><td th:text="${item.operationReason ?: '—'}">—</td></tr>
+<tr th:if="${#lists.isEmpty(requests)}"><td colspan="4">Chưa gửi yêu cầu mở lại nào.</td></tr></tbody></table></div></section>
+</main></div></body></html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<aside class="sidebar" th:fragment="sidebar(activePage)">
+
+    <!-- Brand -->
+    <a class="brand" th:href="@{/admin}">
+        <span class="brand-mark">F</span>
+        <span>
+            Fresh<span>Fruit</span>
+            <small>ADMIN PANEL</small>
+        </span>
+    </a>
+
+    <!-- Admin info -->
+    <div class="shop-switcher">
+        <div class="shop-avatar">AD</div>
+        <div>
+            <strong th:text="${session.fullName ?: 'Admin'}">Admin</strong>
+            <small>Quản trị viên</small>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="side-nav" aria-label="Điều hướng Admin">
+
+        <span class="nav-label">QUẢN LÝ</span>
+
+        <a th:classappend="${activePage == 'dashboard'} ? ' active' : ''"
+           th:href="@{/admin/dashboard}">
+            Bảng điều khiển sàn
+        </a>
+
+        <a th:classappend="${activePage == 'users'} ? ' active' : ''"
+           th:href="@{/admin/users}">
+            Quản lý người dùng
+        </a>
+
+        <a th:classappend="${activePage == 'commission'} ? ' active' : ''"
+           th:href="@{/admin/commission}">
+            Cấu hình phí sàn
+        </a>
+
+        <a th:classappend="${activePage == 'categories'} ? ' active' : ''"
+           th:href="@{/admin/categories}">
+            Cấu hình danh mục
+        </a>
+
+        <a th:classappend="${activePage == 'payouts'} ? ' active' : ''"
+           th:href="@{/admin/shop-payouts}">
+            Chi trả Shop Owner
+        </a>
+
+        <form th:action="@{/logout}" method="post" style="margin: 10px 10px 0;">
+            <button type="submit" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                Đăng xuất
+            </button>
+        </form>
+
+    </nav>
+
+    <!-- Current user -->
+    <div class="sidebar-footer">
+        <div class="mini-user">
+            <div class="avatar">AD</div>
+            <div>
+                <strong th:text="${session.fullName ?: 'Admin'}">Admin</strong>
+                <small>Quản trị viên</small>
+            </div>
+            <span>⋮</span>
+        </div>
+    </div>
+
+</aside>
+
+</body>
+</html>

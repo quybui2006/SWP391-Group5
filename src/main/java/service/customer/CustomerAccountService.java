@@ -1,0 +1,361 @@
+package service.customer;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Map;
+import entity.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import repository.UserRepository;
+
+@Service
+public class CustomerAccountService {
+    private final JdbcTemplate jdbc;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public CustomerAccountService(JdbcTemplate jdbc, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.jdbc = jdbc;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        ensureFavoritesTable();
+    }
+
+    private void ensureFavoritesTable() {
+        try {
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_profiles (user_id BIGINT PRIMARY KEY, gender VARCHAR(10), birth_date DATE, avatar MEDIUMBLOB, avatar_type VARCHAR(30), FOREIGN KEY(user_id) REFERENCES users(id))");
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_favorites (user_id BIGINT NOT NULL, variant_id BIGINT NOT NULL, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), PRIMARY KEY(user_id, variant_id), FOREIGN KEY(user_id) REFERENCES users(id), FOREIGN KEY(variant_id) REFERENCES product_variants(id))");
+            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_saved_vouchers (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, voucher_id BIGINT NOT NULL, saved_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), UNIQUE KEY uq_customer_saved_voucher (user_id, voucher_id), FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (voucher_id) REFERENCES vouchers(id))");
+        } catch (Exception ignored) {
+            // Handled by database migrations.
+        }
+    }
+
+    @Transactional
+    public void saveVoucher(Long userId, Long voucherId) {
+        int inserted = jdbc.update("INSERT IGNORE INTO customer_saved_vouchers(user_id,voucher_id) SELECT ?,v.id FROM vouchers v WHERE v.id=? AND v.is_public=1 AND v.status='ACTIVE' AND v.starts_at<=CURRENT_TIMESTAMP(3) AND v.ends_at>CURRENT_TIMESTAMP(3) AND v.used_count<v.max_usages", userId, voucherId);
+        if (inserted == 0) {
+            Integer alreadySaved = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM customer_saved_vouchers WHERE user_id=? AND voucher_id=?",
+                    Integer.class, userId, voucherId);
+            if (alreadySaved == null || alreadySaved == 0) {
+                throw new IllegalArgumentException("Voucher không còn khả dụng để lưu.");
+            }
+        }
+    }
+
+    public List<Map<String,Object>> savedVouchers(Long userId) {
+        return jdbc.queryForList("SELECT v.id,v.code,v.name,v.voucher_type,v.discount_type,v.discount_value,v.max_discount_amount,v.min_order_value,v.starts_at,v.ends_at FROM customer_saved_vouchers sv JOIN vouchers v ON v.id=sv.voucher_id WHERE sv.user_id=? ORDER BY sv.saved_at DESC", userId);
+    }
+
+    public boolean hasBankAccount(Long userId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM customer_bank_accounts WHERE user_id=? AND bank_name<>'' AND bank_account_no<>'' AND bank_account_holder<>''", Integer.class, userId);
+        return count != null && count > 0;
+    }
+
+    public Map<String,Object> bankAccount(Long userId) {
+        List<Map<String,Object>> rows = jdbc.queryForList("SELECT bank_name,bank_account_no,bank_account_holder,updated_at FROM customer_bank_accounts WHERE user_id=?", userId);
+        return rows.isEmpty() ? Map.of() : rows.get(0);
+    }
+
+    @Transactional
+    public void saveBankAccount(Long userId, String bankName, String accountNo, String accountHolder) {
+        String bank = bankName == null ? "" : bankName.trim();
+        String number = accountNo == null ? "" : accountNo.trim();
+        String holder = accountHolder == null ? "" : accountHolder.trim().replaceAll("\\s+", " ").toUpperCase(java.util.Locale.ROOT);
+        if (bank.isEmpty() || bank.length() > 100) throw new IllegalArgumentException("Vui lòng nhập tên ngân hàng (tối đa 100 ký tự).");
+        if (!number.matches("[A-Za-z0-9-]{5,50}")) throw new IllegalArgumentException("Số tài khoản phải có từ 5 đến 50 ký tự chữ/số.");
+        if (holder.length() < 2 || holder.length() > 150) throw new IllegalArgumentException("Tên chủ tài khoản không hợp lệ.");
+        jdbc.update("""
+            INSERT INTO customer_bank_accounts(user_id,bank_name,bank_account_no,bank_account_holder)
+            VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE bank_name=VALUES(bank_name),bank_account_no=VALUES(bank_account_no),bank_account_holder=VALUES(bank_account_holder)
+        """, userId, bank, number, holder);
+        jdbc.update("""
+            UPDATE customer_refunds SET bank_name=?,bank_account_no=?,bank_account_holder=?
+            WHERE customer_id=? AND status='PENDING'
+        """, bank, number, holder, userId);
+    }
+
+    public List<Map<String,Object>> coinHistory(Long userId, String filter) {
+        String condition = switch (filter == null ? "all" : filter) {
+            case "received" -> " AND type='RECEIVED' AND status='ACTIVE'";
+            case "used" -> " AND ((type='USED') OR (type='EXPIRED') OR status='EXPIRED')";
+            default -> "";
+        };
+        jdbc.update("UPDATE customer_coin_transactions SET status='EXPIRED',type='EXPIRED' WHERE user_id=? AND status='ACTIVE' AND expires_at IS NOT NULL AND expires_at<=CURRENT_TIMESTAMP(3)", userId);
+        return jdbc.queryForList("SELECT amount,type,status,description,expires_at,created_at FROM customer_coin_transactions WHERE user_id=?" + condition + " ORDER BY created_at DESC", userId);
+    }
+
+    public long coinBalance(Long userId) {
+        Number value = jdbc.queryForObject("SELECT COALESCE(SUM(CASE WHEN type='RECEIVED' AND status='ACTIVE' THEN amount ELSE 0 END),0)-COALESCE(SUM(CASE WHEN type IN ('USED','EXPIRED') OR status='EXPIRED' THEN amount ELSE 0 END),0) FROM customer_coin_transactions WHERE user_id=?", Number.class, userId);
+        return value == null ? 0L : Math.max(0L, value.longValue());
+    }
+
+    public Map<String,Object> profile(Long userId) {
+        return jdbc.queryForMap("SELECT u.id,u.full_name,u.email,u.phone,u.status,p.gender,p.birth_date,(p.avatar IS NOT NULL) AS has_avatar FROM users u LEFT JOIN customer_profiles p ON p.user_id=u.id WHERE u.id=? AND u.status='ACTIVE'", userId);
+    }
+    public List<Map<String,Object>> orders(Long userId) {
+        return orders(userId, null);
+    }
+
+    /**
+     * all | pending-payment | shipping | completed | cancelled
+     */
+    public List<Map<String,Object>> orders(Long userId, String statusFilter) {
+        String condition = switch (statusFilter == null ? "all" : statusFilter) {
+            case "pending-payment" -> " AND o.status='PENDING' AND o.payment_status='UNPAID'";
+            case "shipping"        -> " AND (o.status IN ('CONFIRMED','PREPARING','SHIPPING','DELIVERED')"
+                                       + " OR (o.status='PENDING' AND o.payment_status='PAID'))";
+            case "completed"       -> " AND o.status='COMPLETED'";
+            case "cancelled"       -> " AND o.status='CANCELLED'";
+            default -> "";
+        };
+        List<Map<String,Object>> orders = jdbc.query("""
+            SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_method,o.payment_status,o.delivery_status,o.created_at,
+                   s.name AS shop_name, s.id AS shop_id,
+                   (SELECT COUNT(*) FROM complaints c WHERE c.order_id=o.id AND c.status <> 'CANCELLED') AS complaint_count
+            FROM orders o JOIN checkouts c ON c.id=o.checkout_id
+            JOIN shops s ON s.id=o.shop_id
+            WHERE c.user_id=?""" + condition + " ORDER BY o.created_at DESC,o.id DESC",
+            (rs, row) -> {
+                Map<String,Object> order = new java.util.LinkedHashMap<>();
+                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_method", "payment_status", "delivery_status", "shop_name", "shop_id", "complaint_count"))
+                    order.put(column, rs.getObject(column));
+                var timestamp = rs.getTimestamp("created_at");
+                order.put("created_at", timestamp == null ? "—" : timestamp.toLocalDateTime()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                return order;
+            }, userId);
+        for (Map<String,Object> order : orders) {
+            order.put("items", jdbc.queryForList("""
+                SELECT oi.id AS order_item_id, oi.variant_id, oi.product_name, oi.variant_name, oi.sku,
+                       oi.quantity, oi.unit_price, oi.sale_unit_price, oi.line_total,
+                       oi.image_url, oi.reviewed_at
+                FROM order_items oi WHERE oi.order_id=? ORDER BY oi.id
+                """, order.get("id")));
+        }
+        return orders;
+    }
+
+
+    public Map<String,Object> orderStatusCounts(Long userId) {
+        return jdbc.queryForMap("""
+            SELECT
+                COUNT(*) AS all_count,
+                COALESCE(SUM(CASE WHEN o.status='PENDING' AND o.payment_status='UNPAID' THEN 1 ELSE 0 END),0) AS pending_payment,
+                COALESCE(SUM(CASE WHEN o.status IN ('CONFIRMED','PREPARING','SHIPPING','DELIVERED')
+                    OR (o.status='PENDING' AND o.payment_status='PAID') THEN 1 ELSE 0 END),0) AS shipping,
+                COALESCE(SUM(CASE WHEN o.status='COMPLETED' THEN 1 ELSE 0 END),0) AS completed,
+                COALESCE(SUM(CASE WHEN o.status='CANCELLED' THEN 1 ELSE 0 END),0) AS cancelled
+            FROM orders o JOIN checkouts c ON c.id=o.checkout_id
+            WHERE c.user_id=?
+            """, userId);
+    }
+
+    /** Chi tiết một đơn hàng của khách (đảm bảo đơn thuộc về đúng user). */
+    public Map<String,Object> orderDetail(Long userId, Long orderId) {
+        var rows = jdbc.queryForList("""
+            SELECT o.*, s.name AS shop_name
+            FROM orders o JOIN checkouts c ON c.id=o.checkout_id
+            JOIN shops s ON s.id=o.shop_id
+            WHERE o.id=? AND c.user_id=?
+            """, orderId, userId);
+        if (rows.isEmpty())
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        Map<String,Object> order = new java.util.LinkedHashMap<>(rows.get(0));
+        order.put("items", jdbc.queryForList("""
+            SELECT oi.id AS order_item_id, oi.variant_id, oi.product_name, oi.variant_name, oi.sku,
+                   oi.quantity, oi.unit_price, oi.sale_unit_price, oi.line_total,
+                   oi.image_url, oi.base_unit_name, oi.reviewed_at
+            FROM order_items oi WHERE oi.order_id=? ORDER BY oi.id
+            """, orderId));
+        order.put("payments", jdbc.queryForList(
+            "SELECT payment_code, method, amount, status, paid_at FROM payments WHERE order_id=? ORDER BY id", orderId));
+        for (String field : List.of("created_at", "shipped_at", "delivered_at", "completed_at", "cancelled_at", "paid_at"))
+            order.put(field + "_fmt", formatOrderDate(order.get(field)));
+        order.put("tracking", orderTracking(order));
+        return order;
+    }
+
+    private String formatOrderDate(Object value) {
+        if (value == null) return "—";
+        java.time.LocalDateTime dateTime;
+        if (value instanceof java.sql.Timestamp timestamp) dateTime = timestamp.toLocalDateTime();
+        else if (value instanceof java.time.LocalDateTime localDateTime) dateTime = localDateTime;
+        else if (value instanceof java.util.Date date)
+            dateTime = java.time.LocalDateTime.ofInstant(date.toInstant(), java.time.ZoneId.systemDefault());
+        else return value.toString();
+        return dateTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    /**
+     * Chuẩn hóa tiến độ hiển thị trên trang chi tiết đơn hàng.
+     *
+     * CONFIRMED là trạng thái Shop đã xác nhận và bàn giao đơn ở trạng thái
+     * sẵn sàng lấy hàng, vì vậy bước "Chuẩn bị hàng" cũng được xem là đã xong.
+     * delivery_status và các mốc thời gian được dùng làm dữ liệu dự phòng để
+     * timeline không bị lùi hoặc hiển thị sai khi một luồng cập nhật thiếu một cột.
+     */
+    private Map<String, Object> orderTracking(Map<String, Object> order) {
+        String status = normalized(order.get("status"));
+        String deliveryStatus = normalized(order.get("delivery_status"));
+
+        int progress = switch (status) {
+            case "CONFIRMED" -> 2;
+            case "PREPARING" -> 2;
+            case "SHIPPING" -> 3;
+            case "DELIVERED" -> 4;
+            case "COMPLETED" -> 5;
+            default -> 0;
+        };
+        if ("READY".equals(deliveryStatus)) progress = Math.max(progress, 2);
+        if ("IN_TRANSIT".equals(deliveryStatus)) progress = Math.max(progress, 3);
+        if ("DELIVERED".equals(deliveryStatus) || order.get("delivered_at") != null)
+            progress = Math.max(progress, 4);
+        if (order.get("completed_at") != null || "COMPLETED".equals(status))
+            progress = Math.max(progress, 5);
+
+        String currentStep = switch (status) {
+            case "PENDING" -> isPaid(order) ? "CONFIRMED" : "PLACED";
+            case "CONFIRMED" -> "CONFIRMED";
+            case "PREPARING" -> "PREPARING";
+            case "SHIPPING" -> "SHIPPING";
+            case "DELIVERED" -> "DELIVERED";
+            case "COMPLETED" -> "COMPLETED";
+            case "CANCELLED" -> "CANCELLED";
+            default -> progress >= 5 ? "COMPLETED" : progress >= 4 ? "DELIVERED"
+                    : progress >= 3 ? "SHIPPING" : progress >= 2 ? "PREPARING"
+                    : progress >= 1 ? "CONFIRMED" : "PLACED";
+        };
+        if ("READY".equals(deliveryStatus) && "CONFIRMED".equals(status)) currentStep = "PREPARING";
+        if ("IN_TRANSIT".equals(deliveryStatus) && progress >= 3) currentStep = "SHIPPING";
+        if ("DELIVERED".equals(deliveryStatus) && progress >= 4) currentStep = "DELIVERED";
+        if ("COMPLETED".equals(status)) currentStep = "COMPLETED";
+
+        Map<String, Object> tracking = new java.util.LinkedHashMap<>();
+        tracking.put("confirmedClass", trackingClass(progress >= 1, "CONFIRMED".equals(currentStep)));
+        tracking.put("preparingClass", trackingClass(progress >= 2, "PREPARING".equals(currentStep)));
+        tracking.put("shippingClass", trackingClass(progress >= 3, "SHIPPING".equals(currentStep)));
+        tracking.put("deliveredClass", trackingClass(progress >= 4, "DELIVERED".equals(currentStep)));
+        tracking.put("completedClass", trackingClass(progress >= 5, "COMPLETED".equals(currentStep)));
+        tracking.put("currentStep", currentStep);
+        return tracking;
+    }
+
+    private String trackingClass(boolean done, boolean active) {
+        if (done && active) return "done active";
+        if (done) return "done";
+        return active ? "active" : "";
+    }
+
+    private boolean isPaid(Map<String, Object> order) {
+        return "PAID".equals(normalized(order.get("payment_status")));
+    }
+
+    private String normalized(Object value) {
+        return value == null ? "" : value.toString().trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
+    public List<Map<String,Object>> favorites(Long userId) {
+        return jdbc.queryForList("""
+            SELECT pv.id AS variant_id,pv.name AS variant_name,pv.sku,pv.price,pv.image_url,
+                   p.id AS product_id,p.name AS product_name,u.name AS unit_name
+            FROM customer_favorites f JOIN product_variants pv ON pv.id=f.variant_id
+            JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id
+            WHERE f.user_id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') ORDER BY f.created_at DESC
+            """, userId);
+    }
+    @Transactional
+    public void updateProfile(Long userId, String fullName, String phone) {
+        if (fullName == null || fullName.isBlank() || fullName.trim().length() > 150) throw new IllegalArgumentException("Họ tên không hợp lệ.");
+        if (phone != null && phone.trim().length() > 20) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
+        jdbc.update("UPDATE users SET full_name=?, phone=? WHERE id=? AND status='ACTIVE'", fullName.trim(), phone == null || phone.isBlank() ? null : phone.trim(), userId);
+    }
+    @Transactional
+    public void saveProfile(Long userId, String fullName, String phone, String gender, String birthDate,
+                            org.springframework.web.multipart.MultipartFile image) {
+        if (gender != null && !gender.isBlank() && !List.of("MALE", "FEMALE", "OTHER").contains(gender))
+            throw new IllegalArgumentException("Giới tính không hợp lệ.");
+        java.time.LocalDate date = null;
+        try { if (birthDate != null && !birthDate.isBlank()) date = java.time.LocalDate.parse(birthDate); }
+        catch (java.time.format.DateTimeParseException e) { throw new IllegalArgumentException("Ngày sinh không hợp lệ."); }
+        if (date != null && (date.isAfter(java.time.LocalDate.now()) || date.getYear() < 1900))
+            throw new IllegalArgumentException("Ngày sinh phải từ năm 1900 đến hôm nay.");
+        if (phone != null && !phone.isBlank() && !phone.trim().matches("\\+?[0-9]{9,15}"))
+            throw new IllegalArgumentException("Số điện thoại cần có từ 9 đến 15 chữ số.");
+        byte[] bytes = null;
+        String type = null;
+        if (image != null && !image.isEmpty()) {
+            if (image.getSize() > 1024 * 1024) throw new IllegalArgumentException("Ảnh đại diện không được vượt quá 1 MB.");
+            try (var stream = javax.imageio.ImageIO.createImageInputStream(image.getInputStream())) {
+                var readers = javax.imageio.ImageIO.getImageReaders(stream);
+                if (!readers.hasNext()) throw new IllegalArgumentException("Vui lòng chọn ảnh JPEG hoặc PNG hợp lệ.");
+                var reader = readers.next();
+                try {
+                    reader.setInput(stream);
+                    String format = reader.getFormatName().toLowerCase(java.util.Locale.ROOT);
+                    if (!List.of("jpeg", "jpg", "png").contains(format) || (long) reader.getWidth(0) * reader.getHeight(0) > 20000000)
+                        throw new IllegalArgumentException("Vui lòng chọn ảnh JPEG hoặc PNG tối đa 20 megapixel.");
+                    type = format.equals("png") ? "image/png" : "image/jpeg";
+                    bytes = image.getBytes();
+                } finally { reader.dispose(); }
+            } catch (java.io.IOException e) { throw new IllegalArgumentException("Không đọc được ảnh đại diện."); }
+        }
+        updateProfile(userId, fullName, phone);
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM customer_profiles WHERE user_id=?", Integer.class, userId) == 0)
+            jdbc.update("INSERT INTO customer_profiles(user_id) VALUES (?)", userId);
+        jdbc.update("UPDATE customer_profiles SET gender=?,birth_date=? WHERE user_id=?", gender == null || gender.isBlank() ? null : gender, date, userId);
+        if (bytes != null) jdbc.update("UPDATE customer_profiles SET avatar=?,avatar_type=? WHERE user_id=?", bytes, type, userId);
+    }
+    public Map<String,Object> avatar(Long userId) {
+        var rows = jdbc.queryForList("SELECT avatar,avatar_type FROM customer_profiles WHERE user_id=? AND avatar IS NOT NULL", userId);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+    @Transactional
+    public void toggleFavorite(Long userId, Long variantId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=? AND variant_id=?", Integer.class, userId, variantId);
+        if (count != null && count > 0) jdbc.update("DELETE FROM customer_favorites WHERE user_id=? AND variant_id=?", userId, variantId);
+        else jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,pv.id FROM product_variants pv WHERE pv.id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING')", userId, variantId);
+    }
+    public List<Long> favoriteIds(Long userId) {
+        return jdbc.queryForList("SELECT variant_id FROM customer_favorites WHERE user_id=?", Long.class, userId);
+    }
+    @Transactional
+    public boolean setFavorite(Long userId, Long variantId, boolean favorite) {
+        // Serialize changes for this customer, including repeated clicks from other tabs.
+        jdbc.queryForObject("SELECT id FROM users WHERE id=? FOR UPDATE", Long.class, userId);
+        if (!favorite) {
+            jdbc.update("DELETE FROM customer_favorites WHERE user_id=? AND variant_id=?", userId, variantId);
+            return false;
+        }
+        if (!isFavorite(userId, variantId)) {
+            int inserted = jdbc.update("INSERT INTO customer_favorites(user_id,variant_id) SELECT ?,pv.id FROM product_variants pv WHERE pv.id=? AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING')", userId, variantId);
+            if (inserted == 0) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Sản phẩm không còn khả dụng.");
+        }
+        return true;
+    }
+    public boolean isFavorite(Long userId, Long variantId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM customer_favorites WHERE user_id=? AND variant_id=?", Integer.class, userId, variantId) > 0;
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        if (oldPassword == null || oldPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Mật khẩu không được để trống.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không chính xác.");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+}

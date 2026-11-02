@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu hình phí sàn | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:24px 0}
+        .stat-box{border:1px solid var(--line);border-radius:14px;padding:22px;background:#fafdfa}
+        .stat-box strong{display:block;font-size:26px;color:var(--ink);margin:6px 0 0}
+        .stat-box span{color:var(--muted);font-size:13px;font-weight:600}
+        .toast-fixed{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line);border-left:5px solid var(--green);border-radius:12px;padding:12px 20px;box-shadow:0 8px 25px rgba(24,57,30,.12);font-size:14px;font-weight:600;color:var(--ink);z-index:1000;animation:slideDownFade 3s forwards}
+        @keyframes slideDownFade{0%{opacity:0;transform:translateX(-50%) translateY(-20px)}15%,85%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px);pointer-events:none}}
+        .toast-error{border-left-color:#dc2626}.toast-success{border-left-color:var(--green)}
+        .form-row{display:flex;gap:12px;align-items:center}
+        .form-row input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;width:140px}
+        .btn-primary{background:#0a9e54;color:#fff;border:0;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer}
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{admin/fragments :: sidebar('commission')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">Quản trị / <span>Cấu hình phí sàn</span></p>
+                <h1>Cấu hình phí sàn (Commission)</h1>
+                <p class="muted">Tỷ lệ phí mà sàn thu từ doanh thu của Shop Owner.</p>
+            </div>
+        </header>
+
+        <section class="panel">
+            <div class="toast-fixed toast-success" th:if="${success != null}" th:text="${success}"></div>
+            <div class="toast-fixed toast-error" th:if="${error != null}" th:text="${error}"></div>
+
+            <div class="stat-grid">
+                <div class="stat-box"><span>Tỷ lệ hiện tại</span><strong th:text="${rate.multiply(T(java.math.BigDecimal).TEN).multiply(T(java.math.BigDecimal).TEN).stripTrailingZeros().toPlainString() + '%'}">5%</strong></div>
+                <div class="stat-box"><span>Tổng phí đã thu</span><strong th:text="${#numbers.formatInteger(stats.totalFees,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="stat-box"><span>Đã thanh toán</span><strong th:text="${#numbers.formatInteger(stats.paidFees,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="stat-box"><span>Chờ thanh toán</span><strong th:text="${#numbers.formatInteger(stats.unpaidFees,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+            </div>
+
+            <h3 style="margin:24px 0 12px;font-size:16px">Đặt tỷ lệ phí mới</h3>
+            <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Nhập tỷ lệ phần trăm từ 0 đến 15 (ví dụ: 5 cho 5%).</p>
+            <form class="form-row" th:action="@{/admin/commission/set}" method="post">
+                <input type="number" name="rate" min="0" max="15" step="0.01" th:value="${#numbers.formatDecimal(rate * 100, 0, 'POINT', 2, 'POINT')}" required>
+                <span>%</span>
+                <button type="submit" class="btn-primary">Lưu cấu hình</button>
+            </form>
+
+            <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--line)">
+                <h3 style="margin:0 0 12px;font-size:15px">Lưu ý</h3>
+                <ul style="color:var(--muted);font-size:13px;line-height:1.6;padding-left:20px;margin:0">
+                    <li>Tỷ lệ phí sàn phải nằm trong khoảng <strong>0% đến 15%</strong>.</li>
+                    <li>Tỷ lệ mới áp dụng cho các kỳ thanh toán phí tiếp theo.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+</div>
+</body></html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{cs/layout :: head('Yêu cầu & Khiếu nại')}"></head>
+<body>
+
+<aside th:replace="~{cs/layout :: sidebar('tickets')}"></aside>
+
+<div class="cs-main-wrapper">
+    <header class="cs-topbar">
+        <div>
+            <h1>Theo dõi &amp; Giám sát Khiếu nại</h1>
+            <p class="cs-topbar-subtitle">Hệ thống theo dõi khiếu nại toàn sàn (Ban Vận hành thẩm định đầu vào, Shop Owner thực thi bồi hoàn).</p>
+        </div>
+    </header>
+
+    <main class="cs-content">
+        <div th:if="${message}" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600;" th:text="${message}"></div>
+        <div th:if="${error}" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600;" th:text="${error}"></div>
+
+        <!-- THANH TAB TRẠNG THÁI NHANH + TÌM KIẾM GỌN -->
+        <div class="cs-card" style="padding: 16px 20px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a th:href="@{/cs/tickets(status='ALL')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'ALL'} ? 'background:#0284c7;color:#fff;border-color:#0284c7;' : ''">
+                        Tất cả (<span th:text="${disputeReport['totalDisputes']}">0</span>)
+                    </a>
+                    <a th:href="@{/cs/tickets(status='PENDING_OPERATIONS')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'PENDING_OPERATIONS'} ? 'background:#ea580c;color:#fff;border-color:#ea580c;' : ''">
+                        ⏳ Chờ Vận hành duyệt
+                    </a>
+                    <a th:href="@{/cs/tickets(status='PENDING_SHOP')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'PENDING_SHOP' or selectedStatus == 'PENDING'} ? 'background:#d97706;color:#fff;border-color:#d97706;' : ''">
+                        🏪 Chờ Shop xử lý (<span th:text="${disputeReport['pendingDisputes']}">0</span>)
+                    </a>
+                    <a th:href="@{/cs/tickets(status='RESOLVED')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'RESOLVED'} ? 'background:#16a34a;color:#fff;border-color:#16a34a;' : ''">
+                        ✅ Đã giải quyết (<span th:text="${disputeReport['resolvedDisputes']}">0</span>)
+                    </a>
+                    <a th:href="@{/cs/tickets(status='REJECTED')}" class="btn-cs-sm"
+                       th:style="${selectedStatus == 'REJECTED'} ? 'background:#475569;color:#fff;border-color:#475569;' : ''">
+                        ❌ Đã từ chối (<span th:text="${disputeReport['rejectedDisputes']}">0</span>)
+                    </a>
+                </div>
+            </div>
+
+            <form th:action="@{/cs/tickets}" method="get" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <input type="hidden" name="status" th:value="${selectedStatus}">
+                <input type="text" name="keyword" th:value="${keyword}"
+                       placeholder="Tìm mã phiếu KN-..., mã đơn FF-..., tên/SĐT khách, tên Shop..."
+                       style="flex: 1; min-width: 240px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px;">
+
+                <select name="reasonType" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px;">
+                    <option value="ALL" th:selected="${selectedReason == 'ALL'}">Tất cả lý do</option>
+                    <option th:each="entry : ${reasonLabels}"
+                            th:value="${entry.key}"
+                            th:text="${entry.value}"
+                            th:selected="${selectedReason == entry.key}"></option>
+                </select>
+
+                <button type="submit" class="btn-cs-sm" style="background: var(--cs-primary); color: #fff; border-color: var(--cs-primary); padding: 8px 16px; cursor: pointer;">
+                    Tìm kiếm
+                </button>
+                <a th:if="${(keyword != null and !keyword.isEmpty()) or selectedReason != 'ALL' or selectedStatus != 'ALL' or overdueOnly}"
+                   th:href="@{/cs/tickets}" class="btn-cs-sm" style="padding: 8px 12px;">Bỏ lọc</a>
+            </form>
+        </div>
+
+        <!-- BẢNG DANH SÁCH 5 CỘT GỌN RÕ -->
+        <div class="cs-card" style="padding: 20px;">
+            <div style="overflow-x: auto;">
+                <table class="cs-table">
+                    <thead>
+                    <tr>
+                        <th>Mã phiếu / Đơn</th>
+                        <th>Khách hàng &amp; Cửa hàng</th>
+                        <th>Lý do &amp; Yêu cầu</th>
+                        <th>Thời hạn xử lý</th>
+                        <th style="text-align: right;">Trạng thái &amp; Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="t : ${tickets}">
+                        <td>
+                            <a th:href="@{/cs/tickets/{id}(id=${t['id']})}" class="btn-cs-sm" th:text="${t['complaint_code']}">KN-001</a>
+                            <small style="color: #475569; font-weight: 600; display: block; margin-top: 3px;" th:text="${'Đơn: ' + t['order_code']}"></small>
+                            <small style="display: block; color: #94a3b8; font-size: 11.5px;" th:text="${t['created_at_fmt']}"></small>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: #0f172a;" th:text="${t['customer_name']}">Khách hàng</div>
+                            <small style="color: #64748b; display: block;" th:text="${'Shop: ' + t['shop_name']}"></small>
+                            <small th:if="${t['shop_decision'] != null}" style="color: #16a34a; font-weight: 600; font-size: 11.5px;"
+                                   th:text="${t['shop_decision'] == 'RESEND_ITEMS' ? '✓ Shop đã giao bù' : (t['shop_decision'] == 'ISSUE_VOUCHER' ? '✓ Shop tặng voucher' : (t['shop_decision'] == 'ACCEPT' ? '✓ Shop đồng ý' : '• Shop đã phản hồi'))}"></small>
+                        </td>
+                        <td style="max-width: 320px;">
+                            <strong style="font-size: 13px; color: #dc2626; display: block;" th:text="${t['reason_label']}">Lý do</strong>
+                            <span style="font-size: 13px; color: #334155; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                                  th:text="${t['description']}">Mô tả</span>
+                            <div style="margin-top: 2px;">
+                                <small th:if="${t['evidence_image_url'] != null}" style="color: #0284c7; font-weight: 600;">📷 Có ảnh</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span th:if="${t['priority'] == 'HIGH'}" class="badge-status badge-danger" style="margin-bottom: 4px;">🔥 Khẩn cấp</span>
+                            <div style="font-size: 12.5px; font-weight: 700;"
+                                 th:styleappend="${t['sla_state'] == 'OVERDUE' or t['sla_state'] == 'BREACHED_SLA'} ? 'color:#dc2626;' : (${t['sla_state'] == 'DUE_SOON' or t['sla_state'] == 'WAITING_OPERATIONS'} ? 'color:#d97706;' : 'color:#15803d;')">
+                                <span th:text="${t['sla_badge_text']}">Đúng hạn</span>
+                            </div>
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="margin-bottom: 6px;">
+                                <span th:if="${t['status'] == 'PENDING_OPERATIONS'}" class="badge-status badge-warning">Chờ Vận hành duyệt</span>
+                                <span th:if="${t['status'] == 'PENDING_SHOP' or t['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ Shop (6h)</span>
+                                <span th:if="${t['status'] == 'RESOLVED'}" class="badge-status badge-success">Đã giải quyết</span>
+                                <span th:if="${t['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
+                                <span th:if="${t['status'] == 'CANCELLED'}" class="badge-status">Đã rút</span>
+                            </div>
+                            <a th:href="@{/cs/tickets/{id}(id=${t['id']})}" class="btn-cs-sm">Chi tiết →</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(tickets)}">
+                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 36px;">
+                            Không có phiếu khiếu nại nào trong danh mục này.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

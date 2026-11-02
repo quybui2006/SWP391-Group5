@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tệp tải lên quá lớn | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/shopowner.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-product.css}">
+</head>
+<body>
+<main class="main-content product-management" style="max-width:760px;margin:8vh auto;padding:24px;">
+    <section class="form-card" role="alert">
+        <h1>Không thể tải tệp lên</h1>
+        <p>Tệp vượt quá giới hạn cho phép của hệ thống. Chưa có thao tác lưu sản phẩm hoặc biến thể nào được thực hiện.</p>
+        <p>Vui lòng quay lại biểu mẫu, chọn ảnh JPG/PNG có dung lượng không quá 5 MB (ảnh đại diện không quá 1 MB), rồi gửi lại.</p>
+        <div class="form-actions">
+            <a class="button button-primary" th:href="@{/shop/products/add}">Thêm sản phẩm</a>
+            <a class="button button-ghost" th:href="@{/shopowner/product-variants/add}">Thêm biến thể</a>
+            <a class="button button-ghost" th:href="@{/customer/account}">Hồ sơ của tôi</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

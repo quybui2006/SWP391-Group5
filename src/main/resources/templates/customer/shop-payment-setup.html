@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Duyệt thông tin thanh toán | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/customer-account.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
+    <link rel="stylesheet" th:href="@{/css/customer-profile-layout.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <script th:src="@{/js/notification-dropdown.js}" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .payment-setup-container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .hero-banner {
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+            color: #fff;
+            padding: 28px 32px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 14px rgba(22, 101, 52, 0.16);
+        }
+        .hero-banner h1 {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0 0 8px;
+        }
+        .hero-banner p {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.92;
+            line-height: 1.5;
+        }
+        .form-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .form-card h2 {
+            font-size: 17px;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cccd-compare-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .cccd-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .cccd-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cccd-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .cccd-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 680px) {
+            .cccd-grid { grid-template-columns: 1fr; }
+        }
+        .cccd-item label {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .cccd-item .val {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .field-group {
+            margin-bottom: 20px;
+        }
+        .field-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+        .field-group label .req {
+            color: #dc2626;
+        }
+        .field-group input, .field-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1e293b;
+            background: #fff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            box-sizing: border-box;
+        }
+        .field-group input:focus, .field-group select:focus {
+            outline: none;
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+        }
+        .field-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        .match-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .match-ok {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .match-warn {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .field-error {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        .alert-box {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .alert-pending {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+        .alert-rejected {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+        .alert-approved {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 14px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn-submit {
+            background: #16a34a;
+            color: #fff;
+            padding: 13px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-submit:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+        }
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 13px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-back:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+<div class="customer-shell">
+    <aside th:replace="~{customer/account-fragments :: sidebar('shopRegistrationStatus')}"></aside>
+
+    <main class="customer-main">
+        <header th:replace="~{customer/account-fragments :: topbar('Duyệt thông tin thanh toán')}"></header>
+
+        <div class="payment-setup-container">
+            <!-- Hero Header -->
+            <div class="hero-banner">
+                <h1>💳 Bước 2: Duyệt thông tin tài khoản thanh toán</h1>
+                <p>Sau khi thông tin Shop được phê duyệt, Người bán cần khai báo tài khoản ngân hàng thụ hưởng. Ban vận hành (Operator) sẽ trực tiếp đối chiếu tên tài khoản ngân hàng với CCCD đã xác thực trước khi kích hoạt mở bán.</p>
+            </div>
+
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert-box alert-approved">
+                <span style="font-size:20px;">✓</span>
+                <div>
+                    <strong>Thành công:</strong>
+                    <div th:text="${successMessage}">Đã lưu thông tin tài khoản thành công!</div>
+                </div>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert-box alert-rejected">
+                <span style="font-size:20px;">⚠️</span>
+                <div>
+                    <strong>Lỗi:</strong>
+                    <div th:text="${errorMessage}">Đã xảy ra lỗi khi lưu thông tin.</div>
+                </div>
+            </div>
+
+            <!-- Status Alerts -->
+            <div class="alert-box alert-approved" th:if="${paymentApprovalStatus == 'APPROVED'}">
+                <span style="font-size:24px;">🎉</span>
+                <div>
+                    <strong>Tài khoản thanh toán đã được phê duyệt (APPROVED)</strong>
+                    <p style="margin:4px 0 0; font-size:13px;">Thông tin tài khoản ngân hàng đã được Ban vận hành đối chiếu trùng khớp hoàn toàn với CCCD. Cửa hàng của bạn hiện đang ở trạng thái <strong>MỞ BÁN (OPEN)</strong>.</p>
+                </div>
+            </div>
+
+            <div class="alert-box alert-pending" th:if="${paymentApprovalStatus == 'PENDING'}">
+                <span style="font-size:24px;">⏳</span>
+                <div>
+                    <strong>Đang chờ Operator đối chiếu và phê duyệt (PENDING)</strong>
+                    <p style="margin:4px 0 0; font-size:13px;">Hồ sơ thanh toán đang được thẩm định. Operator sẽ kiểm tra Tên chủ tài khoản ngân hàng so với CCCD <strong>"<span th:text="${shop.idCardName}">Họ tên CCCD</span>"</strong> trong vòng 24 giờ làm việc. Bạn vẫn có thể chỉnh sửa và nộp lại nếu phát hiện sai sót.</p>
+                </div>
+            </div>
+
+            <div class="alert-box alert-rejected" th:if="${paymentApprovalStatus == 'REJECTED'}">
+                <span style="font-size:24px;">❌</span>
+                <div>
+                    <strong>Thông tin thanh toán bị từ chối phê duyệt (REJECTED)</strong>
+                    <p style="margin:4px 0 4px; font-size:13px;">Lý do từ chối từ Ban vận hành:</p>
+                    <div style="background:#fff; padding:10px 14px; border-radius:8px; border:1px solid #fecaca; font-weight:600; color:#b91c1c;" th:text="${bankRejectionReason ?: 'Tên chủ tài khoản không khớp với họ tên trên CCCD đã đăng ký.'}">
+                        Lý do từ chối...
+                    </div>
+                    <p style="margin:6px 0 0; font-size:12px; color:#7f1d1d;">Vui lòng chỉnh sửa lại thông tin tài khoản ngân hàng chính chủ và gửi lại để được duyệt.</p>
+                </div>
+            </div>
+
+            <!-- CCCD Comparison Box -->
+            <div class="cccd-compare-box">
+                <div class="cccd-header">
+                    <div class="cccd-title">
+                        <span>🪪</span>
+                        <span>Thông tin Căn cước công dân đã xác minh (Mốc đối chiếu)</span>
+                    </div>
+                    <span class="cccd-badge">🔒 Dữ liệu bảo mật</span>
+                </div>
+                <div class="cccd-grid">
+                    <div class="cccd-item">
+                        <label>Họ và tên trên CCCD</label>
+                        <div class="val" id="refIdCardName" th:text="${shop.idCardName ?: '—'}">NGUYỄN VĂN A</div>
+                    </div>
+                    <div class="cccd-item">
+                        <label>Số CCCD / CMND</label>
+                        <div class="val" th:text="${shop.idCardNumber ?: '—'}">001203004567</div>
+                    </div>
+                    <div class="cccd-item">
+                        <label>Tên Shop</label>
+                        <div class="val" th:text="${shop.name}">Tên Cửa Hàng</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Setup Form -->
+            <div class="form-card">
+                <h2>
+                    <span>🏦</span>
+                    <span>Thông tin tài khoản ngân hàng thụ hưởng</span>
+                </h2>
+
+                <form th:action="@{/customer/shop-registration/payment}" th:object="${form}" method="post">
+                    <!-- Bank Name Select -->
+                    <div class="field-group">
+                        <label for="bankName">Ngân hàng thụ hưởng <span class="req">*</span></label>
+                        <select id="bankName" th:field="*{bankName}">
+                            <option value="">-- Chọn ngân hàng --</option>
+                            <option value="Vietcombank (VCB)">Vietcombank - Ngân hàng Ngoại thương Việt Nam</option>
+                            <option value="MBBank (MB)">MBBank - Ngân hàng Quân Đội</option>
+                            <option value="Techcombank (TCB)">Techcombank - Ngân hàng Kỹ Thương</option>
+                            <option value="BIDV">BIDV - Ngân hàng Đầu tư và Phát triển VN</option>
+                            <option value="VietinBank (CTG)">VietinBank - Ngân hàng Công Thương</option>
+                            <option value="Agribank">Agribank - Ngân hàng Nông nghiệp & PTNT</option>
+                            <option value="VPBank">VPBank - Ngân hàng Việt Nam Thịnh Vượng</option>
+                            <option value="ACB">ACB - Ngân hàng Á Châu</option>
+                            <option value="TPBank">TPBank - Ngân hàng Tiên Phong</option>
+                            <option value="Sacombank">Sacombank - Ngân hàng Sài Gòn Thương Tín</option>
+                            <option value="OCB">OCB - Ngân hàng Phương Đông</option>
+                            <option value="SHB">SHB - Ngân hàng Sài Gòn - Hà Nội</option>
+                            <option value="HDBank">HDBank - Ngân hàng Phát triển TP.HCM</option>
+                            <option value="VIB">VIB - Ngân hàng Quốc Tế</option>
+                            <option value="MSB">MSB - Ngân hàng Hàng Hải Việt Nam</option>
+                            <option value="SeABank">SeABank - Ngân hàng Đông Nam Á</option>
+                        </select>
+                        <div class="field-error" th:if="${#fields.hasErrors('bankName')}" th:errors="*{bankName}"></div>
+                    </div>
+
+                    <!-- Account Number -->
+                    <div class="field-group">
+                        <label for="bankAccountNumber">Số tài khoản ngân hàng <span class="req">*</span></label>
+                        <input type="text" id="bankAccountNumber" th:field="*{bankAccountNumber}" placeholder="Ví dụ: 0987654321, 1029384756..." maxlength="30" autocomplete="off">
+                        <div class="field-hint">Số tài khoản ngân hàng chính xác để nhận tiền bán hoa quả định kỳ.</div>
+                        <div class="field-error" th:if="${#fields.hasErrors('bankAccountNumber')}" th:errors="*{bankAccountNumber}"></div>
+                    </div>
+
+                    <!-- Account Holder Name -->
+                    <div class="field-group">
+                        <label for="bankAccountName">Tên chủ tài khoản (Viết in hoa, không dấu hoặc có dấu) <span class="req">*</span></label>
+                        <input type="text" id="bankAccountName" th:field="*{bankAccountName}" style="text-transform: uppercase;" placeholder="Ví dụ: NGUYEN VAN A" maxlength="150" autocomplete="off">
+                        <div id="matchFeedback" class="match-indicator match-warn" style="display:none;"></div>
+                        <div class="field-hint">
+                            ⚠️ <strong>Quy định bắt buộc:</strong> Tên chủ tài khoản ngân hàng phải <strong>TRÙNG KHỚP</strong> với Họ tên trên CCCD (<span style="color:#15803d; font-weight:700;" th:text="${shop.idCardName}">...</span>). Operator sẽ đối chiếu và từ chối nếu tên không khớp.
+                        </div>
+                        <div class="field-error" th:if="${#fields.hasErrors('bankAccountName')}" th:errors="*{bankAccountName}"></div>
+                    </div>
+
+                    <!-- Branch -->
+                    <div class="field-group">
+                        <label for="bankBranch">Chi nhánh ngân hàng (Tùy chọn)</label>
+                        <input type="text" id="bankBranch" th:field="*{bankBranch}" placeholder="Ví dụ: Chi nhánh Cầu Giấy, Hà Nội..." maxlength="150">
+                        <div class="field-hint">Chi nhánh mở thẻ / tài khoản ngân hàng của bạn.</div>
+                        <div class="field-error" th:if="${#fields.hasErrors('bankBranch')}" th:errors="*{bankBranch}"></div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a th:href="@{/customer/shop-registration/status}" class="btn-back">
+                            ← Quay lại Trạng thái Shop
+                        </a>
+                        <button type="submit" class="btn-submit">
+                            <span th:text="${paymentApprovalStatus == 'PENDING' ? 'Cập nhật lại thông tin thanh toán ➔' : (paymentApprovalStatus == 'APPROVED' ? 'Lưu thay đổi thông tin ➔' : 'Gửi thông tin đối chiếu thanh toán ➔')}">
+                                Gửi thông tin đối chiếu thanh toán ➔
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    function removeAccents(str) {
+        if (!str) return '';
+        return str.normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+            .trim().toLowerCase();
+    }
+
+    const refNameEl = document.getElementById('refIdCardName');
+    const bankNameInput = document.getElementById('bankAccountName');
+    const feedbackEl = document.getElementById('matchFeedback');
+
+    function checkNameMatch() {
+        if (!refNameEl || !bankNameInput || !feedbackEl) return;
+        const refName = refNameEl.textContent || '';
+        const currentVal = bankNameInput.value || '';
+
+        if (!currentVal.trim()) {
+            feedbackEl.style.display = 'none';
+            return;
+        }
+
+        const refClean = removeAccents(refName);
+        const currClean = removeAccents(currentVal);
+
+        feedbackEl.style.display = 'inline-flex';
+        if (refClean === currClean && refClean.length > 0) {
+            feedbackEl.className = 'match-indicator match-ok';
+            feedbackEl.innerHTML = '🟢 Trùng khớp với CCCD (' + refName + ')';
+        } else {
+            feedbackEl.className = 'match-indicator match-warn';
+            feedbackEl.innerHTML = '⚠️ Khác với CCCD (' + refName + ') - Có thể bị Operator từ chối duyệt!';
+        }
+    }
+
+    if (bankNameInput) {
+        bankNameInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            checkNameMatch();
+        });
+        // Initial check on load
+        checkNameMatch();
+    }
+</script>
+</body>
+</html>
