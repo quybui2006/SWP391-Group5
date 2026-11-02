@@ -111,12 +111,23 @@ public class OperationsFinanceService {
     @Transactional
     public int createPayouts(LocalDate from, LocalDate to) {
         if (from == null || to == null || to.isBefore(from)) throw new IllegalArgumentException("Khoảng ngày thanh toán không hợp lệ.");
+        syncRefundLedger();
+        jdbc.update("""
+            UPDATE orders o
+            JOIN customer_refunds cr ON cr.order_id = o.id AND cr.refund_type = 'RETURN_REFUND'
+            SET o.is_settled = 1
+            WHERE o.status = 'COMPLETED' AND o.payment_status = 'PAID' AND o.is_settled = 0
+              AND cr.refund_amount >= o.shop_revenue_amount
+              AND DATE(o.completed_at) BETWEEN ? AND ?
+        """, Date.valueOf(from), Date.valueOf(to));
         List<Map<String,Object>> rows = jdbc.queryForList("""
             SELECT o.shop_id, COUNT(*) AS total_orders,
-                   COALESCE(SUM(o.shop_revenue_amount),0) AS gross_amount,
+                   COALESCE(SUM(GREATEST(o.shop_revenue_amount - COALESCE(cr.refund_amount, 0), 0)),0) AS gross_amount,
                    s.bank_name,s.bank_account_number,s.bank_account_name
             FROM orders o JOIN shops s ON s.id=o.shop_id
+            LEFT JOIN customer_refunds cr ON cr.order_id=o.id AND cr.refund_type='RETURN_REFUND'
             WHERE o.status='COMPLETED' AND o.payment_status='PAID' AND o.is_settled=0
+              AND GREATEST(o.shop_revenue_amount - COALESCE(cr.refund_amount, 0), 0) > 0
               AND DATE(o.completed_at) BETWEEN ? AND ?
             GROUP BY o.shop_id,s.bank_name,s.bank_account_number,s.bank_account_name
             ORDER BY o.shop_id FOR UPDATE

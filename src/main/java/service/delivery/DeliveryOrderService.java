@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import service.customer.OrderCheckoutService;
-import service.shop.InventoryBatchService;
 
 @Service
 public class DeliveryOrderService {
@@ -21,13 +20,10 @@ public class DeliveryOrderService {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
     private final OrderCheckoutService checkout;
-    private final InventoryBatchService inventoryBatches;
 
-    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout,
-                                InventoryBatchService inventoryBatches) {
+    public DeliveryOrderService(JdbcTemplate jdbc, OrderCheckoutService checkout) {
         this.jdbc = jdbc;
         this.checkout = checkout;
-        this.inventoryBatches = inventoryBatches;
     }
 
     /**
@@ -243,7 +239,6 @@ public class DeliveryOrderService {
             return;
         }
         if ("CANCELLED".equals(target)) {
-            if ("PAID".equals(paymentStatus)) throw new IllegalStateException("Đơn online đã thanh toán phải được giao; không thể hủy tại luồng giao hàng.");
             String reason = cancelReason == null || cancelReason.isBlank()
                     ? "Giao hàng không thành công / Khách từ chối nhận" : cancelReason.trim();
             if (reason.length() > 1000) throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
@@ -256,28 +251,52 @@ public class DeliveryOrderService {
     }
 
     private void consumeReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,o.order_code FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.order_id=? AND oi.allocation_status='RESERVED' ORDER BY oi.id FOR UPDATE", orderId);
+        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status='RESERVED' ORDER BY oi.inventory_id FOR UPDATE", orderId);
         if (items.isEmpty()) {
             Integer soldItems = jdbc.queryForObject("SELECT COUNT(*) FROM order_items WHERE order_id=? AND allocation_status='CONSUMED'", Integer.class, orderId);
             if (soldItems != null && soldItems > 0) return;
             throw new IllegalStateException("Không tìm thấy tồn kho đã giữ cho đơn hàng.");
         }
         for (Map<String, Object> item : items) {
+            long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
-            // Batch and aggregate stock are consumed together at the existing delivery-sale transition.
-            inventoryBatches.consumeOrderItem(itemId, String.valueOf(item.get("order_code")));
+            int quantity = ((Number) item.get("quantity")).intValue();
+            if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-? WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, inventoryId, quantity, quantity) != 1)
+                throw new IllegalStateException("Tồn kho đã giữ không còn nhất quán cho mặt hàng " + itemId + ".");
             jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=? AND allocation_status='RESERVED'", itemId);
+            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'SALE',?,?,?,?,?,NULL)", inventoryId, itemId, -quantity, -quantity, onHand, reserved, "sale-delivery-" + itemId);
         }
     }
 
     private void releaseReservedItems(Long orderId) {
-        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.allocation_status FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status IN ('RESERVED','CONSUMED') ORDER BY oi.id FOR UPDATE", orderId);
+        List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity,oi.allocation_status FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status IN ('RESERVED','CONSUMED') ORDER BY oi.inventory_id FOR UPDATE", orderId);
         for (Map<String, Object> item : items) {
+            long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
-            if ("CONSUMED".equals(item.get("allocation_status")))
-                throw new IllegalStateException("Đơn đã ghi nhận bán; không thể tự động hoàn hàng từ luồng giao thất bại.");
-            inventoryBatches.releaseOrderItem(itemId, "delivery-failed");
+            int quantity = ((Number) item.get("quantity")).intValue();
+            boolean alreadySold = "CONSUMED".equals(item.get("allocation_status"));
+            List<Map<String, Object>> invCheck = jdbc.queryForList("SELECT id FROM variant_inventory WHERE id=? FOR UPDATE", inventoryId);
+            if (invCheck.isEmpty()) {
+                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=?", itemId);
+                continue;
+            }
+            if (alreadySold) {
+                if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId) != 1)
+                    throw new IllegalStateException("Không thể hoàn kho cho mặt hàng " + itemId + ".");
+                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='CONSUMED'", itemId);
+                int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+                int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+                jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'ADJUST',?,0,?,?,? ,?,NULL)", inventoryId, itemId, quantity, onHand, reserved, "return-delivery-" + itemId, "Hoàn kho do giao hàng thất bại - đơn " + orderId);
+                continue;
+            }
+            if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity-? WHERE id=? AND reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
+                throw new IllegalStateException("Không thể trả tồn kho đã giữ cho mặt hàng " + itemId + ".");
             jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
+            int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,NULL)", inventoryId, itemId, -quantity, onHand, reserved, "release-delivery-" + itemId);
         }
     }
 }

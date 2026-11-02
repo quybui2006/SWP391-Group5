@@ -70,7 +70,7 @@ public class CheckoutController {
         BigDecimal voucherDiscount = BigDecimal.ZERO;
         for (Map.Entry<Long, Map<String, Object>> entry : checkoutShops.entrySet()) {
             Map<String, Object> shop = entry.getValue();
-            var quote = checkout.previewVoucher(entry.getKey(), (String) shop.get("code"), (BigDecimal) shop.get("subtotal"));
+            var quote = checkout.previewVoucher(userId, entry.getKey(), (String) shop.get("code"), (BigDecimal) shop.get("subtotal"));
             shop.put("discount", quote.discount()); shop.put("voucherError", quote.error());
             voucherDiscount = voucherDiscount.add(quote.discount());
         }
@@ -239,7 +239,8 @@ public class CheckoutController {
 
     /** Trả về mã khách đang đăng nhập, hoặc null nếu đây là khách vãng lai. */
     private Long customerId(HttpSession session) {
-        if (!"CUSTOMER".equals(session.getAttribute("role"))) return null;
+        Object role = session.getAttribute("role");
+        if (!"CUSTOMER".equals(role) && !"ADMIN".equals(role)) return null;
         Object id = session.getAttribute("userId");
         return id instanceof Number number ? number.longValue() : null;
     }

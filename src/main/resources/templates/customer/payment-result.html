@@ -340,7 +340,7 @@
         <nav class="main-nav">
             <a th:href="@{/}">Trang chủ</a>
             <a th:href="@{/search}">Sản phẩm</a>
-            <a th:href="@{/order/tracking}">Tra cứu đơn hàng</a>
+            <a th:if="${session.role == null}" th:href="@{/order/tracking}">Tra cứu đơn hàng</a>
         </nav>
 
         <div class="header-actions">
