@@ -4,13 +4,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
+import java.util.Objects;
 import service.customer.CurrentUserProvider;
 import service.complaint.ComplaintService;
 import service.shop.ShopOrderExcelExporter;
@@ -25,6 +28,22 @@ public class ShopOrderController {
     public ShopOrderController(CurrentUserProvider currentUser, ShopOrderService orders, ShopOrderExcelExporter excelExporter, ComplaintService complaintService) {
         this.currentUser = currentUser; this.orders = orders; this.excelExporter = excelExporter; this.complaintService = complaintService;
     }
+
+    private Map<String, Object> verifyComplaintBelongsToOrderAndShop(Long ownerId, Long orderId, Long complaintId) {
+        Map<String, Object> order = orders.detail(ownerId, orderId);
+        Long shopId = ((Number) order.get("shop_id")).longValue();
+        Map<String, Object> complaint = complaintService.getComplaintDetail(complaintId);
+        if (complaint == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy khiếu nại.");
+        }
+        Long complaintOrderId = complaint.get("order_id") instanceof Number n ? n.longValue() : null;
+        Long complaintShopId = complaint.get("shop_id") instanceof Number n ? n.longValue() : null;
+        if (!Objects.equals(orderId, complaintOrderId) || !Objects.equals(shopId, complaintShopId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Khiếu nại không thuộc đơn hàng hoặc cửa hàng của bạn.");
+        }
+        return complaint;
+    }
+
     @GetMapping("/shopowner/orders")
     public String orders(@RequestParam(value = "filter", required = false) String filter,
                          HttpServletRequest request, Model model) {
@@ -76,8 +95,7 @@ public class ShopOrderController {
         Long owner = currentUser.requireUserId(request);
         Map<String, Object> order = orders.detail(owner, orderId);
         Long shopId = ((Number) order.get("shop_id")).longValue();
-        Map<String, Object> complaint = complaintService.getComplaintDetail(complaintId);
-        if (complaint == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        Map<String, Object> complaint = verifyComplaintBelongsToOrderAndShop(owner, orderId, complaintId);
 
         model.addAttribute("order", order);
         model.addAttribute("orderItems", orders.items(owner, orderId));
@@ -95,6 +113,7 @@ public class ShopOrderController {
                                      HttpServletRequest request,
                                      org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
         Long owner = currentUser.requireUserId(request);
+        verifyComplaintBelongsToOrderAndShop(owner, orderId, complaintId);
         try {
             Long replacementOrderId = complaintService.submitShopDecisionResendCustom(owner, complaintId, variantIds, quantities, shopResponse);
             redirect.addFlashAttribute("message", "Đã tạo đơn giao bù 0đ thành công và chuyển sang quy trình đóng gói!");
@@ -115,8 +134,7 @@ public class ShopOrderController {
                                    Model model) {
         Long owner = currentUser.requireUserId(request);
         Map<String, Object> order = orders.detail(owner, orderId);
-        Map<String, Object> complaint = complaintService.getComplaintDetail(complaintId);
-        if (complaint == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        Map<String, Object> complaint = verifyComplaintBelongsToOrderAndShop(owner, orderId, complaintId);
 
         model.addAttribute("order", order);
         model.addAttribute("complaint", complaint);
@@ -147,6 +165,7 @@ public class ShopOrderController {
                                       HttpServletRequest request,
                                       org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
         Long owner = currentUser.requireUserId(request);
+        verifyComplaintBelongsToOrderAndShop(owner, orderId, complaintId);
         try {
             java.time.LocalDateTime now = java.time.LocalDateTime.now();
             java.time.LocalDateTime end = now.plusDays(validDays != null && validDays > 0 ? validDays : 30);
@@ -175,6 +194,7 @@ public class ShopOrderController {
                                    HttpServletRequest request,
                                    org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
         Long owner = currentUser.requireUserId(request);
+        verifyComplaintBelongsToOrderAndShop(owner, orderId, complaintId);
         try {
             complaintService.submitShopDecision(owner, complaintId, decision, shopResponse, shopEvidenceImage, voucherDiscount);
             if ("RESEND_ITEMS".equalsIgnoreCase(decision)) {
@@ -182,7 +202,7 @@ public class ShopOrderController {
             } else if ("ISSUE_VOUCHER".equalsIgnoreCase(decision)) {
                 redirect.addFlashAttribute("message", "Đã chấp thuận khiếu nại và tặng voucher đền bù vào ví của khách hàng!");
             } else {
-                redirect.addFlashAttribute("message", "Đã từ chối khiếu nại của khách hàng.");
+                redirect.addFlashAttribute("message", "Đã cập nhật quyết định xử lý khiếu nại.");
             }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());

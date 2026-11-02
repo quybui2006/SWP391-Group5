@@ -16,7 +16,7 @@
             <div><a class="back-link" th:href="@{/shopowner/orders}">← Đơn hàng</a><h1 th:text="${order.order_code}">Mã đơn</h1>
                 <div class="order-heading-meta"><span class="order-status" th:classappend="${order.status == 'PENDING'} ? ' pending' : (${order.status == 'CONFIRMED'} ? ' confirmed' : (${order.status == 'CANCELLED'} ? ' cancelled' : ''))"
                      th:text="${order.status == 'PENDING'} ? 'Chờ xác nhận' : (${order.status == 'CONFIRMED'} ? 'Đã xác nhận' : (${order.status == 'CANCELLED'} ? 'Đã hủy' : (${order.status == 'COMPLETED'} ? 'Hoàn tất' : order.status)))">Chờ xác nhận</span>
-                    <span th:text="${order.payment_method == 'COD'} ? 'Thanh toán khi nhận hàng' : 'Đã chọn thanh toán trực tuyến'"></span>
+                    <span th:text="${order.payment_method == 'RESEND'} ? 'Đơn giao bù 0₫ (Miễn phí)' : (${order.payment_method == 'COD'} ? 'Thanh toán khi nhận hàng' : 'Đã chọn thanh toán trực tuyến')"></span>
                     <span th:text="${order.payment_status == 'PAID'} ? 'Đã thanh toán' : 'Chưa thanh toán'"></span></div>
             </div>
         </header>
@@ -64,8 +64,7 @@
                         <dd th:text="${#numbers.formatInteger(order.shop_revenue_amount,1,'COMMA') + ' ₫'}"></dd>
                     </div>
                 </dl>
-                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD' and order.payment_status == 'PAID'}">Đơn đã thanh toán trực tuyến và đang chờ Shop xác nhận. Shop có thể xác nhận hoặc từ chối đơn.</p>
-                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD' and order.payment_status == 'UNPAID'}">Đơn thanh toán trực tuyến đang chờ khách thanh toán.</p>
+                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD' and order.payment_method != 'RESEND'}">Đơn thanh toán trực tuyến sẽ được xác nhận tự động khi thanh toán thành công.</p>
                 <p class="order-notice" th:if="${order.status == 'CONFIRMED'}">Đơn đã được xác nhận và chuyển sang bước giao hàng.</p>
             </section>
         </div>
@@ -131,7 +130,7 @@
                 <!-- Phản hồi của Shop -->
                 <div th:if="${cp['shop_response'] != null}" style="background: #f8fafc; border-left: 3px solid #64748b; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; border-radius: 4px;">
                     <div style="font-weight: 700; margin-bottom: 3px; color: #334155;"
-                         th:text="${cp['status'] == 'REJECTED' ? '✕ Lý do Shop từ chối khiếu nại:' : 'Phản hồi từ Shop:'}"></div>
+                         th:text="${cp['status'] == 'REJECTED' ? '✕ Lý do từ chối khiếu nại:' : 'Phản hồi từ Shop:'}"></div>
                     <span th:text="${cp['shop_response']}"></span>
                     <div th:if="${cp['shop_evidence_image_url'] != null}" style="margin-top: 4px;">
                         <a th:href="${cp['shop_evidence_image_url']}" target="_blank" style="font-size: 12.5px; color: #0284c7; font-weight: 600;">📷 Xem ảnh đối chứng của Shop →</a>
@@ -199,74 +198,5 @@
             </div></section>
     </main>
 </div>
-<script>
-    function toggleShopDecisionFields(decision) {
-        var voucherGroup = document.getElementById('voucherDiscountGroup');
-        var evidenceGroup = document.getElementById('shopEvidenceGroup');
-        var textarea = document.getElementById('shopResponseTextarea');
-        var label = document.getElementById('shopResponseLabel');
-        var btn = document.getElementById('shopSubmitBtn');
-
-        if (decision === 'REJECTED' || decision === 'REJECT') {
-            if (voucherGroup) voucherGroup.style.display = 'none';
-            if (evidenceGroup) evidenceGroup.style.display = 'block';
-            if (textarea) {
-                textarea.required = true;
-                textarea.minLength = 5;
-                textarea.placeholder = 'Bắt buộc nhập lý do từ chối khiếu nại (tối thiểu 5 ký tự)...';
-            }
-            if (label) label.innerText = 'Lý do từ chối khiếu nại (bắt buộc) *:';
-            if (btn) {
-                btn.innerText = '✕ Xác nhận từ chối khiếu nại';
-                btn.style.background = '#dc2626';
-            }
-        } else if (decision === 'ISSUE_VOUCHER') {
-            if (voucherGroup) voucherGroup.style.display = 'block';
-            if (evidenceGroup) evidenceGroup.style.display = 'none';
-            if (textarea) {
-                textarea.required = false;
-                textarea.removeAttribute('minlength');
-                textarea.placeholder = 'Nhập lời xin lỗi hoặc ghi chú gửi kèm voucher (tùy chọn)...';
-            }
-            if (label) label.innerText = 'Ghi chú gửi kèm voucher (tùy chọn):';
-            if (btn) {
-                btn.innerText = '🎟️ Xác nhận tặng voucher cho khách';
-                btn.style.background = '#86198f';
-            }
-        } else {
-            if (voucherGroup) voucherGroup.style.display = 'none';
-            if (evidenceGroup) evidenceGroup.style.display = 'none';
-            if (textarea) {
-                textarea.required = false;
-                textarea.removeAttribute('minlength');
-                textarea.placeholder = 'Nhập ghi chú gửi khách (tùy chọn)...';
-            }
-            if (label) label.innerText = 'Ghi chú gửi khách (tùy chọn):';
-            if (btn) {
-                btn.innerText = '✓ Xác nhận tạo đơn giao bù';
-                btn.style.background = '#16a34a';
-            }
-        }
-    }
-            if (label) label.innerText = 'Lý do từ chối giải trình (bắt buộc) *:';
-            if (btn) {
-                btn.innerText = '✕ Từ chối & Chuyển CSKH phân xử';
-                btn.style.background = '#dc2626';
-            }
-        } else {
-            if (evidenceGroup) evidenceGroup.style.display = 'none';
-            if (textarea) {
-                textarea.required = false;
-                textarea.removeAttribute('minlength');
-                textarea.placeholder = 'Nhập lời xin lỗi hoặc ghi chú gửi khách (tùy chọn)...';
-            }
-            if (label) label.innerText = 'Nội dung phản hồi tới khách:';
-            if (btn) {
-                btn.innerText = '✓ Đồng ý & Hoàn trả điểm cho khách';
-                btn.style.background = '#16a34a';
-            }
-        }
-    }
-</script>
 </body>
 </html>

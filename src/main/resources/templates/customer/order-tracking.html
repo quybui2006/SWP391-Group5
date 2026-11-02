@@ -464,7 +464,7 @@
         <nav class="main-nav" aria-label="Điều hướng chính">
             <a th:href="@{/}">Trang chủ</a>
             <a th:href="@{/search}">Sản phẩm</a>
-            <a class="active" th:href="@{/order/tracking}">Tra cứu đơn hàng</a>
+            <a th:if="${session.role == null}" class="active" th:href="@{/order/tracking}">Tra cứu đơn hàng</a>
         </nav>
 
         <div class="header-actions">
@@ -472,7 +472,7 @@
             <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng">
                 🛒
             </a>
-            <a class="login-nav-btn" th:href="@{/login}" style="margin-left: 8px; text-decoration: none; font-size: 14px; font-weight: 600; color: #16803c; padding: 6px 14px; border: 1.5px solid #16803c; border-radius: 8px;">
+            <a th:if="${session.role == null}" class="login-nav-btn" th:href="@{/login}" style="margin-left: 8px; text-decoration: none; font-size: 14px; font-weight: 600; color: #16803c; padding: 6px 14px; border: 1.5px solid #16803c; border-radius: 8px;">
                 Đăng nhập
             </a>
         </div>
@@ -690,7 +690,7 @@
             </div>
 
             <!-- Lời nhắc đăng ký tài khoản -->
-            <div class="register-tip-banner">
+            <div class="register-tip-banner" th:if="${session.role == null}">
                 <div class="register-tip-text">
                     <strong>💡 Mua sắm thuận tiện hơn với tài khoản FreshFruit!</strong><br>
                     Tạo tài khoản để theo dõi lịch sử mọi đơn mua, lưu sẵn sổ địa chỉ và tích xu hoàn tiền cho mỗi đơn hàng.

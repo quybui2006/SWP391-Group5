@@ -12,7 +12,8 @@
                 <a th:href="@{/cs/tickets}" style="color: #0284c7; text-decoration: none; font-weight: 700; font-size: 14px;">← Quay lại danh sách</a>
                 <span style="color: #cbd5e1;">/</span>
                 <h1 th:text="${'Phiếu ' + complaint['complaint_code']}">Phiếu KN-001</h1>
-                <span th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ Shop phản hồi</span>
+                <span th:if="${complaint['status'] == 'PENDING_OPERATIONS'}" class="badge-status badge-warning">Chờ Vận hành duyệt</span>
+                <span th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'PENDING'}" class="badge-status badge-warning">Chờ Shop xử lý (6h)</span>
                 <span th:if="${complaint['status'] == 'RESOLVED'}" class="badge-status badge-success">Đã giải quyết</span>
                 <span th:if="${complaint['status'] == 'REJECTED'}" class="badge-status badge-danger">Đã từ chối</span>
                 <span th:if="${complaint['status'] == 'CANCELLED'}" class="badge-status">Đã hủy</span>
@@ -58,19 +59,6 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap; background: #f1f5f9; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;">
-                        <div>
-                            <span style="color: #64748b; display: block; font-size: 11.5px;">Khách yêu cầu hoàn:</span>
-                            <strong style="color: #dc2626; font-size: 14.5px;"
-                                    th:text="${#numbers.formatDecimal(complaint['requested_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
-                        </div>
-                        <div>
-                            <span style="color: #64748b; display: block; font-size: 11.5px;">Giới hạn thực trả tối đa:</span>
-                            <strong style="color: #16a34a; font-size: 14.5px;"
-                                    th:text="${#numbers.formatDecimal(complaint['actual_paid_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
-                        </div>
-                    </div>
-
                     <div style="background: #fff; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 10px; font-size: 14px; color: #1e293b; line-height: 1.5; white-space: pre-line;"
                          th:text="${complaint['description']}">Mô tả chi tiết</div>
 
@@ -82,7 +70,7 @@
                         </a>
                     </div>
 
-                    <!-- Giải trình từ Cửa hàng & Nút CSKH Yêu cầu Shop phản hồi -->
+                    <!-- Giải trình từ Cửa hàng -->
                     <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
                             <strong style="font-size: 13px; color: #92400e;">🏪 Phản hồi từ Shop (<span th:text="${complaint['shop_name']}"></span>):</strong>
@@ -95,10 +83,9 @@
                         </div>
 
                         <div th:if="${complaint['shop_response'] != null}"
-                             style="padding: 10px 12px; border-radius: 8px; font-size: 13.5px; margin-bottom: 8px;"
-                             th:styleappend="${complaint['shop_decision'] == 'ACCEPT'} ? 'background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;' : 'background:#fef2f2;border:1px solid #fecaca;color:#991b1b;'">
+                             style="padding: 10px 12px; border-radius: 8px; font-size: 13.5px; margin-bottom: 8px; background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;">
                             <strong style="display: block; font-size: 12px; margin-bottom: 3px;"
-                                    th:text="${complaint['shop_decision'] == 'ACCEPT' ? '✓ Shop đã ĐỒNG Ý đền bù:' : '✕ Shop TỪ CHỐI khiếu nại (Chuyển CSKH):'}"></strong>
+                                    th:text="${complaint['shop_decision'] == 'RESEND_ITEMS' ? '✓ Shop đã TẠO ĐƠN GIAO BÙ 0₫:' : (complaint['shop_decision'] == 'ISSUE_VOUCHER' ? '✓ Shop đã PHÁT HÀNH VOUCHER ĐỀN BÙ:' : '✓ Shop đã xử lý bồi hoàn:')}"></strong>
                             <span th:text="${complaint['shop_response']}"></span>
                             <div th:if="${complaint['shop_evidence_image_url'] != null}" style="margin-top: 6px;">
                                 <a th:href="${complaint['shop_evidence_image_url']}" target="_blank" style="font-size: 12px; color: #0284c7; font-weight: 600;">📷 Xem ảnh đối chứng của Shop →</a>
@@ -106,14 +93,18 @@
                             <small style="display: block; color: #64748b; margin-top: 4px;" th:text="${'Thời gian phản hồi: ' + complaint['shop_responded_at_fmt']}"></small>
                         </div>
 
-                        <div th:if="${complaint['shop_response'] == null}" style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 12px; border-radius: 8px; color: #92400e; font-size: 13px; margin-bottom: 8px;">
-                            ⏳ Shop chưa gửi phản hồi (Hạn SLA 6h: <span th:text="${complaint['sla_due_at_fmt']}"></span>).
+                        <div th:if="${complaint['shop_response'] == null and complaint['status'] == 'PENDING_OPERATIONS'}"
+                             style="background: #fff7ed; border: 1px solid #fed7aa; padding: 10px 12px; border-radius: 8px; color: #c2410c; font-size: 13px; margin-bottom: 8px;">
+                            ⏳ Khiếu nại đang chờ Ban Vận hành (Operations) thẩm định trước khi chuyển về Shop.
+                        </div>
+
+                        <div th:if="${complaint['shop_response'] == null and (complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'PENDING')}"
+                             style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 12px; border-radius: 8px; color: #92400e; font-size: 13px; margin-bottom: 8px;">
+                            ⏳ Shop chưa hoàn tất bồi hoàn (Hạn SLA 6h: <span th:text="${complaint['sla_due_at_fmt']}"></span>).
                             <span th:if="${complaint['cs_shop_request_note'] != null}" style="display: block; margin-top: 4px; font-size: 12.5px; color: #b45309;">
                                 <strong>Đã nhắc:</strong> "<span th:text="${complaint['cs_shop_request_note']}"></span>"
                             </span>
                         </div>
-
-                        
                     </div>
                 </div>
 
@@ -148,7 +139,7 @@
                 </div>
             </div>
 
-            <!-- CỘT PHẢI: LỊCH SỬ SHOP + PHÁN QUYẾT CSKH -->
+            <!-- CỘT PHẢI: LỊCH SỬ SHOP + KẾT QUẢ XỬ LÝ -->
             <div>
                 <!-- Lịch sử Shop -->
                 <div class="cs-card" style="padding: 16px 20px; margin-bottom: 18px;"
@@ -173,17 +164,26 @@
                     </div>
                 </div>
 
-                <!-- THÔNG TIN KẾT QUẢ XỬ LÝ (SHOP DUY NHẤT QUYẾT ĐỊNH) -->
+                <!-- THÔNG TIN KẾT QUẢ XỬ LÝ -->
                 <div class="cs-card" style="padding: 20px; margin-bottom: 0;">
                     <div class="cs-card-header" style="margin-bottom: 14px;">
-                        <h2 class="cs-card-title"><span>📋</span> Quyết định xử lý của Shop</h2>
+                        <h2 class="cs-card-title"><span>📋</span> Trạng thái &amp; Kết quả xử lý</h2>
+                    </div>
+
+                    <!-- Trường hợp 0: Đang chờ Ban Vận hành duyệt (PENDING_OPERATIONS) -->
+                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS'}"
+                         style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 16px; font-size: 13.5px; color: #9a3412; line-height: 1.5;">
+                        <strong style="display: block; font-size: 14.5px; margin-bottom: 6px;">⏳ Đang chờ Ban Vận hành thẩm định</strong>
+                        <p style="margin: 0; color: #7c2d12;">
+                            Hồ sơ khiếu nại mới tạo sẽ được Ban Vận hành (Operations Manager) kiểm tra bằng chứng. Nếu hợp lệ, khiếu nại sẽ được chuyển cho Cửa hàng thực thi bồi hoàn trong vòng 6 giờ.
+                        </p>
                     </div>
 
                     <!-- Trường hợp 1: Khiếu nại đã giải quyết (RESOLVED) -->
                     <div th:if="${complaint['status'] == 'RESOLVED'}"
                          style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 10px; padding: 16px; font-size: 13.5px;">
                         <div style="font-weight: 700; color: #065f46; font-size: 14.5px; margin-bottom: 8px;">
-                            ✓ Shop đã chấp thuận khiếu nại
+                            ✓ Shop đã hoàn tất bồi hoàn khiếu nại
                         </div>
 
                         <!-- Đơn giao bù -->
@@ -206,18 +206,15 @@
                         <small style="color: #64748b; display: block; margin-top: 8px;" th:if="${complaint['resolved_at_fmt'] != null}" th:text="${'Thời gian xử lý: ' + complaint['resolved_at_fmt']}"></small>
                     </div>
 
-                    <!-- Trường hợp 2: Khiếu nại bị từ chối (REJECTED) -->
+                    <!-- Trường hợp 2: Khiếu nại bị từ chối (REJECTED bởi Ban Vận hành) -->
                     <div th:if="${complaint['status'] == 'REJECTED'}"
                          style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 10px; padding: 16px; font-size: 13.5px; color: #991b1b;">
                         <div style="font-weight: 700; font-size: 14.5px; margin-bottom: 8px;">
-                            ✕ Shop đã từ chối khiếu nại
+                            ✕ Ban Vận hành đã từ chối khiếu nại
                         </div>
                         <div>
                             <strong>Lý do từ chối:</strong>
-                            <p style="margin: 4px 0 0;" th:text="${complaint['shop_response']} ?: 'Shop từ chối khiếu nại.'"></p>
-                        </div>
-                        <div th:if="${complaint['shop_evidence_image_url'] != null}" style="margin-top: 8px;">
-                            <a th:href="${complaint['shop_evidence_image_url']}" target="_blank" style="color: #0284c7; font-weight: 600; font-size: 12.5px;">📷 Xem ảnh đối chứng của Shop →</a>
+                            <p style="margin: 4px 0 0;" th:text="${complaint['operations_note'] ?: (complaint['resolution_note'] ?: 'Khiếu nại không đủ căn cứ hợp lệ.')}"></p>
                         </div>
                         <small style="color: #64748b; display: block; margin-top: 8px;" th:if="${complaint['resolved_at_fmt'] != null}" th:text="${'Thời gian từ chối: ' + complaint['resolved_at_fmt']}"></small>
                     </div>
@@ -225,17 +222,16 @@
                     <!-- Trường hợp 3: Khiếu nại đang chờ Shop (PENDING_SHOP / PENDING) -->
                     <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'PENDING'}"
                          style="background: #fffdf5; border: 1.5px solid #fde68a; border-radius: 10px; padding: 16px; font-size: 13.5px; color: #92400e; line-height: 1.5;">
-                        <strong style="display: block; font-size: 14.5px; margin-bottom: 6px;">⏳ Đang chờ Chủ Shop xử lý</strong>
+                        <strong style="display: block; font-size: 14.5px; margin-bottom: 6px;">⏳ Đang chờ Chủ Shop xử lý bồi hoàn (SLA 6h)</strong>
                         <p style="margin: 0 0 10px; color: #78350f;">
-                            Chủ cửa hàng (Shop Owner) là người duy nhất quyết định kết quả khiếu nại:
+                            Ban Vận hành đã phê duyệt khiếu nại. Chủ cửa hàng (Shop Owner) bắt buộc thực hiện 1 trong 2 phương án:
                         </p>
                         <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #92400e;">
                             <li>Tạo đơn giao bù sản phẩm 0 ₫</li>
-                            <li>Tặng voucher đền bù</li>
-                            <li>Từ chối khiếu nại (bắt buộc kèm lý do)</li>
+                            <li>Phát hành voucher đền bù riêng cho khách</li>
                         </ul>
                         <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #fcd34d; font-size: 12.5px; color: #b45309;">
-                            ℹ️ Nhân viên CSKH chỉ tiếp nhận dữ liệu để xem báo cáo, thống kê và hỗ trợ thông tin cho các bên.
+                            ℹ️ Nhân viên CSKH chỉ tiếp nhận dữ liệu để giám sát báo cáo, thống kê và đôn đốc Shop thực hiện đúng hạn SLA.
                         </div>
                     </div>
 
@@ -249,7 +245,6 @@
         </div>
     </main>
 </div>
-
 
 </body>
 </html>
