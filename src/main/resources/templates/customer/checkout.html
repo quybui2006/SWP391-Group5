@@ -3,434 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xác nhận đơn hàng | FreshFruit</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Thanh toán | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/checkout.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #16a34a;
-            --primary-dark: #15803d;
-            --primary-light: #dcfce7;
-            --bg-body: #f8fafc;
-            --surface: #ffffff;
-            --border: #e2e8f0;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --danger: #ef4444;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; }
-
-        /* Header Layout */
-        .checkout-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 0; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .header-container { max-width: 1140px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-size: 22px; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .back-link { font-size: 14px; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
-        .back-link:hover { color: var(--primary); }
-
-        /* Main Container */
-        .checkout-container { max-width: 1140px; margin: 32px auto; padding: 0 24px; display: grid; grid-template-columns: 1.6fr 1fr; gap: 32px; align-items: start; }
-        @media (max-width: 860px) { .checkout-container { grid-template-columns: 1fr; } }
-
-        /* Section Cards */
-        .checkout-section { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        .section-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); color: var(--text-main); }
-        .section-title svg { color: var(--primary); }
-
-        /* Address Options */
-        .address-card { display: block; border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
-        .address-card:hover { border-color: #cbd5e1; }
-        .address-card input[type="radio"] { display: none; }
-        .address-card:has(input[type="radio"]:checked) { border-color: var(--primary); background: var(--primary-light); }
-        .address-card .name { font-weight: 700; font-size: 15px; margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .address-card .phone { color: var(--text-muted); font-size: 13.5px; font-weight: 500; }
-        .address-card .address-text { font-size: 14px; color: var(--text-main); margin-top: 6px; line-height: 1.4; }
-
-        /* Forms */
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-        .form-full { grid-column: span 2; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
-        .form-control { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; transition: border-color 0.2s; outline: none; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1); }
-        .form-control:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
-        .hint-text { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-
-        /* Payment Method */
-        .payment-card { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); padding: 16px; border-radius: 10px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
-        .payment-card:has(input[type="radio"]:checked) { border-color: var(--primary); background: #f8fafc; }
-        .payment-card input[type="radio"] { accent-color: var(--primary); width: 18px; height: 18px; }
-        .payment-card span { font-weight: 600; font-size: 14.5px; }
-
-        /* Order Summary (Right Column) */
-        .order-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
-        .order-item:last-child { border-bottom: none; }
-        .item-info { display: flex; flex-direction: column; gap: 4px; }
-        .item-name { font-weight: 600; color: var(--text-main); }
-        .item-qty { font-size: 13px; color: var(--text-muted); }
-        .item-price { font-weight: 700; color: var(--text-main); }
-
-        /* Cost Breakdown */
-        .cost-box { background: var(--bg-body); border-radius: 10px; padding: 20px; margin-top: 20px; }
-        .cost-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; color: var(--text-muted); }
-        .cost-row span:last-child { font-weight: 600; color: var(--text-main); }
-        .cost-row.discount span:last-child { color: var(--primary); }
-
-        .cost-total { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; margin-top: 16px; border-top: 2px dashed #cbd5e1; }
-        .cost-total span { font-size: 16px; font-weight: 600; color: var(--text-main); }
-        .cost-total strong { font-size: 22px; font-weight: 800; color: var(--primary); }
-
-        /* Vouchers */
-        .voucher-select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; margin-top: 12px; }
-
-        /* Submit Button */
-        .btn-submit { width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 700; margin-top: 24px; cursor: pointer; transition: background 0.2s; }
-        .btn-submit:hover { background: var(--primary-dark); }
-
-        /* Alert */
-        .alert-error { background: #fef2f2; color: #b91c1c; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; margin-bottom: 24px; border: 1px solid #fecaca; }
+        .checkout-page { padding: 36px 0 64px; background: #f8faf9; min-height: 75vh; }
+        .checkout-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 24px; align-items: start; }
+        .checkout-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .checkout-card h3 { margin: 0 0 18px; font-size: 18px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 8px; }
+        .address-option, .payment-option { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+        .address-option:hover, .payment-option:hover { border-color: #16803c; background: #f0fdf4; }
+        .address-option input[type="radio"], .payment-option input[type="radio"] { margin-top: 4px; accent-color: #16803c; transform: scale(1.15); }
+        .new-address-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #d1d5db; }
+        .new-address-fields .full-width { grid-column: 1 / -1; }
+        .form-control { width: 100%; padding: 11px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; font-family: inherit; box-sizing: border-box; }
+        .form-control:focus { outline: none; border-color: #16803c; box-shadow: 0 0 0 3px rgba(22, 128, 60, 0.12); }
+        .summary-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; gap: 12px; }
+        .summary-line { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; color: #4b5563; font-size: 14.5px; }
+        .summary-total { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb; font-size: 18px; font-weight: 800; color: #16803c; }
+        .submit-order-btn { width: 100%; margin-top: 20px; padding: 14px; background: #16803c; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+        .submit-order-btn:hover { background: #14532d; }
+        @media (max-width: 860px) { .checkout-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<header class="checkout-header">
-    <div class="header-container">
+<header class="site-header">
+    <div class="container header-inner">
         <a class="brand" th:href="@{/}">
-            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-            FreshFruit
+            <span class="brand-mark">F</span>
+            <span><strong>FreshFruit</strong><small>Tươi ngon mỗi ngày</small></span>
         </a>
-        <a class="back-link" th:href="@{/cart}">← Quay lại giỏ hàng</a>
+        <nav class="main-nav">
+            <a th:href="@{/}">Trang chủ</a>
+            <a th:href="@{/cart}">Quay lại giỏ hàng</a>
+        </nav>
     </div>
 </header>
 
-<main class="checkout-container">
-    <div th:if="${error != null}" class="alert-error" th:text="${error}" style="grid-column: 1 / -1;"></div>
+<main class="checkout-page">
+    <div class="container">
 
-    <form th:action="@{/order/submit}" method="post" id="checkoutForm" style="display: contents;">
-        <!-- CỘT TRÁI: ĐỊA CHỈ & THANH TOÁN -->
-        <div class="left-col">
+        <h1 style="margin: 0 0 24px; font-size: 26px;">📦 Xác nhận đặt hàng</h1>
 
-            <section class="checkout-section">
-                <h2 class="section-title">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Thông tin giao hàng
-                </h2>
 
-                <!-- Danh sách địa chỉ đã lưu -->
-                <div th:each="address, stat : ${addresses}">
-                    <label class="address-card">
-                        <input type="radio" name="addressId"
-                               th:value="${address['id']}"
-                               th:checked="${address['is_default'] or stat.first}"
-                               th:attr="data-province-code=${address['province_code']}"
-                               class="address-choice">
-                        <div class="name">
-                            <span th:text="${address['recipient_name']}">Nguyễn Văn A</span>
-                            <span class="phone" th:text="${address['recipient_phone']}">0912345678</span>
-                        </div>
-                        <div class="address-text" th:text="${address['address_detail'] + ', ' + address['ward_name'] + ', ' + address['province_name']}"></div>
-                    </label>
-                </div>
+        <form th:action="@{/order/submit}" method="post" id="checkoutForm">
+            <!-- Danh sách sản phẩm đã chọn -->
+            <input type="hidden" name="selectedVariantIds" th:each="vid : ${selectedVariantIds}" th:value="${vid}">
 
-                <!-- Tùy chọn nhập địa chỉ mới -->
-                <label class="address-card" style="border-style: dashed; border-width: 2px;">
-                    <input type="radio" name="addressId" value="0"
-                           th:checked="${#lists.isEmpty(addresses)}" class="address-choice">
-                    <div class="name" style="color: var(--primary);">+ Nhập địa chỉ giao hàng mới</div>
-                </label>
+            <div class="checkout-grid">
+                <!-- CỘT TRÁI: ĐỊA CHỈ & PHƯƠNG THỨC THANH TOÁN -->
+                <div>
+                    <!-- 1. Địa chỉ nhận hàng -->
+                    <div class="checkout-card">
+                        <h3>📍 Địa chỉ nhận hàng</h3>
 
-                <!-- Form nhập địa chỉ mới -->
-                <div id="newAddressFields" style="display: none; padding-top: 10px; border-top: 1px solid var(--border); margin-top: 16px;">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="recipientName">Họ và tên người nhận *</label>
-                            <input class="form-control new-address-field" id="recipientName" name="recipientName" maxlength="150" placeholder="VD: Nguyễn Văn A">
+                        <div th:if="${guest}" style="margin-bottom:14px;">
+                            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Email nhận xác nhận đơn *</label>
+                            <input type="email" name="guestEmail" class="form-control" maxlength="254" required placeholder="email@example.com">
                         </div>
-                        <div class="form-group">
-                            <label for="recipientPhone">Số điện thoại *</label>
-                            <input class="form-control new-address-field" id="recipientPhone" name="recipientPhone" maxlength="20" placeholder="VD: 0912345678">
+
+                        <div th:if="${addresses != null and !addresses.isEmpty()}">
+                            <label class="address-option" th:each="addr, stat : ${addresses}">
+                                <input type="radio" name="addressId" th:value="${addr['id']}"
+                                       th:checked="${addr['is_default'] == 1 or stat.first}"
+                                       onchange="toggleAddressFields()">
+                                <div>
+                                    <div>
+                                        <strong th:text="${addr['recipient_name']}">Nguyễn Văn A</strong>
+                                        <span style="color:#6b7280;" th:text="' | ' + ${addr['recipient_phone']}">0901234567</span>
+                                        <span th:if="${addr['is_default'] == 1}"
+                                              style="background:#dcfce7; color:#16803c; font-size:11px; padding:2px 8px; border-radius:99px; margin-left:6px; font-weight:600;">Mặc định</span>
+                                    </div>
+                                    <div style="font-size:13.5px; color:#4b5563; margin-top:4px;"
+                                         th:text="${addr['address_detail'] + ', ' + addr['ward_name'] + ', ' + addr['province_name']}">
+                                        Địa chỉ chi tiết
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="address-option">
+                                <input type="radio" name="addressId" value="" id="newAddressRadio" onchange="toggleAddressFields()">
+
+                                <div><strong>+ Nhập địa chỉ giao hàng mới</strong></div>
+
+                            </label>
                         </div>
-                        <div class="form-group form-full">
-                            <label for="provinceCode">Tỉnh/Thành phố *</label>
-                            <select class="form-control new-address-field" name="provinceCode" id="provinceCode" th:attr="data-wards-url=@{/api/wards}">
-                                <option value="">--- Chọn tỉnh/thành phố ---</option>
-                                <option th:each="province : ${provinces}" th:value="${province['code']}" th:text="${province['name']}"></option>
-                            </select>
+
+                        <!-- Khung nhập địa chỉ mới -->
+                        <div id="newAddressContainer" class="new-address-fields"
+                             th:style="${addresses != null and !addresses.isEmpty()} ? 'display:none;' : 'display:grid;'">
+
+                            <div class="full-width" style="font-size: 14px; font-weight: 700; color: #16803c;">
+                                Nhập địa chỉ giao hàng
+                            </div>
+
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Họ và tên người nhận *</label>
+                                <input type="text" name="recipientName" class="form-control new-addr-input" placeholder="Nhập họ tên">
+                            </div>
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Số điện thoại *</label>
+                                <input type="text" name="recipientPhone" class="form-control new-addr-input" placeholder="Nhập số điện thoại">
+                            </div>
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Tỉnh / Thành phố *</label>
+                                <select name="provinceCode" class="form-control new-addr-input">
+                                    <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                                    <option th:each="prov : ${provinces}" th:value="${prov['code']}" th:text="${prov['name']}"></option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Phường / Xã *</label>
+                                <input type="text" name="wardName" class="form-control new-addr-input" placeholder="Nhập Phường / Xã">
+                            </div>
+                            <div class="full-width">
+                                <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Số nhà, tên đường *</label>
+                                <input type="text" name="addressDetail" class="form-control new-addr-input" placeholder="Ví dụ: Số 12 Ngõ 34 Đường Láng">
+                            </div>
                         </div>
-                        <div class="form-group form-full">
-                            <label for="wardName">Phường/Xã *</label>
-                            <select class="form-control new-address-field" name="wardName" id="wardName" disabled>
-                                <option value="">Vui lòng chọn tỉnh/thành phố trước</option>
-                            </select>
-                            <div class="hint-text" id="wardHint">Dữ liệu phường/xã sẽ được tự động tải.</div>
-                        </div>
-                        <div class="form-group form-full">
-                            <label for="addressDetail">Địa chỉ cụ thể *</label>
-                            <input class="form-control new-address-field" id="addressDetail" name="addressDetail" maxlength="500" placeholder="Số nhà, Tên đường, Tòa nhà...">
-                        </div>
+                    </div>
+
+                    <!-- 2. Phương thức thanh toán -->
+                    <div class="checkout-card">
+                        <h3>💳 Phương thức thanh toán</h3>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="COD" checked>
+                            <div>
+                                <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                <div style="font-size:13px; color:#6b7280; margin-top:2px;">Kiểm tra trái cây tươi ngon rồi mới thanh toán tiền mặt cho Shipper.</div>
+                            </div>
+                        </label>
+
+                        <label class="payment-option" th:unless="${guest}">
+                            <input type="radio" name="paymentMethod" value="VNPAY">
+                            <div>
+                                <strong>Thanh toán trực tuyến qua cổng VNPay (ATM / QR / Thẻ nội địa)</strong>
+                                <div style="font-size:13px; color:#6b7280; margin-top:2px;">Chuyển hướng an toàn sang cổng thanh toán VNPay Sandbox.</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 3. Ghi chú đơn hàng -->
+                    <div class="checkout-card">
+                        <h3>📝 Ghi chú cho cửa hàng</h3>
+                        <textarea name="customerNote" rows="2" class="form-control"
+                                  placeholder="Lưu ý giờ giao hàng hoặc yêu cầu đóng gói..."></textarea>
                     </div>
                 </div>
 
-                <!-- Khách vãng lai -->
-                <div th:if="${guest}" class="form-group" style="margin-top: 20px;">
-                    <label for="guestEmail">Email nhận thông tin đơn hàng *</label>
-                    <input class="form-control" type="email" id="guestEmail" name="guestEmail" required placeholder="VD: email@example.com">
-                </div>
+                <!-- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG & TÍNH TIỀN -->
+                <div>
+                    <div class="checkout-card">
+                        <h3>🛒 Đơn hàng của bạn</h3>
 
-                <div class="form-group" style="margin-top: 20px;">
-                    <label for="customerNote">Ghi chú cho cửa hàng (Tùy chọn)</label>
-                    <textarea class="form-control" id="customerNote" name="customerNote" rows="2" placeholder="Ghi chú về thời gian giao hàng, đóng gói..."></textarea>
-                </div>
-            </section>
-
-            <section class="checkout-section">
-                <h2 class="section-title">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                    Phương thức thanh toán
-                </h2>
-
-                <label class="payment-card">
-                    <input type="radio" name="paymentMethod" value="COD" checked>
-                    <span>Thanh toán khi nhận hàng (Thanh toán COD)</span>
-                </label>
-                <label class="payment-card" th:unless="${guest}">
-                    <input type="radio" name="paymentMethod" value="VNPAY">
-                    <span>Thanh toán trực tuyến qua VNPAY</span>
-                </label>
-            </section>
-        </div>
-
-        <!-- CỘT PHẢI: TỔNG QUAN ĐƠN HÀNG -->
-        <div class="right-col">
-            <section class="checkout-section" style="position: sticky; top: 90px;">
-                <h2 class="section-title">Tổng quan đơn hàng</h2>
-
-                <input type="hidden" name="selectedVariantIds" th:each="id : ${selectedVariantIds}" th:value="${id}">
-
-                <!-- Danh sách sản phẩm -->
-                <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
-                    <div th:each="item : ${checkoutItems}" class="order-item">
-                        <div class="item-info">
-                            <span class="item-name" th:text="${item['product_name']}">Sản phẩm</span>
-                            <span class="item-qty" th:text="${item['variant_name'] + ' × ' + item['quantity']}">Phân loại x 1</span>
+                        <div th:each="item : ${checkoutItems}" class="summary-item">
+                            <div>
+                                <div style="font-weight:600; color:#111827;" th:text="${item['name']}">Tên sản phẩm</div>
+                                <small style="color:#6b7280;"
+                                       th:text="'SL: ' + ${item['quantity']} + ' × ' + ${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                                    SL: 1 x 100.000 ₫
+                                </small>
+                            </div>
+                            <strong style="color:#111827;"
+                                    th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                100.000 ₫
+                            </strong>
                         </div>
-                        <div class="item-price" th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</div>
+
+                        <div th:each="shop : ${checkoutShops}" style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
+                            <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;"
+                                   th:text="'Voucher của ' + ${shop.shopName}">Voucher cửa hàng</label>
+                            <div style="display:flex;gap:8px;">
+                                <input class="form-control" type="text" maxlength="50" autocomplete="off"
+                                       th:name="'voucherCode_' + ${shop.shopId}" th:value="${shop.code}"
+                                       placeholder="Nhập mã voucher của shop">
+                                <button class="form-control" type="submit" formaction="/checkout" formmethod="post" formnovalidate
+                                        style="width:auto;white-space:nowrap;background:#eef6f0;color:#14532d;font-weight:700;cursor:pointer;">Áp dụng</button>
+                            </div>
+                            <small th:if="${shop.voucherError != null}" th:text="${shop.voucherError}" style="color:#b42318;"></small>
+                            <small th:if="${shop.discount > 0}" th:text="'Đã giảm ' + ${#numbers.formatDecimal(shop.discount,0,'COMMA',0,'POINT')} + ' ₫'" style="color:#16803c;"></small>
+                        </div>
+
+                        <!-- Phần tính tiền đã đổi tên theo đúng yêu cầu -->
+                        <div style="margin-top: 16px;">
+                            <div class="summary-line">
+                                <span>Tổng tiền hàng</span>
+                                <strong style="color:#111827;"
+                                        th:text="${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</strong>
+                            </div>
+                            <div class="summary-line">
+                                <span>Phí vận chuyển</span>
+                                <strong style="color:#111827;"
+                                        th:text="${#numbers.formatDecimal(shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}">20.000 ₫</strong>
+                            </div>
+                            <div class="summary-line" th:if="${voucherDiscount > 0}">
+                                <span>Giảm giá voucher</span>
+                                <strong style="color:#16803c;" th:text="'- ' + ${#numbers.formatDecimal(voucherDiscount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">- 0 ₫</strong>
+                            </div>
+                            <div class="summary-total">
+                                <span>Thành tiền</span>
+                                <span th:text="${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                            </div>
+                        </div>
+
+
+                        <button type="submit" id="btnPlaceOrder" class="submit-order-btn">Đặt hàng ngay</button>
+
                     </div>
                 </div>
-
-                <!-- Voucher Shop -->
-                <div th:if="${!guest and checkoutShops != null and !#lists.isEmpty(checkoutShops)}" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
-                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Mã giảm giá từ Shop</h3>
-                    <div th:each="shop : ${checkoutShops}" style="margin-bottom: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;" th:text="${shop['shopName']}">Shop</span>
-                        <select class="form-control voucher-select saved-voucher-select"
-                                th:name="${'voucherId_' + shop['shopId']}" data-voucher-select>
-                            <option value="">Không dùng mã giảm giá</option>
-                            <option th:each="voucher : ${shop['savedVouchers']}"
-                                    th:value="${voucher['id']}"
-                                    th:selected="${shop['selectedVoucherId'] != null and shop['selectedVoucherId'] == voucher['id']}"
-                                    th:disabled="${!voucher['eligible']}"
-                                    th:attr="data-discount=${voucher['discount']}"
-                                    th:text="${voucher['display_label']}">
-                                Voucher
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Dữ liệu ẩn phục vụ tính Ship bằng JS -->
-                <div id="shippingShopData" hidden>
-                    <span th:each="shop : ${checkoutShops}" th:attr="data-shop-province-code=${shop['shopProvinceCode'] == null ? '' : shop['shopProvinceCode']}"></span>
-                </div>
-
-                <!-- Bảng tính tiền -->
-                <div class="cost-box">
-                    <div class="cost-row">
-                        <span>Tổng tiền hàng:</span>
-                        <span th:text="${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
-                    </div>
-
-                    <div class="cost-row">
-                        <span>Phí vận chuyển:</span>
-                        <span id="shippingFeeAmount">Đang tính...</span>
-                    </div>
-
-                    <div class="cost-row discount" id="voucherDiscountLine" style="display: none;">
-                        <span>Giảm giá Voucher:</span>
-                        <span id="voucherDiscountAmount">0 ₫</span>
-                    </div>
-
-                    <div class="cost-total" id="checkoutSummary" th:attr="data-subtotal=${subtotal}, data-shipping-fee=${shippingFee != null ? shippingFee : 0}">
-                        <span>Khách thanh toán:</span>
-                        <strong id="grandTotal">0 ₫</strong>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">Tiến hành đặt hàng →</button>
-            </section>
-        </div>
-    </form>
+            </div>
+        </form>
+    </div>
 </main>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('checkoutForm');
-        const provinceSelect = document.getElementById('provinceCode');
-        const wardSelect = document.getElementById('wardName');
-        const wardHint = document.getElementById('wardHint');
-        const newAddressFields = document.getElementById('newAddressFields');
-        const addressRadios = document.querySelectorAll('.address-choice');
+    function toggleAddressFields() {
+        const newAddressRadio = document.getElementById('newAddressRadio');
+        const container = document.getElementById('newAddressContainer');
+        const inputs = document.querySelectorAll('.new-addr-input');
 
-        const summary = document.getElementById('checkoutSummary');
-        const voucherDiscountLine = document.getElementById('voucherDiscountLine');
-        const voucherDiscountAmount = document.getElementById('voucherDiscountAmount');
-        const grandTotal = document.getElementById('grandTotal');
-        const voucherSelects = document.querySelectorAll('[data-voucher-select]');
+        const useNewAddress = !newAddressRadio || newAddressRadio.checked;
 
-        const subtotalAmount = summary ? Number(summary.dataset.subtotal || 0) : 0;
-        let shippingAmount = 0;
-        const shippingFeeAmount = document.getElementById('shippingFeeAmount');
-        const shippingShopNodes = document.querySelectorAll('#shippingShopData [data-shop-province-code]');
-        const moneyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
-
-        // HÀM 1: Cập nhật tổng tiền khi đổi Voucher
-        function updateVoucherTotal() {
-            let discount = 0;
-            voucherSelects.forEach(select => {
-                const selectedOption = select.options[select.selectedIndex];
-                if (selectedOption && selectedOption.value) {
-                    discount += Number(selectedOption.dataset.discount || 0);
-                }
-            });
-
-            // Tính tổng: Tiền hàng + Phí ship - Giảm giá
-            const total = Math.max(0, subtotalAmount + shippingAmount - discount);
-
-            if (voucherDiscountAmount) voucherDiscountAmount.textContent = '-' + moneyFormatter.format(discount) + ' ₫';
-            if (voucherDiscountLine) voucherDiscountLine.style.display = discount > 0 ? 'flex' : 'none';
-            if (grandTotal) grandTotal.textContent = moneyFormatter.format(total) + ' ₫';
+        if (container) {
+            container.style.display = useNewAddress ? 'grid' : 'none';
         }
-
-        // Gắn sự kiện cho thẻ Select Voucher
-        voucherSelects.forEach(select => select.addEventListener('change', updateVoucherTotal));
-
-        // Lấy mã tỉnh đang được chọn (Từ thẻ radio hoặc từ thẻ select)
-        function selectedCustomerProvinceCode() {
-            const selectedAddress = document.querySelector('.address-choice:checked');
-            if (selectedAddress && selectedAddress.value !== '0') {
-                return (selectedAddress.dataset.provinceCode || '').trim();
-            }
-            return provinceSelect ? (provinceSelect.value || '').trim() : '';
-        }
-
-        // HÀM 2: TÍNH PHÍ SHIP ĐỘNG THEO TỈNH (14K Nội Tỉnh / 30K Ngoại Tỉnh)
-        function updateShippingAmount() {
-            if (!shippingShopNodes.length) return;
-
-            const customerProvinceCode = selectedCustomerProvinceCode();
-            let newShippingAmount = 0;
-
-            shippingShopNodes.forEach(node => {
-                const shopProvinceCode = (node.dataset.shopProvinceCode || '').trim();
-
-                // Nếu khách chưa chọn tỉnh -> Tạm lấy mức cao nhất 30k
-                if (customerProvinceCode === '') {
-                    newShippingAmount += 30000;
-                } else {
-                    // Nếu mã tỉnh của Khách trùng với mã tỉnh của Shop -> Nội tỉnh (14k). Khác -> Ngoại tỉnh (30k)
-                    const sameProvince = (customerProvinceCode === shopProvinceCode);
-                    newShippingAmount += sameProvince ? 14000 : 30000;
-                }
-            });
-
-            shippingAmount = newShippingAmount;
-            if (summary) summary.dataset.shippingFee = String(shippingAmount);
-            if (shippingFeeAmount) {
-                shippingFeeAmount.textContent = moneyFormatter.format(shippingAmount) + ' ₫';
-            }
-
-            // Gọi lại hàm tính tổng tiền
-            updateVoucherTotal();
-        }
-
-        // Xử lý ẩn/hiện form nhập địa chỉ mới
-        function isNewAddressSelected() {
-            const selected = document.querySelector('.address-choice:checked');
-            return !selected || selected.value === '0';
-        }
-
-        function updateAddressFields() {
-            const useNewAddress = isNewAddressSelected();
-            if(useNewAddress) {
-                newAddressFields.style.display = 'block';
-            } else {
-                newAddressFields.style.display = 'none';
-            }
-
-            newAddressFields.querySelectorAll('.new-address-field').forEach(field => {
-                field.disabled = !useNewAddress;
-                if(useNewAddress && field.id !== 'wardName') {
-                    field.required = true;
-                } else {
-                    field.required = false;
-                }
-            });
-        }
-
-        addressRadios.forEach(radio => radio.addEventListener('change', () => {
-            updateAddressFields();
-            updateShippingAmount(); // Tính lại ship khi đổi radio địa chỉ
-        }));
-
-        // Gọi khởi tạo lần đầu
-        updateAddressFields();
-        updateShippingAmount();
-
-        // HÀM 3: GỌI API LẤY DANH SÁCH PHƯỜNG XÃ
-        let wardRequestNumber = 0;
-        provinceSelect.addEventListener('change', async () => {
-            updateShippingAmount(); // Tính lại ship ngay khi khách vừa đổi tỉnh
-
-            const requestNumber = ++wardRequestNumber;
-            const provinceCode = provinceSelect.value;
-            wardSelect.replaceChildren(new Option(
-                provinceCode ? 'Đang tải phường/xã...' : 'Vui lòng chọn tỉnh/thành phố trước', ''
-            ));
-            wardSelect.disabled = true;
-            wardHint.textContent = provinceCode ? 'Đang tải dữ liệu phường/xã...' : 'Dữ liệu phường/xã sẽ được tự động tải.';
-
-            if (!provinceCode) return;
-
-            try {
-                const endpoint = provinceSelect.dataset.wardsUrl || '/api/wards';
-                const response = await fetch(`${endpoint}?provinceCode=${encodeURIComponent(provinceCode)}`, {
-                    headers: { 'Accept': 'application/json' }
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const wards = await response.json();
-                if (requestNumber !== wardRequestNumber) return;
-
-                wardSelect.replaceChildren(new Option('--- Chọn phường/xã ---', ''));
-                wards.forEach(ward => wardSelect.add(new Option(ward.name, ward.name)));
-                wardSelect.disabled = wards.length === 0;
-                wardSelect.required = wards.length > 0;
-                wardHint.textContent = '';
-            } catch (error) {
-                if (requestNumber !== wardRequestNumber) return;
-                wardSelect.replaceChildren(new Option('Không tải được danh sách', ''));
-                wardSelect.disabled = true;
-                wardHint.textContent = 'Lỗi tải dữ liệu. Vui lòng kiểm tra kết nối mạng.';
-            }
+        inputs.forEach(input => {
+            input.disabled = !useNewAddress;
+            input.required = useNewAddress;
         });
+    }
 
-
-        form.addEventListener('submit', event => {
-            if (!isNewAddressSelected()) return;
-            if (!provinceSelect.value || (wardSelect.options.length > 1 && !wardSelect.value)) {
-                event.preventDefault();
-                alert('Vui lòng chọn đầy đủ Tỉnh/Thành phố và Phường/Xã để tính phí vận chuyển chính xác.');
-            }
-        });
-    });
+    document.addEventListener('DOMContentLoaded', toggleAddressFields);
 </script>
+
 </body>
 </html>

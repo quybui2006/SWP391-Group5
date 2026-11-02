@@ -1,20 +1,19 @@
 package service.customer;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
-<<<<<<< HEAD
 import service.shop.VoucherUsageService;
 import service.shop.InventoryBatchService;
-=======
-import service.vnpay.VNPayService;
-import service.login.EmailService;
-import service.operations.CustomerRefundService;
-
->>>>>>> develop
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,10 +22,8 @@ import java.time.ZoneId;
 
 @Service
 public class OrderCheckoutService {
-    private static final BigDecimal INTRA_PROVINCE_SHIPPING_FEE = new BigDecimal("14000");
-    private static final BigDecimal INTER_PROVINCE_SHIPPING_FEE = new BigDecimal("30000");
+    private static final BigDecimal SHIPPING_FEE = new BigDecimal("20000");
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-<<<<<<< HEAD
     private final JdbcTemplate jdbc;
     private final VoucherUsageService voucherUsage;
     private final InventoryBatchService inventoryBatches;
@@ -36,23 +33,6 @@ public class OrderCheckoutService {
         this.jdbc = jdbc;
         this.voucherUsage = voucherUsage;
         this.inventoryBatches = inventoryBatches;
-=======
-
-    private final JdbcTemplate jdbc;
-    private final VNPayService vnPayService;
-    private final EmailService emailService;
-    private final CustomerRefundService customerRefunds;
-
-    public OrderCheckoutService(
-            JdbcTemplate jdbc,
-            VNPayService vnPayService,
-            EmailService emailService,
-            CustomerRefundService customerRefunds) {
-        this.jdbc = jdbc;
-        this.vnPayService = vnPayService;
-        this.emailService = emailService;
-        this.customerRefunds = customerRefunds;
->>>>>>> develop
     }
 
     /** Đọc sản phẩm đã chọn và lấy giá khuyến mãi đang hiệu lực cho khách đã đăng nhập. */
@@ -90,26 +70,14 @@ public class OrderCheckoutService {
 
     /** Tính thử mức giảm và trả lỗi dễ hiển thị trên checkout, chưa ghi nhận lượt dùng. */
     public VoucherQuote previewVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal) {
-<<<<<<< HEAD
         if (rawCode == null || rawCode.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
-=======
-        return previewVoucher(null, shopId, rawCode, shopSubtotal);
-    }
-
-    public VoucherQuote previewVoucher(Long userId, Long shopId, String rawCode, BigDecimal shopSubtotal) {
-        if (rawCode == null || rawCode.isBlank()) {
-            return new VoucherQuote(null, "", BigDecimal.ZERO, null);
-        }
->>>>>>> develop
         try {
             return quoteVoucher(shopId, rawCode, shopSubtotal, false);
         } catch (IllegalArgumentException ex) {
-            return new VoucherQuote(null,
-                    rawCode.trim().toUpperCase(java.util.Locale.ROOT), BigDecimal.ZERO, ex.getMessage());
+            return new VoucherQuote(null, rawCode.trim().toUpperCase(java.util.Locale.ROOT), BigDecimal.ZERO, ex.getMessage());
         }
     }
 
-<<<<<<< HEAD
     /** Kiểm tra mã thuộc shop, loại giảm tiền, hiệu lực, lượt còn lại và đơn tối thiểu rồi tính số tiền giảm. */
     private VoucherQuote quoteVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
         String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
@@ -119,149 +87,24 @@ public class OrderCheckoutService {
                 "FROM vouchers WHERE shop_id=? AND code=? AND voucher_type='DISCOUNT'" + lockClause, shopId, code);
         if (rows.isEmpty()) throw new IllegalArgumentException("Mã voucher không thuộc cửa hàng này.");
         Map<String, Object> v = rows.get(0);
-=======
-    /** Danh sách voucher khách đã lưu, còn hiệu lực và thuộc đúng cửa hàng. */
-    public List<Map<String, Object>> savedVouchers(Long userId, Long shopId, BigDecimal shopSubtotal) {
-        if (userId == null || shopId == null) return List.of();
-
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT DISTINCT v.id, v.code, v.name, v.discount_type, v.discount_value,
-                   v.max_discount_amount, v.min_order_value, v.max_usages, v.used_count,
-                   v.starts_at, v.ends_at, csv.saved_at
-            FROM customer_saved_vouchers csv
-            JOIN vouchers v ON v.id = csv.voucher_id
-            WHERE csv.user_id = ?
-              AND v.shop_id = ?
-              AND v.status = 'ACTIVE'
-              AND v.starts_at <= ?
-              AND v.ends_at > ?
-              AND v.used_count < v.max_usages
-            ORDER BY csv.saved_at DESC, v.id DESC
-        """, userId, shopId, now, now);
-
-        for (Map<String, Object> voucher : rows) {
-            BigDecimal minOrder = (BigDecimal) voucher.get("min_order_value");
-            boolean eligible = minOrder == null || shopSubtotal.compareTo(minOrder) >= 0;
-            BigDecimal discount = eligible ? calculateVoucherDiscount(voucher, shopSubtotal) : BigDecimal.ZERO;
-            voucher.put("eligible", eligible);
-            voucher.put("discount", discount);
-            String name = String.valueOf(voucher.get("name"));
-            String code = String.valueOf(voucher.get("code"));
-            if (eligible) {
-                voucher.put("display_label", name + " (" + code + ") - Giảm " + discount.toPlainString() + " ₫");
-            } else {
-                voucher.put("display_label", name + " (" + code + ") - Đơn tối thiểu " + minOrder.toPlainString() + " ₫");
-            }
-        }
-        return rows;
-    }
-
-    /** Xem trước voucher đã lưu. Khi đặt hàng sẽ kiểm tra quyền sở hữu lại trong transaction. */
-    public VoucherQuote previewSavedVoucher(Long userId, Long shopId, Long voucherId, BigDecimal shopSubtotal) {
-        if (voucherId == null) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
-        try {
-            return quoteSavedVoucher(userId, shopId, voucherId, shopSubtotal, false);
-        } catch (IllegalArgumentException ex) {
-            return new VoucherQuote(null, "", BigDecimal.ZERO, ex.getMessage());
-        }
-    }
-
-    private VoucherQuote quoteSavedVoucher(Long userId, Long shopId, Long voucherId,
-                                            BigDecimal shopSubtotal, boolean lock) {
-        if (userId == null) {
-            throw new IllegalArgumentException("Bạn cần đăng nhập để sử dụng voucher đã lưu.");
-        }
-        String lockClause = lock ? " FOR UPDATE" : "";
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT v.id, v.code, v.name, v.discount_type, v.discount_value,
-                   v.max_discount_amount, v.min_order_value, v.max_usages, v.used_count,
-                   v.status, v.starts_at, v.ends_at
-            FROM customer_saved_vouchers csv
-            JOIN vouchers v ON v.id = csv.voucher_id
-            WHERE csv.user_id = ?
-              AND csv.voucher_id = ?
-              AND v.shop_id = ?
-            """ + lockClause, userId, voucherId, shopId);
-
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Voucher này chưa được lưu trong ví của bạn hoặc không thuộc cửa hàng đang mua.");
-        }
-
-        Map<String, Object> voucher = rows.get(0);
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        LocalDateTime startsAt = toLocalDateTime(voucher.get("starts_at"));
-        LocalDateTime endsAt = toLocalDateTime(voucher.get("ends_at"));
-        if (!"ACTIVE".equals(voucher.get("status")) || startsAt.isAfter(now) || !endsAt.isAfter(now)) {
+        LocalDateTime startsAt = toLocalDateTime(v.get("starts_at"));
+        LocalDateTime endsAt = toLocalDateTime(v.get("ends_at"));
+        if (!"ACTIVE".equals(v.get("status")) || startsAt.isAfter(now) || !endsAt.isAfter(now)) {
             throw new IllegalArgumentException("Voucher chưa có hiệu lực hoặc đã hết hạn.");
         }
-        if (((Number) voucher.get("used_count")).intValue() >= ((Number) voucher.get("max_usages")).intValue()) {
+        if (((Number) v.get("used_count")).intValue() >= ((Number) v.get("max_usages")).intValue())
             throw new IllegalArgumentException("Voucher đã hết lượt sử dụng.");
-        }
-        BigDecimal minOrder = (BigDecimal) voucher.get("min_order_value");
-        if (minOrder != null && shopSubtotal.compareTo(minOrder) < 0) {
+        if (shopSubtotal.compareTo((BigDecimal) v.get("min_order_value")) < 0)
             throw new IllegalArgumentException("Đơn hàng của shop chưa đạt giá trị tối thiểu của voucher.");
-        }
-
-        BigDecimal discount = calculateVoucherDiscount(voucher, shopSubtotal);
-        return new VoucherQuote(((Number) voucher.get("id")).longValue(),
-                String.valueOf(voucher.get("code")), discount, null);
-    }
-
-    private BigDecimal calculateVoucherDiscount(Map<String, Object> voucher, BigDecimal shopSubtotal) {
-        BigDecimal discountValue = (BigDecimal) voucher.get("discount_value");
-        BigDecimal discount = "PERCENTAGE".equalsIgnoreCase(String.valueOf(voucher.get("discount_type")))
+        BigDecimal discountValue = (BigDecimal) v.get("discount_value");
+        BigDecimal discount = "PERCENTAGE".equals(v.get("discount_type"))
                 ? shopSubtotal.multiply(discountValue).divide(new BigDecimal("100"), 0, RoundingMode.DOWN)
                 : discountValue;
-        BigDecimal maxDiscount = (BigDecimal) voucher.get("max_discount_amount");
+        BigDecimal maxDiscount = (BigDecimal) v.get("max_discount_amount");
         if (maxDiscount != null) discount = discount.min(maxDiscount);
-        return discount.min(shopSubtotal).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN);
-    }
-
-    private VoucherQuote quoteVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
-        return quoteVoucher(null, shopId, rawCode, shopSubtotal, lock);
-    }
-
-    private VoucherQuote quoteVoucher(Long userId, Long shopId, String rawCode,
-                                      BigDecimal shopSubtotal, boolean lock) {
-        String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
-        if (code.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
-        String lockClause = lock ? " FOR UPDATE" : "";
-        List<Map<String, Object>> rows;
-        if (userId != null) {
-            rows = jdbc.queryForList(
-                    "SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at " +
-                    "FROM vouchers WHERE shop_id=? AND code=? AND (is_public=1 OR EXISTS (" +
-                    "SELECT 1 FROM customer_saved_vouchers csv WHERE csv.voucher_id=vouchers.id AND csv.user_id=?" +
-                    "))" + lockClause,
-                    shopId, code, userId);
-        } else {
-            rows = jdbc.queryForList(
-                    "SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at " +
-                    "FROM vouchers WHERE shop_id=? AND code=? AND is_public=1" + lockClause,
-                    shopId, code);
-        }
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Mã voucher không thuộc cửa hàng này hoặc bạn không có quyền sử dụng.");
-        }
-        Map<String, Object> voucher = rows.get(0);
->>>>>>> develop
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        LocalDateTime startsAt = toLocalDateTime(voucher.get("starts_at"));
-        LocalDateTime endsAt = toLocalDateTime(voucher.get("ends_at"));
-        if (!"ACTIVE".equals(voucher.get("status")) || startsAt.isAfter(now) || !endsAt.isAfter(now)) {
-            throw new IllegalArgumentException("Voucher chưa có hiệu lực hoặc đã hết hạn.");
-        }
-        if (((Number) voucher.get("used_count")).intValue()
-                >= ((Number) voucher.get("max_usages")).intValue()) {
-            throw new IllegalArgumentException("Voucher đã hết lượt sử dụng.");
-        }
-        BigDecimal minOrder = (BigDecimal) voucher.get("min_order_value");
-        if (minOrder != null && shopSubtotal.compareTo(minOrder) < 0) {
-            throw new IllegalArgumentException("Đơn hàng của shop chưa đạt giá trị tối thiểu của voucher.");
-        }
-        BigDecimal discount = calculateVoucherDiscount(voucher, shopSubtotal);
-        return new VoucherQuote(((Number) voucher.get("id")).longValue(), code, discount, null);
+        discount = discount.min(shopSubtotal).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN);
+        return new VoucherQuote(((Number) v.get("id")).longValue(), code, discount, null);
     }
 
     /** Đọc sổ địa chỉ của khách để chọn khi đặt hàng. */
@@ -274,59 +117,91 @@ public class OrderCheckoutService {
         return jdbc.queryForList("SELECT code,name FROM provinces WHERE is_active=1 ORDER BY name");
     }
 
-<<<<<<< HEAD
     /** Đặt COD theo giao diện cũ; chuyển sang luồng tạo đơn chung không có mã voucher. */
-=======
-    /** Lấy danh sách phường/xã thuộc tỉnh/thành phố đang chọn. */
-    public List<Map<String, Object>> getWardsByProvince(String provinceCode) {
-        if (provinceCode == null || provinceCode.isBlank()) return List.of();
-        return jdbc.queryForList("""
-            SELECT w.code, w.name
-            FROM wards w
-            JOIN provinces p ON p.code = w.province_code
-            WHERE p.code = ?
-              AND p.is_active = 1
-              AND w.is_active = 1
-            ORDER BY w.name
-        """, provinceCode.trim());
-    }
-
-    /** Kiểm tra phường/xã thuộc đúng tỉnh/thành được gửi lên. */
-    private void validateWardForProvince(String provinceCode, String wardName) {
-        if (provinceCode == null || provinceCode.isBlank() || wardName == null || wardName.isBlank()) {
-            throw new IllegalArgumentException("Vui lòng chọn tỉnh/thành phố và phường/xã.");
-        }
-        Integer count = jdbc.queryForObject("""
-            SELECT COUNT(*)
-            FROM wards w
-            JOIN provinces p ON p.code = w.province_code
-            WHERE p.code = ?
-              AND p.is_active = 1
-              AND w.name = ?
-              AND w.is_active = 1
-        """, Integer.class, provinceCode.trim(), wardName.trim());
-        if (count == null || count == 0) {
-            throw new IllegalArgumentException("Phường/xã không thuộc tỉnh/thành phố đã chọn. Vui lòng chọn lại.");
-        }
-    }
-
-    /**
-     * Tính phí vận chuyển riêng cho từng shop theo tỉnh của shop và khách hàng.
-     * Cùng tỉnh: 14.000đ; khác tỉnh: 30.000đ.
-     */
-    private BigDecimal calculateShippingFee(String shopProvinceCode, String customerProvinceCode) {
-        if (shopProvinceCode != null && customerProvinceCode != null
-                && shopProvinceCode.trim().equals(customerProvinceCode.trim())) {
-            return INTRA_PROVINCE_SHIPPING_FEE;
-        }
-        return INTER_PROVINCE_SHIPPING_FEE;
-    }
-
->>>>>>> develop
     @Transactional
     public String placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                              String recipientPhone, String provinceCode, String wardName, String addressDetail, String note) {
-        return placeOrder(userId, variantIds, addressId, recipientName, recipientPhone, provinceCode, wardName, addressDetail, note, "COD").checkoutCode();
+        if (variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
+        Map<String, Object> address;
+        if (addressId != null && addressId > 0) {
+            List<Map<String, Object>> savedAddresses = jdbc.queryForList("SELECT ua.*,p.name AS province_name FROM user_addresses ua JOIN provinces p ON p.code=ua.province_code WHERE ua.id=? AND ua.user_id=?", addressId, userId);
+            if (savedAddresses.isEmpty()) throw new IllegalArgumentException("Địa chỉ không tồn tại trong tài khoản này.");
+            address = savedAddresses.get(0);
+        } else {
+            String name = required(recipientName, 150, "Tên người nhận");
+            String phone = required(recipientPhone, 20, "Số điện thoại").replaceAll("[\\s.-]", "");
+            String ward = required(wardName, 150, "Phường/xã");
+            String detail = required(addressDetail, 500, "Địa chỉ cụ thể");
+            if (!phone.matches("0[35789][0-9]{8}")) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM provinces WHERE code=? AND is_active=1", Integer.class, provinceCode) == 0) throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
+            addressId = insertId("INSERT INTO user_addresses(user_id,recipient_name,recipient_phone,province_code,ward_name,address_detail,is_default) VALUES(?,?,?,?,?,?,FALSE)", userId, name, phone, provinceCode, ward, detail);
+            address = jdbc.queryForMap("SELECT ua.*,p.name AS province_name FROM user_addresses ua JOIN provinces p ON p.code=ua.province_code WHERE ua.id=? AND ua.user_id=?", addressId, userId);
+        }
+        Map<String, Object> user = jdbc.queryForMap("SELECT email FROM users WHERE id=?", userId);
+        String marks = String.join(",", java.util.Collections.nCopies(variantIds.size(), "?"));
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        Object[] args = new Object[variantIds.size() + 5]; args[0] = now; args[1] = now; args[2] = now; args[3] = now; args[4] = userId;
+        for (int i = 0; i < variantIds.size(); i++) args[i + 5] = variantIds.get(i);
+        // HẬU KIỂM: lấy cả sản phẩm đã bị tạm ngừng/từ chối để có thể chặn checkout
+        // bằng tên cụ thể. FOR UPDATE khóa các dòng liên quan trong suốt lúc chốt đơn,
+        // tránh Operations Manager từ chối đúng giữa bước kiểm tra và tạo đơn.
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,pv.sku,pv.name AS variant_name,pv.status AS variant_status,pv.approval_status AS variant_approval_status,pv.price AS original_price, " +
+                "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
+                "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
+                "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity, " +
+                "s.province_code AS shop_province_code,s.name AS shop_name,s.approval_status AS shop_approval_status,s.operating_status AS shop_operating_status " +
+                "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") FOR UPDATE", args);
+        if (lines.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ hàng. Vui lòng tải lại giỏ hàng.");
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (Map<String, Object> line : lines) {
+            String productName = String.valueOf(line.get("product_name"));
+            if (!("APPROVED".equals(line.get("variant_approval_status")) || "PENDING".equals(line.get("variant_approval_status")))) {
+                throw new IllegalArgumentException("Biến thể của " + productName + " không còn đủ điều kiện bán.");
+            }
+            if (!"ACTIVE".equals(line.get("variant_status"))) {
+                throw new IllegalArgumentException("Phân loại của sản phẩm " + productName + " hiện không còn mở bán.");
+            }
+            if (!"APPROVED".equals(line.get("shop_approval_status")) || !"OPEN".equals(line.get("shop_operating_status"))) {
+                throw new IllegalArgumentException("Cửa hàng " + line.get("shop_name") + " hiện không hoạt động.");
+            }
+            int quantity = ((Number) line.get("quantity")).intValue();
+            if (quantity > ((Number) line.get("available_quantity")).intValue()) throw new IllegalArgumentException("Số lượng tồn kho không đủ cho " + productName + ".");
+            subtotal = subtotal.add(((BigDecimal) line.get("price")).multiply(BigDecimal.valueOf(quantity)));
+        }
+        Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
+                line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
+        BigDecimal total = subtotal.add(SHIPPING_FEE.multiply(BigDecimal.valueOf(shopLines.size())));
+        String checkoutCode = code("CK-");
+        Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status) VALUES(?,?,?,?,'COD',?,'CONFIRMED')", checkoutCode, UUID.randomUUID().toString(), userId, user.get("email"), total);
+        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,payment_method,delivery_code,status,payment_status,delivery_status) VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,'COD',?,'PENDING','UNPAID','NOT_STARTED')";
+        java.util.List<String> orderCodes = new java.util.ArrayList<>();
+        for (var shopEntry : shopLines.entrySet()) {
+            long shopId = shopEntry.getKey();
+            List<Map<String, Object>> shopItems = shopEntry.getValue();
+            BigDecimal shopSubtotal = shopItems.stream().map(line -> ((BigDecimal) line.get("price")).multiply(BigDecimal.valueOf(((Number) line.get("quantity")).longValue()))).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal shopTotal = shopSubtotal.add(SHIPPING_FEE);
+            String orderCode = code("FF-");
+            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal, code("DL-"));
+            orderCodes.add(orderCode);
+            jdbc.update("INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,'COD',?,'PENDING')", code("PAY-"), orderId, UUID.randomUUID().toString(), shopTotal);
+            for (Map<String, Object> line : shopItems) {
+                Long variantId = ((Number) line.get("variant_id")).longValue();
+                Long inventoryId = ((Number) line.get("inventory_id")).longValue();
+                int quantity = ((Number) line.get("quantity")).intValue();
+                BigDecimal price = (BigDecimal) line.get("price");
+                insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UNRESERVED')", orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"), line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)));
+            }
+        }
+        Object[] deleteArgs = new Object[variantIds.size() + 1];
+        deleteArgs[0] = userId;
+        for (int i = 0; i < variantIds.size(); i++) {
+            deleteArgs[i + 1] = variantIds.get(i);
+        }
+
+
+        jdbc.update("DELETE FROM cart_items WHERE cart_id=(SELECT id FROM carts WHERE user_id=?) AND variant_id IN (" + marks + ")", deleteArgs);
+
+        return String.join(", ", orderCodes);
     }
 
     private String code(String prefix) { return prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase(); }
@@ -345,6 +220,7 @@ public class OrderCheckoutService {
             }
             return ps;
         }, keys);
+
 
         if (!keys.getKeyList().isEmpty()) {
             java.util.Map<String, Object> firstRow = keys.getKeyList().get(0);
@@ -366,7 +242,7 @@ public class OrderCheckoutService {
         }
         return key.longValue();
     }
-
+    // Thêm Record này vào trong class OrderCheckoutService để gói dữ liệu trả về
     public record CheckoutResult(String checkoutCode, BigDecimal totalAmount, List<String> orderCodes, String paymentMethod) {}
     public record GuestCheckoutResult(CheckoutResult checkout, String guestAccessToken) {}
 
@@ -383,7 +259,7 @@ public class OrderCheckoutService {
     @Transactional
     public CheckoutResult placeOrder(Long userId, List<Long> variantIds, Long addressId, String recipientName,
                                      String recipientPhone, String provinceCode, String wardName, String addressDetail,
-                                     String note, String paymentMethod, Map<Long, ?> voucherSelections) {
+                                     String note, String paymentMethod, Map<Long, String> voucherCodes) {
         if (variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
 
         // Chuẩn hóa phương thức thanh toán
@@ -400,8 +276,7 @@ public class OrderCheckoutService {
             String ward = required(wardName, 150, "Phường/xã");
             String detail = required(addressDetail, 500, "Địa chỉ cụ thể");
             if (!phone.matches("0[35789][0-9]{8}")) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
-            if (provinceCode == null || jdbc.queryForObject("SELECT COUNT(*) FROM provinces WHERE code=? AND is_active=1", Integer.class, provinceCode) == 0) throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
-            validateWardForProvince(provinceCode, ward);
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM provinces WHERE code=? AND is_active=1", Integer.class, provinceCode) == 0) throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
             addressId = insertId("INSERT INTO user_addresses(user_id,recipient_name,recipient_phone,province_code,ward_name,address_detail,is_default) VALUES(?,?,?,?,?,?,FALSE)", userId, name, phone, provinceCode, ward, detail);
             address = jdbc.queryForMap("SELECT ua.*,p.name AS province_name FROM user_addresses ua JOIN provinces p ON p.code=ua.province_code WHERE ua.id=? AND ua.user_id=?", addressId, userId);
         }
@@ -430,43 +305,12 @@ public class OrderCheckoutService {
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
                 line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
-        Map<Long, BigDecimal> shopShippingFees = new java.util.LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
-        String customerProvinceCode = (String) address.get("province_code");
-
         for (var entry : shopLines.entrySet()) {
-            Long shopId = entry.getKey();
             BigDecimal shopSubtotal = sumLines(entry.getValue());
-<<<<<<< HEAD
             VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
             voucherQuotes.put(entry.getKey(), quote);
             total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
-=======
-
-            String shopProvinceCode = (String) entry.getValue().get(0).get("shop_province_code");
-            BigDecimal shippingFee = calculateShippingFee(shopProvinceCode, customerProvinceCode);
-            shopShippingFees.put(shopId, shippingFee);
-
-            Object selectedValue = voucherSelections == null ? null : voucherSelections.get(shopId);
-            Long selectedVoucherId = null;
-            if (selectedValue instanceof Number number) {
-                selectedVoucherId = number.longValue();
-            } else if (selectedValue instanceof String text && !text.isBlank()) {
-                try {
-                    selectedVoucherId = Long.parseLong(text.trim());
-                } catch (NumberFormatException ex) {
-                    throw new IllegalArgumentException("Vui lòng chọn voucher đã lưu trong ví, không nhập mã voucher thủ công.");
-                }
-            } else if (selectedValue != null) {
-                throw new IllegalArgumentException("Voucher được chọn không hợp lệ.");
-            }
-
-            VoucherQuote quote = selectedVoucherId == null
-                    ? new VoucherQuote(null, "", BigDecimal.ZERO, null)
-                    : quoteSavedVoucher(userId, shopId, selectedVoucherId, shopSubtotal, true);
-            voucherQuotes.put(shopId, quote);
-            total = total.add(shopSubtotal.subtract(quote.discount()).add(shippingFee));
->>>>>>> develop
         }
 
         String checkoutCode = code("CK-");
@@ -474,12 +318,7 @@ public class OrderCheckoutService {
         Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status) VALUES(?,?,?,?,?,?,?)",
                 checkoutCode, UUID.randomUUID().toString(), userId, user.get("email"), method, total, checkoutStatus);
 
-<<<<<<< HEAD
         String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,0,?,0,?,?,?,?,?,?,?,CASE WHEN ? IN ('VNPAY','MOCK_ONLINE') THEN DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 15 MINUTE) ELSE NULL END,?,'PENDING','UNPAID','NOT_STARTED')";
-=======
-        String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,created_at,status,payment_status,delivery_status) " +
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,?,?,?,?,?,?,?,'PENDING','UNPAID','NOT_STARTED')";
->>>>>>> develop
 
         java.util.List<String> orderCodes = new java.util.ArrayList<>();
         for (var shopEntry : shopLines.entrySet()) {
@@ -487,28 +326,10 @@ public class OrderCheckoutService {
             List<Map<String, Object>> shopItems = shopEntry.getValue();
             BigDecimal shopSubtotal = sumLines(shopItems);
             VoucherQuote voucher = voucherQuotes.get(shopId);
-            BigDecimal shippingFee = shopShippingFees.get(shopId);
-            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(shippingFee);
+            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
             String orderCode = code("FF-");
 
-<<<<<<< HEAD
             Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), method, method, code("DL-"));
-=======
-            LocalDateTime paymentExpiresAt = "VNPAY".equals(method)
-                    ? paymentCreatedAt.plusMinutes(15)
-                    : null;
-            Long orderId = insertId(
-                    insertOrder, orderCode, checkoutId, shopId,
-                    address.get("recipient_name"), address.get("recipient_phone"),
-                    address.get("province_code"), address.get("province_name"),
-                    address.get("ward_name"), address.get("address_detail"),
-                    shopItems.get(0).get("shop_province_code"), note,
-                    shopSubtotal, shopSubtotal, shippingFee, shopTotal,
-                    shopSubtotal.subtract(voucher.discount()), voucher.voucherId(),
-                    voucher.voucherId() == null ? null : voucher.code(), voucher.discount(),
-                    method, paymentExpiresAt, code("DL-"), paymentCreatedAt
-            );
->>>>>>> develop
             countVoucherUse(voucher);
             orderCodes.add(orderCode);
 
@@ -544,219 +365,90 @@ public class OrderCheckoutService {
     /** Đặt hàng COD cho khách vãng lai, dùng cùng quy tắc giá và voucher như khách đăng nhập. */
     @Transactional
     public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
-<<<<<<< HEAD
                                                 String recipientName, String recipientPhone, String provinceCode,
                                                 String wardName, String addressDetail, String note,
                                                 Map<Long, String> voucherCodes) {
         if (guestCart == null || variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
-=======
-                                               String recipientName, String recipientPhone, String provinceCode,
-                                               String wardName, String addressDetail, String note,
-                                               Map<Long, String> voucherCodes) {
-        return placeGuestOrder(guestCart, variantIds, email, recipientName, recipientPhone,
-                provinceCode, wardName, addressDetail, note, voucherCodes, (String) null);
-    }
-
-    /** Tương thích với các caller cũ có truyền thêm cashback-code map. */
-    @Transactional
-    public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
-                                               String recipientName, String recipientPhone, String provinceCode,
-                                               String wardName, String addressDetail, String note,
-                                               Map<Long, String> voucherCodes, Map<Long, String> cashbackCodes) {
-        if (cashbackCodes != null && !cashbackCodes.isEmpty()) {
-            throw new IllegalArgumentException("Chức năng mã cashback cho khách vãng lai chưa được hỗ trợ.");
-        }
-        return placeGuestOrder(guestCart, variantIds, email, recipientName, recipientPhone,
-                provinceCode, wardName, addressDetail, note, voucherCodes, (String) null);
-    }
-
-    @Transactional
-    public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
-                                               String recipientName, String recipientPhone, String provinceCode,
-                                               String wardName, String addressDetail, String note,
-                                               Map<Long, String> voucherCodes, String baseUrl) {
-        if (voucherCodes != null && !voucherCodes.isEmpty()) {
-            throw new IllegalArgumentException("Khách vãng lai cần đăng nhập để sử dụng voucher đã lưu.");
-        }
-        if (guestCart == null || variantIds == null || variantIds.isEmpty()) {
-            throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
-        }
->>>>>>> develop
         String contactEmail = required(email, 254, "Email").toLowerCase(java.util.Locale.ROOT);
-        if (!contactEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new IllegalArgumentException("Email không hợp lệ.");
-        }
+        if (!contactEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) throw new IllegalArgumentException("Email không hợp lệ.");
         String name = required(recipientName, 150, "Tên người nhận");
         String phone = required(recipientPhone, 20, "Số điện thoại").replaceAll("[\\s.-]", "");
         String ward = required(wardName, 150, "Phường/xã");
         String detail = required(addressDetail, 500, "Địa chỉ cụ thể");
-        if (!phone.matches("0[35789][0-9]{8}")) {
-            throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
-        }
-        if (provinceCode == null || provinceCode.isBlank()) {
-            throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
-        }
-
-        Map<String, Object> province;
-        try {
-            province = jdbc.queryForMap(
-                    "SELECT code,name FROM provinces WHERE code=? AND is_active=1",
-                    provinceCode.trim()
-            );
-        } catch (org.springframework.dao.EmptyResultDataAccessException ex) {
-            throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
-        }
-        validateWardForProvince(provinceCode, ward);
+        if (!phone.matches("0[35789][0-9]{8}")) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
+        Map<String, Object> province = jdbc.queryForMap("SELECT code,name FROM provinces WHERE code=? AND is_active=1", provinceCode);
 
         List<Long> selected = variantIds.stream().distinct().filter(guestCart::containsKey).toList();
-        if (selected.size() != variantIds.stream().distinct().count()) {
-            throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ. Vui lòng tải lại.");
-        }
+        if (selected.size() != variantIds.stream().distinct().count()) throw new IllegalArgumentException("Một số sản phẩm không còn trong giỏ. Vui lòng tải lại.");
         String marks = String.join(",", java.util.Collections.nCopies(selected.size(), "?"));
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        Object[] args = new Object[selected.size() + 4];
-        args[0] = now;
-        args[1] = now;
-        args[2] = now;
-        args[3] = now;
-        for (int i = 0; i < selected.size(); i++) {
-            args[i + 4] = selected.get(i);
-        }
-
-        List<Map<String, Object>> lines = jdbc.queryForList(
-                "SELECT pv.id AS variant_id,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
+        Object[] args = new Object[selected.size() + 4]; args[0] = now; args[1] = now; args[2] = now; args[3] = now;
+        for (int i = 0; i < selected.size(); i++) args[i + 4] = selected.get(i);
+        List<Map<String, Object>> lines = jdbc.queryForList("SELECT pv.id AS variant_id,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +
                 "pv.image_url,p.name AS product_name,u.name AS unit_name,vi.id AS inventory_id,vi.quantity_on_hand,vi.available_quantity,s.province_code AS shop_province_code,s.name AS shop_name " +
                 "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN units u ON u.id=pv.base_unit_id JOIN variant_inventory vi ON vi.variant_id=pv.id JOIN shops s ON s.id=pv.shop_id " +
-<<<<<<< HEAD
                 "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE", args);
         if (lines.size() != selected.size()) throw new IllegalArgumentException("Một số sản phẩm đã ngừng bán hoặc bị ẩn.");
-=======
-                "WHERE pv.id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' " +
-                "AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' " +
-                "AND s.payment_approval_status='APPROVED' AND s.operating_status='OPEN' FOR UPDATE",
-                args
-        );
-        if (lines.size() != selected.size()) {
-            throw new IllegalArgumentException("Một số sản phẩm đã ngừng bán hoặc bị ẩn.");
-        }
->>>>>>> develop
         for (Map<String, Object> line : lines) {
             int quantity = guestCart.get(((Number) line.get("variant_id")).longValue());
-            if (quantity < 1 || quantity > 99) {
-                throw new IllegalArgumentException("Số lượng trong giỏ không hợp lệ.");
-            }
-            if (quantity > ((Number) line.get("available_quantity")).intValue()) {
-                throw new IllegalArgumentException("Số lượng tồn kho không đủ cho " + line.get("product_name") + ".");
-            }
+            if (quantity < 1 || quantity > 99) throw new IllegalArgumentException("Số lượng trong giỏ không hợp lệ.");
+            if (quantity > ((Number) line.get("available_quantity")).intValue()) throw new IllegalArgumentException("Số lượng tồn kho không đủ cho " + line.get("product_name") + ".");
             line.put("quantity", quantity);
         }
-
-        Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(
-                java.util.stream.Collectors.groupingBy(
-                        line -> ((Number) line.get("shop_id")).longValue(),
-                        java.util.LinkedHashMap::new,
-                        java.util.stream.Collectors.toList()
-                )
-        );
+        Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
+                line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
-        Map<Long, BigDecimal> shopShippingFees = new java.util.LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
-        String customerProvinceCode = String.valueOf(province.get("code"));
-
         for (var entry : shopLines.entrySet()) {
-            Long shopId = entry.getKey();
             BigDecimal shopSubtotal = sumLines(entry.getValue());
-<<<<<<< HEAD
             VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
             voucherQuotes.put(entry.getKey(), quote);
             total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
-=======
-            String shopProvinceCode = (String) entry.getValue().get(0).get("shop_province_code");
-            BigDecimal shippingFee = calculateShippingFee(shopProvinceCode, customerProvinceCode);
-            shopShippingFees.put(shopId, shippingFee);
-
-            // Khách vãng lai không sử dụng voucher đã lưu trong ví.
-            VoucherQuote quote = new VoucherQuote(null, "", BigDecimal.ZERO, null);
-            voucherQuotes.put(shopId, quote);
-            total = total.add(shopSubtotal.add(shippingFee));
->>>>>>> develop
         }
 
         String checkoutCode = code("CK-");
         String accessToken = UUID.randomUUID() + UUID.randomUUID().toString().replace("-", "");
-        Long checkoutId = insertId(
-                "INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status,guest_access_token_hash,guest_access_expires_at) " +
+        Long checkoutId = insertId("INSERT INTO checkouts(checkout_code,request_key,user_id,contact_email,payment_method,total_amount,status,guest_access_token_hash,guest_access_expires_at) " +
                 "VALUES(?,?,NULL,?,'COD',?,'CONFIRMED',UNHEX(SHA2(?,256)),DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 7 DAY))",
-                checkoutCode, UUID.randomUUID().toString(), contactEmail, total, accessToken
-        );
-
+                checkoutCode, UUID.randomUUID().toString(), contactEmail, total, accessToken);
         String insertOrder = "INSERT INTO orders(order_code,checkout_id,shop_id,recipient_name,recipient_phone,delivery_province_code,delivery_province_name,delivery_ward_name,delivery_address,shop_province_code,customer_note,subtotal,points_used,points_discount,points_subsidy_amount,qualifying_amount,points_earned,shipping_fee,total_amount,shop_revenue_amount,voucher_id,voucher_code,voucher_discount,payment_method,payment_expires_at,delivery_code,status,payment_status,delivery_status) " +
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?, ?,0,0,0,?,0,?,?,?,?,?,?,'COD',NULL,?,'PENDING','UNPAID','NOT_STARTED')";
-
         List<String> orderCodes = new java.util.ArrayList<>();
         for (var entry : shopLines.entrySet()) {
             long shopId = entry.getKey();
             List<Map<String, Object>> shopItems = entry.getValue();
             BigDecimal shopSubtotal = sumLines(shopItems);
             VoucherQuote voucher = voucherQuotes.get(shopId);
-            BigDecimal shippingFee = shopShippingFees.get(shopId);
-            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(shippingFee);
+            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
             String orderCode = code("FF-");
-
-            Long orderId = insertId(
-                    insertOrder, orderCode, checkoutId, shopId, name, phone,
-                    province.get("code"), province.get("name"), ward, detail,
-                    shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal,
-                    shippingFee, shopTotal, shopSubtotal.subtract(voucher.discount()),
-                    voucher.voucherId(), null, voucher.discount(), "COD", null, code("DL-")
-            );
+            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, name, phone, province.get("code"), province.get("name"), ward,
+                    detail, shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal,
+                    shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(),
+                    voucher.discount(), code("DL-"));
             countVoucherUse(voucher);
             orderCodes.add(orderCode);
-            jdbc.update(
-                    "INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,'COD',?,'PENDING')",
-                    code("PAY-"), orderId, UUID.randomUUID().toString(), shopTotal
-            );
-            notifyShopOwner(shopId, "ORDER_NEW_SHOP_" + orderId, "Có đơn hàng mới",
-                    "Đơn " + orderCode + " chờ bạn xác nhận.", orderId);
-
+            jdbc.update("INSERT INTO payments(payment_code,order_id,request_key,method,amount,status) VALUES(?,?,?,'COD',?,'PENDING')",
+                    code("PAY-"), orderId, UUID.randomUUID().toString(), shopTotal);
+            notifyShopOwner(shopId, "ORDER_NEW_SHOP_" + orderId, "Có đơn hàng mới", "Đơn " + orderCode + " chờ bạn xác nhận.", orderId);
             for (Map<String, Object> line : shopItems) {
                 Long variantId = ((Number) line.get("variant_id")).longValue();
                 Long inventoryId = ((Number) line.get("inventory_id")).longValue();
                 int quantity = ((Number) line.get("quantity")).intValue();
                 BigDecimal price = (BigDecimal) line.get("price");
-                insertId(
-                        "INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UNRESERVED')",
-                        orderId, shopId, variantId, inventoryId, line.get("promotion_id"),
-                        line.get("product_name"), line.get("variant_name"), line.get("sku"),
-                        line.get("image_url"), line.get("unit_name"), quantity,
-                        line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity))
-                );
+                insertId("INSERT INTO order_items(order_id,shop_id,variant_id,inventory_id,promotion_id,product_name,variant_name,sku,image_url,base_unit_name,quantity,unit_price,sale_unit_price,line_total,allocation_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'UNRESERVED')",
+                        orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"),
+                        line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)));
             }
         }
-<<<<<<< HEAD
-=======
-
-        if (emailService != null && !contactEmail.isBlank()) {
-            String fullAddress = detail + ", " + ward + ", " + province.get("name");
-            String defaultBaseUrl = (baseUrl != null && !baseUrl.isBlank())
-                    ? baseUrl : "http://localhost:8080";
-            String trackingUrl = defaultBaseUrl + "/order/tracking?code="
-                    + (orderCodes.isEmpty() ? "" : orderCodes.get(0));
-            emailService.sendOrderConfirmationEmail(
-                    contactEmail, name, orderCodes, fullAddress, phone, total, lines, trackingUrl
-            );
-        }
-
->>>>>>> develop
         return new GuestCheckoutResult(new CheckoutResult(checkoutCode, total, orderCodes, "COD"), accessToken);
     }
 
     /** Cộng tiền các dòng hàng sau khi đã lấy giá khuyến mãi hiện tại. */
     private BigDecimal sumLines(List<Map<String, Object>> lines) {
         return lines.stream().map(line -> ((BigDecimal) line.get("price"))
-                        .multiply(BigDecimal.valueOf(((Number) line.get("quantity")).longValue())))
+                .multiply(BigDecimal.valueOf(((Number) line.get("quantity")).longValue())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -800,41 +492,21 @@ public class OrderCheckoutService {
         }
     }
 
-<<<<<<< HEAD
     /**
      * Hàm xử lý khi VNPay redirect kết quả về
      */
     /** Xác nhận kết quả VNPay; nếu thất bại thì hủy đơn và hoàn lượt voucher đã giữ. */
-=======
->>>>>>> develop
     @Transactional
     public List<String> handleVnPayCallback(String checkoutCode, boolean isSuccess) {
-        return handleVnPayCallback(checkoutCode, isSuccess, null, null);
-    }
-
-    @Transactional
-    public List<String> handleVnPayCallback(String checkoutCode, boolean isSuccess,
-                                            String vnpTransactionNo, String vnpPayDate) {
-        List<Map<String, Object>> checkouts = jdbc.queryForList(
-                "SELECT id,payment_method FROM checkouts WHERE checkout_code=? FOR UPDATE", checkoutCode);
+        List<Map<String, Object>> checkouts = jdbc.queryForList("SELECT id,payment_method FROM checkouts WHERE checkout_code=? FOR UPDATE", checkoutCode);
         if (checkouts.isEmpty()) throw new IllegalArgumentException("Không tìm thấy phiên thanh toán.");
-
         Long checkoutId = ((Number) checkouts.get(0).get("id")).longValue();
-        if (!"VNPAY".equals(checkouts.get(0).get("payment_method"))) {
-            throw new IllegalArgumentException("Phiên này không sử dụng VNPay.");
-        }
-
-        List<Map<String, Object>> orderRows = jdbc.queryForList(
-                "SELECT id,order_code,status,payment_status FROM orders WHERE checkout_id=? ORDER BY id FOR UPDATE",
-                checkoutId);
-        List<String> orderCodes = orderRows.stream()
-                .map(row -> String.valueOf(row.get("order_code"))).toList();
+        if (!"VNPAY".equals(checkouts.get(0).get("payment_method"))) throw new IllegalArgumentException("Phiên này không sử dụng VNPay.");
+        List<Map<String, Object>> orderRows = jdbc.queryForList("SELECT id,order_code,status,payment_status FROM orders WHERE checkout_id=? ORDER BY id FOR UPDATE", checkoutId);
+        List<String> orderCodes = orderRows.stream().map(row -> String.valueOf(row.get("order_code"))).toList();
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        LocalDateTime paymentTime = parseVnPayPayDate(vnpPayDate, now);
-        String transactionNo = vnpTransactionNo == null ? "" : vnpTransactionNo.trim();
 
         if (isSuccess) {
-<<<<<<< HEAD
             if (orderRows.stream().allMatch(row -> "CONFIRMED".equals(row.get("status")) && "PAID".equals(row.get("payment_status")))) return orderCodes;
             if (orderRows.isEmpty() || orderRows.stream().anyMatch(row -> !"PENDING".equals(row.get("status")) || !"UNPAID".equals(row.get("payment_status"))))
                 throw new IllegalArgumentException("Đơn đã hết hạn hoặc đã được xử lý; không thể xác nhận thanh toán này.");
@@ -855,87 +527,11 @@ public class OrderCheckoutService {
                 notifyOrderCustomer(orderId, "ORDER_PAYMENT_FAILED", "Thanh toán không thành công", "Thanh toán cho đơn " + order.get("order_code") + " không thành công.");
             }
             jdbc.update("UPDATE checkouts SET status='CANCELLED' WHERE id=? AND status='PENDING'", checkoutId);
-=======
-            boolean alreadyPaid = !orderRows.isEmpty() && orderRows.stream().allMatch(row ->
-                    "PENDING".equals(row.get("status")) && "PAID".equals(row.get("payment_status")));
-            if (alreadyPaid) return orderCodes;
-
-            if (orderRows.isEmpty() || orderRows.stream().anyMatch(row ->
-                    !"PENDING".equals(row.get("status"))
-                            || !("UNPAID".equals(row.get("payment_status"))
-                            || "PAID".equals(row.get("payment_status"))))) {
-                throw new IllegalArgumentException(
-                        "Đơn đã hết hạn hoặc đã được xử lý; không thể xác nhận thanh toán này.");
-            }
-
-            jdbc.update("UPDATE checkouts SET status='CONFIRMED' WHERE id=? AND status='PENDING'", checkoutId);
-            jdbc.update(
-                    "UPDATE orders SET payment_status='PAID',paid_at=? WHERE checkout_id=? AND status='PENDING' AND payment_status='UNPAID'",
-                    paymentTime, checkoutId);
-
-            if (!transactionNo.isBlank() && transactionNo.matches("\\d+")) {
-                // Schema hiện tại chưa có provider_transaction_no nên tạm lưu ở failure_reason.
-                jdbc.update(
-                        "UPDATE payments SET status='SUCCEEDED',paid_at=?,failure_reason=? WHERE status='PENDING' AND order_id IN (SELECT id FROM orders WHERE checkout_id=?)",
-                        paymentTime, transactionNo, checkoutId);
-            } else {
-                jdbc.update(
-                        "UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE status='PENDING' AND order_id IN (SELECT id FROM orders WHERE checkout_id=?)",
-                        paymentTime, checkoutId);
-            }
-
-            notifyCheckoutParties(checkoutId, "ORDER_PAID", "Đơn online đã thanh toán",
-                    "Khách đã thanh toán VNPay thành công; đơn hàng đang chờ Shop xác nhận.");
-        } else {
-            if (orderRows.isEmpty() || orderRows.stream().allMatch(row ->
-                    "CANCELLED".equals(row.get("status")) && "UNPAID".equals(row.get("payment_status")))) {
-                return orderCodes;
-            }
-            if (orderRows.stream().anyMatch(row ->
-                    !("PENDING".equals(row.get("status")) || "CANCELLED".equals(row.get("status")))
-                            || !"UNPAID".equals(row.get("payment_status")))) {
-                return orderCodes;
-            }
-
-            for (Map<String, Object> order : orderRows) {
-                long orderId = ((Number) order.get("id")).longValue();
-                if (!"CANCELLED".equals(order.get("status"))) {
-                    releaseReservedItems(orderId, "vnpay-failed");
-                    jdbc.update(
-                            "UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Thanh toán VNPay thất bại hoặc bị hủy' WHERE id=? AND status='PENDING'",
-                            now, orderId);
-                    notifyOrderCustomer(orderId, "ORDER_PAYMENT_FAILED", "Thanh toán không thành công",
-                            "Thanh toán cho đơn " + order.get("order_code") + " không thành công.");
-                }
-                jdbc.update(
-                        "UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'",
-                        orderId);
-                jdbc.update(
-                        "UPDATE payments SET status='FAILED',failure_reason='Khách hủy hoặc giao dịch thất bại' WHERE order_id=? AND status IN ('PENDING','CANCELLED')",
-                        orderId);
-            }
-            jdbc.update(
-                    "UPDATE checkouts SET status='CANCELLED' WHERE id=? AND status IN ('PENDING','CONFIRMED','PARTIAL')",
-                    checkoutId);
->>>>>>> develop
         }
         return orderCodes;
     }
 
-<<<<<<< HEAD
     /** Tự hủy đơn COD/online quá hạn và trả lại lượt voucher trong cùng transaction. */
-=======
-    private LocalDateTime parseVnPayPayDate(String vnpPayDate, LocalDateTime fallback) {
-        if (vnpPayDate == null || !vnpPayDate.matches("\\d{14}")) return fallback;
-        try {
-            return LocalDateTime.parse(vnpPayDate,
-                    java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        } catch (java.time.format.DateTimeParseException ex) {
-            return fallback;
-        }
-    }
-
->>>>>>> develop
     @Scheduled(fixedDelayString = "${orders.expiry-scan-ms:300000}")
     @Transactional
     public void expirePendingOrders() {
@@ -968,136 +564,7 @@ public class OrderCheckoutService {
         }
     }
 
-<<<<<<< HEAD
     /** Hàng chỉ được ghi nhận bán khi khách chủ động xác nhận đã nhận hàng. */
-=======
-    // =========================================================================================
-    // KHÁCH HÀNG TỰ HỦY ĐƠN (CÓ HỖ TRỢ HOÀN TIỀN VNPAY)
-    // =========================================================================================
-    @Transactional
-    public void cancelMyOrder(Long userId, Long orderId, String reason) {
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT o.*, c.user_id 
-            FROM orders o 
-            JOIN checkouts c ON o.checkout_id = c.id 
-            WHERE o.id = ? AND c.user_id = ? FOR UPDATE
-        """, orderId, userId);
-
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
-        }
-
-        Map<String, Object> order = rows.get(0);
-        String currentStatus = order.get("status") != null ? String.valueOf(order.get("status")) : "";
-        String paymentMethod = order.get("payment_method") != null ? String.valueOf(order.get("payment_method")) : "COD";
-        String paymentStatus = order.get("payment_status") != null ? String.valueOf(order.get("payment_status")) : "UNPAID";
-
-        if (!"PENDING".equals(currentStatus)) {
-            throw new IllegalStateException("Bạn chỉ có thể tự hủy đơn khi Shop chưa xác nhận.");
-        }
-
-        String cleanReason = (reason == null || reason.isBlank()) ? "Khách hàng đổi ý / Tự hủy đơn" : reason.trim();
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-
-        // 1. Nhả tồn kho (Sử dụng luôn hàm có sẵn trong class)
-        releaseReservedItems(orderId, "customer-cancel");
-
-        // 2. Hoàn tiền VNPay nếu đơn đã thanh toán online.
-        if ("VNPAY".equalsIgnoreCase(paymentMethod) && "PAID".equalsIgnoreCase(paymentStatus)) {
-            BigDecimal refundAmount = order.get("total_amount") != null
-                    ? new BigDecimal(order.get("total_amount").toString())
-                    : BigDecimal.ZERO;
-            String orderCode = String.valueOf(order.get("order_code"));
-            Long checkoutIdForRefund = ((Number) order.get("checkout_id")).longValue();
-
-            // VNPay refund phải dùng mã checkout CK-..., không dùng mã đơn FF-...
-            String checkoutCode = jdbc.queryForObject(
-                    "SELECT c.checkout_code FROM checkouts c JOIN orders o ON o.checkout_id=c.id WHERE o.id=?",
-                    String.class, orderId);
-            if (checkoutCode == null || checkoutCode.isBlank()) {
-                throw new IllegalStateException("Không tìm thấy mã checkout của giao dịch VNPay.");
-            }
-
-            Integer orderCount = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM orders WHERE checkout_id=?", Integer.class, checkoutIdForRefund);
-            boolean isFullRefund = orderCount != null && orderCount == 1;
-
-            List<Map<String, Object>> paymentRows = jdbc.queryForList(
-                    "SELECT paid_at,failure_reason FROM payments WHERE order_id=? ORDER BY id DESC LIMIT 1", orderId);
-            String transactionNo = "";
-            String transactionDate = "";
-            java.time.format.DateTimeFormatter formatter =
-                    java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-
-            if (!paymentRows.isEmpty()) {
-                Map<String, Object> payment = paymentRows.get(0);
-                Object transactionNoValue = payment.get("failure_reason");
-                if (transactionNoValue != null && transactionNoValue.toString().trim().matches("\\d+")) {
-                    transactionNo = transactionNoValue.toString().trim();
-                }
-                Object paidAtValue = payment.get("paid_at");
-                if (paidAtValue instanceof java.sql.Timestamp timestamp) {
-                    transactionDate = timestamp.toLocalDateTime().format(formatter);
-                } else if (paidAtValue instanceof LocalDateTime dateTime) {
-                    transactionDate = dateTime.format(formatter);
-                }
-            }
-
-            if (transactionDate.isBlank()) {
-                Object paidAtValue = order.get("paid_at");
-                if (paidAtValue instanceof java.sql.Timestamp timestamp) {
-                    transactionDate = timestamp.toLocalDateTime().format(formatter);
-                } else if (paidAtValue instanceof LocalDateTime dateTime) {
-                    transactionDate = dateTime.format(formatter);
-                }
-            }
-            if (transactionNo.isBlank()) {
-                throw new IllegalStateException("Không tìm thấy vnp_TransactionNo đã lưu. Hãy kiểm tra callback VNPay.");
-            }
-            if (transactionDate.isBlank()) {
-                throw new IllegalStateException("Không tìm thấy thời điểm thanh toán gốc để hoàn tiền VNPay.");
-            }
-
-            var refundRes = vnPayService.refundTransaction(
-                    checkoutCode, transactionNo, refundAmount, isFullRefund, transactionDate,
-                    "Customer_" + userId, "127.0.0.1", "Hoan tien don hang " + checkoutCode
-            );
-
-            String refundNote = cleanReason + " [Hoàn tiền VNPAY: " + refundAmount.toPlainString()
-                    + "đ - GD: " + (refundRes.refundTransactionNo() != null
-                    ? refundRes.refundTransactionNo() : "SANDBOX") + "]";
-            try {
-                jdbc.update("UPDATE orders SET status='CANCELLED',payment_status='REFUNDED',cancelled_at=?,cancellation_reason=? WHERE id=?",
-                        now, refundNote, orderId);
-                jdbc.update("UPDATE payments SET status='REFUNDED',failure_reason=? WHERE order_id=?", refundNote, orderId);
-            } catch (Exception ex) {
-                // Fallback cho schema có CHECK constraint chưa chấp nhận REFUNDED.
-                jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=?",
-                        now, refundNote, orderId);
-                jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=?", refundNote, orderId);
-            }
-        } else {
-            // NẾU LÀ ĐƠN COD HOẶC CHƯA THANH TOÁN
-            jdbc.update("UPDATE orders SET status='CANCELLED', cancelled_at=?, cancellation_reason=? WHERE id=?", now, cleanReason, orderId);
-            jdbc.update("UPDATE payments SET status='CANCELLED', failure_reason=? WHERE order_id=?", cleanReason, orderId);
-        }
-
-        // Cập nhật lại Checkouts (Dùng hàm có sẵn)
-        Long checkoutId = ((Number) order.get("checkout_id")).longValue();
-        updateCheckoutAfterCancel(checkoutId);
-
-        // Gửi thông báo cho Shop Owner
-        Long shopId = ((Number) order.get("shop_id")).longValue();
-        notifyShopOwner(shopId, "ORDER_CANCELLED_BY_CUST_" + orderId, "Khách hàng đã hủy đơn", "Đơn hàng " + order.get("order_code") + " đã bị khách hủy. Lý do: " + cleanReason, orderId);
-    }
-    // =========================================================================================
-
-    /**
-     * Scheduled Job tự động chuyển đơn hàng từ DELIVERED sang COMPLETED sau 24h.
-     * Bắt buộc bỏ qua (skip) các đơn hàng đang có khiếu nại ở trạng thái PENDING_SHOP hoặc ESCALATED.
-     */
-    @Scheduled(fixedDelayString = "${orders.auto-complete-scan-ms:300000}")
->>>>>>> develop
     @Transactional
     public int autoCompleteDeliveredOrders() {
         return 0;
@@ -1111,12 +578,7 @@ public class OrderCheckoutService {
     @Transactional
     public void cancelOrderByCustomer(Long userId, Long orderId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
-<<<<<<< HEAD
             SELECT o.id, o.order_code, o.status, o.payment_status, o.checkout_id
-=======
-            SELECT o.id, o.order_code, o.status, o.payment_method, o.payment_status,
-                   o.checkout_id, o.total_amount
->>>>>>> develop
             FROM orders o
             JOIN checkouts c ON c.id = o.checkout_id
             WHERE o.id = ? AND c.user_id = ?
@@ -1127,30 +589,13 @@ public class OrderCheckoutService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
         }
         Map<String, Object> order = rows.get(0);
-<<<<<<< HEAD
         if (!"PENDING".equals(order.get("status")) || "PAID".equals(order.get("payment_status"))) {
             throw new IllegalArgumentException("Shop đã xác nhận hoặc đơn đã thanh toán, bạn không thể hủy đơn từ phía khách hàng.");
-=======
-        boolean paid = "PAID".equals(order.get("payment_status"));
-        if (!"PENDING".equals(order.get("status"))) {
-            throw new IllegalArgumentException("Shop đã xác nhận đơn, bạn không thể hủy đơn từ phía khách hàng.");
-        }
-
-        if (paid) {
-            Integer bankAccountCount = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM customer_bank_accounts WHERE user_id=? AND bank_name<>'' AND bank_account_no<>'' AND bank_account_holder<>''",
-                    Integer.class, userId);
-            if (bankAccountCount == null || bankAccountCount == 0) {
-                throw new IllegalArgumentException(
-                        "Vui lòng liên kết tài khoản ngân hàng nhận hoàn tiền trước khi hủy đơn đã thanh toán.");
-            }
->>>>>>> develop
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         String reason = "Khách hàng hủy đơn trước khi Shop xác nhận";
-        if (jdbc.update(
-                "UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=? AND status='PENDING'",
+        if (jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=? AND status='PENDING'",
                 now, reason, orderId) != 1) {
             throw new IllegalArgumentException("Đơn hàng vừa được Shop xác nhận, vui lòng tải lại trang.");
         }
@@ -1158,125 +603,8 @@ public class OrderCheckoutService {
         releaseReservedItems(orderId, "customer-cancel");
         jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", orderId);
         jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
-<<<<<<< HEAD
         updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
         notifyOrderCustomer(orderId, "ORDER_CANCELLED_BY_CUSTOMER", "Đã hủy đơn hàng", "Bạn đã hủy đơn " + order.get("order_code") + " trước khi Shop xác nhận.");
-=======
-        if (paid) {
-            jdbc.update(
-                    "UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='SUCCEEDED'",
-                    "Khách hủy đơn; yêu cầu hoàn tiền đang chờ Ops xử lý. " + reason, orderId);
-        }
-
-        updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
-        if (paid) {
-            customerRefunds.queuePaidOrderRefund(orderId, reason);
-        }
-        notifyOrderCustomer(
-                orderId,
-                "ORDER_CANCELLED_BY_CUSTOMER",
-                "Đã hủy đơn hàng",
-                "Bạn đã hủy đơn " + order.get("order_code") + " trước khi Shop xác nhận."
-                        + (paid ? " Yêu cầu hoàn tiền đã được chuyển đến bộ phận Vận hành." : ""));
-        return paid;
-    }
-
-    /** Khách hàng từ chối nhận hàng khi đơn đang giao hoặc vừa giao. */
-    @Transactional
-    public void refuseDeliveryByCustomer(Long userId, Long orderId, String reasonInput) {
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT o.id, o.order_code, o.status, o.payment_status, o.delivery_status, o.checkout_id, o.shop_id
-            FROM orders o
-            JOIN checkouts c ON c.id = o.checkout_id
-            WHERE o.id = ? AND c.user_id = ?
-            FOR UPDATE
-        """, orderId, userId);
-
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
-        }
-        Map<String, Object> order = rows.get(0);
-        String currentStatus = String.valueOf(order.get("status"));
-        if (!"SHIPPING".equals(currentStatus) && !"DELIVERED".equals(currentStatus)) {
-            throw new IllegalArgumentException(
-                    "Chỉ có thể từ chối nhận hàng khi đơn hàng đang giao (SHIPPING) hoặc vừa giao (DELIVERED).");
-        }
-
-        String cleanReason = (reasonInput == null || reasonInput.isBlank())
-                ? "Khách hàng từ chối nhận hàng do sự cố giao hàng / chất lượng khi kiểm tra"
-                : reasonInput.trim();
-        if (cleanReason.length() > 1000) {
-            throw new IllegalArgumentException("Lý do từ chối nhận hàng không được vượt quá 1000 ký tự.");
-        }
-
-        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        restoreStockOnDeliveryFailure(orderId, "refuse-delivery-" + orderId,
-                "Hoàn kho do khách từ chối nhận hàng - đơn " + orderId);
-
-        int updated = jdbc.update("""
-            UPDATE orders
-            SET status = 'CANCELLED',
-                delivery_status = 'FAILED',
-                delivery_failure_reason = ?,
-                delivery_updated_at = ?,
-                cancelled_at = ?,
-                cancellation_reason = ?
-            WHERE id = ? AND status IN ('SHIPPING', 'DELIVERED')
-        """, cleanReason, now, now, cleanReason, orderId);
-        if (updated == 0) {
-            throw new IllegalArgumentException("Trạng thái đơn hàng vừa thay đổi, vui lòng tải lại trang.");
-        }
-
-        jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'",
-                cleanReason, orderId);
-        Long checkoutId = order.get("checkout_id") instanceof Number n ? n.longValue() : null;
-        if (checkoutId != null) updateCheckoutAfterCancel(checkoutId);
-
-        Long shopId = ((Number) order.get("shop_id")).longValue();
-        String orderCode = String.valueOf(order.get("order_code"));
-        notifyOrderCustomer(orderId, "ORDER_REFUSED_BY_CUSTOMER", "Đã ghi nhận từ chối nhận hàng",
-                "Bạn đã từ chối nhận đơn " + orderCode + ". Lý do: " + cleanReason);
-        notifyShopOwner(shopId, "ORDER_REFUSED_SHOP_" + orderId, "Khách từ chối nhận hàng",
-                "Đơn " + orderCode + " bị khách từ chối nhận. Lý do: " + cleanReason, orderId);
-    }
-
-    private void restoreStockOnDeliveryFailure(Long orderId, String eventPrefix, String reasonText) {
-        List<Map<String, Object>> items = jdbc.queryForList(
-                "SELECT id, inventory_id, quantity, allocation_status FROM order_items " +
-                "WHERE order_id=? AND allocation_status IN ('RESERVED','CONSUMED') ORDER BY inventory_id FOR UPDATE",
-                orderId);
-
-        for (Map<String, Object> item : items) {
-            long itemId = ((Number) item.get("id")).longValue();
-            long inventoryId = ((Number) item.get("inventory_id")).longValue();
-            int quantity = ((Number) item.get("quantity")).intValue();
-            boolean alreadySold = "CONSUMED".equals(item.get("allocation_status"));
-            List<Map<String, Object>> inventoryRows = jdbc.queryForList(
-                    "SELECT id FROM variant_inventory WHERE id=? FOR UPDATE", inventoryId);
-            if (inventoryRows.isEmpty()) {
-                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=?", itemId);
-                continue;
-            }
-
-            if (alreadySold) {
-                jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId);
-                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='CONSUMED'", itemId);
-                int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-                int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-                jdbc.update(
-                        "INSERT IGNORE INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'ADJUST',?,0,?,?,?,?,NULL)",
-                        inventoryId, itemId, quantity, onHand, reserved, eventPrefix + "-item-" + itemId, reasonText);
-            } else {
-                jdbc.update("UPDATE variant_inventory SET reserved_quantity=GREATEST(0,reserved_quantity-?) WHERE id=?", quantity, inventoryId);
-                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
-                int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-                int reserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-                jdbc.update(
-                        "INSERT IGNORE INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,NULL)",
-                        inventoryId, itemId, -quantity, onHand, reserved, eventPrefix + "-rel-" + itemId);
-            }
-        }
->>>>>>> develop
     }
 
     /**
@@ -1296,7 +624,6 @@ public class OrderCheckoutService {
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
         }
-
         Map<String, Object> order = rows.get(0);
         String currentStatus = String.valueOf(order.get("status"));
         if (!"DELIVERED".equals(currentStatus)) {
@@ -1308,11 +635,7 @@ public class OrderCheckoutService {
             WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
         """, Integer.class, orderId);
         if (activeComplaints != null && activeComplaints > 0) {
-<<<<<<< HEAD
             throw new IllegalArgumentException("Đơn hàng đang có khiếu nại chờ xử lý (PENDING_SHOP / ESCALATED). Vui lòng chờ giải quyết xong hoặc hủy khiếu nại trước khi hoàn tất đơn hàng.");
-=======
-            throw new IllegalArgumentException("Đơn hàng đang có khiếu nại chờ xử lý. Vui lòng chờ giải quyết xong hoặc hủy khiếu nại trước khi hoàn tất.");
->>>>>>> develop
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);

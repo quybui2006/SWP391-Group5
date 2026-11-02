@@ -8,14 +8,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = {"org.example.swp391group5", "controller", "service", "repository"})
 @AutoConfigurationPackage(basePackages = {"org.example.swp391group5", "entity", "repository"})
 @EnableScheduling
-<<<<<<< HEAD
 public class  Swp391Group5Application {
-=======
-
-public class Swp391Group5Application {
->>>>>>> develop
 
     public static void main(String[] args) {
         SpringApplication.run(Swp391Group5Application.class, args);
     }
+
 }
