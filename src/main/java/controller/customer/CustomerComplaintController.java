@@ -81,6 +81,11 @@ public class CustomerComplaintController {
             return "redirect:/login?continueTo=/customer/account/orders/" + orderId;
         }
         try {
+            if (!accountService.hasBankAccount(customerId)) {
+                redirect.addFlashAttribute("bankAccountRequired", true);
+                redirect.addFlashAttribute("error", "Để gửi khiếu nại, vui lòng liên kết tài khoản ngân hàng nhận bồi hoàn trước.");
+                return "redirect:/customer/account/orders/" + orderId;
+            }
             Long complaintId = complaintService.submitCustomerComplaint(
                     customerId, orderId, orderItemId, reasonType, title, description, evidenceImage, desiredResolution, requestedRefundAmount);
             redirect.addFlashAttribute("message", "Đã gửi khiếu nại thành công!");
