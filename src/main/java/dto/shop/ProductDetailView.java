@@ -22,6 +22,7 @@ public class ProductDetailView {
     private String approvalStatus;
 
     private String sellingStatus;
+    private boolean visible;
 
     private String rejectionReason;
 
@@ -53,6 +54,8 @@ public class ProductDetailView {
     public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
     public String getSellingStatus() { return sellingStatus; }
     public void setSellingStatus(String sellingStatus) { this.sellingStatus = sellingStatus; }
+    public boolean isVisible() { return visible; }
+    public void setVisible(boolean visible) { this.visible = visible; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public List<VariantRow> getVariants() { return variants; }

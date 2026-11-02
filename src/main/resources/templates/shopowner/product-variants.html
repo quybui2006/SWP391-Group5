@@ -31,6 +31,14 @@
             <a class="button button-primary" th:href="@{/shopowner/product-variants/add}">＋ Thêm loại hàng</a>
         </header>
 
+        <section class="sku-success" th:if="${createdSku}" role="status" aria-live="polite">
+            <div>
+                <strong th:text="${success}">Đã lưu biến thể và thông tin tồn kho.</strong>
+                <span>Mã SKU của biến thể mới</span>
+            </div>
+            <code th:text="${createdSku}">SKU-42</code>
+        </section>
+
         <section class="variant-summary" aria-label="Tổng quan biến thể">
             <article class="variant-stat"><strong th:text="${variantSummary.total}">0</strong><span>Tổng biến thể</span></article>
             <article class="variant-stat"><strong th:text="${variantSummary.active}">0</strong><span>Đang bán</span></article>
@@ -84,16 +92,24 @@
                         <td th:text="${variant.stock_quantity + ' ' + variant.unit_name}">0 kg</td>
                         <td>
                             <span class="badge badge-draft variant-status" th:if="${variant.approval_status == 'DRAFT'}">Bản nháp</span>
-                            <span class="badge badge-active variant-status" th:if="${variant.approval_status == 'PENDING' and variant.variant_status == 'ACTIVE'}">Đang bán · Chờ hậu kiểm</span>
-                            <span class="badge badge-draft variant-status" th:if="${variant.approval_status == 'PENDING' and variant.variant_status == 'INACTIVE'}">Chờ hậu kiểm · Chưa mở bán</span>
-                            <span class="badge badge-active variant-status" th:if="${variant.approval_status == 'APPROVED' and variant.variant_status == 'ACTIVE'}">Đang bán</span>
-                            <span class="badge badge-draft variant-status" th:if="${variant.approval_status == 'APPROVED' and variant.variant_status == 'INACTIVE'}">Đã duyệt · Ngừng bán</span>
+                            <span class="badge badge-active variant-status" th:if="${variant.approval_status != 'DRAFT' and variant.approval_status != 'REJECTED' and variant.variant_status == 'ACTIVE'}">Đang bán</span>
+                            <span class="badge badge-draft variant-status" th:if="${variant.approval_status != 'DRAFT' and variant.approval_status != 'REJECTED' and variant.variant_status == 'INACTIVE'}">Ngừng bán</span>
                             <span class="badge variant-status" th:if="${variant.approval_status == 'REJECTED'}" style="color:#b42318;background:#fff0ef">Bị từ chối</span>
                             <small class="variant-rejection" th:if="${variant.approval_status == 'REJECTED' and variant.rejection_reason != null}" th:text="${'Lý do: ' + variant.rejection_reason}"></small>
                         </td>
                         <td class="product-actions">
                             <a th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}">Chi tiết</a>
-                            <a th:if="${variant.approval_status != 'PENDING'}" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}" th:text="${variant.approval_status == 'REJECTED' ? 'Sửa và gửi lại' : 'Sửa'}">Sửa</a>
+                            <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}" th:text="${variant.approval_status == 'REJECTED' ? 'Sửa và gửi lại' : 'Sửa'}">Sửa</a>
+                            <form class="variant-listing-form" th:if="${variant.approval_status != 'REJECTED' and variant.variant_status == 'ACTIVE'}"
+                                  method="post" th:action="@{/shopowner/product-variants/{id}/hide(id=${variant.variant_id})}"
+                                  onsubmit="return confirm('Ngừng bán biến thể này? Các đơn đã xác nhận vẫn được giữ nguyên.');">
+                                <button class="button button-ghost" type="submit">Ngừng bán</button>
+                            </form>
+                            <form class="variant-listing-form" th:if="${variant.approval_status != 'REJECTED' and variant.variant_status == 'INACTIVE'}"
+                                  method="post" th:action="@{/shopowner/product-variants/{id}/show(id=${variant.variant_id})}"
+                                  onsubmit="return confirm('Đăng bán biến thể này?');">
+                                <button class="button button-primary" type="submit">Đăng bán</button>
+                            </form>
                             <button class="button button-ghost open-variant-complaint" type="button"
                                     th:if="${variant.approval_status == 'REJECTED'}"
                                     th:attr="data-variant-id=${variant.variant_id},data-variant-name=${variant.variant_name}">Khiếu nại</button>

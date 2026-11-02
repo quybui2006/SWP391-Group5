@@ -136,12 +136,10 @@ public class ShopOwnerController {
         }
 
         try {
-            products.createVariantInventory(ownerId, form);
+            String sku = products.createVariantInventory(ownerId, form);
 
-            redirect.addFlashAttribute(
-                    "success",
-                    "Đã lưu biến thể và thông tin tồn kho."
-            );
+            redirect.addFlashAttribute("success", "Đã lưu biến thể và thông tin tồn kho.");
+            redirect.addFlashAttribute("createdSku", sku);
 
             return "redirect:/shopowner/product-variants";
 

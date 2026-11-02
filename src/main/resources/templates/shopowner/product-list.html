@@ -54,17 +54,18 @@
                         <td th:text="${product.categoryName}">Danh mục</td>
                         <td th:text="${product.variantCount + ' biến thể'}">0 biến thể</td>
                         <td th:text="${product.stockQuantity}">0</td>
-                        <td><span class="visibility-state" th:classappend="${product.visible} ? ' is-visible' : ' is-hidden'" th:text="${product.visible} ? 'Đang hiện' : 'Đang ẩn'">Đang hiện</span></td>
+                        <td><span class="visibility-state" th:classappend="${product.variantCount == 0 ? ' is-hidden' : (product.visible ? ' is-visible' : ' is-hidden')}" th:text="${product.variantCount == 0 ? 'Chưa thể đăng bán' : (product.visible ? 'Đang bán' : 'Chưa đăng bán')}">Chưa đăng bán</span></td>
                         <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
                         <td class="product-actions">
                             <a class="row-link" th:href="@{/shop/product/{id}(id=${product.id})}">Chi tiết</a>
                             <a class="row-link" th:href="@{/shop/product/{id}/edit(id=${product.id})}">Sửa</a>
-                            <form th:if="${product.visible}" method="post" th:action="@{/shop/product/{id}/hide(id=${product.id})}"
+                            <a class="row-link" th:if="${product.variantCount == 0}" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">Thêm biến thể</a>
+                            <form th:if="${product.variantCount > 0 and product.visible}" method="post" th:action="@{/shop/product/{id}/hide(id=${product.id})}"
                                   onsubmit="return confirm('Ẩn sản phẩm khỏi khách hàng? Bạn có thể hiện lại sau.');">
                                 <button class="visibility-toggle is-visible" type="submit" title="Ẩn với khách hàng"><span aria-hidden="true">◉</span> Ẩn</button>
                             </form>
-                            <form th:unless="${product.visible}" method="post" th:action="@{/shop/product/{id}/show(id=${product.id})}">
-                                <button class="visibility-toggle is-hidden" type="submit" title="Hiện cho khách hàng"><span aria-hidden="true">○</span> Hiện</button>
+                            <form th:if="${product.variantCount > 0 and !product.visible}" method="post" th:action="@{/shop/product/{id}/show(id=${product.id})}">
+                                <button class="visibility-toggle is-hidden" type="submit" title="Đăng bán sản phẩm"><span aria-hidden="true">○</span> Đăng bán</button>
                             </form>
                         </td>
                     </tr>

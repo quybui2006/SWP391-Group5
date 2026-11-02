@@ -70,7 +70,7 @@ public class ShopProductManagementController {
         }
         try {
             Long productId = products.createProduct(ownerId, form);
-            redirect.addFlashAttribute("success", "Đã tạo hồ sơ sản phẩm để quản lý biến thể. Hãy thêm biến thể để đăng bán; Operations sẽ hậu kiểm sau.");
+            redirect.addFlashAttribute("success", "Đã tạo sản phẩm ở trạng thái chưa đăng bán. Hãy thêm biến thể, sau đó đăng bán sản phẩm.");
             return "redirect:/shop/products";
         } catch (ProductValidationException ex) {
             // The service supplies user-facing text, not a Spring message-code.

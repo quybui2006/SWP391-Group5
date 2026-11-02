@@ -159,9 +159,6 @@ public class ShopProductService {
         VariantInventory inventory = inventoryRepository.findByVariantId(variantId)
                 .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy tồn kho biến thể."));
         boolean rejectedBeforeEdit = "REJECTED".equals(variant.getApprovalStatus());
-        if ("PENDING".equals(variant.getApprovalStatus())) {
-            throw new ProductValidationException("status", "Biến thể đang được Operations hậu kiểm nên chưa thể chỉnh sửa.");
-        }
         Map<String, String> errors = new LinkedHashMap<>();
         String name = blankToNull(form.getVariantName()); String sku = variant.getSku();
         String specification = blankToNull(form.getSpecification());
@@ -192,6 +189,7 @@ public class ShopProductService {
         variant.setName(name); variant.setSku(sku); variant.setSpecification(specification);
         variant.setPrice(form.getPrice()); variant.setBaseUnit(unit);
         if (listingDetailsChanged || !"APPROVED".equals(variant.getApprovalStatus())) {
+            // Refresh the review timestamp so Operations can identify edits made while the variant is pending.
             // Hậu kiểm: thay đổi công khai tiếp tục được bán và được đưa lại vào hàng đợi kiểm tra.
             variant.setApprovalStatus("PENDING");
             variant.setSubmittedAt(LocalDateTime.now(BUSINESS_ZONE));
@@ -370,6 +368,7 @@ public class ShopProductService {
             // Việc duyệt và mở bán thuộc từng product_variant.
             product.setApprovalStatus("DRAFT");
             product.setSellingStatus("DRAFT");
+            product.setVisible(false);
             product.setSubmittedAt(null);
             product.setReviewedAt(null);
             product.setRejectionReason(null);
@@ -391,8 +390,17 @@ public class ShopProductService {
     }
 
     @Transactional
-    public void createVariantInventory(Long ownerUserId, ProductVariantCreateRequest form) {
+    public String createVariantInventory(Long ownerUserId, ProductVariantCreateRequest form) {
         Product product = loadOwnedProduct(form.getProductId(), ownerUserId);
+        Long existingVariantCount = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM product_variants WHERE product_id=? AND shop_id=?",
+                Long.class, product.getId(), product.getShopId());
+        if (existingVariantCount == null || existingVariantCount == 0) {
+            // Sản phẩm cũ chưa có biến thể cũng phải được đăng bán lại sau khi thêm biến thể đầu tiên.
+            product.setVisible(false);
+            product.setSellingStatus("DRAFT");
+            productRepository.save(product);
+        }
         Unit unit = unitRepository.findById(form.getUnitId())
                 .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
                 .orElseThrow(() -> new ProductValidationException("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động."));
@@ -419,7 +427,12 @@ public class ShopProductService {
             variant.setImageUrl(imageUrl);
             variant.setMinOrderQuantity(1);
             variant = variantRepository.saveAndFlush(variant);
-            variant.setSku("SKU-" + String.format(java.util.Locale.ROOT, "%08d", variant.getId()));
+            String sku = "SKU-" + variant.getId();
+            int suffix = 2;
+            while (variantRepository.existsByShopIdAndSku(product.getShopId(), sku)) {
+                sku = "SKU-" + variant.getId() + "-" + suffix++;
+            }
+            variant.setSku(sku);
             variant = variantRepository.saveAndFlush(variant);
 
             VariantInventory inventory = new VariantInventory();
@@ -440,6 +453,7 @@ public class ShopProductService {
                 image.setSortOrder(0);
                 imageRepository.save(image);
             }
+            return variant.getSku();
         } catch (RuntimeException ex) {
             imageStorage.delete(imageUrl);
             throw ex;
@@ -652,6 +666,7 @@ public class ShopProductService {
         view.setBatchCode(product.getBatchCode());
         view.setApprovalStatus(product.getApprovalStatus());
         view.setSellingStatus(product.getSellingStatus());
+        view.setVisible(product.isVisible());
         view.setShopName(shopRepository.findById(product.getShopId())
                 .map(shop -> shop.getName()).orElse("-"));
 
@@ -722,7 +737,7 @@ public class ShopProductService {
             statement.setLong(5, ownerId); return statement;
         }, key);
         long batchId = key.getKey().longValue();
-        String code = "LOT-" + String.format(java.util.Locale.ROOT, "%08d", batchId);
+        String code = "LOT-" + batchId;
         jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", code, batchId);
         jdbc.update("INSERT INTO inventory_transactions(inventory_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,'RECEIVE',?,0,?,0,?,?,?)",
                 inventory.getId(), quantity, quantity, "initial-batch-" + batchId, "Nhập lô khởi tạo " + code, ownerId);
@@ -753,6 +768,7 @@ public class ShopProductService {
             );
         }
         product.setVisible(false);
+        product.setSellingStatus("PAUSED");
         productRepository.save(product);
     }
 
@@ -765,7 +781,17 @@ public class ShopProductService {
                     "Sản phẩm đã lưu trữ, hãy khôi phục hồ sơ trước."
             );
         }
+        Long variantCount = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM product_variants WHERE product_id=? AND shop_id=?",
+                Long.class, productId, product.getShopId());
+        if (variantCount == null || variantCount == 0) {
+            throw new ProductValidationException(
+                    "visibility",
+                    "Không thể đăng bán sản phẩm khi chưa có biến thể. Hãy thêm ít nhất một biến thể trước."
+            );
+        }
         product.setVisible(true);
+        product.setSellingStatus("ACTIVE");
         productRepository.save(product);
     }
 }

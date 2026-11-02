@@ -73,7 +73,7 @@
                                 <span class="inventory-image-placeholder inventory-variant-placeholder" th:unless="${variant.imageUrl != null}" aria-hidden="true">LOẠI</span>
                                 <span class="inventory-variant-main">
                                     <strong th:text="${variant.name}">Tên biến thể</strong>
-                                    <small th:text="${'SKU ' + variant.sku}">SKU</small>
+                                    <small th:text="${'Mã biến thể ' + variant.sku}">Mã biến thể</small>
                                 </span>
                                 <span class="inventory-summary-value"><small>Trong kho</small><strong th:text="${variant.onHand + ' ' + variant.unitName}">0</strong></span>
                                 <span class="inventory-summary-value"><small>Đang giữ</small><strong th:text="${variant.reserved + ' ' + variant.unitName}">0</strong></span>
@@ -95,7 +95,7 @@
                                         <thead><tr><th>Mã lô</th><th>Ngày nhập</th><th class="text-end">Đã bán</th><th class="text-end">Tồn</th><th class="text-end">Đang giữ</th><th class="text-end">Có thể bán</th><th>Trạng thái</th></tr></thead>
                                         <tbody>
                                         <tr th:each="batch : ${variant.batches}">
-                                            <td><strong class="inventory-batch-code" th:text="${batch.code}">LOT-00000001</strong></td>
+                                            <td><strong class="inventory-batch-code" th:text="${batch.code}">LOT-1</strong></td>
                                             <td th:text="${#temporals.format(batch.receivedAt, 'dd/MM/yyyy HH:mm')}">01/11/2026 08:00</td>
                                             <td class="text-end" th:text="${batch.sold + ' ' + variant.unitName}">0 kg</td>
                                             <td class="text-end" th:text="${batch.onHand + ' ' + variant.unitName}">0 kg</td>
@@ -127,7 +127,7 @@
                     <tr th:each="tx : ${transactionRows}">
                         <td th:text="${#temporals.format(tx.createdAt, 'dd/MM/yyyy HH:mm:ss')}">01/11/2026 08:00</td>
                         <td><strong th:text="${tx.productName}">Táo</strong><small class="d-block text-muted" th:text="${tx.variantName + ' · ' + tx.sku}">1 kg</small></td>
-                        <td th:text="${tx.batchCode}">LOT-00000001</td>
+                        <td th:text="${tx.batchCode}">LOT-1</td>
                         <td><span class="transaction-type-badge" th:text="${tx.typeLabel()}">Nhập hàng</span></td>
                         <td class="inventory-history-change"><span th:if="${tx.onHandDelta != 0}" th:classappend="${tx.onHandDelta > 0} ? ' delta-positive' : ' delta-negative'" th:text="${'Tồn ' + (tx.onHandDelta > 0 ? '+' : '') + tx.onHandDelta + ' ' + tx.unitName}">Tồn +10 kg</span><span th:if="${tx.reservedDelta != 0}" th:text="${'Giữ ' + (tx.reservedDelta > 0 ? '+' : '') + tx.reservedDelta + ' ' + tx.unitName}">Giữ +1 kg</span><span th:if="${tx.onHandDelta == 0 and tx.reservedDelta == 0}">Không đổi</span></td>
                         <td class="inventory-reason"><span th:if="${tx.orderCode != null}" th:text="${'Đơn ' + tx.orderCode}">Đơn hàng</span><span th:if="${tx.orderCode != null and tx.reason != null}"> · </span><span th:if="${tx.reason != null}" th:text="${tx.reason}">Nhập hàng</span><span th:if="${tx.orderCode == null and tx.reason == null}">—</span></td>

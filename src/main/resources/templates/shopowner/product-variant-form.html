@@ -15,7 +15,7 @@
             <div>
                 <p class="breadcrumb">Chủ cửa hàng / <a th:href="@{/shopowner/product-variants}">Biến thể sản phẩm</a> / <span>Thêm mới</span></p>
                 <h1>Biến thể và tồn kho</h1>
-                <p class="muted">Chọn hồ sơ nhóm, nhập thông tin bán và tồn kho. Biến thể sẽ được đăng bán ngay để Operations hậu kiểm.</p>
+                <p class="muted">Chọn sản phẩm, nhập thông tin biến thể và tồn kho. Sau khi thêm biến thể, hãy đăng bán sản phẩm để khách hàng nhìn thấy.</p>
             </div>
             <a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách biến thể</a>
         </header>
@@ -43,8 +43,8 @@
                     </label>
                     <label class="field">
                         <span>SKU</span>
-                        <input type="text" value="Tự sinh sau khi lưu" readonly>
-                        <small>Mã duy nhất được tạo tự động theo biến thể.</small>
+                        <div class="sku-pending" role="status"><code>Chưa được cấp</code></div>
+                        <small>SKU được tạo theo mã biến thể trong hệ thống. Sau khi lưu, mã thực tế sẽ hiện trong thông báo và danh sách biến thể.</small>
                     </label>
                     <label class="field">
                         <span>Đơn vị <b>*</b></span>

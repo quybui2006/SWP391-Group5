@@ -49,7 +49,7 @@ public class InventoryBatchService {
         }, key);
         if (key.getKey() == null) throw new InventoryActionException("Không tạo được mã batch.");
         long batchId = key.getKey().longValue();
-        String batchCode = "LOT-" + String.format(java.util.Locale.ROOT, "%08d", batchId);
+        String batchCode = "LOT-" + batchId;
         jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", batchCode, batchId);
         if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId) != 1)
             throw new InventoryActionException("Không cập nhật được tổng tồn kho.");
