@@ -53,7 +53,8 @@ class CartCheckoutIntegrationTests {
         mvc.perform(post("/shopowner/orders/" + id + "/advance").session(session).param("token", token))
                 .andExpect(status().isNotFound());
         assertEquals("CONFIRMED", shopOrders.detail(owner, id).get("status"));
-        assertEquals(1, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(19, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions WHERE type='SALE' AND order_item_id IN (SELECT id FROM order_items WHERE order_id=?)", Integer.class, id));
         assertThrows(IllegalArgumentException.class, () -> shopOrders.confirmCod(owner, id));
         assertTrue(shopOrders.list(-1L).isEmpty());
@@ -318,7 +319,7 @@ class CartCheckoutIntegrationTests {
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Xác nhận đơn hàng")));
         mvc.perform(post("/order/submit").session(session).param("selectedVariantIds", String.valueOf(variant))
                         .param("addressId", String.valueOf(address)))
-                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/cart"));
+                .andExpect(status().isOk()).andExpect(view().name("customer/payment-result"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class));
     }
 
@@ -379,7 +380,7 @@ class CartCheckoutIntegrationTests {
                         .param("recipientName", "New recipient").param("recipientPhone", "0912345678")
                         .param("provinceCode", "P-CHECKOUT").param("wardName", "Ward 2")
                         .param("addressDetail", "2 Test St"))
-                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/cart"));
+                .andExpect(status().isOk()).andExpect(view().name("customer/payment-result"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class));
         assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM user_addresses WHERE user_id=?", Integer.class, user));
     }
