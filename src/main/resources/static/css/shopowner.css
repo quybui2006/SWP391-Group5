@@ -9,7 +9,6 @@
     --bg: #f8fafc;
     --white: #fff;
     --shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
-    --font-ui: Arial, sans-serif;
 }
 
 * {
@@ -20,7 +19,7 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font: 13.5px/1.45 var(--font-ui);
+    font: 13.5px/1.45 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -70,30 +69,20 @@ button, input, select, textarea {
     align-items: center;
     gap: 8px;
     margin: 0 6px 14px;
-    font: 800 17px var(--font-ui);
+    font: 800 17px 'Inter', sans-serif;
+    letter-spacing: -0.4px;
     color: #0f172a;
 }
 
-.brand-copy {
-    display: block;
-    min-width: 0;
-    white-space: nowrap;
-}
-
-.brand-name {
-    display: block;
-    line-height: 1.15;
-}
-
-.brand-name > span {
+.brand > span:last-child > span {
     color: var(--green);
 }
 
 .brand small {
     display: block;
     color: #94a3b8;
-    font: 700 8px var(--font-ui);
-    letter-spacing: 1px;
+    font: 700 8px 'Inter', sans-serif;
+    letter-spacing: 1.4px;
     margin-top: 1px;
 }
 
@@ -105,7 +94,7 @@ button, input, select, textarea {
     color: #fff;
     display: grid;
     place-items: center;
-    font: bold 16px var(--font-ui);
+    font: bold 16px 'Inter', sans-serif;
     flex-shrink: 0;
 }
 
@@ -180,7 +169,6 @@ button, input, select, textarea {
 }
 
 .side-nav a {
-    position: relative;
     display: flex;
     align-items: center;
     gap: 9px;
@@ -203,33 +191,6 @@ button, input, select, textarea {
     text-align: center;
     font-size: 14px;
     flex-shrink: 0;
-}
-
-.side-nav a > .notification-nav-label {
-    width: auto;
-    flex: 1;
-    text-align: left;
-    font-size: inherit;
-}
-
-.side-nav a > .notification-nav-icon {
-    filter: grayscale(1);
-}
-
-.side-nav a > .notification-unread-badge {
-    width: auto;
-    min-width: 17px;
-    height: 17px;
-    margin-left: auto;
-    padding: 0 5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: #dc2626;
-    color: #fff;
-    font-size: 9px;
-    font-weight: 800;
 }
 
 .nav-count {
@@ -310,7 +271,7 @@ button, input, select, textarea {
 }
 
 .topbar h1 {
-    font: 800 19px var(--font-ui);
+    font: 800 19px 'Inter', sans-serif;
     margin: 0 0 3px;
     letter-spacing: -0.4px;
     color: #0f172a;
@@ -346,7 +307,7 @@ button, input, select, textarea {
 /* KPI Stat Cards Grid */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -415,7 +376,7 @@ button, input, select, textarea {
 
 .stat-card strong {
     display: block;
-    font: 800 17px var(--font-ui);
+    font: 800 17px 'Inter', sans-serif;
     letter-spacing: -0.4px;
     color: #0f172a;
 }
@@ -456,7 +417,7 @@ button, input, select, textarea {
 }
 
 .panel h2 {
-    font: 800 14px var(--font-ui);
+    font: 800 14px 'Inter', sans-serif;
     margin: 0 0 3px;
     letter-spacing: -0.3px;
     color: #0f172a;
@@ -708,7 +669,7 @@ td:first-child, th:first-child {
 
 .variant-summary strong {
     display: block;
-    font: 800 18px var(--font-ui);
+    font: 800 18px 'Inter', sans-serif;
 }
 
 .variant-summary span {
@@ -783,59 +744,6 @@ td:first-child, th:first-child {
     box-shadow: 0 3px 12px rgba(220, 38, 38, 0.06);
 }
 
-.shop-setup-banner.payment-required {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
-}
-
-.payment-status-banner {
-    display: block;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #fff;
-}
-
-.payment-status-banner h2 {
-    margin: 0 0 4px;
-    font: 700 14px var(--font-ui);
-}
-
-.payment-status-banner p {
-    margin: 0;
-    color: #475569;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.payment-status-banner.approved { background: #f0fdf4; border-color: #bbf7d0; }
-.payment-status-banner.pending { background: #fffbeb; border-color: #fde68a; }
-.payment-status-banner.rejected { background: #fef2f2; border-color: #fecaca; }
-.payment-status-banner.unconfigured { background: #f8fafc; border-color: #cbd5e1; }
-.payment-status-banner.approved h2 { color: #166534; }
-.payment-status-banner.pending h2 { color: #92400e; }
-.payment-status-banner.rejected h2 { color: #991b1b; }
-.payment-status-banner.unconfigured h2 { color: #334155; }
-
-.payment-verify-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-    gap: 14px;
-    margin-top: 14px;
-    align-items: start;
-}
-
-.payment-verify-grid .info-card {
-    border-radius: 10px;
-    padding: 18px;
-    gap: 14px;
-}
-
-@media (max-width: 980px) {
-    .payment-verify-grid { grid-template-columns: 1fr; }
-}
-
 .setup-banner-left {
     flex: 1;
 }
@@ -856,7 +764,7 @@ td:first-child, th:first-child {
 .setup-tag.rejected { background: #dc2626; }
 
 .setup-banner-left h2 {
-    font: 800 16px var(--font-ui);
+    font: 800 16px 'Inter', sans-serif;
     color: #14532d;
     margin: 0 0 6px;
 }
@@ -1000,7 +908,7 @@ td:first-child, th:first-child {
     .shop-switcher > div:not(.shop-avatar),
     .shop-switcher > span,
     .nav-label,
-    .side-nav a > span:not(:first-child):not(.notification-unread-badge),
+    .side-nav a > span:not(:first-child),
     .side-nav a text,
     .sidebar-footer {
         display: none;
@@ -1011,17 +919,6 @@ td:first-child, th:first-child {
     }
     .side-nav a > span {
         font-size: 17px;
-    }
-    .side-nav a > .notification-unread-badge {
-        position: absolute;
-        top: 3px;
-        right: 3px;
-        width: 8px;
-        min-width: 8px;
-        height: 8px;
-        padding: 0;
-        overflow: hidden;
-        font-size: 0;
     }
     .main-content {
         margin-left: 64px;

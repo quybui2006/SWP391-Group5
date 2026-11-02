@@ -54,8 +54,7 @@ class CartCheckoutIntegrationTests {
                 .andExpect(status().isNotFound());
         assertEquals("CONFIRMED", shopOrders.detail(owner, id).get("status"));
         assertEquals(1, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions WHERE type='SALE' AND order_item_id IN (SELECT id FROM order_items WHERE order_id=?)", Integer.class, id));
-        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM order_item_batch_allocations WHERE order_item_id IN (SELECT id FROM order_items WHERE order_id=?) AND status='RESERVED'", Integer.class, id));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions WHERE type='SALE' AND order_item_id IN (SELECT id FROM order_items WHERE order_id=?)", Integer.class, id));
         assertThrows(IllegalArgumentException.class, () -> shopOrders.confirmCod(owner, id));
         assertTrue(shopOrders.list(-1L).isEmpty());
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.detail(-1L, id));
@@ -75,9 +74,6 @@ class CartCheckoutIntegrationTests {
         jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status,approval_status,reviewed_at) VALUES (?,?,?,?,?,?,'ACTIVE','APPROVED',CURRENT_TIMESTAMP)", product, shop, "SKU-CHECKOUT", "1kg", unit, 50000);
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,created_by) VALUES (?,?,?,?)", variant, 20, 20, user);
-        long inventoryId = jdbc.queryForObject("SELECT id FROM variant_inventory WHERE variant_id=?", Long.class, variant);
-        jdbc.update("INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,created_by) VALUES (?,?,20,20,0,CURRENT_TIMESTAMP,'ACTIVE',?)",
-                inventoryId, "LOT-CHECKOUT", user);
         jdbc.update("INSERT INTO user_addresses(user_id,recipient_name,recipient_phone,province_code,ward_name,address_detail,is_default) VALUES (?,?,?,?,?,?,TRUE)", user, "Recipient", "0912345678", "P-CHECKOUT", "Ward", "1 Test St");
         return user;
     }
@@ -179,11 +175,11 @@ class CartCheckoutIntegrationTests {
         long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
         shopOrders.confirmCod(user, orderId);
         assertEquals("CONFIRMED", shopOrders.detail(user, orderId).get("status"));
-        assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items", String.class));
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_batch_transactions WHERE type='SALE'", Integer.class));
-        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM inventory_batches WHERE inventory_id=(SELECT id FROM variant_inventory WHERE variant_id=?)", Integer.class, variant));
+        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items", String.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions", Integer.class));
+        assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
         assertTrue(cart.items(user).isEmpty());
     }
 
@@ -238,8 +234,8 @@ class CartCheckoutIntegrationTests {
 
         shopOrders.confirmCod(customer, orderId);
         assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
-        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
 
         deliveryOrders.updateDeliveryStatus(orderId, "SHIPPING", null);
         deliveryOrders.updateDeliveryStatus(orderId, "COMPLETED", null);
@@ -247,7 +243,7 @@ class CartCheckoutIntegrationTests {
         assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
         assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_batch_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
+        assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
     }
 
     @Test
@@ -268,7 +264,7 @@ class CartCheckoutIntegrationTests {
         assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
         assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("RELEASED", jdbc.queryForObject("SELECT status FROM order_item_batch_allocations WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?)", String.class, orderId));
+        assertEquals("ADJUST", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE event_key LIKE 'return-delivery-%'", String.class));
     }
 
     @Test
@@ -401,9 +397,6 @@ class CartCheckoutIntegrationTests {
         jdbc.update("INSERT INTO product_variants(product_id,shop_id,sku,name,base_unit_id,price,status,approval_status,reviewed_at) VALUES (?,?,?,?,?,?,'ACTIVE','APPROVED',CURRENT_TIMESTAMP)", product, secondShop, "SKU-CHECKOUT-2", "500g", unit, 30000);
         long secondVariant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT-2'", Long.class);
         jdbc.update("INSERT INTO variant_inventory(variant_id,initial_quantity,quantity_on_hand,created_by) VALUES (?,?,?,?)", secondVariant, 20, 20, owner);
-        long secondInventory = jdbc.queryForObject("SELECT id FROM variant_inventory WHERE variant_id=?", Long.class, secondVariant);
-        jdbc.update("INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,created_by) VALUES (?,?,20,20,0,CURRENT_TIMESTAMP,'ACTIVE',?)",
-                secondInventory, "LOT-CHECKOUT-2", owner);
         long firstVariant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         cart.add(user, firstVariant, 1);
         cart.add(user, secondVariant, 1);

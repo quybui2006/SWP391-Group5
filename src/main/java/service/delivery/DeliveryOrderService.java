@@ -239,6 +239,7 @@ public class DeliveryOrderService {
             return;
         }
         if ("CANCELLED".equals(target)) {
+            if ("PAID".equals(paymentStatus)) throw new IllegalStateException("Đơn online đã thanh toán phải được giao; không thể hủy tại luồng giao hàng.");
             String reason = cancelReason == null || cancelReason.isBlank()
                     ? "Giao hàng không thành công / Khách từ chối nhận" : cancelReason.trim();
             if (reason.length() > 1000) throw new IllegalArgumentException("Lý do không được vượt quá 1000 ký tự.");
@@ -277,11 +278,6 @@ public class DeliveryOrderService {
             long itemId = ((Number) item.get("id")).longValue();
             int quantity = ((Number) item.get("quantity")).intValue();
             boolean alreadySold = "CONSUMED".equals(item.get("allocation_status"));
-            List<Map<String, Object>> invCheck = jdbc.queryForList("SELECT id FROM variant_inventory WHERE id=? FOR UPDATE", inventoryId);
-            if (invCheck.isEmpty()) {
-                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=?", itemId);
-                continue;
-            }
             if (alreadySold) {
                 if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId) != 1)
                     throw new IllegalStateException("Không thể hoàn kho cho mặt hàng " + itemId + ".");
