@@ -29,7 +29,7 @@
                 <div class="form-grid">
                     <label class="field field-wide">
                         <span>Tên sản phẩm <b>*</b></span>
-                        <input type="text" th:field="*{name}" maxlength="200" required>
+                        <input type="text" th:field="*{name}" maxlength="200" placeholder="Ví dụ: Cam sành Vĩnh Long" required>
                         <em th:errors="*{name}"></em>
                     </label>
                     <label class="field field-wide">
@@ -46,7 +46,7 @@
                     </label>
                     <label class="field">
                         <span>Mã lô <b>*</b></span>
-                        <input type="text" th:field="*{batchCode}" maxlength="60" required>
+                        <input type="text" th:field="*{batchCode}" maxlength="60" placeholder="Ví dụ: CAM-20261012" required>
                         <em th:errors="*{batchCode}"></em>
                     </label>
                     <div class="field">
@@ -66,12 +66,12 @@
                     </div>
                     <label class="field">
                         <span>Xuất xứ</span>
-                        <input type="text" th:field="*{origin}" maxlength="150">
+                        <input type="text" th:field="*{origin}" maxlength="150" placeholder="Ví dụ: Vĩnh Long">
                         <em th:errors="*{origin}"></em>
                     </label>
                     <label class="field field-wide">
                         <span>Mô tả</span>
-                        <textarea th:field="*{description}" rows="4"></textarea>
+                        <textarea th:field="*{description}" rows="4" placeholder="Mô tả ngắn về chất lượng, đặc điểm sản phẩm..."></textarea>
                         <em th:errors="*{description}"></em>
                     </label>
 

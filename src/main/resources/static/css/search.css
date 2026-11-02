@@ -734,7 +734,7 @@ input {
     overflow: hidden;
 
     border: 1px solid var(--line);
-    border-radius: 2px;
+    border-radius: 18px;
 
     background: white;
 
@@ -750,8 +750,7 @@ input {
 .product-image {
     position: relative;
 
-    aspect-ratio: 1;
-    height: auto;
+    height: 225px;
 
     overflow: hidden;
 

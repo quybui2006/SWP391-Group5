@@ -54,7 +54,7 @@ public class OperationsVariantApprovalService {
     @Transactional(readOnly = true)
     public OperationsVariantDetailDto getVariantDetail(Long variantId) {
         List<OperationsVariantDetailDto> rows = jdbc.query("""
-                SELECT pv.id AS variant_id, pv.product_id, pv.shop_id, pv.name AS variant_name, pv.sku,
+                SELECT pv.id AS variant_id, pv.product_id, pv.name AS variant_name, pv.sku,
                        pv.specification,
                        pv.image_url AS image_url,
                        pv.price, pv.min_order_quantity,
@@ -75,7 +75,7 @@ public class OperationsVariantApprovalService {
                 LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
                 WHERE pv.id = ?
                 """, (rs, rowNum) -> new OperationsVariantDetailDto(
-                rs.getLong("variant_id"), rs.getLong("product_id"), rs.getLong("shop_id"), rs.getString("variant_name"),
+                rs.getLong("variant_id"), rs.getLong("product_id"), rs.getString("variant_name"),
                 rs.getString("sku"), rs.getString("specification"), rs.getString("image_url"),
                 rs.getBigDecimal("price"), nullableInt(rs, "min_order_quantity"), rs.getString("unit_name"),
                 rs.getString("variant_status"), rs.getString("approval_status"), rs.getString("rejection_reason"),

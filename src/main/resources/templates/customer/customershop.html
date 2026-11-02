@@ -382,24 +382,24 @@
         <div class="product-grid" th:if="${products != null and !products.empty}">
 
             <article class="product-card"
-                     th:each="product, iter : ${products}"
-                     th:attr="data-name=${product.name}"
-                     th:onclick="|window.location.href='/product/' + ${product.variantId}|"
+                     th:each="variant, iter : ${products}"
+                     th:attr="data-name=${variant.name + ' ' + (variant.product != null ? variant.product.name : '')}"
+                     th:onclick="|window.location.href='/product/' + ${variant.id}|"
                      role="link"
                      tabindex="0"
-                     th:attrappend="aria-label=|Xem chi tiết ${product.name}|">
+                     th:attrappend="aria-label=|Xem chi tiết ${variant.name}|">
 
                 <!-- Product image -->
                 <div class="product-image"
                      th:classappend="${iter.index % 4 == 0 ? 'bg-pastel-red' : (iter.index % 4 == 1 ? 'bg-pastel-yellow' : (iter.index % 4 == 2 ? 'bg-pastel-purple' : 'bg-pastel-green'))}">
 
-                    <img th:if="${product.imageUrl != null and !product.imageUrl.isEmpty()}"
-                         th:src="${product.imageUrl}"
-                         th:alt="${product.name}"
+                    <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
+                         th:src="${variant.imageUrl}"
+                         th:alt="${variant.name}"
                          onerror="this.style.display='none'">
 
                     <div class="image-placeholder"
-                         th:if="${product.imageUrl == null or product.imageUrl.isEmpty()}">
+                         th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">
                         🍎
                     </div>
 
@@ -409,7 +409,7 @@
                             type="button"
                             title="Yêu thích"
                             aria-label="Thêm vào yêu thích"
-                            th:attr="data-favorite-id=${product.variantId}"
+                            th:attr="data-favorite-id=${variant.id}"
                             onclick="event.stopPropagation(); toggleFavorite(event, this)">
                         ♡
                     </button>
@@ -418,15 +418,32 @@
                 <!-- Product info -->
                 <div class="product-info">
                     <h3 class="product-title"
-                        th:text="${product.name}"
-                        th:title="${product.name}">
+                        th:text="${variant.product != null ? variant.product.name : variant.name}"
+                        th:title="${variant.product != null ? variant.product.name : variant.name}">
                         Tên sản phẩm
                     </h3>
 
                     <div class="product-bottom">
-                        <strong class="price" th:if="${product.salePrice != null}"
-                                th:text="${#numbers.formatDecimal(product.salePrice, 0, 'POINT', 0, 'COMMA') + ' ₫'}">10.000 ₫</strong>
-                        <strong class="price price-contact" th:unless="${product.salePrice != null}">Liên hệ</strong>
+                        <div class="price-wrap" th:if="${variant.promotionalPrice != null}">
+                            <strong class="price price-promotion"
+                                    th:text="${#numbers.formatDecimal(variant.promotionalPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                0 ₫
+                            </strong>
+                            <span class="price-old"
+                                  th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                0 ₫
+                            </span>
+                        </div>
+
+                        <strong class="price"
+                                th:if="${variant.promotionalPrice == null and variant.price != null}"
+                                th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                            0 ₫
+                        </strong>
+
+                        <strong class="price price-contact" th:if="${variant.promotionalPrice == null and variant.price == null}">
+                            Liên hệ
+                        </strong>
                     </div>
                 </div>
             </article>

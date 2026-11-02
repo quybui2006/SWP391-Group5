@@ -2,7 +2,6 @@ package controller.home;
 
 import entity.Category;
 import entity.ProductVariant;
-import dto.customer.CustomerProductCard;
 import repository.CategoryRepository;
 import repository.ShopProductRepository;
 import service.shop.ProductService;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Comparator;
 
 @Controller
 public class SearchController {
@@ -50,22 +48,11 @@ public class SearchController {
         // 3. Truy vấn sản phẩm theo các tiêu chí Lọc & Tìm kiếm đa trường
         List<ProductVariant> searchResults = productService.searchAndFilterProducts(
                 keyword, categoryIds, priceRange, minPrice, maxPrice, origins, inStockOnly, sort);
-        List<CustomerProductCard> productCards = CustomerProductCard.fromVariants(searchResults);
-        if ("priceAsc".equalsIgnoreCase(sort)) {
-            productCards.sort(Comparator.comparing(CustomerProductCard::getSalePrice,
-                    Comparator.nullsLast(Comparator.naturalOrder())));
-        } else if ("priceDesc".equalsIgnoreCase(sort)) {
-            productCards.sort(Comparator.comparing(CustomerProductCard::getSalePrice,
-                    Comparator.nullsLast(Comparator.reverseOrder())));
-        } else if ("nameAsc".equalsIgnoreCase(sort)) {
-            productCards.sort(Comparator.comparing(CustomerProductCard::getName,
-                    String.CASE_INSENSITIVE_ORDER));
-        }
 
         // 4. Đẩy dữ liệu sang Thymeleaf
         model.addAttribute("categories", allCategories);
         model.addAttribute("origins", allOrigins);
-        model.addAttribute("products", productCards);
+        model.addAttribute("products", searchResults);
 
         // Trả lại các giá trị user đã chọn để giữ trạng thái Checked trên giao diện
         model.addAttribute("keyword", keyword);
@@ -76,7 +63,7 @@ public class SearchController {
         model.addAttribute("selectedOrigins", origins != null ? origins : new ArrayList<>());
         model.addAttribute("inStockOnly", Boolean.TRUE.equals(inStockOnly));
         model.addAttribute("sort", sort);
-        model.addAttribute("resultCount", productCards.size());
+        model.addAttribute("resultCount", searchResults.size());
 
         return "home/search";
     }

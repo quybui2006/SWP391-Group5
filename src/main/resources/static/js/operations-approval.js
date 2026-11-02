@@ -4,7 +4,6 @@
     if (!table || !tbody) return;
 
     const resource = table.dataset.resource;
-    const itemLabel = resource === 'variants' ? 'biến thể' : 'yêu cầu';
     const searchInput = document.querySelector('#tableSearch');
     const recordCount = document.querySelector('#recordCount');
     const pageInfo = document.querySelector('#pageInfo');
@@ -43,8 +42,8 @@
         const cell = document.createElement('td');
         cell.colSpan = 5;
         cell.textContent = dataRows().length === 0
-            ? `Không còn ${itemLabel} nào đang chờ xử lý.`
-            : `Không tìm thấy ${itemLabel} phù hợp với từ khóa.`;
+            ? 'Không còn yêu cầu nào đang chờ duyệt.'
+            : 'Không tìm thấy yêu cầu phù hợp với từ khóa.';
         row.appendChild(cell);
         tbody.appendChild(row);
     }
@@ -65,10 +64,10 @@
 
         if (recordCount) {
             const total = allRows.length;
-            recordCount.textContent = `${total} ${itemLabel}`;
+            recordCount.textContent = `${total} yêu cầu`;
         }
         if (pageInfo) {
-            if (filteredRows.length === 0) pageInfo.textContent = `0 ${itemLabel}`;
+            if (filteredRows.length === 0) pageInfo.textContent = '0 yêu cầu';
             else pageInfo.textContent = `Hiển thị ${start + 1}–${Math.min(start + pageSize, filteredRows.length)} / ${filteredRows.length}`;
         }
         if (previousButton) previousButton.disabled = currentPage <= 0 || filteredRows.length === 0;

@@ -41,7 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/cs/**").hasAnyRole("CS_STAFF", "OPERATIONS_MANAGER", "ADMIN")
                         .requestMatchers("/delivery/**").hasAnyRole("DELIVERY_MANAGER", "ADMIN")
                         // Ops pages and approval APIs are restricted to Operations Manager.
-                        .requestMatchers("/operations/**").hasRole("OPERATIONS_MANAGER")
+                        .requestMatchers("/operations/**").hasAnyRole("OPERATIONS_MANAGER", "ADMIN")
 
 
                         // Các request còn lại

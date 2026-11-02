@@ -34,7 +34,7 @@
             <section class="voucher-filter-card">
                 <div class="filter-heading"><div><h2>Tìm kiếm voucher</h2><p>Lọc theo mã, tên hoặc trạng thái voucher.</p></div><span class="filter-caption">BỘ LỌC</span></div>
                 <form method="get" th:action="${voucherType == 'CASHBACK' ? '/shop/vouchers/cashback' : '/shop/vouchers'}" class="voucher-filter-form">
-                    <div class="filter-field filter-keyword"><label for="keyword">Mã hoặc tên voucher</label><div class="field-with-icon"><span aria-hidden="true">⌕</span><input id="keyword" name="keyword" type="search" th:value="${keyword}" autocomplete="off"></div></div>
+                    <div class="filter-field filter-keyword"><label for="keyword">Mã hoặc tên voucher</label><div class="field-with-icon"><span aria-hidden="true">⌕</span><input id="keyword" name="keyword" type="search" th:value="${keyword}" placeholder="Ví dụ: WELCOME10" autocomplete="off"></div></div>
                     <div class="filter-field"><label for="status">Trạng thái</label><select id="status" name="status"><option value="" th:selected="${selectedStatus == null or selectedStatus == ''}">Tất cả trạng thái</option><option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">Đang bật</option><option value="PAUSED" th:selected="${selectedStatus == 'PAUSED'}">Đang tắt</option><option value="EXPIRED" th:selected="${selectedStatus == 'EXPIRED'}">Hết hạn</option></select></div>
                     <div class="filter-actions"><button type="submit" class="voucher-search-button">Tìm kiếm</button><a class="voucher-reset-button" th:href="${voucherType == 'CASHBACK' ? '/shop/vouchers/cashback' : '/shop/vouchers'}">Xóa lọc</a></div>
                 </form>

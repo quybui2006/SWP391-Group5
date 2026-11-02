@@ -38,7 +38,7 @@ public class ShopProductDetailController {
                               RedirectAttributes redirect) {
         try {
             shopProductService.hideProductFromSale(id, currentUserProvider.requireUserId(request));
-            redirect.addFlashAttribute("success", "Đã ẩn sản phẩm.");
+            redirect.addFlashAttribute("success", "Đã ẩn sản phẩm và các biến thể con khỏi khách hàng.");
         } catch (ProductValidationException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
@@ -50,7 +50,7 @@ public class ShopProductDetailController {
                               RedirectAttributes redirect) {
         try {
             shopProductService.showProductForSale(id, currentUserProvider.requireUserId(request));
-            redirect.addFlashAttribute("success", "Đã đăng bán sản phẩm.");
+            redirect.addFlashAttribute("success", "Đã hiển thị sản phẩm lại cho khách hàng.");
         } catch (ProductValidationException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }

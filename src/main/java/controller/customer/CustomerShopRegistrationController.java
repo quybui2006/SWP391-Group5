@@ -261,6 +261,12 @@ public class CustomerShopRegistrationController {
         return "seller/create-shop";
     }
 
+    /**
+     * BƯỚC KHỞI ĐẦU LUỒNG DUYỆT: Người bán nộp hồ sơ tạo Shop.
+     * - Nếu là đăng ký lần đầu: Tạo Shop mới với approval_status = 'PENDING', operating_status = 'CLOSED'.
+     * - Nếu là nộp lại sau khi bị từ chối (REJECTED): Cập nhật thông tin mới và đưa approval_status trở lại 'PENDING'.
+     * - Gửi thông báo xác nhận đã nộp hồ sơ tới Người bán và chuyển hướng sang trang /seller/status.
+     */
     @PostMapping("/seller/create-shop")
     public String submitCreateShop(
             @Valid @ModelAttribute("form") SellerCreateShopDto form,
@@ -323,6 +329,7 @@ public class CustomerShopRegistrationController {
         }
 
         try {
+            // Trường hợp 1: Hồ sơ đã tồn tại và từng bị REJECTED -> Nộp lại (resubmit) đưa trạng thái về PENDING
             if (existingShopOpt.isPresent() && "REJECTED".equals(existingShopOpt.get().getApprovalStatus())) {
                 ShopRegistrationDto fullDto = new ShopRegistrationDto();
                 fullDto.setName(form.getName());
@@ -367,6 +374,7 @@ public class CustomerShopRegistrationController {
                 }
                 shopRegistrationService.resubmitShop(userId, fullDto);
             } else {
+                // Trường hợp 2: Đăng ký tạo Shop mới lần đầu -> Chèn mới vào bảng shops với status = 'PENDING'
                 shopRegistrationService.registerShopFromSellerOnboarding(userId, activation, form);
             }
 

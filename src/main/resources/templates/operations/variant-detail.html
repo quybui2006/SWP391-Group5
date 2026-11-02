@@ -7,7 +7,7 @@
     <main class="operations-main">
         <header th:replace="~{operations/layout :: pageHeader('Chi tiết biến thể sản phẩm', 'Kiểm tra hình ảnh, thông tin bán hàng, tồn kho và hồ sơ sản phẩm trong quá trình hậu kiểm.')}"></header>
         <section class="approval-page">
-            <p><a class="button button-secondary" th:href="${returnUrl}" th:text="${returnShopId != null ? '← Quay lại cửa hàng' : '← Quay lại danh sách hậu kiểm'}">Quay lại</a></p>
+            <p><a class="button button-secondary" th:href="@{/operations/variants}">← Quay lại danh sách duyệt</a></p>
             <div class="table-card" style="padding:24px;margin-bottom:20px">
                 <div style="display:grid;grid-template-columns:minmax(220px,360px) minmax(0,1fr);gap:28px;align-items:start">
                     <div>
@@ -17,12 +17,12 @@
                         <p class="eyebrow">BIẾN THỂ #<span th:text="${variant.id}">0</span></p>
                         <h2 style="margin:0 0 8px" th:text="${variant.variantName}">Tên biến thể</h2>
                         <p class="secondary-cell" style="margin:0 0 18px">Hồ sơ nhóm: <strong th:text="${variant.productName}">Tên sản phẩm</strong> · Shop: <strong th:text="${variant.shopName}">Tên shop</strong></p>
-                        <p><span id="variantApprovalStatus" class="status-pill pending" th:if="${variant.approvalStatus == 'PENDING'}">Chờ hậu kiểm</span><span id="variantApprovalStatus" class="status-pill open" th:if="${variant.approvalStatus == 'APPROVED'}">Đã hậu kiểm</span><span id="variantApprovalStatus" class="status-pill rejected" th:if="${variant.approvalStatus == 'REJECTED'}">Cần sửa</span><span id="variantApprovalStatus" class="status-pill draft" th:if="${variant.approvalStatus == 'DRAFT'}">Chưa gửi</span></p>
-                        <div id="variantReviewActions" class="row-actions" th:if="${variant.approvalStatus == 'PENDING'}" style="margin:16px 0">
+                        <p><span class="status-pill" th:text="${variant.approvalStatus}">PENDING</span></p>
+                        <div class="row-actions" th:if="${variant.approvalStatus == 'PENDING'}" style="margin:16px 0">
                             <button type="button" class="button button-approve" id="approveVariant" th:attr="data-url=@{/operations/api/variants/{id}/approve(id=${variant.id})}">Duyệt biến thể</button>
                             <button type="button" class="button button-reject" id="openRejectDialog" th:attr="data-id=${variant.id}">Từ chối</button>
                         </div>
-                        <div id="variantReviewReason" class="alert" th:if="${variant.approvalStatus == 'REJECTED'}" style="margin-top:14px" th:text="${'Lý do cần sửa: ' + (variant.rejectionReason ?: 'Không có lý do')}">Lý do cần sửa</div>
+                        <div class="alert" th:if="${variant.approvalStatus == 'REJECTED'}" style="margin-top:14px" th:text="${'Lý do từ chối: ' + (variant.rejectionReason ?: 'Không có lý do')}">Lý do từ chối</div>
                     </div>
                 </div>
             </div>

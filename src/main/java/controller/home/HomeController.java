@@ -1,6 +1,6 @@
 package controller.home;
 
-import dto.customer.CustomerProductCard;
+import entity.ProductVariant;
 import service.home.HomeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -18,7 +18,7 @@ public class HomeController {
     @GetMapping({"/", "/home"})
     public String homePage(Model model) {
         // 1. Lấy danh sách sản phẩm từ database
-        List<CustomerProductCard> featuredProducts = homeService.getActiveProductsForHome();
+        List featuredProducts = homeService.getActiveProductsForHome();
 
         // 2. Đưa dữ liệu vào Model để Thymeleaf có thể đọc được
         model.addAttribute("products", featuredProducts);

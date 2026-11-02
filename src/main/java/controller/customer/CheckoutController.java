@@ -25,14 +25,12 @@ public class CheckoutController {
     private final VNPayService vnPayService;
     private final JdbcTemplate jdbc;
 
-    /** Nhận service checkout và cổng thanh toán để xử lý trang xác nhận đơn. */
     public CheckoutController(OrderCheckoutService checkout, VNPayService vnPayService, JdbcTemplate jdbc) {
         this.checkout = checkout;
         this.vnPayService = vnPayService;
         this.jdbc = jdbc;
     }
 
-    /** Nhận giỏ hàng, tính giá khuyến mãi và xem trước voucher theo từng shop. */
     @PostMapping("/checkout")
     public String review(@RequestParam(required = false) List<Long> selectedVariantIds,
                          @RequestParam MultiValueMap<String, String> params,
@@ -70,7 +68,7 @@ public class CheckoutController {
         BigDecimal voucherDiscount = BigDecimal.ZERO;
         for (Map.Entry<Long, Map<String, Object>> entry : checkoutShops.entrySet()) {
             Map<String, Object> shop = entry.getValue();
-            var quote = checkout.previewVoucher(entry.getKey(), (String) shop.get("code"), (BigDecimal) shop.get("subtotal"));
+            var quote = checkout.previewVoucher(userId, entry.getKey(), (String) shop.get("code"), (BigDecimal) shop.get("subtotal"));
             shop.put("discount", quote.discount()); shop.put("voucherError", quote.error());
             voucherDiscount = voucherDiscount.add(quote.discount());
         }
@@ -91,7 +89,6 @@ public class CheckoutController {
         return "customer/checkout";
     }
 
-    /** Xác thực dữ liệu thanh toán rồi chuyển yêu cầu đặt hàng vào service checkout. */
     @PostMapping("/order/submit")
     public String submitOrder(
             @RequestParam("selectedVariantIds") List<Long> selectedVariantIds,
@@ -156,7 +153,6 @@ public class CheckoutController {
         }
     }
 
-    /** Đọc các mã voucher gửi lên, ghép mã với shop tương ứng từ tên trường form. */
     private Map<Long, String> voucherCodes(MultiValueMap<String, String> params) {
         Map<Long, String> codes = new HashMap<>();
         if (params == null) return codes;
@@ -172,13 +168,11 @@ public class CheckoutController {
     }
 
     @SuppressWarnings("unchecked")
-    /** Đọc giỏ hàng khách vãng lai từ session để tạo đơn mà không cần tài khoản. */
     private Map<Long, Integer> guestCart(HttpSession session) {
         Object value = session.getAttribute("guestCart");
         return value instanceof Map<?, ?> map ? (Map<Long, Integer>) map : new java.util.LinkedHashMap<>();
     }
 
-    /** Kiểm tra kết quả VNPay và cập nhật đơn; thanh toán lỗi sẽ hủy đơn và trả lượt voucher. */
     @GetMapping("/payment/vnpay-return")
     public String vnpayReturn(@RequestParam Map<String, String> allParams, Model model) {
         boolean isValidSignature = vnPayService.verifyCallback(new HashMap<>(allParams));
@@ -237,9 +231,9 @@ public class CheckoutController {
         }
     }
 
-    /** Trả về mã khách đang đăng nhập, hoặc null nếu đây là khách vãng lai. */
     private Long customerId(HttpSession session) {
-        if (!"CUSTOMER".equals(session.getAttribute("role"))) return null;
+        Object role = session.getAttribute("role");
+        if (!"CUSTOMER".equals(role) && !"ADMIN".equals(role)) return null;
         Object id = session.getAttribute("userId");
         return id instanceof Number number ? number.longValue() : null;
     }

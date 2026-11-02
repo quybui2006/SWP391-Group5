@@ -66,7 +66,6 @@ public class ShopOwnerController {
         return "shopowner/home";
     }
 
-    /** Danh sách biến thể thuộc shop, kèm tìm kiếm và thống kê trạng thái. */
     @GetMapping("/shopowner/product-variants")
     public String productVariants(
             @RequestParam(defaultValue = "") String keyword,
@@ -88,11 +87,13 @@ public class ShopOwnerController {
                 products.shopVariantSummary(ownerId)
         );
         model.addAttribute("keyword", keyword.trim());
+        java.util.Map<String, Object> shop = products.shopDashboard(ownerId);
+        model.addAttribute("shopPaymentApprovalStatus", shop.get("paymentApprovalStatus"));
+        model.addAttribute("shopApprovalStatus", shop.get("approvalStatus"));
 
         return "shopowner/product-variants";
     }
 
-    /** Hiển thị biểu mẫu thêm biến thể cho một hồ sơ sản phẩm của shop. */
     @GetMapping("/shopowner/product-variants/add")
     public String addVariantForm(
             @RequestParam(required = false) Long productId,
@@ -114,7 +115,6 @@ public class ShopOwnerController {
         return "shopowner/product-variant-form";
     }
 
-    /** Tạo biến thể và tồn kho ban đầu, đồng thời đưa biến thể vào hàng đợi hậu kiểm. */
     @PostMapping("/shopowner/product-variants/add")
     public String createVariant(
             @Valid @ModelAttribute("variantCreateRequest")
@@ -136,11 +136,11 @@ public class ShopOwnerController {
         }
 
         try {
-            String sku = products.createVariantInventory(ownerId, form);
+            products.createVariantInventory(ownerId, form);
 
             redirect.addFlashAttribute(
                     "success",
-                    "Đã tạo loại hàng. Mã SKU: " + sku
+                    "Đã lưu biến thể và thông tin tồn kho."
             );
 
             return "redirect:/shopowner/product-variants";
@@ -168,7 +168,6 @@ public class ShopOwnerController {
     }
 
     private void addVariantOptions(Long ownerId, Model model) {
-        model.addAttribute("skuPreview", products.previewNextVariantSku(ownerId));
         model.addAttribute(
                 "products",
                 products.getListByShop(ownerId)

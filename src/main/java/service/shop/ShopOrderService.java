@@ -71,8 +71,11 @@ public class ShopOrderService {
                 SELECT COUNT(*) AS total,
                 COALESCE(SUM(CASE WHEN o.status='PENDING' THEN 1 ELSE 0 END),0) AS pending,
                 COALESCE(SUM(CASE WHEN o.status='COMPLETED' AND o.payment_status='PAID'
-                    THEN o.shop_revenue_amount ELSE 0 END),0) AS revenue
-                FROM orders o JOIN shops s ON s.id=o.shop_id WHERE s.owner_id=?
+                    THEN GREATEST(o.shop_revenue_amount - COALESCE(cr.refund_amount, 0), 0) ELSE 0 END),0) AS revenue
+                FROM orders o
+                JOIN shops s ON s.id=o.shop_id
+                LEFT JOIN customer_refunds cr ON cr.order_id=o.id AND cr.refund_type='RETURN_REFUND'
+                WHERE s.owner_id=?
                 """, ownerId);
     }
 
