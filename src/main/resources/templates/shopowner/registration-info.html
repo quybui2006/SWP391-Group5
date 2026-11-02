@@ -7,12 +7,6 @@
     <title>Thông tin đăng ký Cửa hàng | FreshFruit</title>
 
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
-    <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
-    <script th:src="@{/js/notification-dropdown.js}" defer></script>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 
     <style>
         /* ==========================================================================
@@ -35,7 +29,7 @@
         }
 
         .reg-header-left h1 {
-            font: 800 24px/1.3 'Plus Jakarta Sans', sans-serif;
+            font: 800 24px/1.3 var(--font-ui);
             color: #0f172a;
             margin: 0 0 6px;
             display: flex;
@@ -138,14 +132,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font: 800 24px 'Plus Jakarta Sans', sans-serif;
+            font: 800 24px var(--font-ui);
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
             flex-shrink: 0;
         }
 
         .shop-name-block strong {
             display: block;
-            font: 800 19px 'Plus Jakarta Sans', sans-serif;
+            font: 800 19px var(--font-ui);
             color: #0f172a;
             margin-bottom: 3px;
         }
@@ -276,7 +270,7 @@
             color: #fff;
             display: grid;
             place-items: center;
-            font: 700 12px 'Plus Jakarta Sans', sans-serif;
+            font: 700 12px var(--font-ui);
             flex-shrink: 0;
             margin-top: 2px;
         }
@@ -324,7 +318,7 @@
             border: none;
             padding: 8px 16px;
             border-radius: 8px;
-            font: 600 13px 'DM Sans', sans-serif;
+            font: 600 13px var(--font-ui);
             color: #64748b;
             cursor: pointer;
             transition: all 0.2s;
@@ -376,7 +370,7 @@
         }
 
         .section-title h2 {
-            font: 700 16px 'Plus Jakarta Sans', sans-serif;
+            font: 700 16px var(--font-ui);
             color: #0f172a;
             margin: 0;
             display: flex;
@@ -489,7 +483,7 @@
         }
 
         .id-card-top strong {
-            font: 700 12px 'Plus Jakarta Sans', sans-serif;
+            font: 700 12px var(--font-ui);
             letter-spacing: 0.8px;
             text-transform: uppercase;
             color: #a7f3d0;
@@ -526,7 +520,7 @@
         }
 
         .id-name-box h3 {
-            font: 800 18px 'Plus Jakarta Sans', sans-serif;
+            font: 800 18px var(--font-ui);
             color: #ffffff;
             margin: 0;
             letter-spacing: 0.5px;
@@ -575,7 +569,7 @@
         }
 
         .bank-title {
-            font: 800 14px 'Plus Jakarta Sans', sans-serif;
+            font: 800 14px var(--font-ui);
             color: #38bdf8;
             letter-spacing: 0.5px;
         }
@@ -714,43 +708,6 @@
                     </h1>
                 </div>
 
-                <div class="top-actions">
-                    <!-- Notification Bell -->
-                    <div class="notif-dropdown-wrapper">
-                        <button type="button" class="notif-bell-btn" id="globalNotifBellBtn" title="Thông báo"
-                            aria-label="Thông báo"
-                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px;">
-                            🔔
-                            <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
-                        </button>
-                        <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
-                            <div class="notif-dropdown-header">
-                                <h4><span>🔔</span> Thông báo</h4>
-                                <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
-                            </div>
-                            <div class="notif-dropdown-body" id="globalNotifList">
-                                <div class="notif-empty-box">Đang tải...</div>
-                            </div>
-                            <div class="notif-dropdown-footer">
-                                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="top-user">
-                        <div class="avatar" th:text="${ownerName != null && !#strings.isEmpty(ownerName) ? #strings.substring(ownerName, 0, 1).toUpperCase() : 'S'}">SO</div>
-                        <span th:text="${ownerName ?: 'Chủ cửa hàng'}">Chủ cửa hàng</span>
-                    </div>
-
-                    <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
-                        <button type="submit"
-                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
-                            onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'"
-                            title="Đăng xuất">
-                            🚪 Đăng xuất
-                        </button>
-                    </form>
-                </div>
             </header>
 
             <div class="reg-info-wrapper">

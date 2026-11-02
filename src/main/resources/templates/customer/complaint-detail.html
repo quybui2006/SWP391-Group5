@@ -45,9 +45,9 @@
                         <span>Phạm vi</span>
                         <strong>Toàn bộ đơn hàng</strong>
                     </div>
-                    <div class="pay-row">
-                        <span>Phương án mong muốn</span>
-                        <strong style="color: #0284c7;" th:text="${complaint['desired_resolution_label'] ?: 'Giao bù hàng'}"></strong>
+                    <div class="pay-row" th:if="${complaint['requested_refund_amount'] != null and complaint['requested_refund_amount'] > 0}">
+                        <span>Yêu cầu bồi hoàn</span>
+                        <strong style="color: #dc2626;" th:text="${#numbers.formatDecimal(complaint['requested_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
                     </div>
                     <div class="pay-row">
                         <span>Ngày gửi</span>
@@ -88,32 +88,26 @@
                     <!-- Case: Đã giải quyết thành công -->
                     <div th:if="${complaint['status'] == 'RESOLVED'}">
                         <div class="pay-row">
-                            <span>Kết quả giải quyết</span>
-                            <strong style="color: #15803d;" th:text="${'✅ ' + (complaint['resolution_label'] ?: 'Đã chấp thuận khiếu nại')}"></strong>
+                            <span>Trạng thái kết luận</span>
+                            <strong style="color: #15803d;">✅ Đã chấp nhận đền bù</strong>
                         </div>
-                        <div class="pay-row" th:if="${complaint['replacement_order_id'] != null}">
-                            <span>Đơn hàng giao bù</span>
-                            <div>
-                                <a th:href="@{/customer/account/orders/{id}(id=${complaint['replacement_order_id']})}"
-                                   style="color: #0284c7; font-weight: 700; text-decoration: underline;">
-                                    📦 <span th:text="${complaint['replacement_order_code']}"></span>
-                                </a>
-                                <small style="display: block; color: #16a34a; font-size: 11.5px; font-weight: 600;"
-                                       th:text="${'Trạng thái: ' + complaint['replacement_order_status'] + ' (' + complaint['replacement_delivery_status'] + ') - Miễn phí 0₫'}"></small>
-                            </div>
+                        <div class="pay-row" th:if="${complaint['compensated_points'] != null and complaint['compensated_points'] > 0}">
+                            <span>Điểm thưởng hoàn trả</span>
+                            <strong style="color: #16a34a; font-size: 15px;"
+                                    th:text="${'+' + #numbers.formatInteger(complaint['compensated_points'], 1, 'COMMA') + ' điểm (đã cộng vào ví)'}"></strong>
                         </div>
-                        <div class="pay-row" th:if="${complaint['voucher_code'] != null}">
-                            <span>Voucher đền bù</span>
-                            <strong style="color: #d97706; font-size: 15px;"
-                                    th:text="${'🎟️ ' + complaint['voucher_code'] + ' (Đã lưu vào ví voucher)'}"></strong>
+                        <div class="pay-row" th:if="${complaint['gifted_freeship_voucher'] != null}">
+                            <span>Quà tặng thiện chí</span>
+                            <strong style="color: #0284c7;"
+                                    th:text="${'🎁 Mã Freeship: ' + complaint['gifted_freeship_voucher'] + ' (Trị giá 20,000₫ do Quỹ Sàn tài trợ)'}"></strong>
                         </div>
                         <div class="pay-row" th:if="${complaint['resolved_at_fmt'] != null}">
                             <span>Thời gian hoàn tất</span>
                             <span th:text="${complaint['resolved_at_fmt']}"></span>
                         </div>
                         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.08);">
-                            <span style="font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Phản hồi từ Cửa hàng:</span>
-                            <p style="margin: 0; font-size: 14px; color: #0f172a; line-height: 1.5;" th:text="${complaint['shop_response'] ?: complaint['resolution_note']}"></p>
+                            <span style="font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Lời giải thích:</span>
+                            <p style="margin: 0; font-size: 14px; color: #0f172a; line-height: 1.5;" th:text="${complaint['resolution_note']}"></p>
                         </div>
                     </div>
 
@@ -142,14 +136,9 @@
                     </div>
 
                     <!-- Case: Đang xử lý -->
-                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS'}">
-                        <p style="margin: 0; font-size: 13.5px; color: #ea580c; line-height: 1.5;">
-                            ⏳ Yêu cầu khiếu nại của bạn đang được Ban Vận hành (Operations) tiếp nhận và thẩm định tính hợp lệ.
-                        </p>
-                    </div>
-                    <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}">
+                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS' or complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}">
                         <p style="margin: 0; font-size: 13.5px; color: #0284c7; line-height: 1.5;">
-                            ⏳ Ban Vận hành đã phê duyệt khiếu nại của bạn và yêu cầu Cửa hàng xử lý bồi hoàn (Giao bù sản phẩm hoặc Tặng voucher đền bù).
+                            ⏳ Yêu cầu khiếu nại của bạn đang được tiếp nhận và xử lý. Kết quả và mức bồi hoàn sẽ được cập nhật sớm nhất tại đây.
                         </p>
                     </div>
                 </div>

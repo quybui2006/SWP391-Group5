@@ -124,6 +124,7 @@ public class ProductService {
         return variants;
     }
 
+    /** Đọc biến thể khách xem và gắn giá khuyến mãi còn hiệu lực để trang chi tiết hiển thị. */
     public ProductVariant getProductVariantById(Long id) {
         ProductVariant variant = productVariantRepository.findSellableById(id).orElse(null);
         if (variant != null) {

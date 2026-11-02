@@ -1,6 +1,7 @@
 package service.home;
 
 import entity.ProductVariant;
+import dto.customer.CustomerProductCard;
 import org.springframework.stereotype.Service;
 import repository.ProductVariantRepository;
 import repository.PromotionalPriceRepository;
@@ -23,16 +24,17 @@ public class HomeService {
         this.promotionalPriceRepository = promotionalPriceRepository;
     }
 
-    public List<ProductVariant> getActiveProductsForHome() {
+    /** Lấy sản phẩm đang bán và gắn giá khuyến mãi còn hiệu lực để hiển thị ở trang chủ. */
+    public List<CustomerProductCard> getActiveProductsForHome() {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         List<ProductVariant> variants = productVariantRepository.findApprovedActiveForCatalog();
-        if (variants.isEmpty()) return variants;
+        if (variants.isEmpty()) return List.of();
         List<Long> variantIds = variants.stream().map(ProductVariant::getId).toList();
         Map<Long, java.math.BigDecimal> activePrices = promotionalPriceRepository
                 .findActivePricesByVariantIds(variantIds, now).stream()
                 .collect(Collectors.toMap(ActivePromotionPrice::getVariantId,
                         ActivePromotionPrice::getPromotionalPrice));
         variants.forEach(variant -> variant.setPromotionalPrice(activePrices.get(variant.getId())));
-        return variants;
+        return CustomerProductCard.fromVariants(variants);
     }
 }

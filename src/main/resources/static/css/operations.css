@@ -685,6 +685,30 @@ tbody tr:last-child td {
     color: #475569;
 }
 
+.audit-products { display: grid; gap: 10px; }
+.audit-product { border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; }
+.audit-product > summary { display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 10px 16px; cursor: pointer; list-style: none; }
+.audit-product > summary::-webkit-details-marker { display: none; }
+.audit-product > summary:focus-visible { outline: 3px solid #0f8a4b; outline-offset: -3px; }
+.audit-product > summary::after { content: '+'; margin-left: auto; font-size: 20px; font-weight: 600; color: var(--muted); }
+.audit-product[open] > summary::after { content: '−'; }
+.audit-product > summary img { width: 46px; height: 46px; flex: 0 0 46px; border: 1px solid var(--line); border-radius: 6px; object-fit: cover; }
+.audit-product-name { font-weight: 700; color: var(--ink); }
+.audit-product-count { color: var(--muted); font-size: 12px; }
+.audit-product > .table-wrap { border-top: 1px solid var(--line); }
+.audit-variant-table { min-width: 920px; }
+.audit-variant-cell { display: flex; align-items: center; gap: 9px; min-width: 150px; }
+.audit-variant-cell img, .audit-no-image { width: 36px; height: 36px; flex: 0 0 36px; border: 1px solid var(--line); border-radius: 6px; object-fit: cover; }
+.audit-no-image { display: grid; place-items: center; background: #f1f5f9; color: #64748b; font-size: 10px; font-weight: 700; }
+.audit-variant-cell strong, .audit-variant-cell small, .audit-variant-table td > small { display: block; }
+.audit-variant-cell small, .audit-variant-table td > small, .audit-no-action { color: var(--muted); font-size: 11px; }
+.audit-variant-table code { display: inline-block; padding: 3px 6px; border-radius: 4px; background: #f1f5f9; font-size: 11px; }
+.audit-variant-table td { vertical-align: middle; }
+.audit-price { color: #15803d; white-space: nowrap; }
+.audit-empty-variants, .audit-empty-products { margin: 0; padding: 18px; color: var(--muted); }
+
+.audit-variant-table .button { font-size: 11px; }
+
 /* ==========================================================================
    BUTTONS & ACTIONS
    ========================================================================== */

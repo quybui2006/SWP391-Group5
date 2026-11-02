@@ -3,16 +3,15 @@ package service.complaint;
 import java.util.Locale;
 
 /**
- * Mô hình trạng thái khiếu nại (Ban Vận hành thẩm định trước, Cửa hàng xử lý bồi hoàn).
+ * Mô hình trạng thái khiếu nại 2 tầng (Shop xử lý trước -> CSKH phân xử sau).
  */
 public enum ComplaintStatus {
     PENDING_OPERATIONS("PENDING_OPERATIONS", "Chờ Vận hành duyệt"),
-    PENDING_SHOP("PENDING_SHOP", "Chờ Shop xử lý"),
+    PENDING_SHOP("PENDING_SHOP", "Chờ Shop phản hồi"),
+    ESCALATED("ESCALATED", "Chuyển CSKH phân xử"),
     RESOLVED("RESOLVED", "Đã giải quyết"),
-    REJECTED("REJECTED", "Từ chối khiếu nại"),
-    CANCELLED("CANCELLED", "Đã rút khiếu nại"),
-    // Trạng thái cũ giữ tương thích hiển thị nếu có bản ghi lịch sử
-    ESCALATED("ESCALATED", "Đang xử lý");
+    REJECTED("REJECTED", "Bác bỏ khiếu nại"),
+    CANCELLED("CANCELLED", "Đã rút khiếu nại");
 
     private final String code;
     private final String label;
@@ -40,16 +39,16 @@ public enum ComplaintStatus {
 
     public static ComplaintStatus fromString(String raw) {
         if (raw == null || raw.isBlank()) {
-            return PENDING_OPERATIONS;
+            return PENDING_SHOP;
         }
         String normalized = raw.trim().toUpperCase(Locale.ROOT);
         return switch (normalized) {
             case "PENDING_OPERATIONS", "PENDING_OPS" -> PENDING_OPERATIONS;
             case "PENDING_SHOP", "PENDING" -> PENDING_SHOP;
+            case "ESCALATED", "IN_PROGRESS" -> ESCALATED;
             case "RESOLVED" -> RESOLVED;
             case "REJECTED" -> REJECTED;
             case "CANCELLED" -> CANCELLED;
-            case "ESCALATED", "IN_PROGRESS" -> ESCALATED;
             default -> throw new IllegalArgumentException("Trạng thái khiếu nại không hợp lệ: " + raw);
         };
     }

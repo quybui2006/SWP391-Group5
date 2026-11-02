@@ -30,6 +30,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Optional<Notification> findByEventKey(String eventKey);
 
     @Modifying
+    @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.eventKey IN :eventKeys")
+    int deleteByUserAndEventKeys(@Param("userId") Long userId, @Param("eventKeys") List<String> eventKeys);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.id = :notificationId AND n.user.id = :userId")
+    int deleteByIdAndUserId(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
+
+    @Modifying
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.user.id = :userId AND n.isRead = false")
     int markAllAsReadByUserId(@Param("userId") Long userId);
 }

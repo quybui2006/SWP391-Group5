@@ -31,6 +31,7 @@ public class ShopProductManagementController {
         this.categoryRepository = categoryRepository;
     }
 
+    /** Danh sách sản phẩm của shop, hỗ trợ tìm kiếm và phân trang. */
     @GetMapping({"/shop/products", "/shopowner/products"})
     public String list(@RequestParam(defaultValue = "") String keyword,
                        @RequestParam(defaultValue = "0") int page,
@@ -40,12 +41,10 @@ public class ShopProductManagementController {
         Page<?> result = products.searchShopProducts(ownerId, keyword, Math.max(0, page), PAGE_SIZE);
         model.addAttribute("products", result);
         model.addAttribute("keyword", keyword.trim());
-        java.util.Map<String, Object> shop = products.shopDashboard(ownerId);
-        model.addAttribute("shopPaymentApprovalStatus", shop.get("paymentApprovalStatus"));
-        model.addAttribute("shopApprovalStatus", shop.get("approvalStatus"));
         return "shopowner/product-list";
     }
 
+    /** Hiển thị biểu mẫu tạo hồ sơ sản phẩm và chọn danh mục còn hoạt động. */
     @GetMapping({"/shop/products/add", "/shopowner/products/add"})
     public String addForm(HttpServletRequest request, Model model) {
         if (ownerId(request) == null) return "redirect:/login";
@@ -55,6 +54,7 @@ public class ShopProductManagementController {
         return "shopowner/product-form";
     }
 
+    /** Tạo hồ sơ sản phẩm sau khi kiểm tra dữ liệu và ảnh bắt buộc. */
     @PostMapping({"/shop/products/add", "/shopowner/products/add"})
     public String create(@Valid @ModelAttribute("productCreateRequest") ProductCreateRequest form,
                         BindingResult binding, HttpServletRequest request, Model model,
@@ -70,7 +70,7 @@ public class ShopProductManagementController {
         }
         try {
             Long productId = products.createProduct(ownerId, form);
-            redirect.addFlashAttribute("success", "Đã tạo hồ sơ sản phẩm để quản lý biến thể. Hãy thêm biến thể để đăng bán; Operations sẽ hậu kiểm sau.");
+            redirect.addFlashAttribute("success", "Đã tạo sản phẩm ở trạng thái chưa đăng bán.");
             return "redirect:/shop/products";
         } catch (ProductValidationException ex) {
             // The service supplies user-facing text, not a Spring message-code.

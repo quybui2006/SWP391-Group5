@@ -8,7 +8,7 @@
         <aside th:replace="~{operations/layout :: sidebar('shop-list')}"></aside>
         <main class="operations-main">
             <header
-                th:replace="~{operations/layout :: pageHeader('Danh sách Cửa hàng', 'Giám sát tuân thủ, kiểm soát chất lượng nông sản và xử lý vi phạm gian hàng sau khi mở bán.')}">
+                th:replace="~{operations/layout :: pageHeader('Danh sách hậu kiểm', 'Chọn một cửa hàng để kiểm tra toàn bộ sản phẩm và biến thể đang quản lý.')}">
             </header>
             <p class="alert alert-success" th:if="${success}" th:text="${success}"></p>
             <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>

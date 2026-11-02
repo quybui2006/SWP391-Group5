@@ -33,9 +33,7 @@ public class CustomerAccountHomeController {
     }
 
     private Long current(HttpSession s) {
-        if (s == null) return null;
-        Object role = s.getAttribute("role");
-        if (!"CUSTOMER".equals(role) && !"ADMIN".equals(role)) return null;
+        if (!"CUSTOMER".equals(s.getAttribute("role"))) return null;
         Object id = s.getAttribute("userId");
         return id instanceof Number n ? n.longValue() : null;
     }
@@ -142,23 +140,6 @@ public class CustomerAccountHomeController {
             if (e.getMessage() != null && e.getMessage().contains("tài khoản ngân hàng")) {
                 ra.addFlashAttribute("bankAccountRequired", true);
             }
-            ra.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/customer/account/orders/" + id;
-    }
-
-    @PostMapping("/orders/{id}/refuse")
-    public String refuseDelivery(@PathVariable Long id,
-                                 @RequestParam(required = false) String reason,
-                                 HttpSession session,
-                                 RedirectAttributes ra) {
-        Long customerId = current(session);
-        String redirect = login(customerId, "/customer/account/orders/" + id);
-        if (redirect != null) return redirect;
-        try {
-            checkout.refuseDeliveryByCustomer(customerId, id, reason);
-            ra.addFlashAttribute("message", "Đã ghi nhận từ chối nhận hàng. Bạn có thể gửi khiếu nại sự cố giao hàng ngay bên dưới nếu cần hỗ trợ.");
-        } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/customer/account/orders/" + id;
