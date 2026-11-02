@@ -1,11 +1,13 @@
+@import url('/css/design-system.css');
+
 /* =========================================================
    FRESHFRUIT - CHECKOUT PAGE STYLES (MATCH HOME SCREEN DESIGN)
 ========================================================= */
 
 :root {
-    --green: #2f8f46;
-    --green-dark: #176b30;
-    --green-light: #eaf7ed;
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-light: #f0fdf4;
     --green-soft: #f3faf4;
     --green-subtle: #f0faef;
     --ink: #17221a;

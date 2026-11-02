@@ -26,6 +26,7 @@ public interface ShopProductRepository extends JpaRepository<Product, Long> {
       AND pv.status = 'ACTIVE'
       AND pv.approvalStatus IN ('APPROVED', 'PENDING')
       AND s.approvalStatus = 'APPROVED'
+      AND s.paymentApprovalStatus = 'APPROVED'
       AND s.operatingStatus = 'OPEN'
     ORDER BY p.origin
     """)

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -340,6 +340,7 @@
         <nav class="main-nav">
             <a th:href="@{/}">Trang chủ</a>
             <a th:href="@{/search}">Sản phẩm</a>
+            <a th:if="${session.role == null}" th:href="@{/order/tracking}">Tra cứu đơn hàng</a>
         </nav>
 
         <div class="header-actions">
@@ -377,7 +378,11 @@
 
                 <div class="hero-btn-group">
                     <a class="hero-outline-btn" th:href="@{/}">Trang chủ</a>
-                    <a class="hero-outline-btn" th:href="@{/customer/account/orders}">Đơn mua</a>
+                    <a th:if="${guest}" class="hero-outline-btn" th:href="@{/order/tracking(code=${firstOrderCode})}">Theo dõi đơn hàng</a>
+                    <a th:unless="${guest}" class="hero-outline-btn" th:href="@{/customer/account/orders}">Đơn mua</a>
+                </div>
+                <div th:if="${guest}" style="margin-top: 16px; font-size: 14px; opacity: 0.95;">
+                    📧 Chi tiết đơn hàng và liên kết theo dõi đã được gửi về email của bạn.
                 </div>
             </div>
         </section>

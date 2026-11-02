@@ -9,7 +9,6 @@
     <link rel="stylesheet" th:href="@{/css/shop-workflows.css}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Modern Seller Center Styles */
         :root {
             --seller-bg: #f5f5f5;
             --seller-surface: #ffffff;
@@ -21,104 +20,82 @@
             --seller-warning: #f59e0b;
             --seller-info: #3b82f6;
         }
-
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--seller-bg); color: var(--seller-text-main); margin: 0; }
-
-        /* Loại bỏ max-width và margin auto để không đè lên Sidebar */
         .main-content { padding: 24px 32px; }
-
-        /* Header */
         .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-        .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--seller-text-muted); text-decoration: none; margin-bottom: 12px; transition: color 0.2s; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--seller-text-muted); text-decoration: none; margin-bottom: 12px; transition: color .2s; }
         .back-link:hover { color: var(--seller-primary); }
-        .detail-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: var(--seller-text-main); display: flex; align-items: center; gap: 12px; }
-
+        .detail-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: var(--seller-text-main); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .header-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .meta-tag { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border: 1px solid transparent; }
-
-        /* Status Tags */
         .tag-pending { background: #fef3c7; color: #b45309; border-color: #fde68a; }
         .tag-confirmed { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
         .tag-cancelled { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
         .tag-completed { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
         .tag-neutral { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
-
-        /* Alerts */
         .seller-alert { padding: 14px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; margin-bottom: 20px; border: 1px solid transparent; }
         .alert-success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
         .alert-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-
-        /* Grid Layout */
         .detail-grid { display: grid; grid-template-columns: 2.2fr 1fr; gap: 24px; align-items: start; }
         @media (max-width: 960px) { .detail-grid { grid-template-columns: 1fr; } }
-
-        /* Cards */
-        .seller-card { background: var(--seller-surface); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid var(--seller-border); padding: 24px; margin-bottom: 24px; }
+        @media (max-width: 640px) { .main-content { padding: 16px; } .seller-card { padding: 16px; } .detail-header h1 { font-size: 19px; } }
+        .seller-card { background: var(--seller-surface); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.04); border: 1px solid var(--seller-border); padding: 24px; margin-bottom: 24px; }
         .seller-card h2 { margin: 0 0 20px; font-size: 16px; font-weight: 700; color: var(--seller-text-main); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--seller-border); padding-bottom: 12px; }
-
-        /* Info List (Customer Info) */
         .info-list { display: grid; gap: 16px; font-size: 14px; }
         .info-row { display: flex; flex-direction: column; gap: 4px; }
         .info-label { color: var(--seller-text-muted); font-size: 12.5px; }
-        .info-value { font-weight: 600; color: var(--seller-text-main); line-height: 1.4; }
-
-        /* Order Items Table */
+        .info-value { font-weight: 600; color: var(--seller-text-main); line-height: 1.4; overflow-wrap: anywhere; }
         .item-table { width: 100%; border-collapse: collapse; text-align: left; }
         .item-table th { padding: 12px 16px; font-size: 12.5px; font-weight: 600; color: var(--seller-text-muted); background: #f8fafc; border-bottom: 1px solid var(--seller-border); }
         .item-table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--seller-border); vertical-align: middle; }
         .item-table tr:last-child td { border-bottom: none; }
         .prod-name { font-weight: 600; color: var(--seller-text-main); display: block; margin-bottom: 4px; }
         .prod-variant { font-size: 12.5px; color: var(--seller-text-muted); }
-
-        /* Order Summary / Costs */
         .cost-list { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
-        .cost-row { display: flex; justify-content: space-between; color: var(--seller-text-muted); }
+        .cost-row { display: flex; justify-content: space-between; gap: 16px; color: var(--seller-text-muted); }
+        .cost-row span:last-child { text-align: right; }
         .cost-row.total { padding-top: 12px; margin-top: 4px; border-top: 1px dashed #cbd5e1; font-size: 16px; font-weight: 700; color: var(--seller-primary); }
         .cost-row.deduction { color: var(--seller-danger); font-weight: 600; }
         .cost-row.revenue { padding-top: 12px; margin-top: 4px; border-top: 1px dashed #cbd5e1; font-size: 15px; font-weight: 700; color: #15803d; }
-
-        /* Action Panel (Confirm/Reject) */
         .action-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
         .action-panel h3 { margin: 0 0 16px; font-size: 15px; font-weight: 700; }
-
-        .btn-confirm { background: var(--seller-primary); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; display: flex; justify-content: center; gap: 8px; }
+        .btn-confirm { background: var(--seller-primary); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; width: 100%; display: flex; justify-content: center; gap: 8px; align-items: center; }
         .btn-confirm:hover { background: #11632e; }
-
         .reject-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #cbd5e1; }
         .reject-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 12px; }
-        .btn-reject { background: #fff; color: var(--seller-danger); border: 1px solid #fca5a5; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn-reject { background: #fff; color: var(--seller-danger); border: 1px solid #fca5a5; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; width: 100%; }
         .btn-reject:hover { background: #fef2f2; border-color: var(--seller-danger); }
-
-        /* Complaint Section */
         .complaint-box { border: 1px solid #fde68a; background: #fffdf5; padding: 20px; border-radius: 10px; margin-top: 24px; }
-        .complaint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .complaint-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
         .complaint-header h3 { margin: 0; color: #92400e; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-
-        .complaint-item { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .complaint-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
         .complaint-item:last-child { margin-bottom: 0; }
-
-        .cp-meta { display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center; }
+        .cp-meta { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
         .cp-code { color: var(--seller-info); font-weight: 700; font-size: 14px; }
-
         .cp-desc { font-size: 13.5px; color: var(--seller-text-main); margin-bottom: 12px; line-height: 1.5; background: #f8fafc; padding: 10px 14px; border-radius: 6px; }
-
-        .cp-amounts { display: flex; gap: 20px; font-size: 13px; margin-bottom: 12px; }
-
+        .cp-amounts { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; margin-bottom: 12px; }
         .shop-response-history { background: #f0fdf4; border-left: 3px solid #16a34a; padding: 12px 16px; font-size: 13px; margin-bottom: 12px; border-radius: 4px; }
         .admin-resolution { background: #e0f2fe; border-left: 3px solid #0284c7; padding: 12px 16px; font-size: 13px; margin-bottom: 12px; border-radius: 4px; }
-
-        /* Complaint Action Form */
-        .cp-action-form { background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 16px; margin-top: 16px; }
-        .radio-group { display: flex; gap: 24px; margin-bottom: 16px; background: #fffafa; padding: 12px 16px; border-radius: 6px; border: 1px solid #ffedd5; }
-        .radio-group label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+        .ops-pending { background: #fffaf0; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 18px; margin-top: 14px; }
+        .compensation-panel { background: #fffdf5; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 18px; margin-top: 14px; }
+        .compensation-options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .compensation-option { border-radius: 8px; padding: 14px; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: all .2s; min-height: 145px; }
+        .compensation-option:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.06); }
+        .replacement-option { background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; }
+        .voucher-option { background: #faf5ff; border: 1.5px solid #d8b4fe; color: #6b21a8; }
+        .compensation-option small { font-size: 12px; line-height: 1.4; display: block; margin-top: 5px; }
+        .compensation-option strong { font-size: 14px; }
+        .compensation-option .option-link { display: inline-block; margin-top: 10px; font-weight: 700; font-size: 12.5px; }
+        .replacement-result { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; }
+        .voucher-result { background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; }
+        @media (max-width: 680px) { .compensation-options { grid-template-columns: 1fr; } .cp-amounts { gap: 10px; } .item-table th, .item-table td { padding: 10px; } }
     </style>
 </head>
 <body>
 <div class="app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside>
     <main class="main-content">
-
         <header class="detail-header">
             <div>
                 <a class="back-link" th:href="@{/shopowner/orders}">
@@ -127,20 +104,18 @@
                 </a>
                 <h1>
                     Đơn hàng <span th:text="${order.order_code}"></span>
-
                     <span class="meta-tag tag-pending" th:if="${order.status == 'PENDING'}">Chờ xác nhận</span>
-                    <span class="meta-tag tag-confirmed" th:if="${order.status == 'CONFIRMED' or order.status == 'PREPARING'}">Đã xác nhận / Đang chuẩn bị</span>
+                    <span class="meta-tag tag-confirmed" th:if="${order.status == 'CONFIRMED' or order.status == 'PREPARING' or order.status == 'SHIPPING'}" th:text="${order.status == 'CONFIRMED' ? 'Đã xác nhận' : (order.status == 'PREPARING' ? 'Đang chuẩn bị' : 'Đang giao hàng')}"></span>
                     <span class="meta-tag tag-cancelled" th:if="${order.status == 'CANCELLED'}">Đã hủy</span>
-                    <span class="meta-tag tag-completed" th:if="${order.status == 'COMPLETED' or order.status == 'DELIVERED'}">Hoàn tất / Đã giao</span>
+                    <span class="meta-tag tag-completed" th:if="${order.status == 'COMPLETED' or order.status == 'DELIVERED'}" th:text="${order.status == 'DELIVERED' ? 'Đã giao' : 'Hoàn tất'}"></span>
                 </h1>
-
                 <div class="header-meta">
                     <span class="meta-tag tag-neutral">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                        <span th:text="${order.payment_method == 'COD'} ? 'Thanh toán COD' : 'Thanh toán VNPAY'"></span>
+                        <span th:text="${order.payment_method == 'RESEND' ? 'Đơn giao bù 0 ₫ (Miễn phí)' : (order.payment_method == 'COD' ? 'Thanh toán COD' : (order.payment_method == 'MOCK_ONLINE' ? 'Thanh toán trực tuyến' : 'Thanh toán VNPAY'))}"></span>
                     </span>
                     <span class="meta-tag" th:classappend="${order.payment_status == 'PAID'} ? 'tag-completed' : 'tag-pending'">
-                        <span th:text="${order.payment_status == 'PAID'} ? 'Đã thanh toán' : 'Chưa thanh toán'"></span>
+                        <span th:text="${order.payment_status == 'PAID' ? 'Đã thanh toán' : (order.payment_status == 'REFUNDED' ? 'Đã hoàn tiền' : 'Chưa thanh toán')}"></span>
                     </span>
                 </div>
             </div>
@@ -150,25 +125,20 @@
         <div th:if="${error}" class="seller-alert alert-error" th:text="${error}"></div>
 
         <div class="detail-grid">
-            <!-- CỘT TRÁI: THÔNG TIN SẢN PHẨM & KHIẾU NẠI -->
             <div class="grid-left">
-
                 <section class="seller-card">
                     <h2>
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                         Sản phẩm trong đơn
                     </h2>
-
                     <div style="overflow-x: auto;">
                         <table class="item-table">
-                            <thead>
-                            <tr>
+                            <thead><tr>
                                 <th>Sản phẩm</th>
                                 <th style="text-align: center;">Số lượng</th>
                                 <th style="text-align: right;">Đơn giá</th>
                                 <th style="text-align: right;">Thành tiền</th>
-                            </tr>
-                            </thead>
+                            </tr></thead>
                             <tbody>
                             <tr th:each="item : ${items}">
                                 <td>
@@ -184,7 +154,6 @@
                     </div>
                 </section>
 
-                <!-- KHU VỰC KHIẾU NẠI (Chỉ hiện khi có khiếu nại) -->
                 <section class="complaint-box" th:if="${orderComplaints != null and !#lists.isEmpty(orderComplaints)}">
                     <div class="complaint-header">
                         <h3>
@@ -200,14 +169,18 @@
                                 <span class="cp-code" th:text="${cp['complaint_code']}">KN-001</span>
                                 <span style="margin-left: 8px; font-weight: 600; color: var(--seller-danger);" th:text="${'• ' + cp['reason_label']}"></span>
                             </div>
-
                             <span class="meta-tag"
                                   th:classappend="${cp['status'] == 'RESOLVED'} ? 'tag-completed' : (${cp['status'] == 'REJECTED'} ? 'tag-cancelled' : (${cp['status'] == 'CANCELLED'} ? 'tag-neutral' : (${cp['status'] == 'ESCALATED' or cp['status'] == 'IN_PROGRESS'} ? 'tag-confirmed' : 'tag-pending')))"
                                   th:text="${cp['status_label']}"></span>
                         </div>
 
                         <div class="cp-desc">
-                            <strong style="color: var(--seller-text-muted);">Khách mô tả:</strong> <span th:text="${cp['description']}"></span>
+                            <div style="color: #0369a1; font-weight: 600; margin-bottom: 5px;">
+                                Mong muốn xử lý của khách:
+                                <strong style="color: #0c4a6e;" th:text="${cp['desired_resolution_label'] ?: 'Giao hàng bù'}"></strong>
+                            </div>
+                            <strong style="color: var(--seller-text-muted);">Khách mô tả:</strong>
+                            <span th:text="${cp['description']}"></span>
                         </div>
 
                         <div class="cp-amounts">
@@ -220,76 +193,89 @@
                         </div>
 
                         <div th:if="${cp['evidence_image_url'] != null}" style="margin-bottom: 16px;">
-                            <a th:href="${cp['evidence_image_url']}" target="_blank" style="font-size: 13px; color: var(--seller-info); font-weight: 600; text-decoration: none;">
-                                📷 Xem ảnh minh chứng của khách
-                            </a>
+                            <a th:href="${cp['evidence_image_url']}" target="_blank" rel="noopener" style="font-size: 13px; color: var(--seller-info); font-weight: 600; text-decoration: none;">📷 Xem ảnh minh chứng của khách</a>
                         </div>
 
-                        <!-- Lịch sử Shop phản hồi -->
-                        <div th:if="${cp['shop_response'] != null}" class="shop-response-history">
-                            <div style="font-weight: 700; margin-bottom: 4px;"
-                                 th:styleappend="${cp['shop_decision'] == 'ACCEPT'} ? 'color:#15803d;' : 'color:#b91c1c;'"
-                                 th:text="${cp['shop_decision'] == 'ACCEPT' ? '✓ Bạn đã đồng ý đền bù' : '✕ Bạn đã từ chối khiếu nại'}"></div>
-                            <div th:text="${cp['shop_response']}"></div>
-                            <div th:if="${cp['shop_evidence_image_url'] != null}" style="margin-top: 8px;">
-                                <a th:href="${cp['shop_evidence_image_url']}" target="_blank" style="font-size: 12.5px; color: var(--seller-info); font-weight: 600;">📷 Xem ảnh đối chứng của Shop</a>
+                        <div th:if="${cp['replacement_order_code'] != null}" class="replacement-result">
+                            <div style="font-weight: 700; color: #065f46; font-size: 13.5px; margin-bottom: 4px;">✓ Đã tạo đơn giao bù 0 ₫ thành công:</div>
+                            <div style="font-size: 13px; color: #047857;">
+                                Mã đơn:
+                                <a th:href="@{/shopowner/orders/{id}(id=${cp['replacement_order_id']})}" style="font-weight: 700; color: #047857; text-decoration: underline;" th:text="${cp['replacement_order_code']}"></a>
+                                <span th:if="${cp['replacement_order_status'] != null}" th:text="${' • Trạng thái đơn: ' + cp['replacement_order_status']}"></span>
+                                <span th:if="${cp['replacement_delivery_status'] != null}" th:text="${' • Giao hàng: ' + cp['replacement_delivery_status']}"></span>
                             </div>
                         </div>
 
-                        <!-- Phán quyết của CSKH -->
+                        <div th:if="${cp['voucher_code'] != null}" class="voucher-result">
+                            <div style="font-weight: 700; color: #86198f; font-size: 13.5px; margin-bottom: 4px;">✓ Đã tặng voucher đền bù vào ví của khách hàng:</div>
+                            <div style="font-size: 13px; color: #a21caf;">
+                                Mã voucher:
+                                <strong style="background: #fae8ff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 14px;" th:text="${cp['voucher_code']}"></strong>
+                            </div>
+                        </div>
+
+                        <div th:if="${cp['shop_response'] != null}" class="shop-response-history">
+                            <div style="font-weight: 700; margin-bottom: 4px; color: #334155;"
+                                 th:text="${cp['status'] == 'REJECTED' ? '✕ Lý do từ chối khiếu nại:' : 'Phản hồi từ Shop:'}"></div>
+                            <div th:text="${cp['shop_response']}"></div>
+                            <div th:if="${cp['shop_evidence_image_url'] != null}" style="margin-top: 8px;">
+                                <a th:href="${cp['shop_evidence_image_url']}" target="_blank" rel="noopener" style="font-size: 12.5px; color: var(--seller-info); font-weight: 600;">📷 Xem ảnh đối chứng của Shop</a>
+                            </div>
+                            <small th:if="${cp['shop_responded_at_fmt'] != null}" style="display: block; color: #64748b; margin-top: 4px;" th:text="${'Thời gian: ' + cp['shop_responded_at_fmt']}"></small>
+                        </div>
+
                         <div th:if="${cp['resolution_note'] != null}" class="admin-resolution">
                             <strong style="color: #0284c7;">🎧 Phán quyết CSKH (<span th:text="${cp['resolution_label']}"></span>):</strong>
                             <div style="margin-top: 4px;" th:text="${cp['resolution_note']}"></div>
                         </div>
 
-                        <!-- Form xử lý (Chỉ hiện khi PENDING_SHOP) -->
-                        <div th:if="${cp['status'] == 'PENDING_SHOP' or cp['status'] == 'PENDING'}" class="cp-action-form">
-                            <form th:action="@{/shopowner/orders/{oid}/complaints/{cid}/respond(oid=${order.id},cid=${cp['id']})}"
-                                  method="post" enctype="multipart/form-data">
+                        <div th:if="${cp['operations_note'] != null and !cp['operations_note'].isEmpty()}" class="admin-resolution">
+                            <strong style="color: #0284c7;">Ghi chú từ Ban Vận hành:</strong>
+                            <div style="margin-top: 4px;" th:text="${cp['operations_note']}"></div>
+                        </div>
 
-                                <div class="radio-group">
-                                    <label style="color: #166534;">
-                                        <input type="radio" name="decision" value="ACCEPT" checked onchange="toggleShopDecisionFields(this.value)">
-                                        Đồng ý đền bù
-                                        <span th:if="${cp['requested_refund_amount'] != null}" th:text="${'(' + #numbers.formatDecimal(cp['requested_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫)'}"></span>
-                                    </label>
-                                    <label style="color: #991b1b;">
-                                        <input type="radio" name="decision" value="REJECT" onchange="toggleShopDecisionFields(this.value)">
-                                        Từ chối (Chuyển CSKH)
-                                    </label>
-                                </div>
+                        <div th:if="${cp['status'] == 'CANCELLED'}" style="background: #f1f5f9; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #64748b; margin-top: 10px;">
+                            ✓ Khách hàng đã rút lại yêu cầu khiếu nại này.
+                        </div>
 
-                                <div style="margin-bottom: 12px;">
-                                    <label id="shopResponseLabel" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Nội dung phản hồi tới khách:</label>
-                                    <textarea id="shopResponseTextarea" name="shopResponse" rows="2" maxlength="1500"
-                                              class="reject-input" placeholder="Nhập lời xin lỗi hoặc nội dung giải trình..."></textarea>
-                                </div>
+                        <div th:if="${cp['status'] == 'PENDING_OPERATIONS'}" class="ops-pending">
+                            <div style="font-size: 13.5px; font-weight: 700; color: #ea580c; margin-bottom: 4px;">⏳ Đang chờ Ban Vận hành (Operations) thẩm định khiếu nại</div>
+                            <p style="margin: 0; font-size: 13px; color: #7c2d12; line-height: 1.5;">
+                                Khách hàng đã gửi khiếu nại. Ban Vận hành sàn đang kiểm tra tính hợp lệ và bằng chứng. Khi Ban Vận hành phê duyệt, Shop sẽ thực hiện tạo đơn giao bù hoặc tặng voucher đền bù.
+                            </p>
+                        </div>
 
-                                <div id="shopEvidenceGroup" style="display: none; margin-bottom: 16px;">
-                                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
-                                        📷 Ảnh đối chứng từ Shop (Lúc đóng gói / Bàn giao):
-                                    </label>
-                                    <input type="file" name="shopEvidenceImage" accept="image/jpeg,image/png" style="font-size: 13px;">
-                                </div>
-
-                                <div style="text-align: right;">
-                                    <button type="submit" id="shopSubmitBtn" class="btn-confirm">
-                                        ✓ Xác nhận xử lý khiếu nại
-                                    </button>
-                                </div>
-                            </form>
+                        <div th:if="${cp['status'] == 'PENDING_SHOP' or cp['status'] == 'PENDING'}" class="compensation-panel">
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;">
+                                <strong style="color: #15803d; font-size: 13.5px;">✓ Ban Vận hành đã thẩm định và phê duyệt khiếu nại:</strong>
+                                <p th:if="${cp['operations_note'] != null and !cp['operations_note'].isEmpty()}" style="margin: 4px 0 0; font-size: 13px; color: #166534;" th:text="${'Ghi chú từ Vận hành: ' + cp['operations_note']}"></p>
+                                <small style="color: #15803d; display: block; margin-top: 4px;">Cửa hàng vui lòng chọn 1 trong 2 phương án bồi hoàn dưới đây để hoàn tất xử lý cho khách hàng.</small>
+                            </div>
+                            <label style="display: block; font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 12px;">⚙️ Chọn phương án bồi hoàn:</label>
+                            <div class="compensation-options">
+                                <a class="compensation-option replacement-option" th:href="@{/shopowner/orders/{oid}/complaints/{cid}/resend(oid=${order.id},cid=${cp['id']})}">
+                                    <div>
+                                        <strong>📦 Tạo đơn giao bù sản phẩm →</strong>
+                                        <small style="color: #15803d;">Chuyển sang màn hình chọn sản phẩm trong kho (giống hoặc khác món cũ), tạo đơn giao bù 0 ₫ và theo dõi vận chuyển.</small>
+                                    </div>
+                                    <span class="option-link" style="color: #16a34a;">Vào màn hình tạo đơn bù »</span>
+                                </a>
+                                <a class="compensation-option voucher-option" th:href="@{/shopowner/orders/{oid}/complaints/{cid}/voucher(oid=${order.id},cid=${cp['id']})}">
+                                    <div>
+                                        <strong>🎟️ Phát hành voucher đền bù →</strong>
+                                        <small style="color: #7e22ce;">Chuyển sang màn hình thiết lập mệnh giá voucher, thời hạn dùng và tự động lưu thẳng vào ví voucher của khách hàng.</small>
+                                    </div>
+                                    <span class="option-link" style="color: #9333ea;">Vào màn hình tạo voucher »</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </section>
             </div>
 
-            <!-- CỘT PHẢI: THÔNG TIN GIAO HÀNG & THAO TÁC XÁC NHẬN -->
             <div class="grid-right">
-
-                <!-- Bảng điều khiển thao tác XÁC NHẬN (Hiển thị cho TẤT CẢ các loại thanh toán miễn là PENDING) -->
                 <div class="action-panel" th:if="${order.status == 'PENDING'}">
                     <h3>⚡ Thao tác xử lý đơn</h3>
-
                     <form method="post" th:action="@{/shopowner/orders/{id}/confirm(id=${order.id})}"
                           onsubmit="return confirm('Xác nhận chốt đơn này để chuẩn bị hàng?');" style="margin-bottom: 16px;">
                         <input type="hidden" name="token" th:value="${token}">
@@ -298,30 +284,25 @@
                             Xác nhận đơn hàng
                         </button>
                     </form>
-
                     <div class="reject-section">
                         <form method="post" th:action="@{/shopowner/orders/{id}/reject(id=${order.id})}"
                               onsubmit="return confirm('Bạn chắc chắn muốn từ chối và HỦY đơn hàng này?');">
                             <input type="hidden" name="token" th:value="${token}">
                             <input type="text" name="reason" class="reject-input" maxlength="1000" placeholder="Nhập lý do từ chối đơn hàng..." required>
-                            <button class="btn-reject" type="submit">Hủy & Từ chối đơn</button>
+                            <button class="btn-reject" type="submit">Hủy &amp; Từ chối đơn</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Bảng điều khiển thao tác BÀN GIAO SHIPPER (Chỉ hiện khi CONFIRMED) -->
                 <div class="action-panel" th:if="${order.status == 'CONFIRMED'}" style="background: #eff6ff; border-color: #bfdbfe;">
                     <h3 style="color: #1e3a8a;">📦 Bàn giao cho Vận chuyển</h3>
                     <p style="font-size: 13px; color: #475569; margin-bottom: 16px; line-height: 1.4;">
                         Hãy đóng gói kỹ kiện hàng. Sau khi bấm bàn giao, đơn hàng sẽ được gửi đến ứng dụng của Shipper để lấy hàng.
                     </p>
-
                     <form method="post" th:action="@{/shopowner/orders/{id}/handover(id=${order.id})}"
                           onsubmit="return confirm('Xác nhận đã đóng gói xong và gọi Shipper đến lấy hàng?');">
                         <input type="hidden" name="token" th:value="${token}">
-                        <button class="btn-confirm" type="submit" style="background: #2563eb;">
-                            🚚 Bàn giao cho Shipper
-                        </button>
+                        <button class="btn-confirm" type="submit" style="background: #2563eb;">🚚 Bàn giao cho Shipper</button>
                     </form>
                 </div>
 
@@ -330,15 +311,14 @@
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         Thông tin giao hàng
                     </h2>
-
                     <div class="info-list">
                         <div class="info-row">
                             <span class="info-label">Người nhận</span>
-                            <span class="info-value" th:text="${order.recipient_name} + ' - ' + ${order.recipient_phone}"></span>
+                            <span class="info-value" th:text="|${order.recipient_name} - ${order.recipient_phone}|"></span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Địa chỉ giao hàng</span>
-                            <span class="info-value" th:text="${order.delivery_address + ', ' + order.delivery_ward_name + ', ' + order.delivery_province_name}"></span>
+                            <span class="info-value" th:text="|${order.delivery_address}, ${order.delivery_ward_name}, ${order.delivery_province_name}|"></span>
                         </div>
                         <div class="info-row" th:if="${order.customer_note != null and !order.customer_note.isEmpty()}">
                             <span class="info-label">Ghi chú của khách</span>
@@ -356,7 +336,6 @@
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Tổng quan tài chính
                     </h2>
-
                     <div class="cost-list">
                         <div class="cost-row">
                             <span>Tổng tiền hàng</span>
@@ -370,13 +349,10 @@
                             <span>Phí vận chuyển</span>
                             <span th:text="${#numbers.formatInteger(order.shipping_fee,1,'COMMA') + ' ₫'}"></span>
                         </div>
-
                         <div class="cost-row total">
                             <span>Khách thanh toán</span>
                             <span th:text="${#numbers.formatInteger(order.total_amount,1,'COMMA') + ' ₫'}"></span>
                         </div>
-
-                        <!-- Phần khấu trừ đền bù khiếu nại (Nếu có) -->
                         <th:block th:if="${order.shop_revenue_amount != null and order.shop_revenue_amount < order.subtotal}">
                             <div class="cost-row deduction" style="margin-top: 12px;">
                                 <span>Khấu trừ đền bù khiếu nại</span>
@@ -393,39 +369,5 @@
         </div>
     </main>
 </div>
-
-<script>
-    function toggleShopDecisionFields(decision) {
-        var evidenceGroup = document.getElementById('shopEvidenceGroup');
-        var textarea = document.getElementById('shopResponseTextarea');
-        var label = document.getElementById('shopResponseLabel');
-        var btn = document.getElementById('shopSubmitBtn');
-        if (decision === 'REJECT') {
-            if (evidenceGroup) evidenceGroup.style.display = 'block';
-            if (textarea) {
-                textarea.required = true;
-                textarea.minLength = 5;
-                textarea.placeholder = 'Bắt buộc nhập lý do từ chối giải trình (tối thiểu 5 ký tự)...';
-            }
-            if (label) label.innerText = 'Lý do từ chối giải trình (bắt buộc) *:';
-            if (btn) {
-                btn.innerHTML = '✕ Từ chối & Chuyển CSKH';
-                btn.style.background = '#dc2626';
-            }
-        } else {
-            if (evidenceGroup) evidenceGroup.style.display = 'none';
-            if (textarea) {
-                textarea.required = false;
-                textarea.removeAttribute('minlength');
-                textarea.placeholder = 'Nhập lời xin lỗi hoặc ghi chú gửi khách (tùy chọn)...';
-            }
-            if (label) label.innerText = 'Nội dung phản hồi tới khách:';
-            if (btn) {
-                btn.innerHTML = '✓ Đồng ý đền bù tiền';
-                btn.style.background = '#16a34a';
-            }
-        }
-    }
-</script>
 </body>
 </html>

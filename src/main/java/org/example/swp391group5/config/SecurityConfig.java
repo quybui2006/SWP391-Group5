@@ -27,8 +27,8 @@ public class SecurityConfig {
                         // Tài nguyên tĩnh công khai (CSS, JS, Ảnh, Data JSON)
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/data/**", "/uploads/**", "/favicon.ico").permitAll()
 
-                        // Các trang công khai cho khách xem sản phẩm, cửa hàng và giỏ hàng
-                        .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}").permitAll()
+                        // Các trang công khai cho khách xem sản phẩm, cửa hàng, giỏ hàng và tra cứu đơn
+                        .requestMatchers("/", "/home", "/search/**", "/product/**", "/cart/**", "/shops/**", "/shop/{id:[0-9]+}", "/order/tracking/**", "/order/tracking").permitAll()
 
                         // Luồng xác thực tài khoản: Đăng nhập, Đăng ký, OTP, Quên & Đặt lại mật khẩu
                         .requestMatchers("/login", "/register/**", "/forgot-password/**", "/reset-password/**").permitAll()
@@ -41,7 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/cs/**").hasAnyRole("CS_STAFF", "OPERATIONS_MANAGER", "ADMIN")
                         .requestMatchers("/delivery/**").hasAnyRole("DELIVERY_MANAGER", "ADMIN")
                         // Ops pages and approval APIs are restricted to Operations Manager.
-                        .requestMatchers("/operations/**").hasRole("OPERATIONS_MANAGER")
+                        .requestMatchers("/operations/**").hasAnyRole("OPERATIONS_MANAGER", "ADMIN")
 
 
                         // Các request còn lại

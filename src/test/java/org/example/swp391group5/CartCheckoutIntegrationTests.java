@@ -54,6 +54,7 @@ class CartCheckoutIntegrationTests {
                 .andExpect(status().isNotFound());
         assertEquals("CONFIRMED", shopOrders.detail(owner, id).get("status"));
         assertEquals(1, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions WHERE type='SALE' AND order_item_id IN (SELECT id FROM order_items WHERE order_id=?)", Integer.class, id));
         assertThrows(IllegalArgumentException.class, () -> shopOrders.confirmCod(owner, id));
         assertTrue(shopOrders.list(-1L).isEmpty());
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> shopOrders.detail(-1L, id));
@@ -64,7 +65,7 @@ class CartCheckoutIntegrationTests {
         jdbc.update("INSERT INTO provinces(code,name) VALUES ('P-CHECKOUT','Province checkout')");
         jdbc.update("INSERT INTO users(full_name,email) VALUES ('Checkout user','checkout@test.example')");
         long user = jdbc.queryForObject("SELECT id FROM users WHERE email='checkout@test.example'", Long.class);
-        jdbc.update("INSERT INTO shops(owner_id,name,phone,province_code,ward_name,address_detail,approval_status,operating_status) VALUES (?,?,?,?,?,?,?,?)", user, "Test shop", "0912345678", "P-CHECKOUT", "Ward", "Shop address", "APPROVED", "OPEN");
+        jdbc.update("INSERT INTO shops(owner_id,name,phone,province_code,ward_name,address_detail,approval_status,operating_status,payment_approval_status) VALUES (?,?,?,?,?,?,?,?,?)", user, "Test shop", "0912345678", "P-CHECKOUT", "Ward", "Shop address", "APPROVED", "OPEN", "APPROVED");
         long shop = jdbc.queryForObject("SELECT id FROM shops WHERE province_code='P-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO units(code,name) VALUES ('UNIT-CHECKOUT','kg')");
         long unit = jdbc.queryForObject("SELECT id FROM units WHERE code='UNIT-CHECKOUT'", Long.class);
@@ -82,6 +83,7 @@ class CartCheckoutIntegrationTests {
         long customer = seed();
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
+        jdbc.update("INSERT INTO customer_bank_accounts(user_id,bank_name,bank_account_no,bank_account_holder) VALUES (?,?,?,?)", customer, "Test Bank", "123456789", "CHECKOUT USER");
 
         cart.add(customer, variant, 1);
         String pendingCode = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null);
@@ -226,10 +228,12 @@ class CartCheckoutIntegrationTests {
         assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
         checkout.handleVnPayCallback(checkoutCode, true);
         checkout.handleVnPayCallback(checkoutCode, true);
-        assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("PENDING", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
         assertEquals("PAID", jdbc.queryForObject("SELECT payment_status FROM orders WHERE id=?", String.class, orderId));
-        assertThrows(IllegalArgumentException.class, () -> shopOrders.rejectCod(customer, orderId, "Không thể từ chối đơn online đã trả tiền"));
-        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+
+        shopOrders.confirmCod(customer, orderId);
+        assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
         assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
 
@@ -360,6 +364,7 @@ class CartCheckoutIntegrationTests {
     void checkoutAllowsAFirstOrderWithANewAddress() throws Exception {
         long user = seed();
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        jdbc.update("UPDATE shops SET payment_approval_status='APPROVED' WHERE owner_id=?", user);
         cart.add(user, variant, 1);
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("userId", user);
@@ -383,6 +388,8 @@ class CartCheckoutIntegrationTests {
     void checkoutSplitsMultipleShopsAndSavesNewDeliveryAddress() {
         long user = seed();
         long owner = seedOwnerForSecondShop();
+        jdbc.update("UPDATE shops SET payment_approval_status='APPROVED' WHERE owner_id=?", user);
+        jdbc.update("UPDATE shops SET payment_approval_status='APPROVED' WHERE owner_id=?", owner);
         long secondShop = jdbc.queryForObject("SELECT id FROM shops WHERE owner_id=?", Long.class, owner);
         long unit = jdbc.queryForObject("SELECT id FROM units WHERE code='UNIT-CHECKOUT'", Long.class);
         jdbc.update("INSERT INTO products(shop_id,name,batch_code,approval_status,selling_status) VALUES (?,?,?,'APPROVED','ACTIVE')", secondShop, "Pear", "BATCH-CHECKOUT-2");
@@ -407,7 +414,7 @@ class CartCheckoutIntegrationTests {
     private long seedOwnerForSecondShop() {
         jdbc.update("INSERT INTO users(full_name,email) VALUES ('Second shop owner','second-owner@test.example')");
         long owner = jdbc.queryForObject("SELECT id FROM users WHERE email='second-owner@test.example'", Long.class);
-        jdbc.update("INSERT INTO shops(owner_id,name,phone,province_code,ward_name,address_detail,approval_status,operating_status) VALUES (?,?,?,?,?,?,?,?)", owner, "Second shop", "0912345678", "P-CHECKOUT", "Ward", "Shop address", "APPROVED", "OPEN");
+        jdbc.update("INSERT INTO shops(owner_id,name,phone,province_code,ward_name,address_detail,approval_status,operating_status,payment_approval_status) VALUES (?,?,?,?,?,?,?,?,?)", owner, "Second shop", "0912345678", "P-CHECKOUT", "Ward", "Shop address", "APPROVED", "OPEN", "APPROVED");
         return owner;
     }
 

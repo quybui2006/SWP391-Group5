@@ -16,7 +16,6 @@ import service.customer.OrderCheckoutService;
 import service.vnpay.VNPayService;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -103,8 +102,8 @@ public class CheckoutController {
                 ? List.of()
                 : checkout.addresses(userId);
 
-        // Dùng địa chỉ được gửi kèm request nếu có; nếu chưa có thì dùng địa chỉ mặc định/đầu tiên.
-        // Đây chỉ là phí tạm tính ở giao diện; Service sẽ tự kiểm tra và tính lại khi đặt hàng.
+        // Ưu tiên tỉnh trong form, sau đó địa chỉId được chọn, cuối cùng địa chỉ mặc định/đầu tiên.
+        // Phí tại đây chỉ để hiển thị; Service tính lại khi đặt hàng.
         String customerProvinceCode = resolveCustomerProvinceCode(params, addresses);
 
         BigDecimal voucherDiscount = BigDecimal.ZERO;
@@ -124,9 +123,8 @@ public class CheckoutController {
             shop.put("selectedVoucherId", selectedVoucherId);
 
             if (selectedVoucherId != null) {
-                OrderCheckoutService.VoucherQuote quote = checkout.previewSavedVoucher(
-                        userId, shopId, selectedVoucherId, shopSubtotal
-                );
+                // Voucher được chọn bằng ID trong ví, không phải nhập mã code.
+                var quote = checkout.previewSavedVoucher(userId, shopId, selectedVoucherId, shopSubtotal);
                 shop.put("discount", quote.discount());
                 shop.put("voucherError", quote.error());
                 voucherDiscount = voucherDiscount.add(quote.discount());
@@ -189,6 +187,7 @@ public class CheckoutController {
                     throw new IllegalArgumentException("Bạn cần đăng nhập để sử dụng voucher đã lưu.");
                 }
 
+                // Service hiện tại nhận voucherCodes là tham số cuối; không nhận baseUrl.
                 OrderCheckoutService.GuestCheckoutResult guestResult = checkout.placeGuestOrder(
                         guest,
                         selectedVariantIds,
@@ -199,7 +198,7 @@ public class CheckoutController {
                         wardName,
                         addressDetail,
                         customerNote,
-                        Map.of()
+                        voucherCodes(params)
                 );
 
                 result = guestResult.checkout();
@@ -239,6 +238,8 @@ public class CheckoutController {
             model.addAttribute("checkoutCode", result.checkoutCode());
             model.addAttribute("guestAccessToken", session.getAttribute("guestOrderAccessToken"));
             model.addAttribute("orderCodes", String.join(", ", result.orderCodes()));
+            model.addAttribute("firstOrderCode", result.orderCodes().isEmpty() ? "" : result.orderCodes().get(0));
+            model.addAttribute("guest", userId == null);
             model.addAttribute("suggestedProducts", loadSuggestedProducts());
             return "customer/payment-result";
 
@@ -253,8 +254,8 @@ public class CheckoutController {
 
     /**
      * Phí ship được tính riêng cho từng shop:
-     * - Cùng tỉnh/thành: 14.000đ.
-     * - Khác tỉnh/thành hoặc chưa xác định được tỉnh: 30.000đ.
+     * Cùng tỉnh/thành: 14.000đ.
+     * Khác tỉnh/thành hoặc chưa xác định được tỉnh: 30.000đ.
      */
     private BigDecimal calculateShippingFee(String customerProvinceCode, String shopProvinceCode) {
         if (customerProvinceCode != null && !customerProvinceCode.isBlank()
@@ -318,11 +319,31 @@ public class CheckoutController {
                         ids.put(shopId, voucherId);
                     }
                 } catch (NumberFormatException ignored) {
-                    // Bỏ qua tham số voucher sai định dạng; Service sẽ kiểm tra lại voucher hợp lệ.
+                    // Service sẽ kiểm tra lại voucher hợp lệ.
                 }
             }
         });
         return ids;
+    }
+
+    /** Guest không được sử dụng voucher trong ví; Service sẽ từ chối nếu map này có dữ liệu. */
+    private Map<Long, String> voucherCodes(MultiValueMap<String, String> params) {
+        Map<Long, String> codes = new HashMap<>();
+        if (params == null) return codes;
+        params.forEach((key, values) -> {
+            if (key.startsWith("voucherCode_")) {
+                try {
+                    String value = values == null || values.isEmpty() ? "" : values.get(0);
+                    if (!value.isBlank()) {
+                        Long shopId = Long.parseLong(key.substring("voucherCode_".length()));
+                        codes.put(shopId, value.trim());
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Bỏ qua shopId sai định dạng.
+                }
+            }
+        });
+        return codes;
     }
 
     @SuppressWarnings("unchecked")
@@ -435,7 +456,8 @@ public class CheckoutController {
     }
 
     private Long customerId(HttpSession session) {
-        if (!"CUSTOMER".equals(session.getAttribute("role"))) {
+        Object role = session.getAttribute("role");
+        if (!"CUSTOMER".equals(role) && !"ADMIN".equals(role)) {
             return null;
         }
         Object id = session.getAttribute("userId");
