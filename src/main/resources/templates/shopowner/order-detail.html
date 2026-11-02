@@ -64,7 +64,8 @@
                         <dd th:text="${#numbers.formatInteger(order.shop_revenue_amount,1,'COMMA') + ' ₫'}"></dd>
                     </div>
                 </dl>
-                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD'}">Đơn thanh toán trực tuyến sẽ được xác nhận tự động khi thanh toán thành công.</p>
+                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD' and order.payment_status == 'PAID'}">Đơn đã thanh toán trực tuyến và đang chờ Shop xác nhận. Shop có thể xác nhận hoặc từ chối đơn.</p>
+                <p class="order-notice" th:if="${order.status == 'PENDING' and order.payment_method != 'COD' and order.payment_status == 'UNPAID'}">Đơn thanh toán trực tuyến đang chờ khách thanh toán.</p>
                 <p class="order-notice" th:if="${order.status == 'CONFIRMED'}">Đơn đã được xác nhận và chuyển sang bước giao hàng.</p>
             </section>
         </div>
