@@ -1,4 +1,4 @@
-CREATE TABLE inventory_batches (
+CREATE TABLE IF NOT EXISTS inventory_batches (
     id BIGINT NOT NULL AUTO_INCREMENT,
     inventory_id BIGINT NOT NULL,
     batch_code VARCHAR(40) NULL,
@@ -7,24 +7,22 @@ CREATE TABLE inventory_batches (
     reserved_quantity INT NOT NULL DEFAULT 0,
     available_quantity INT GENERATED ALWAYS AS (quantity_on_hand - reserved_quantity) STORED,
     received_at DATETIME(3) NOT NULL,
-    expires_at DATE NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     note VARCHAR(1000) NULL,
     created_by BIGINT NOT NULL,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (id),
     UNIQUE KEY UX_inventory_batches_code (batch_code),
-    KEY IX_inventory_batches_fifo (inventory_id, expires_at, received_at, id),
+    KEY IX_inventory_batches_fifo_received (inventory_id, received_at, id),
     CONSTRAINT FK_inventory_batches_inventory FOREIGN KEY (inventory_id) REFERENCES variant_inventory(id),
     CONSTRAINT FK_inventory_batches_creator FOREIGN KEY (created_by) REFERENCES users(id),
     CONSTRAINT CK_inventory_batches_received CHECK (received_quantity > 0),
     CONSTRAINT CK_inventory_batches_on_hand CHECK (quantity_on_hand >= 0),
     CONSTRAINT CK_inventory_batches_reserved CHECK (reserved_quantity >= 0 AND reserved_quantity <= quantity_on_hand),
-    CONSTRAINT CK_inventory_batches_dates CHECK (expires_at IS NULL OR expires_at >= DATE(received_at)),
     CONSTRAINT CK_inventory_batches_status CHECK (status IN ('ACTIVE', 'CLOSED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE order_item_batch_allocations (
+CREATE TABLE IF NOT EXISTS order_item_batch_allocations (
     id BIGINT NOT NULL AUTO_INCREMENT,
     order_item_id BIGINT NOT NULL,
     batch_id BIGINT NOT NULL,
@@ -41,7 +39,7 @@ CREATE TABLE order_item_batch_allocations (
     CONSTRAINT CK_batch_allocations_status CHECK (status IN ('RESERVED', 'CONSUMED', 'RELEASED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE inventory_batch_transactions (
+CREATE TABLE IF NOT EXISTS inventory_batch_transactions (
     id BIGINT NOT NULL AUTO_INCREMENT,
     batch_id BIGINT NOT NULL,
     order_item_id BIGINT NULL,
@@ -75,23 +73,76 @@ CREATE TABLE inventory_batch_transactions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO inventory_batches (inventory_id, batch_code, received_quantity, quantity_on_hand, reserved_quantity,
-                               received_at, expires_at, status, note, created_by, created_at)
+                               received_at, status, note, created_by, created_at)
 SELECT vi.id, CONCAT('LEGACY-', LPAD(vi.id, 8, '0')), GREATEST(vi.quantity_on_hand, 1), vi.quantity_on_hand,
-       vi.reserved_quantity, vi.created_at, NULL, IF(vi.quantity_on_hand = 0, 'CLOSED', 'ACTIVE'),
+       vi.reserved_quantity, vi.created_at, IF(vi.quantity_on_hand = 0, 'CLOSED', 'ACTIVE'),
        'Tồn kho chuyển đổi từ dữ liệu cũ', vi.created_by, vi.created_at
-FROM variant_inventory vi;
+FROM variant_inventory vi
+WHERE NOT EXISTS (SELECT 1 FROM inventory_batches existing WHERE existing.inventory_id = vi.id);
+
+-- Older databases may already have the optional expiry field; remove it without changing batch history.
+SET @expiry_check = (
+    SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'inventory_batches'
+      AND CONSTRAINT_TYPE = 'CHECK' AND CONSTRAINT_NAME = 'CK_inventory_batches_dates'
+    LIMIT 1
+);
+SET @drop_expiry_check = IF(@expiry_check IS NULL, 'SELECT 1', 'ALTER TABLE inventory_batches DROP CHECK CK_inventory_batches_dates');
+PREPARE drop_expiry_check_stmt FROM @drop_expiry_check;
+EXECUTE drop_expiry_check_stmt;
+DEALLOCATE PREPARE drop_expiry_check_stmt;
+
+SET @fifo_index = (
+    SELECT INDEX_NAME FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inventory_batches' AND INDEX_NAME = 'IX_inventory_batches_fifo_received'
+    LIMIT 1
+);
+SET @add_fifo_index = IF(@fifo_index IS NULL,
+    'CREATE INDEX IX_inventory_batches_fifo_received ON inventory_batches (inventory_id, received_at, id)',
+    'SELECT 1');
+PREPARE add_fifo_index_stmt FROM @add_fifo_index;
+EXECUTE add_fifo_index_stmt;
+DEALLOCATE PREPARE add_fifo_index_stmt;
+
+SET @legacy_fifo_index = (
+    SELECT INDEX_NAME FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inventory_batches' AND INDEX_NAME = 'IX_inventory_batches_fifo'
+    LIMIT 1
+);
+SET @drop_legacy_fifo_index = IF(@legacy_fifo_index IS NULL, 'SELECT 1', 'ALTER TABLE inventory_batches DROP INDEX IX_inventory_batches_fifo');
+PREPARE drop_legacy_fifo_index_stmt FROM @drop_legacy_fifo_index;
+EXECUTE drop_legacy_fifo_index_stmt;
+DEALLOCATE PREPARE drop_legacy_fifo_index_stmt;
+
+SET @expiry_column = (
+    SELECT COLUMN_NAME FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inventory_batches' AND COLUMN_NAME = 'expires_at'
+    LIMIT 1
+);
+SET @drop_expiry_column = IF(@expiry_column IS NULL, 'SELECT 1', 'ALTER TABLE inventory_batches DROP COLUMN expires_at');
+PREPARE drop_expiry_column_stmt FROM @drop_expiry_column;
+EXECUTE drop_expiry_column_stmt;
+DEALLOCATE PREPARE drop_expiry_column_stmt;
 
 INSERT INTO inventory_batch_transactions (batch_id, type, on_hand_delta, reserved_delta, on_hand_after,
                                          reserved_after, event_key, reason, created_by, created_at)
 SELECT b.id, 'OPENING', b.quantity_on_hand, b.reserved_quantity, b.quantity_on_hand, b.reserved_quantity,
        CONCAT('opening-', b.id), 'Chuyển tồn kho hiện có sang quản lý theo batch', b.created_by, b.created_at
-FROM inventory_batches b;
+FROM inventory_batches b
+WHERE NOT EXISTS (
+    SELECT 1 FROM inventory_batch_transactions existing
+    WHERE existing.event_key = CONCAT('opening-', b.id)
+);
 
 INSERT INTO order_item_batch_allocations (order_item_id, batch_id, quantity, status)
 SELECT oi.id, b.id, oi.quantity, 'RESERVED'
 FROM order_items oi
 JOIN inventory_batches b ON b.inventory_id = oi.inventory_id
-WHERE oi.allocation_status = 'RESERVED';
+WHERE oi.allocation_status = 'RESERVED'
+  AND NOT EXISTS (
+      SELECT 1 FROM order_item_batch_allocations existing
+      WHERE existing.order_item_id = oi.id AND existing.batch_id = b.id
+  );
 
 INSERT INTO inventory_batch_transactions (batch_id, order_item_id, type, on_hand_delta, reserved_delta,
                                          on_hand_after, reserved_after, event_key, reason, created_at)
@@ -100,4 +151,8 @@ SELECT b.id, oi.id, 'RESERVE', 0, oi.quantity, b.quantity_on_hand, b.reserved_qu
 FROM order_items oi
 JOIN orders o ON o.id = oi.order_id
 JOIN inventory_batches b ON b.inventory_id = oi.inventory_id
-WHERE oi.allocation_status = 'RESERVED';
+WHERE oi.allocation_status = 'RESERVED'
+  AND NOT EXISTS (
+      SELECT 1 FROM inventory_batch_transactions existing
+      WHERE existing.event_key = CONCAT('legacy-reserve-', oi.id)
+  );
