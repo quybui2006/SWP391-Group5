@@ -6,6 +6,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
+import service.login.EmailService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.PreparedStatement;
@@ -23,7 +24,17 @@ public class OrderCheckoutService {
     private static final BigDecimal SHIPPING_FEE = new BigDecimal("20000");
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
-    public OrderCheckoutService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final EmailService emailService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public OrderCheckoutService(JdbcTemplate jdbc, EmailService emailService) {
+        this.jdbc = jdbc;
+        this.emailService = emailService;
+    }
+
+    public OrderCheckoutService(JdbcTemplate jdbc) {
+        this(jdbc, null);
+    }
 
     public List<Map<String, Object>> items(Long userId, List<Long> variantIds) {
         if (variantIds == null || variantIds.isEmpty()) return List.of();
@@ -349,6 +360,14 @@ public class OrderCheckoutService {
                                                 String recipientName, String recipientPhone, String provinceCode,
                                                 String wardName, String addressDetail, String note,
                                                 Map<Long, String> voucherCodes) {
+        return placeGuestOrder(guestCart, variantIds, email, recipientName, recipientPhone, provinceCode, wardName, addressDetail, note, voucherCodes, null);
+    }
+
+    @Transactional
+    public GuestCheckoutResult placeGuestOrder(Map<Long, Integer> guestCart, List<Long> variantIds, String email,
+                                                String recipientName, String recipientPhone, String provinceCode,
+                                                String wardName, String addressDetail, String note,
+                                                Map<Long, String> voucherCodes, String baseUrl) {
         if (guestCart == null || variantIds == null || variantIds.isEmpty()) throw new IllegalArgumentException("Chưa chọn sản phẩm để đặt hàng.");
         String contactEmail = required(email, 254, "Email").toLowerCase(java.util.Locale.ROOT);
         if (!contactEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) throw new IllegalArgumentException("Email không hợp lệ.");
@@ -422,6 +441,12 @@ public class OrderCheckoutService {
                         orderId, shopId, variantId, inventoryId, line.get("promotion_id"), line.get("product_name"), line.get("variant_name"), line.get("sku"),
                         line.get("image_url"), line.get("unit_name"), quantity, line.get("original_price"), price, price.multiply(BigDecimal.valueOf(quantity)));
             }
+        }
+                if (emailService != null && contactEmail != null && !contactEmail.isBlank()) {
+            String fullAddress = detail + ", " + ward + ", " + province.get("name");
+            String defaultBaseUrl = (baseUrl != null && !baseUrl.isBlank()) ? baseUrl : "http://localhost:8080";
+            String trackingUrl = defaultBaseUrl + "/order/tracking?code=" + (orderCodes.isEmpty() ? "" : orderCodes.get(0));
+            emailService.sendOrderConfirmationEmail(contactEmail, name, orderCodes, fullAddress, phone, total, lines, trackingUrl);
         }
         return new GuestCheckoutResult(new CheckoutResult(checkoutCode, total, orderCodes, "COD"), accessToken);
     }

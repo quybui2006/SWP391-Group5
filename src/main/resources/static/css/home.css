@@ -1,17 +1,19 @@
+@import url('/css/design-system.css');
+
 :root {
-    --green: #2f8f46;
-    --green-dark: #176b30;
-    --green-light: #eaf7ed;
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-light: #f0fdf4;
 
-    --ink: #17221a;
-    --muted: #6e786f;
+    --ink: #0f172a;
+    --muted: #64748b;
 
-    --line: #e8ece8;
+    --line: #e2e8f0;
 
-    --bg: #fbfcfa;
+    --bg: #f8fafc;
     --white: #ffffff;
 
-    --shadow: 0 18px 45px rgba(24, 57, 30, 0.09);
+    --shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
 }
 
 
@@ -1638,3 +1640,103 @@ input {
 /* Promotion prices */
 .price-old { color: #7a8580; text-decoration: line-through; font-size: 0.85em; margin-right: 6px; }
 .price-promotion { color: #d62828 !important; }
+
+
+/* ================= MODERN ENHANCEMENTS (DESIGN SYSTEM INTEGRATION) ================= */
+.brand-mark {
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28) !important;
+    transition: transform var(--ff-transition-fast) !important;
+}
+
+.brand:hover .brand-mark {
+    transform: scale(1.06);
+}
+
+.icon-btn {
+    transition: all var(--ff-transition-fast) !important;
+}
+
+.icon-btn:hover {
+    border-color: var(--ff-primary) !important;
+    color: var(--ff-primary) !important;
+    transform: translateY(-1.5px);
+    box-shadow: var(--ff-shadow-sm) !important;
+}
+
+.primary-btn {
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35) !important;
+    transition: all var(--ff-transition-fast) !important;
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45) !important;
+}
+
+.secondary-btn {
+    transition: all var(--ff-transition-fast) !important;
+}
+
+.secondary-btn:hover {
+    transform: translateY(-1px);
+    background: #e2e8f0 !important;
+}
+
+.login-btn {
+    border-color: var(--ff-primary) !important;
+    color: var(--ff-primary) !important;
+}
+
+.login-btn:hover {
+    background: var(--ff-primary-light) !important;
+    transform: translateY(-1px);
+}
+
+.register-btn {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3) !important;
+    transition: all var(--ff-transition-fast) !important;
+}
+
+.register-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4) !important;
+}
+
+.user-avatar {
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35) !important;
+}
+
+.user-dropdown {
+    border-radius: var(--ff-radius-lg) !important;
+    border: 1px solid var(--ff-border) !important;
+    box-shadow: var(--ff-shadow-xl) !important;
+}
+
+/* Category & Product Cards enhancement */
+.category-card {
+    border-radius: var(--ff-radius-lg) !important;
+    border: 1px solid var(--ff-border) !important;
+    transition: all var(--ff-transition-normal) !important;
+}
+
+.category-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: var(--ff-primary) !important;
+    box-shadow: var(--ff-shadow-md) !important;
+}
+
+.product-card {
+    border-radius: var(--ff-radius-lg) !important;
+    border: 1px solid var(--ff-border) !important;
+    box-shadow: var(--ff-shadow-sm) !important;
+    transition: all var(--ff-transition-normal) !important;
+}
+
+.product-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: var(--ff-shadow-lg) !important;
+    border-color: #cbd5e1 !important;
+}

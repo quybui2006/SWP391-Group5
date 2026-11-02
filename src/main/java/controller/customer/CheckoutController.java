@@ -112,9 +112,12 @@ public class CheckoutController {
             if (userId == null) {
                 if ("VNPAY".equalsIgnoreCase(paymentMethod)) throw new IllegalArgumentException("Thanh toán online hiện yêu cầu đăng nhập. Guest có thể đặt COD.");
                 Map<Long, Integer> guest = guestCart(session);
+                String baseUrl = request.getScheme() + "://" + request.getServerName() +
+                        (request.getServerPort() == 80 || request.getServerPort() == 443 ? "" : ":" + request.getServerPort()) +
+                        request.getContextPath();
                 var guestResult = checkout.placeGuestOrder(guest, selectedVariantIds,
                         params.getFirst("guestEmail"), recipientName, recipientPhone, provinceCode,
-                        wardName, addressDetail, customerNote, voucherCodes(params));
+                        wardName, addressDetail, customerNote, voucherCodes(params), baseUrl);
                 result = guestResult.checkout();
                 selectedVariantIds.forEach(guest::remove);
                 session.setAttribute("guestCart", guest);
@@ -139,6 +142,8 @@ public class CheckoutController {
             model.addAttribute("checkoutCode", result.checkoutCode());
             model.addAttribute("guestAccessToken", session.getAttribute("guestOrderAccessToken"));
             model.addAttribute("orderCodes", String.join(", ", result.orderCodes()));
+            model.addAttribute("firstOrderCode", result.orderCodes().isEmpty() ? "" : result.orderCodes().get(0));
+            model.addAttribute("guest", userId == null);
             model.addAttribute("suggestedProducts", loadSuggestedProducts());
             return "customer/payment-result";
 
