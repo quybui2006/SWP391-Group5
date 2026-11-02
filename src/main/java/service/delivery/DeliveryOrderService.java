@@ -34,7 +34,7 @@ public class DeliveryOrderService {
     }
 
     /**
-     * Chỉ lấy các đơn hàng mà Shop Owner ĐÃ XÁC NHẬN hoặc ĐÃ BÀN GIAO (không lấy đơn PENDING chưa duyệt)
+     * Chỉ lấy các đơn hàng mà Shop Owner ĐÃ BÀN GIAO (không lấy đơn PENDING chưa duyệt)
      */
     public List<Map<String, Object>> getDeliveryOrders() {
         String sql = """
@@ -42,7 +42,7 @@ public class DeliveryOrderService {
                    s.name AS joined_shop_name
             FROM orders o
             LEFT JOIN shops s ON s.id = o.shop_id
-            WHERE o.status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPING', 'DELIVERED', 'COMPLETED')
+            WHERE o.status IN ('PREPARING', 'SHIPPING', 'DELIVERED', 'COMPLETED')
                OR (o.status = 'CANCELLED' AND o.delivery_status IN ('IN_TRANSIT', 'FAILED'))
             ORDER BY o.id DESC
         """;
@@ -82,12 +82,12 @@ public class DeliveryOrderService {
         String sql = """
             SELECT 
                 COUNT(*) AS total_all,
-                SUM(CASE WHEN status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP') THEN 1 ELSE 0 END) AS waiting_pickup,
+                SUM(CASE WHEN status = 'PREPARING' THEN 1 ELSE 0 END) AS waiting_pickup,
                 SUM(CASE WHEN status = 'SHIPPING' THEN 1 ELSE 0 END) AS shipping_count,
                 SUM(CASE WHEN status IN ('DELIVERED', 'COMPLETED') THEN 1 ELSE 0 END) AS delivered_count,
                 SUM(CASE WHEN status = 'CANCELLED' AND delivery_status IN ('IN_TRANSIT', 'FAILED') THEN 1 ELSE 0 END) AS cancelled_count
             FROM orders
-            WHERE status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPING', 'DELIVERED', 'COMPLETED')
+            WHERE status IN ('PREPARING', 'SHIPPING', 'DELIVERED', 'COMPLETED')
                OR (status = 'CANCELLED' AND delivery_status IN ('IN_TRANSIT', 'FAILED'))
         """;
         return jdbc.queryForMap(sql);
@@ -144,7 +144,7 @@ public class DeliveryOrderService {
 
         String rawStatus = firstNonNullStr(row, "status", "order_status", "CONFIRMED").toUpperCase(Locale.ROOT);
         String uiStatus = switch (rawStatus) {
-            case "CONFIRMED", "PROCESSING", "READY_TO_SHIP", "PACKING" -> "PROCESSING";
+            case "CONFIRMED", "PROCESSING", "PREPARING", "PACKING" -> "PROCESSING";
             case "SHIPPING", "DELIVERING", "IN_TRANSIT" -> "SHIPPING";
             case "COMPLETED", "DELIVERED", "SUCCESS" -> "COMPLETED";
             case "CANCELLED", "CANCELED", "FAILED", "RETURNED" -> "CANCELLED";
@@ -208,7 +208,7 @@ public class DeliveryOrderService {
         String deliveryNote = firstNonNullStr(row, "delivery_note", "shipping_note", "");
 
         ord.put("order_code", firstNonNullStr(row, "order_code", "code", String.valueOf(orderId)));
-        ord.put("tracking_code", firstNonNullStr(row, "delivery_tracking_code", "tracking_code", "DL-" + orderId));
+        ord.put("tracking_code", firstNonNullStr(row, "delivery_code", "tracking_code", "DL-" + orderId));
         ord.put("recipient_name", recipientName);
         ord.put("recipient_phone", recipientPhone);
         ord.put("full_address", fullAddress);
@@ -263,8 +263,8 @@ public class DeliveryOrderService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         String target = newStatus == null ? "" : newStatus.trim().toUpperCase(Locale.ROOT);
 
-        // 1. SHOP BÀN GIAO CHO VẬN CHUYỂN (READY_TO_SHIP)
-        if ("READY_TO_SHIP".equals(target)) {
+        // 1. SHOP BÀN GIAO CHO VẬN CHUYỂN (PREPARING)
+        if ("PREPARING".equals(target)) {
             if (!"CONFIRMED".equals(currentStatus) && !"PROCESSING".equals(currentStatus)) {
                 throw new IllegalStateException("Chỉ bàn giao đơn hàng đã được Shop xác nhận.");
             }
@@ -272,22 +272,22 @@ public class DeliveryOrderService {
             try {
                 jdbc.update("""
                     UPDATE orders 
-                    SET status = 'READY_TO_SHIP', 
-                        delivery_status = 'WAITING_PICKUP', 
-                        delivery_tracking_code = COALESCE(delivery_tracking_code, ?),
+                    SET status = 'PREPARING', 
+                        delivery_status = 'READY', 
+                        delivery_code = COALESCE(delivery_code, ?),
                         delivery_updated_at = ? 
                     WHERE id = ?
                 """, trackingCode, now, orderId);
             } catch (Exception e) {
-                jdbc.update("UPDATE orders SET status = 'READY_TO_SHIP', delivery_status = 'WAITING_PICKUP', delivery_updated_at = ? WHERE id = ?", now, orderId);
+                jdbc.update("UPDATE orders SET status = 'PREPARING', delivery_status = 'READY', delivery_updated_at = ? WHERE id = ?", now, orderId);
             }
             return;
         }
 
         // 2. SHIPPER NHẬN HÀNG & BẮT ĐẦU GIAO (SHIPPING)
         if ("SHIPPING".equals(target)) {
-            if (!"CONFIRMED".equals(currentStatus) && !"PROCESSING".equals(currentStatus) && !"READY_TO_SHIP".equals(currentStatus)) {
-                throw new IllegalStateException("Chỉ nhận đơn Shop Owner đã xác nhận để bắt đầu giao.");
+            if (!"CONFIRMED".equals(currentStatus) && !"PREPARING".equals(currentStatus)) {
+                throw new IllegalStateException("Chỉ nhận đơn Shop Owner đã bàn giao để bắt đầu giao.");
             }
             jdbc.update("""
                 UPDATE orders 
@@ -295,7 +295,7 @@ public class DeliveryOrderService {
                     delivery_status = 'IN_TRANSIT',
                     shipped_at = ?,
                     delivery_updated_at = ? 
-                WHERE id = ? AND status IN ('CONFIRMED', 'PROCESSING', 'READY_TO_SHIP')
+                WHERE id = ? AND status IN ('CONFIRMED', 'PREPARING')
             """, now, now, orderId);
             return;
         }
@@ -348,7 +348,7 @@ public class DeliveryOrderService {
                     delivery_updated_at = ?,
                     cancelled_at = ?,
                     cancellation_reason = ? 
-                WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PROCESSING', 'READY_TO_SHIP')
+                WHERE id = ? AND status IN ('CONFIRMED', 'SHIPPING', 'PREPARING')
             """, reason, now, now, reason, orderId);
 
             jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);

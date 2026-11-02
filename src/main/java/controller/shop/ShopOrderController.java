@@ -1,6 +1,7 @@
 package controller.shop;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.http.HttpHeaders;
@@ -20,9 +21,18 @@ public class ShopOrderController {
     private final ShopOrderService orders;
     private final ShopOrderExcelExporter excelExporter;
     private final ComplaintService complaintService;
-    public ShopOrderController(CurrentUserProvider currentUser, ShopOrderService orders, ShopOrderExcelExporter excelExporter, ComplaintService complaintService) {
-        this.currentUser = currentUser; this.orders = orders; this.excelExporter = excelExporter; this.complaintService = complaintService;
+    private final JdbcTemplate jdbc; // Đã thêm JdbcTemplate để xử lý bàn giao vận chuyển
+
+    public ShopOrderController(CurrentUserProvider currentUser, ShopOrderService orders,
+                               ShopOrderExcelExporter excelExporter, ComplaintService complaintService,
+                               JdbcTemplate jdbc) {
+        this.currentUser = currentUser;
+        this.orders = orders;
+        this.excelExporter = excelExporter;
+        this.complaintService = complaintService;
+        this.jdbc = jdbc;
     }
+
     @GetMapping("/shopowner/orders")
     public String orders(@RequestParam(value = "filter", required = false) String filter,
                          HttpServletRequest request, Model model) {
@@ -102,7 +112,7 @@ public class ShopOrderController {
             redirect.addFlashAttribute("message", "Đã xác nhận đơn hàng và trừ tồn kho thành công.");
         }
         catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("message", ex.getMessage());
+            redirect.addFlashAttribute("error", ex.getMessage()); // Chuyển thành error để hiển thị màu đỏ
         }
         return "redirect:/shopowner/orders/" + id;
     }
@@ -120,8 +130,50 @@ public class ShopOrderController {
             redirect.addFlashAttribute("message", "Đã từ chối đơn hàng thành công.");
         }
         catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("message", ex.getMessage());
+            redirect.addFlashAttribute("error", ex.getMessage());
         }
+        return "redirect:/shopowner/orders/" + id;
+    }
+
+    // --- API MỚI: BÀN GIAO ĐƠN HÀNG CHO SHIPPER (Đã khớp 100% với Database) ---
+    @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{id}/handover")
+    public String handoverOrder(@org.springframework.web.bind.annotation.PathVariable Long id,
+                                @RequestParam(required=false) String token,
+                                HttpServletRequest request, org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
+        Long owner = currentUser.requireUserId(request);
+        if (token == null || !token.equals(request.getSession(false).getAttribute("shopOrderToken"))) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            Integer count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM orders WHERE id = ? AND shop_id = (SELECT id FROM shops WHERE owner_id = ?)",
+                    Integer.class, id, owner
+            );
+            if (count == null || count == 0) {
+                throw new IllegalArgumentException("Đơn hàng không tồn tại hoặc không thuộc quyền quản lý của bạn.");
+            }
+
+            // Sửa lại cho khớp với Check Constraint của DB: Dùng PREPARING và READY
+            int updatedRows = jdbc.update("""
+                UPDATE orders 
+                SET status = 'PREPARING', 
+                    delivery_status = 'READY',
+                    delivery_updated_at = NOW(),
+                    updated_at = NOW() 
+                WHERE id = ? AND status IN ('CONFIRMED', 'PENDING')
+            """, id);
+
+            if (updatedRows > 0) {
+                redirect.addFlashAttribute("message", "Đã đóng gói và bàn giao đơn hàng cho Shipper thành công!");
+            } else {
+                redirect.addFlashAttribute("error", "Đơn hàng chưa được xác nhận hoặc đã được bàn giao trước đó.");
+            }
+        }
+        catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Lỗi khi bàn giao đơn hàng: " + ex.getMessage());
+        }
+
         return "redirect:/shopowner/orders/" + id;
     }
 }

@@ -16,7 +16,8 @@ import java.time.ZoneId;
 
 @Service
 public class OrderCheckoutService {
-    private static final BigDecimal SHIPPING_FEE = new BigDecimal("20000");
+    private static final BigDecimal INTRA_PROVINCE_SHIPPING_FEE = new BigDecimal("14000");
+    private static final BigDecimal INTER_PROVINCE_SHIPPING_FEE = new BigDecimal("30000");
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final JdbcTemplate jdbc;
@@ -207,7 +208,7 @@ public class OrderCheckoutService {
         return jdbc.queryForList("""
             SELECT w.code, w.name
             FROM wards w
-            JOIN provinces p ON p.id = w.province_id
+            JOIN provinces p ON p.code = w.province_code
             WHERE p.code = ?
               AND p.is_active = 1
               AND w.is_active = 1
@@ -223,7 +224,7 @@ public class OrderCheckoutService {
         Integer count = jdbc.queryForObject("""
             SELECT COUNT(*)
             FROM wards w
-            JOIN provinces p ON p.id = w.province_id
+            JOIN provinces p ON p.code = w.province_code
             WHERE p.code = ?
               AND p.is_active = 1
               AND w.name = ?
@@ -232,6 +233,18 @@ public class OrderCheckoutService {
         if (count == null || count == 0) {
             throw new IllegalArgumentException("Phường/xã không thuộc tỉnh/thành phố đã chọn. Vui lòng chọn lại.");
         }
+    }
+
+    /**
+     * Tính phí vận chuyển riêng cho từng shop theo tỉnh của shop và khách hàng.
+     * Cùng tỉnh: 14.000đ; khác tỉnh: 30.000đ.
+     */
+    private BigDecimal calculateShippingFee(String shopProvinceCode, String customerProvinceCode) {
+        if (shopProvinceCode != null && customerProvinceCode != null
+                && shopProvinceCode.trim().equals(customerProvinceCode.trim())) {
+            return INTRA_PROVINCE_SHIPPING_FEE;
+        }
+        return INTER_PROVINCE_SHIPPING_FEE;
     }
 
     @Transactional
@@ -339,10 +352,19 @@ public class OrderCheckoutService {
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
                 line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
+        Map<Long, BigDecimal> shopShippingFees = new java.util.LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
+        String customerProvinceCode = (String) address.get("province_code");
+
         for (var entry : shopLines.entrySet()) {
+            Long shopId = entry.getKey();
             BigDecimal shopSubtotal = sumLines(entry.getValue());
-            Object selectedValue = voucherSelections == null ? null : voucherSelections.get(entry.getKey());
+
+            String shopProvinceCode = (String) entry.getValue().get(0).get("shop_province_code");
+            BigDecimal shippingFee = calculateShippingFee(shopProvinceCode, customerProvinceCode);
+            shopShippingFees.put(shopId, shippingFee);
+
+            Object selectedValue = voucherSelections == null ? null : voucherSelections.get(shopId);
             Long selectedVoucherId = null;
             if (selectedValue instanceof Number number) {
                 selectedVoucherId = number.longValue();
@@ -358,9 +380,9 @@ public class OrderCheckoutService {
 
             VoucherQuote quote = selectedVoucherId == null
                     ? new VoucherQuote(null, "", BigDecimal.ZERO, null)
-                    : quoteSavedVoucher(userId, entry.getKey(), selectedVoucherId, shopSubtotal, true);
-            voucherQuotes.put(entry.getKey(), quote);
-            total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
+                    : quoteSavedVoucher(userId, shopId, selectedVoucherId, shopSubtotal, true);
+            voucherQuotes.put(shopId, quote);
+            total = total.add(shopSubtotal.subtract(quote.discount()).add(shippingFee));
         }
 
         String checkoutCode = code("CK-");
@@ -376,10 +398,11 @@ public class OrderCheckoutService {
             List<Map<String, Object>> shopItems = shopEntry.getValue();
             BigDecimal shopSubtotal = sumLines(shopItems);
             VoucherQuote voucher = voucherQuotes.get(shopId);
-            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
+            BigDecimal shippingFee = shopShippingFees.get(shopId);
+            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(shippingFee);
             String orderCode = code("FF-");
 
-            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal, shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), method, method, code("DL-"));
+            Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, address.get("recipient_name"), address.get("recipient_phone"), address.get("province_code"), address.get("province_name"), address.get("ward_name"), address.get("address_detail"), shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, shippingFee, shopTotal, shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(), voucher.discount(), method, method, code("DL-"));
             countVoucherUse(voucher);
             orderCodes.add(orderCode);
 
@@ -439,7 +462,18 @@ public class OrderCheckoutService {
         String ward = required(wardName, 150, "Phường/xã");
         String detail = required(addressDetail, 500, "Địa chỉ cụ thể");
         if (!phone.matches("0[35789][0-9]{8}")) throw new IllegalArgumentException("Số điện thoại không hợp lệ.");
-        Map<String, Object> province = jdbc.queryForMap("SELECT code,name FROM provinces WHERE code=? AND is_active=1", provinceCode);
+        if (provinceCode == null || provinceCode.isBlank()) {
+            throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
+        }
+        Map<String, Object> province;
+        try {
+            province = jdbc.queryForMap(
+                    "SELECT code,name FROM provinces WHERE code=? AND is_active=1",
+                    provinceCode.trim()
+            );
+        } catch (org.springframework.dao.EmptyResultDataAccessException ex) {
+            throw new IllegalArgumentException("Hãy chọn tỉnh/thành hợp lệ.");
+        }
         validateWardForProvince(provinceCode, ward);
 
         List<Long> selected = variantIds.stream().distinct().filter(guestCart::containsKey).toList();
@@ -464,12 +498,26 @@ public class OrderCheckoutService {
         Map<Long, List<Map<String, Object>>> shopLines = lines.stream().collect(java.util.stream.Collectors.groupingBy(
                 line -> ((Number) line.get("shop_id")).longValue(), java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         Map<Long, VoucherQuote> voucherQuotes = new java.util.LinkedHashMap<>();
+        Map<Long, BigDecimal> shopShippingFees = new java.util.LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
+        String customerProvinceCode = String.valueOf(province.get("code"));
+
         for (var entry : shopLines.entrySet()) {
+            Long shopId = entry.getKey();
             BigDecimal shopSubtotal = sumLines(entry.getValue());
-            VoucherQuote quote = quoteVoucher(entry.getKey(), voucherCodes == null ? null : voucherCodes.get(entry.getKey()), shopSubtotal, true);
-            voucherQuotes.put(entry.getKey(), quote);
-            total = total.add(shopSubtotal.subtract(quote.discount()).add(SHIPPING_FEE));
+
+            String shopProvinceCode = (String) entry.getValue().get(0).get("shop_province_code");
+            BigDecimal shippingFee = calculateShippingFee(shopProvinceCode, customerProvinceCode);
+            shopShippingFees.put(shopId, shippingFee);
+
+            VoucherQuote quote = quoteVoucher(
+                    shopId,
+                    voucherCodes == null ? null : voucherCodes.get(shopId),
+                    shopSubtotal,
+                    true
+            );
+            voucherQuotes.put(shopId, quote);
+            total = total.add(shopSubtotal.subtract(quote.discount()).add(shippingFee));
         }
 
         String checkoutCode = code("CK-");
@@ -485,10 +533,11 @@ public class OrderCheckoutService {
             List<Map<String, Object>> shopItems = entry.getValue();
             BigDecimal shopSubtotal = sumLines(shopItems);
             VoucherQuote voucher = voucherQuotes.get(shopId);
-            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(SHIPPING_FEE);
+            BigDecimal shippingFee = shopShippingFees.get(shopId);
+            BigDecimal shopTotal = shopSubtotal.subtract(voucher.discount()).add(shippingFee);
             String orderCode = code("FF-");
             Long orderId = insertId(insertOrder, orderCode, checkoutId, shopId, name, phone, province.get("code"), province.get("name"), ward,
-                    detail, shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, SHIPPING_FEE, shopTotal,
+                    detail, shopItems.get(0).get("shop_province_code"), note, shopSubtotal, shopSubtotal, shippingFee, shopTotal,
                     shopSubtotal.subtract(voucher.discount()), voucher.voucherId(), voucher.voucherId() == null ? null : voucher.code(),
                     voucher.discount(), code("DL-"));
             countVoucherUse(voucher);

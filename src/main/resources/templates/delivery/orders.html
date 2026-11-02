@@ -30,7 +30,7 @@
             color: var(--text-dark);
         }
 
-        /* Navbar */
+
         .navbar {
             background: linear-gradient(135deg, #16803c 0%, #0f5c2b 100%);
             color: #ffffff;
@@ -545,7 +545,7 @@
     <div class="user-nav">
         <div class="manager-badge">
             <span>🚚</span>
-            <span th:text="${managerName}">Delivery Manager</span>
+            <span th:text="${managerName}">Delivery Staff</span>
         </div>
         <form th:action="@{/logout}" method="post" style="margin:0;">
             <button type="submit" class="btn-logout">Đăng xuất</button>

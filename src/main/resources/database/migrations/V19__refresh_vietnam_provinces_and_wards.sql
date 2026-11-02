@@ -1,7 +1,58 @@
+-- Flyway migration V20: activate the current 34-province/city directory for FreshFruit while preserving legacy FK rows.
+-- Base dataset: user-supplied ITExpressLocation script (34 province/city rows, 3,321 commune-level rows).
+-- Province codes use the current national 2-digit codes. The 2026 province-level changes are reflected in display names.
+-- Keep legacy province rows inactive; expose only the current 34 province/city rows.
+-- The 22 commune-to-ward renames (10 Dong Nai + 12 Bac Ninh) do not change the unit names, so the dropdown dataset is unchanged.
+-- Requires existing provinces table with columns: code, name, is_active.
 
 SET NAMES utf8mb4;
--- Keep historic province rows so old addresses/orders can still resolve their old province_code.
+
+-- Do not DELETE provinces: earlier migrations seed shops whose province_code
+-- references provinces.code. Keep those legacy codes for foreign-key integrity.
+-- They are deactivated so checkout only offers the current 34 province/city rows.
 UPDATE provinces SET is_active = 0;
+
+-- provinces.name is UNIQUE. Rename only legacy rows whose names collide with
+-- one of the new 34 display names, freeing those names for the current rows.
+-- province codes stay unchanged, so existing shop foreign keys remain valid.
+UPDATE provinces
+SET name = CONCAT(name, ' (mã cũ ', code, ')')
+WHERE name IN (
+               'Thành phố Hà Nội',
+               'Tỉnh Cao Bằng',
+               'Tỉnh Tuyên Quang',
+               'Tỉnh Điện Biên',
+               'Tỉnh Lai Châu',
+               'Tỉnh Sơn La',
+               'Tỉnh Lào Cai',
+               'Tỉnh Thái Nguyên',
+               'Tỉnh Lạng Sơn',
+               'Thành phố Quảng Ninh',
+               'Thành phố Bắc Ninh',
+               'Tỉnh Phú Thọ',
+               'Thành phố Hải Phòng',
+               'Tỉnh Hưng Yên',
+               'Tỉnh Ninh Bình',
+               'Tỉnh Thanh Hóa',
+               'Tỉnh Nghệ An',
+               'Tỉnh Hà Tĩnh',
+               'Tỉnh Quảng Trị',
+               'Thành phố Huế',
+               'Thành phố Đà Nẵng',
+               'Tỉnh Quảng Ngãi',
+               'Tỉnh Gia Lai',
+               'Tỉnh Khánh Hòa',
+               'Tỉnh Đắk Lắk',
+               'Tỉnh Lâm Đồng',
+               'Thành phố Đồng Nai',
+               'Thành phố Hồ Chí Minh',
+               'Tỉnh Tây Ninh',
+               'Tỉnh Đồng Tháp',
+               'Tỉnh Vĩnh Long',
+               'Tỉnh An Giang',
+               'Thành phố Cần Thơ',
+               'Tỉnh Cà Mau'
+    );
 
 -- Add/refresh the 34 current province/city choices.
 INSERT INTO provinces (code, name, is_active) VALUES
@@ -43,30 +94,23 @@ INSERT INTO provinces (code, name, is_active) VALUES
                          name = VALUES(name),
                          is_active = VALUES(is_active);
 
--- Keep the province_id relationship so it matches the earlier CheckoutService query design.
--- If wards was created earlier with province_id, this migration reuses that table.
-CREATE TABLE IF NOT EXISTS wards (
-                                     id BIGINT NOT NULL AUTO_INCREMENT,
-                                     code VARCHAR(30) NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    province_id BIGINT NOT NULL,
-    is_active TINYINT(1) NOT NULL DEFAULT 1,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_wards_code (code),
-    KEY idx_wards_province_active (province_id, is_active, name)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Store the province code directly because provinces.code is the key in this project.
+DROP TABLE IF EXISTS wards;
 
--- If wards existed from the earlier setup without a unique code index, add it once.
-SET @has_wards_code_unique = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'wards' AND column_name = 'code' AND non_unique = 0);
-SET @ddl = IF(@has_wards_code_unique = 0, 'ALTER TABLE wards ADD UNIQUE KEY uk_wards_code (code)', 'SELECT 1');
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+CREATE TABLE wards (
+                       id BIGINT NOT NULL AUTO_INCREMENT,
+                       code VARCHAR(30) NOT NULL,
+                       name VARCHAR(150) NOT NULL,
+                       province_code VARCHAR(10) NOT NULL,
+                       is_active TINYINT(1) NOT NULL DEFAULT 1,
+                       PRIMARY KEY (id),
+                       UNIQUE KEY uk_wards_code (code),
+                       KEY idx_wards_province_active (province_code, is_active, name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Import the 3,321 wards/communes. Province IDs are resolved from the current provinces.code rows.
--- This uses SELECT + UNION ALL so it works both with newly created and pre-existing province IDs.
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+-- Import wards/communes and associate each row with the current provinces.code value.
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '10105001' AS code, 'Hoàn Kiếm' AS name
          UNION ALL SELECT '10105002', 'Cửa Nam'
@@ -172,11 +216,11 @@ FROM (
          JOIN provinces AS p ON p.code = '01' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '10139101' AS code, 'Phú Cát' AS name
          UNION ALL SELECT '10137102', 'Hoài Đức'
@@ -208,11 +252,11 @@ FROM (
          JOIN provinces AS p ON p.code = '01' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '20301001' AS code, 'Thục Phán' AS name
          UNION ALL SELECT '20301002', 'Nùng Trí Cao'
@@ -274,11 +318,11 @@ FROM (
          JOIN provinces AS p ON p.code = '04' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '21113001' AS code, 'Thượng Lâm' AS name
          UNION ALL SELECT '21113002', 'Lâm Bình'
@@ -384,11 +428,11 @@ FROM (
          JOIN provinces AS p ON p.code = '08' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '20119101' AS code, 'Hùng An' AS name
          UNION ALL SELECT '20119102', 'Vĩnh Tuy'
@@ -418,11 +462,11 @@ FROM (
          JOIN provinces AS p ON p.code = '08' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '30101001' AS code, 'Mường Phăng' AS name
          UNION ALL SELECT '30101002', 'Điện Biên Phủ'
@@ -473,11 +517,11 @@ FROM (
          JOIN provinces AS p ON p.code = '11' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '30209001' AS code, 'Mường Kim' AS name
          UNION ALL SELECT '30209002', 'Khoen On'
@@ -521,11 +565,11 @@ FROM (
          JOIN provinces AS p ON p.code = '12' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '30301001' AS code, 'Tô Hiệu' AS name
          UNION ALL SELECT '30301002', 'Chiềng An'
@@ -606,11 +650,11 @@ FROM (
          JOIN provinces AS p ON p.code = '14' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '21309001' AS code, 'Khao Mang' AS name
          UNION ALL SELECT '21309002', 'Mù Cang Chải'
@@ -715,11 +759,11 @@ FROM (
          JOIN provinces AS p ON p.code = '15' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '21501001' AS code, 'Phan Đình Phùng' AS name
          UNION ALL SELECT '21501002', 'Linh Sơn'
@@ -817,11 +861,11 @@ FROM (
          JOIN provinces AS p ON p.code = '19' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '20903001' AS code, 'Thất Khê' AS name
          UNION ALL SELECT '20903002', 'Đoàn Kết'
@@ -892,11 +936,11 @@ FROM (
          JOIN provinces AS p ON p.code = '20' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '22521001' AS code, 'An Sinh' AS name
          UNION ALL SELECT '22521002', 'Đông Triều'
@@ -956,11 +1000,11 @@ FROM (
          JOIN provinces AS p ON p.code = '22' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '22113001' AS code, 'Đại Sơn' AS name
          UNION ALL SELECT '22113002', 'Sơn Động'
@@ -1065,11 +1109,11 @@ FROM (
          JOIN provinces AS p ON p.code = '24' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '21701001' AS code, 'Việt Trì' AS name
          UNION ALL SELECT '21701002', 'Nông Trang'
@@ -1175,11 +1219,11 @@ FROM (
          JOIN provinces AS p ON p.code = '25' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '21902101' AS code, 'Phúc Yên' AS name
          UNION ALL SELECT '21902102', 'Xuân Hòa'
@@ -1233,11 +1277,11 @@ FROM (
          JOIN provinces AS p ON p.code = '25' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '10311001' AS code, 'Thuỷ Nguyên' AS name
          UNION ALL SELECT '10311002', 'Thiên Hương'
@@ -1343,11 +1387,11 @@ FROM (
          JOIN provinces AS p ON p.code = '31' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '10723101' AS code, 'Ninh Giang' AS name
          UNION ALL SELECT '10723102', 'Vĩnh Lại'
@@ -1367,11 +1411,11 @@ FROM (
          JOIN provinces AS p ON p.code = '31' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '10901001' AS code, 'Phố Hiến' AS name
          UNION ALL SELECT '10901002', 'Sơn Nam'
@@ -1477,11 +1521,11 @@ FROM (
          JOIN provinces AS p ON p.code = '33' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '11511101' AS code, 'Tân Thuận' AS name
          UNION ALL SELECT '11511102', 'Thư Vũ'
@@ -1491,11 +1535,11 @@ FROM (
          JOIN provinces AS p ON p.code = '33' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '11707001' AS code, 'Gia Viễn' AS name
          UNION ALL SELECT '11707002', 'Đại Hoàng'
@@ -1601,11 +1645,11 @@ FROM (
          JOIN provinces AS p ON p.code = '37' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '11713101' AS code, 'Đông Hoa Lư' AS name
          UNION ALL SELECT '11703102', 'Tam Điệp'
@@ -1640,11 +1684,11 @@ FROM (
          JOIN provinces AS p ON p.code = '37' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '40101001' AS code, 'Hạc Thành' AS name
          UNION ALL SELECT '40101002', 'Quảng Phú'
@@ -1750,11 +1794,11 @@ FROM (
          JOIN provinces AS p ON p.code = '38' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '40109101' AS code, 'Thiên Phủ' AS name
          UNION ALL SELECT '40109102', 'Hiền Kiệt'
@@ -1826,11 +1870,11 @@ FROM (
          JOIN provinces AS p ON p.code = '38' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '40327001' AS code, 'Anh Sơn' AS name
          UNION ALL SELECT '40327002', 'Yên Xuân'
@@ -1936,11 +1980,11 @@ FROM (
          JOIN provinces AS p ON p.code = '40' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '40331101' AS code, 'Sơn Lâm' AS name
          UNION ALL SELECT '40331102', 'Hoa Quân'
@@ -1976,11 +2020,11 @@ FROM (
          JOIN provinces AS p ON p.code = '40' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '40520001' AS code, 'Sông Trí' AS name
          UNION ALL SELECT '40520002', 'Hải Ninh'
@@ -2055,11 +2099,11 @@ FROM (
          JOIN provinces AS p ON p.code = '42' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '40701001' AS code, 'Đồng Hới' AS name
          UNION ALL SELECT '40701002', 'Đồng Thuận'
@@ -2143,11 +2187,11 @@ FROM (
          JOIN provinces AS p ON p.code = '44' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '41109001' AS code, 'Thuận An' AS name
          UNION ALL SELECT '41119002', 'Hóa Châu'
@@ -2193,11 +2237,11 @@ FROM (
          JOIN provinces AS p ON p.code = '46' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '50101001' AS code, 'Hải Châu' AS name
          UNION ALL SELECT '50101002', 'Hoà Cường'
@@ -2297,11 +2341,11 @@ FROM (
          JOIN provinces AS p ON p.code = '48' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '50501001' AS code, 'Tịnh Khê' AS name
          UNION ALL SELECT '50501002', 'Trương Quang Trọng'
@@ -2403,11 +2447,11 @@ FROM (
          JOIN provinces AS p ON p.code = '51' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '50701001' AS code, 'Quy Nhơn' AS name
          UNION ALL SELECT '50701002', 'Quy Nhơn Đông'
@@ -2513,11 +2557,11 @@ FROM (
          JOIN provinces AS p ON p.code = '52' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '60329101' AS code, 'Phú Thiện' AS name
          UNION ALL SELECT '60329102', 'Chư A Thai'
@@ -2558,11 +2602,11 @@ FROM (
          JOIN provinces AS p ON p.code = '52' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '51101001' AS code, 'Nha Trang' AS name
          UNION ALL SELECT '51101002', 'Bắc Nha Trang'
@@ -2633,11 +2677,11 @@ FROM (
          JOIN provinces AS p ON p.code = '56' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '60501001' AS code, 'Hoà Phú' AS name
          UNION ALL SELECT '60501002', 'Buôn Ma Thuột'
@@ -2743,11 +2787,11 @@ FROM (
          JOIN provinces AS p ON p.code = '66' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '50903101' AS code, 'Xuân Phước' AS name
          UNION ALL SELECT '50903102', 'Đồng Xuân'
@@ -2755,11 +2799,11 @@ FROM (
          JOIN provinces AS p ON p.code = '66' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '70301001' AS code, 'Xuân Hương - Đà Lạt' AS name
          UNION ALL SELECT '70301002', 'Cam Ly - Đà Lạt'
@@ -2865,11 +2909,11 @@ FROM (
          JOIN provinces AS p ON p.code = '68' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '60603101' AS code, 'Cư Jút' AS name
          UNION ALL SELECT '60607102', 'Thuận An'
@@ -2899,11 +2943,11 @@ FROM (
          JOIN provinces AS p ON p.code = '68' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '71301001' AS code, 'Biên Hoà' AS name
          UNION ALL SELECT '71301002', 'Trấn Biên'
@@ -3004,11 +3048,11 @@ FROM (
          JOIN provinces AS p ON p.code = '75' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '71701001' AS code, 'Vũng Tàu' AS name
          UNION ALL SELECT '71701002', 'Tam Thắng'
@@ -3114,11 +3158,11 @@ FROM (
          JOIN provinces AS p ON p.code = '79' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '70134101' AS code, 'Bình Tân' AS name
          UNION ALL SELECT '70134102', 'Bình Trị Đông'
@@ -3192,11 +3236,11 @@ FROM (
          JOIN provinces AS p ON p.code = '79' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '80103001' AS code, 'Hưng Điền' AS name
          UNION ALL SELECT '80103002', 'Vĩnh Thạnh'
@@ -3298,11 +3342,11 @@ FROM (
          JOIN provinces AS p ON p.code = '80' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '80701001' AS code, 'Mỹ Tho' AS name
          UNION ALL SELECT '80701002', 'Đạo Thạnh'
@@ -3408,11 +3452,11 @@ FROM (
          JOIN provinces AS p ON p.code = '82' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '80321101' AS code, 'Tân Nhuận Đông' AS name
          UNION ALL SELECT '80321102', 'Tân Phú Trung'
@@ -3420,11 +3464,11 @@ FROM (
          JOIN provinces AS p ON p.code = '82' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '81701037' AS code, 'Trà Vinh' AS name
          UNION ALL SELECT '80905001', 'Cái Nhum'
@@ -3530,11 +3574,11 @@ FROM (
          JOIN provinces AS p ON p.code = '86' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '81115101' AS code, 'An Qui' AS name
          UNION ALL SELECT '81115102', 'Thạnh Hải'
@@ -3564,11 +3608,11 @@ FROM (
          JOIN provinces AS p ON p.code = '86' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '80501001' AS code, 'Mỹ Hoà Hưng' AS name
          UNION ALL SELECT '80501002', 'Long Xuyên'
@@ -3674,11 +3718,11 @@ FROM (
          JOIN provinces AS p ON p.code = '91' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '81321101' AS code, 'khu Phú Quốc' AS name
          UNION ALL SELECT '81321102', 'khu Thổ Châu'
@@ -3686,11 +3730,11 @@ FROM (
          JOIN provinces AS p ON p.code = '91' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '81519001' AS code, 'Ninh Kiều' AS name
          UNION ALL SELECT '81519002', 'Cái Khế'
@@ -3796,11 +3840,11 @@ FROM (
          JOIN provinces AS p ON p.code = '92' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '81917101' AS code, 'Trần Đề' AS name
          UNION ALL SELECT '81906102', 'An Thạnh'
@@ -3809,11 +3853,11 @@ FROM (
          JOIN provinces AS p ON p.code = '92' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
-INSERT INTO wards (code, name, province_id, is_active)
-SELECT ward_seed.code, ward_seed.name, p.id, 1
+INSERT INTO wards (code, name, province_code, is_active)
+SELECT ward_seed.code, ward_seed.name, p.code, 1
 FROM (
          SELECT '82301001' AS code, 'An Xuyên' AS name
          UNION ALL SELECT '82301002', 'Lý Văn Lâm'
@@ -3883,7 +3927,7 @@ FROM (
          JOIN provinces AS p ON p.code = '96' AND p.is_active = 1
     ON DUPLICATE KEY UPDATE
                          name = VALUES(name),
-                         province_id = VALUES(province_id),
+                         province_code = VALUES(province_code),
                          is_active = VALUES(is_active);
 
 -- Sanity checks (expected: 34 active province/city rows and 3,321 active ward/commune rows).
@@ -3891,4 +3935,4 @@ SELECT COUNT(*) AS active_province_count FROM provinces WHERE is_active = 1;
 SELECT COUNT(*) AS active_ward_count FROM wards WHERE is_active = 1;
 
 -- Dropdown query for a selected province code (example: Hanoi = 01):
--- SELECT w.code, w.name FROM wards w JOIN provinces p ON p.id = w.province_id WHERE p.code = '01' AND p.is_active = 1 AND w.is_active = 1 ORDER BY w.name;
+-- SELECT w.code, w.name FROM wards w JOIN provinces p ON p.code = w.province_code WHERE p.code = '01' AND p.is_active = 1 AND w.is_active = 1 ORDER BY w.name;
