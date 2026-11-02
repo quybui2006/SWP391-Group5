@@ -27,7 +27,6 @@ public class CustomerAccountService {
             jdbc.execute("CREATE TABLE IF NOT EXISTS customer_profiles (user_id BIGINT PRIMARY KEY, gender VARCHAR(10), birth_date DATE, avatar MEDIUMBLOB, avatar_type VARCHAR(30), FOREIGN KEY(user_id) REFERENCES users(id))");
             jdbc.execute("CREATE TABLE IF NOT EXISTS customer_favorites (user_id BIGINT NOT NULL, variant_id BIGINT NOT NULL, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), PRIMARY KEY(user_id, variant_id), FOREIGN KEY(user_id) REFERENCES users(id), FOREIGN KEY(variant_id) REFERENCES product_variants(id))");
             jdbc.execute("CREATE TABLE IF NOT EXISTS customer_saved_vouchers (id BIGINT AUTO_INCREMENT PRIMARY KEY, user_id BIGINT NOT NULL, voucher_id BIGINT NOT NULL, saved_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), UNIQUE KEY uq_customer_saved_voucher (user_id, voucher_id), FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (voucher_id) REFERENCES vouchers(id))");
-            jdbc.execute("CREATE TABLE IF NOT EXISTS customer_wallets (user_id BIGINT PRIMARY KEY, balance DECIMAL(19,0) NOT NULL DEFAULT 0, total_deposited DECIMAL(19,0) NOT NULL DEFAULT 0, total_refunded DECIMAL(19,0) NOT NULL DEFAULT 0, updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3))");
         } catch (Exception ignored) {
             // Handled by database migrations.
         }
@@ -50,9 +49,32 @@ public class CustomerAccountService {
         return jdbc.queryForList("SELECT v.id,v.code,v.name,v.voucher_type,v.discount_type,v.discount_value,v.max_discount_amount,v.min_order_value,v.starts_at,v.ends_at FROM customer_saved_vouchers sv JOIN vouchers v ON v.id=sv.voucher_id WHERE sv.user_id=? ORDER BY sv.saved_at DESC", userId);
     }
 
-    public Map<String,Object> wallet(Long userId) {
-        jdbc.update("INSERT IGNORE INTO customer_wallets(user_id) VALUES (?)", userId);
-        return jdbc.queryForMap("SELECT balance,total_deposited,total_refunded FROM customer_wallets WHERE user_id=?", userId);
+    public boolean hasBankAccount(Long userId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM customer_bank_accounts WHERE user_id=? AND bank_name<>'' AND bank_account_no<>'' AND bank_account_holder<>''", Integer.class, userId);
+        return count != null && count > 0;
+    }
+
+    public Map<String,Object> bankAccount(Long userId) {
+        List<Map<String,Object>> rows = jdbc.queryForList("SELECT bank_name,bank_account_no,bank_account_holder,updated_at FROM customer_bank_accounts WHERE user_id=?", userId);
+        return rows.isEmpty() ? Map.of() : rows.get(0);
+    }
+
+    @Transactional
+    public void saveBankAccount(Long userId, String bankName, String accountNo, String accountHolder) {
+        String bank = bankName == null ? "" : bankName.trim();
+        String number = accountNo == null ? "" : accountNo.trim();
+        String holder = accountHolder == null ? "" : accountHolder.trim().replaceAll("\\s+", " ").toUpperCase(java.util.Locale.ROOT);
+        if (bank.isEmpty() || bank.length() > 100) throw new IllegalArgumentException("Vui lòng nhập tên ngân hàng (tối đa 100 ký tự).");
+        if (!number.matches("[A-Za-z0-9-]{5,50}")) throw new IllegalArgumentException("Số tài khoản phải có từ 5 đến 50 ký tự chữ/số.");
+        if (holder.length() < 2 || holder.length() > 150) throw new IllegalArgumentException("Tên chủ tài khoản không hợp lệ.");
+        jdbc.update("""
+            INSERT INTO customer_bank_accounts(user_id,bank_name,bank_account_no,bank_account_holder)
+            VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE bank_name=VALUES(bank_name),bank_account_no=VALUES(bank_account_no),bank_account_holder=VALUES(bank_account_holder)
+        """, userId, bank, number, holder);
+        jdbc.update("""
+            UPDATE customer_refunds SET bank_name=?,bank_account_no=?,bank_account_holder=?
+            WHERE customer_id=? AND status='PENDING'
+        """, bank, number, holder, userId);
     }
 
     public List<Map<String,Object>> coinHistory(Long userId, String filter) {
@@ -90,14 +112,15 @@ public class CustomerAccountService {
             default -> "";
         };
         List<Map<String,Object>> orders = jdbc.query("""
-            SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_status,o.delivery_status,o.created_at,
-                   s.name AS shop_name, s.id AS shop_id
+            SELECT o.id,o.order_code,o.total_amount,o.status,o.payment_method,o.payment_status,o.delivery_status,o.created_at,
+                   s.name AS shop_name, s.id AS shop_id,
+                   (SELECT COUNT(*) FROM complaints c WHERE c.order_id=o.id AND c.status <> 'CANCELLED') AS complaint_count
             FROM orders o JOIN checkouts c ON c.id=o.checkout_id
             JOIN shops s ON s.id=o.shop_id
             WHERE c.user_id=?""" + condition + " ORDER BY o.created_at DESC,o.id DESC",
             (rs, row) -> {
                 Map<String,Object> order = new java.util.LinkedHashMap<>();
-                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_status", "delivery_status", "shop_name", "shop_id"))
+                for (String column : List.of("id", "order_code", "total_amount", "status", "payment_method", "payment_status", "delivery_status", "shop_name", "shop_id", "complaint_count"))
                     order.put(column, rs.getObject(column));
                 var timestamp = rs.getTimestamp("created_at");
                 order.put("created_at", timestamp == null ? "—" : timestamp.toLocalDateTime()

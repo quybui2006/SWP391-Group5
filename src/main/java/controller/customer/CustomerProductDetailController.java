@@ -26,6 +26,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.Locale;
+import entity.VariantInventory;
+import repository.ProductImageRepository;
+import repository.VariantInventoryRepository;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -46,6 +51,12 @@ public class CustomerProductDetailController {
 
     @Autowired
     private ReviewService reviewService;
+
+    @Autowired
+    private VariantInventoryRepository variantInventoryRepository;
+
+    @Autowired
+    private ProductImageRepository productImageRepository;
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -129,6 +140,142 @@ public class CustomerProductDetailController {
                     Long.class, currentUserId, shopId));
         }
         model.addAttribute("savedVoucherIds", savedVoucherIds);
+
+        // 3a. Tồn kho thực tế (Stock)
+        VariantInventory inventory = variantInventoryRepository.findByVariantId(id).orElse(null);
+        int stockQuantity = 0;
+        if (inventory != null) {
+            int onHand = inventory.getQuantityOnHand() != null ? inventory.getQuantityOnHand() : 0;
+            int reserved = inventory.getReservedQuantity() != null ? inventory.getReservedQuantity() : 0;
+            stockQuantity = Math.max(0, onHand - reserved);
+        }
+        model.addAttribute("stockQuantity", stockQuantity);
+
+        // 3b. Số lượng đã bán thực tế (Sold count)
+        Long soldCount = 0L;
+        try {
+            soldCount = jdbc.queryForObject(
+                    "SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi " +
+                    "JOIN orders o ON oi.order_id = o.id " +
+                    "WHERE oi.variant_id = ? AND o.status != 'CANCELLED'",
+                    Long.class, id);
+            if (soldCount == null) soldCount = 0L;
+        } catch (Exception ignored) {}
+        String soldCountFormatted = (soldCount >= 1000)
+                ? String.format(Locale.US, "%.1fk", soldCount / 1000.0)
+                : String.valueOf(soldCount);
+        model.addAttribute("soldCount", soldCount);
+        model.addAttribute("soldCountFormatted", soldCountFormatted);
+
+        // 3c. Lượt yêu thích (Favorites)
+        Long favoriteCount = 0L;
+        try {
+            favoriteCount = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM customer_favorites WHERE variant_id = ?",
+                    Long.class, id);
+            if (favoriteCount == null) favoriteCount = 0L;
+        } catch (Exception ignored) {}
+        boolean isFavorite = false;
+        if (isCustomer && currentUserId != null) {
+            try {
+                Integer favMatch = jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM customer_favorites WHERE user_id = ? AND variant_id = ?",
+                        Integer.class, currentUserId, id);
+                isFavorite = (favMatch != null && favMatch > 0);
+            } catch (Exception ignored) {}
+        }
+        model.addAttribute("favoriteCount", favoriteCount);
+        model.addAttribute("isFavorite", isFavorite);
+
+        // 3d. Bộ sưu tập hình ảnh sản phẩm (Gallery Images)
+        List<String> galleryImages = new ArrayList<>();
+        if (variant.getImageUrl() != null && !variant.getImageUrl().isBlank()) {
+            galleryImages.add(variant.getImageUrl());
+        }
+        if (variant.getProduct() != null && variant.getProduct().getId() != null) {
+            List<entity.ProductImage> pImages = productImageRepository.findByProductIdOrderBySortOrderAsc(variant.getProduct().getId());
+            for (entity.ProductImage pi : pImages) {
+                if (pi.getImageUrl() != null && !pi.getImageUrl().isBlank() && !galleryImages.contains(pi.getImageUrl())) {
+                    galleryImages.add(pi.getImageUrl());
+                }
+            }
+        }
+        model.addAttribute("galleryImages", galleryImages);
+
+        // 3e. Danh mục sản phẩm (Categories for specs & breadcrumb)
+        List<String> catNames = new ArrayList<>();
+        if (variant.getProduct() != null && variant.getProduct().getId() != null) {
+            try {
+                catNames = jdbc.queryForList(
+                        "SELECT c.name FROM categories c " +
+                        "JOIN product_categories pc ON pc.category_id = c.id " +
+                        "WHERE pc.product_id = ? ORDER BY c.id",
+                        String.class, variant.getProduct().getId());
+            } catch (Exception ignored) {}
+        }
+        String categoryNames = !catNames.isEmpty() ? String.join(", ", catNames) : "Trái cây tươi";
+        model.addAttribute("categoryNames", categoryNames);
+
+        // 3f. Thông số gian hàng cập nhật thực tế (Shop Metrics)
+        Integer shopTotalReviews = 0;
+        String shopTotalReviewsFormatted = "0";
+        String shopAverageRatingFormatted = "5.0";
+        Integer shopTotalProducts = 0;
+        String shopJoinTime = "Mới tham gia";
+        String shopResponseRate = "100%";
+        String shopResponseTime = "trong vài phút";
+
+        if (shopId != null) {
+            try {
+                Integer revCount = jdbc.queryForObject(
+                        "SELECT COUNT(r.id) FROM reviews r " +
+                        "JOIN product_variants pv ON pv.id = r.variant_id " +
+                        "WHERE pv.shop_id = ?",
+                        Integer.class, shopId);
+                if (revCount != null) {
+                    shopTotalReviews = revCount;
+                    shopTotalReviewsFormatted = (revCount >= 1000)
+                            ? String.format(Locale.US, "%.1fk", revCount / 1000.0)
+                            : String.valueOf(revCount);
+                }
+
+                Double avgRating = jdbc.queryForObject(
+                        "SELECT AVG(r.rating) FROM reviews r " +
+                        "JOIN product_variants pv ON pv.id = r.variant_id " +
+                        "WHERE pv.shop_id = ?",
+                        Double.class, shopId);
+                if (avgRating != null) {
+                    shopAverageRatingFormatted = String.format(Locale.US, "%.1f", avgRating);
+                }
+
+                Integer prodCount = jdbc.queryForObject(
+                        "SELECT COUNT(DISTINCT pv.id) FROM product_variants pv " +
+                        "JOIN products p ON p.id = pv.product_id " +
+                        "WHERE pv.shop_id = ? AND pv.status = 'ACTIVE' AND pv.approval_status IN ('APPROVED', 'PENDING') AND p.is_visible = 1",
+                        Integer.class, shopId);
+                if (prodCount != null) {
+                    shopTotalProducts = prodCount;
+                }
+            } catch (Exception ignored) {}
+
+            if (shop != null && shop.getCreatedAt() != null) {
+                long days = java.time.temporal.ChronoUnit.DAYS.between(shop.getCreatedAt(), LocalDateTime.now());
+                if (days < 30) {
+                    shopJoinTime = days <= 1 ? "Hôm nay" : days + " ngày trước";
+                } else if (days < 365) {
+                    shopJoinTime = (days / 30) + " tháng trước";
+                } else {
+                    shopJoinTime = (days / 365) + " năm trước";
+                }
+            }
+        }
+        model.addAttribute("shopTotalReviews", shopTotalReviews);
+        model.addAttribute("shopTotalReviewsFormatted", shopTotalReviewsFormatted);
+        model.addAttribute("shopAverageRatingFormatted", shopAverageRatingFormatted);
+        model.addAttribute("shopTotalProducts", shopTotalProducts);
+        model.addAttribute("shopJoinTime", shopJoinTime);
+        model.addAttribute("shopResponseRate", shopResponseRate);
+        model.addAttribute("shopResponseTime", shopResponseTime);
         // 4. Danh sách sản phẩm liên quan / gợi ý hôm nay (Shopee style)
         List<ProductVariant> allActiveVariants = productVariantRepository.findApprovedActiveForCatalog();
         List<ProductVariant> relatedProducts = allActiveVariants.stream()

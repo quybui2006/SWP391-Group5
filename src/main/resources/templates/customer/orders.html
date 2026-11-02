@@ -101,12 +101,14 @@
                 </div>
                 <div class="order-actions">
                     <a class="btn-outline" th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Chi tiết</a>
-                    <form th:if="${o['status'] == 'PENDING' and o['payment_status'] != 'PAID'}"
+                    <form th:if="${o['status'] == 'PENDING' and (o['payment_status'] == 'UNPAID' or ((o['payment_method'] == 'VNPAY' or o['payment_method'] == 'MOCK_ONLINE') and o['payment_status'] == 'PAID')) and (o['payment_status'] == 'UNPAID' or hasBankAccount)}"
                           th:action="@{/customer/account/orders/{id}/cancel(id=${o['id']})}"
                           method="post" style="display: inline-block; margin: 0;"
                           onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
                         <button class="btn-cancel-sm" type="submit">Hủy đơn</button>
                     </form>
+                    <button th:if="${o['status'] == 'PENDING' and ((o['payment_method'] == 'VNPAY' or o['payment_method'] == 'MOCK_ONLINE') and o['payment_status'] == 'PAID') and !hasBankAccount}"
+                            class="btn-cancel-sm" type="button" onclick="showBankAccountModal()">Hủy đơn</button>
                     <a class="btn-primary-sm"
                        th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
                        th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Đánh giá</a>
@@ -129,6 +131,19 @@
     </section>
 </main>
 </div>
-<script th:src="@{/js/customer-account-pages.js}"></script>
+    <div id="bankAccountRequiredModal" th:style="${bankAccountRequired} ? 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;' : 'display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;'">
+        <div style="max-width:460px;background:#fff;border-radius:14px;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.25);">
+            <h3 style="margin-top:0;color:#0f172a;">Cần liên kết tài khoản ngân hàng</h3>
+            <p style="color:#475569;line-height:1.6;">Vui lòng hoàn thiện tài khoản ngân hàng thụ hưởng trước khi hủy đơn hoặc gửi yêu cầu hỗ trợ.</p>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn-outline" onclick="document.getElementById('bankAccountRequiredModal').style.display='none'">Để sau</button><a class="primary-button" th:href="@{/customer/account/bank-account}">Liên kết ngay</a></div>
+        </div>
+    </div>
+    <script>
+        function showBankAccountModal() {
+            const modal = document.getElementById('bankAccountRequiredModal');
+            if (modal) modal.style.display = 'flex';
+        }
+    </script>
+    <script th:src="@{/js/customer-account-pages.js}"></script>
 </body>
 </html>

@@ -379,12 +379,24 @@
                                 Bắt buộc có ít nhất 1 ảnh đối với nhóm lỗi hàng hóa (chất lượng, thiếu cân, sai quy cách).
                             </small>
                         </div>
-                        <button type="submit"
+                        <button th:if="${hasBankAccount}" type="submit"
                                 style="background: #dc2626; color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;">
                             Gửi khiếu nại tới Shop
                         </button>
+                        <button th:unless="${hasBankAccount}" type="button" onclick="showBankAccountModal()"
+                                style="background:#94a3b8;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">
+                            Liên kết ngân hàng để gửi khiếu nại
+                        </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div id="bankAccountRequiredModal" th:style="${bankAccountRequired} ? 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;' : 'display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;'">
+            <div style="max-width:460px;background:#fff;border-radius:14px;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.25);">
+                <h3 style="margin-top:0;color:#0f172a;">Cần liên kết tài khoản ngân hàng</h3>
+                <p style="color:#475569;line-height:1.6;">Để nhận tiền hoàn/bồi hoàn khi hủy đơn hoặc gửi khiếu nại, bạn cần hoàn thiện tài khoản ngân hàng thụ hưởng trước.</p>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button type="button" class="btn-outline" onclick="document.getElementById('bankAccountRequiredModal').remove()">Để sau</button><a class="primary-button" th:href="@{/customer/account/bank-account}">Liên kết ngay</a></div>
             </div>
         </div>
 
@@ -393,6 +405,10 @@
 </div>
 <script th:inline="javascript">
     /*<![CDATA[*/
+    function showBankAccountModal() {
+        const modal = document.getElementById('bankAccountRequiredModal');
+        if (modal) modal.style.display = 'flex';
+    }
     const orderPaidMax = /*[[${eligibility != null ? eligibility['orderActualPaidAmount'] : 0}]]*/ 0;
     const itemPaidMap = /*[[${eligibility != null ? eligibility['itemActualPaidAmounts'] : null}]]*/ {};
     const productDefectReasons = ['QUALITY_ISSUE', 'WEIGHT_OR_QUANTITY_SHORTAGE', 'WRONG_SPECIFICATION'];

@@ -90,9 +90,9 @@
                                th:href="@{/shopowner/orders/{id}(id=${o.id})}">
                                 Xử lý khiếu nại →
                             </a>
-                            <th:block th:if="${o.status == 'PENDING' and o.payment_method == 'COD' and o.payment_status == 'UNPAID'}">
+                            <th:block th:if="${o.status == 'PENDING' and ((o.payment_method == 'COD' and o.payment_status == 'UNPAID') or ((o.payment_method == 'VNPAY' or o.payment_method == 'MOCK_ONLINE') and o.payment_status == 'PAID'))}">
                                 <form method="post" th:action="@{/shopowner/orders/{id}/confirm(id=${o.id})}"
-                                      onsubmit="return confirm('Xác nhận đơn này và giữ số lượng hàng?');">
+                                      onsubmit="return confirm('Xác nhận đơn này và ghi nhận số lượng bán?');">
                                     <input type="hidden" name="token" th:value="${token}">
                                     <button class="order-action-button confirm" type="submit">Xác nhận</button>
                                 </form>
