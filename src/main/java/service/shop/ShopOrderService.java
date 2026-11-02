@@ -9,9 +9,12 @@ import java.util.Map;
 public class ShopOrderService {
     private final JdbcTemplate jdbc;
     private final service.operations.CustomerRefundService customerRefunds;
-    public ShopOrderService(JdbcTemplate jdbc, service.operations.CustomerRefundService customerRefunds) {
+    private final InventoryBatchService inventoryBatches;
+    public ShopOrderService(JdbcTemplate jdbc, service.operations.CustomerRefundService customerRefunds,
+                            InventoryBatchService inventoryBatches) {
         this.jdbc = jdbc;
         this.customerRefunds = customerRefunds;
+        this.inventoryBatches = inventoryBatches;
     }
 
     public List<Map<String, Object>> list(Long ownerId) {
@@ -124,19 +127,19 @@ public class ShopOrderService {
                 throw new IllegalArgumentException("Tồn kho có thể bán không đủ để xác nhận đơn này. Còn " + item.get("available_quantity") + ", cần " + quantity + ".");
             }
         }
+        // Shop confirmation holds stock; the customer confirmation later records the sale.
         for (Map<String, Object> item : items) {
+            if ("RESERVED".equals(item.get("allocation_status"))) continue;
             long inventoryId = ((Number) item.get("inventory_id")).longValue();
             long itemId = ((Number) item.get("id")).longValue();
             int quantity = ((Number) item.get("quantity")).intValue();
-            boolean reserved = "RESERVED".equals(item.get("allocation_status"));
-            int updated = reserved
-                    ? jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-? WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, inventoryId, quantity, quantity)
-                    : jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity);
-            if (updated != 1) throw new IllegalArgumentException("Không thể ghi nhận số lượng đã bán cho mặt hàng " + itemId + ".");
-            jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=? AND allocation_status=?", itemId, item.get("allocation_status"));
+            int reservedBefore = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
             int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            inventoryBatches.reserveOrderItem(itemId, inventoryId, quantity, ownerId);
+            jdbc.update("UPDATE order_items SET allocation_status='RESERVED' WHERE id=? AND allocation_status='UNRESERVED'", itemId);
             int reservedAfter = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'SALE',?,?,?,?,?,?,?)", inventoryId, itemId, -quantity, reserved ? -quantity : 0, onHand, reservedAfter, "sale-confirm-" + itemId, "Bán theo đơn " + order.get("order_code"), ownerId);
+            jdbc.update("INSERT IGNORE INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'RESERVE',0,?,?,?,?,?,?)",
+                    inventoryId, itemId, quantity, onHand, reservedAfter, "reserve-shop-" + itemId, "Giữ hàng theo đơn " + order.get("order_code"), ownerId);
         }
         if (jdbc.update("UPDATE orders SET status='CONFIRMED' WHERE id=? AND status='PENDING' AND ((payment_method='COD' AND payment_status='UNPAID') OR (payment_method IN ('VNPAY','MOCK_ONLINE') AND payment_status='PAID'))", id) != 1)
             throw new IllegalArgumentException("Đơn vừa được cập nhật ở nơi khác. Tải lại trang.");
@@ -181,12 +184,11 @@ public class ShopOrderService {
             long itemId = ((Number) item.get("id")).longValue();
             long inventoryId = ((Number) item.get("inventory_id")).longValue();
             int quantity = ((Number) item.get("quantity")).intValue();
-            if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity-? WHERE id=? AND reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
-                throw new IllegalStateException("Không thể trả tồn kho đã giữ cho mặt hàng " + itemId + ".");
-            jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
             int onHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
+            inventoryBatches.releaseOrderItem(itemId, "shop-reject");
+            jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE id=? AND allocation_status='RESERVED'", itemId);
             int reservedAfter = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,?,?)", inventoryId, itemId, -quantity, onHand, reservedAfter, "release-shop-reject-" + itemId, reason, ownerForOrder(orderId));
+            jdbc.update("INSERT IGNORE INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,?,?)", inventoryId, itemId, -quantity, onHand, reservedAfter, "release-shop-reject-" + itemId, reason, ownerForOrder(orderId));
         }
     }
 
@@ -226,10 +228,10 @@ public class ShopOrderService {
                        vi.quantity_on_hand,
                        vi.reserved_quantity,
                        vi.available_quantity,
-                       ROUND(vi.initial_quantity * (vi.low_stock_threshold_pct / 100.0), 0) AS threshold_qty,
+                       vi.low_stock_threshold_quantity AS threshold_qty,
                        CASE
-                           WHEN vi.quantity_on_hand = 0 THEN 'Hết hàng'
-                           WHEN vi.quantity_on_hand <= (vi.initial_quantity * (vi.low_stock_threshold_pct / 100.0)) THEN 'Sắp hết'
+                           WHEN vi.available_quantity = 0 THEN 'Hết hàng'
+                           WHEN vi.low_stock_threshold_quantity > 0 AND vi.available_quantity <= vi.low_stock_threshold_quantity THEN 'Sắp hết'
                            ELSE 'Đủ hàng'
                        END AS stock_status
                 FROM product_variants pv
@@ -238,8 +240,8 @@ public class ShopOrderService {
                 JOIN units u ON u.id = pv.base_unit_id
                 JOIN variant_inventory vi ON vi.variant_id = pv.id
                 WHERE s.owner_id = ?
-                ORDER BY CASE WHEN vi.quantity_on_hand = 0 THEN 1 ELSE 0 END DESC,
-                         CASE WHEN vi.quantity_on_hand <= (vi.initial_quantity * (vi.low_stock_threshold_pct / 100.0)) THEN 1 ELSE 0 END DESC,
+                ORDER BY CASE WHEN vi.available_quantity = 0 THEN 1
+                              WHEN vi.low_stock_threshold_quantity > 0 AND vi.available_quantity <= vi.low_stock_threshold_quantity THEN 1 ELSE 0 END DESC,
                          vi.quantity_on_hand ASC
                 LIMIT 10
                 """, ownerId);
@@ -309,7 +311,8 @@ public class ShopOrderService {
                 SELECT
                     COALESCE(SUM(vi.quantity_on_hand), 0) AS total_quantity,
                     COALESCE(SUM(CASE WHEN vi.quantity_on_hand = 0 THEN 1 ELSE 0 END), 0) AS out_of_stock_count,
-                    COALESCE(SUM(CASE WHEN vi.quantity_on_hand > 0 AND vi.quantity_on_hand <= (vi.initial_quantity * (vi.low_stock_threshold_pct / 100.0)) THEN 1 ELSE 0 END), 0) AS low_stock_count
+                    COALESCE(SUM(CASE WHEN vi.low_stock_threshold_quantity > 0
+                        AND vi.available_quantity > 0 AND vi.available_quantity <= vi.low_stock_threshold_quantity THEN 1 ELSE 0 END), 0) AS low_stock_count
                 FROM variant_inventory vi
                 JOIN product_variants pv ON pv.id = vi.variant_id
                 JOIN shops s ON s.id = pv.shop_id

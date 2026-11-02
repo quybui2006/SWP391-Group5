@@ -14,4 +14,5 @@ public record ManagedShopVariant(
         String approvalStatus,
         Integer quantityOnHand,
         Integer availableQuantity,
+        Long soldQuantity,
         String batchCode) { }

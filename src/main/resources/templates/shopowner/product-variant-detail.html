@@ -145,7 +145,7 @@
                     <div><span>Hiện có</span><strong th:text="${variant.quantityOnHand + ' ' + variant.unitName}">-</strong></div>
                     <div><span>Đang giữ</span><strong th:text="${variant.reservedQuantity + ' ' + variant.unitName}">-</strong></div>
                     <div><span>Có thể bán</span><strong th:text="${variant.availableQuantity + ' ' + variant.unitName}">-</strong></div>
-                    <div><span>Ngưỡng cảnh báo</span><strong th:text="${variant.lowStockThresholdPct != null ? variant.lowStockThresholdPct + '%' : '-'}">-</strong></div>
+                    <div><span>Ngưỡng cảnh báo</span><strong th:text="${variant.lowStockThresholdQuantity != null ? variant.lowStockThresholdQuantity + ' ' + variant.unitName : '-'}">-</strong></div>
                 </div>
             </section>
         </div>

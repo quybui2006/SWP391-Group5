@@ -19,5 +19,5 @@ public record ProductVariantDetailView(
         Integer quantityOnHand,
         Integer reservedQuantity,
         Integer availableQuantity,
-        BigDecimal lowStockThresholdPct
+        Integer lowStockThresholdQuantity
 ) { }

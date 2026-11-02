@@ -21,6 +21,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Optional<Notification> findByIdAndUserId(Long id, Long userId);
 
+    int deleteByIdAndUserId(Long id, Long userId);
+
+    @Modifying
+    @Query(value = "DELETE FROM notifications WHERE user_id = :userId AND (event_key LIKE 'WELCOME-%' OR event_key LIKE 'ORDER-DEMO-%' OR event_key LIKE 'PROD-ARRIVE-%' OR event_key LIKE 'SYSTEM-TIP-%')", nativeQuery = true)
+    int deleteCustomerSampleNotificationsByUserId(@Param("userId") Long userId);
+
     Optional<Notification> findByEventKey(String eventKey);
 
     @Modifying

@@ -35,7 +35,6 @@ import repository.UnitRepository;
 import entity.Category;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
@@ -71,6 +70,7 @@ public class ShopProductService {
     @Autowired private UnitRepository unitRepository;
     @Autowired private ProductImageStorage imageStorage;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private InventoryBatchService inventoryBatches;
 
     // ======================== ĐỌC DỮ LIỆU ========================
 
@@ -132,7 +132,7 @@ public class ShopProductService {
         // Product là metadata; trạng thái bán chỉ thuộc biến thể.
         form.setStatus("REJECTED".equals(variant.getApprovalStatus()) || "INACTIVE".equals(variant.getStatus()) ? "INACTIVE" : "ACTIVE");
         form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice());
-        form.setQuantityOnHand(inventory.getQuantityOnHand()); form.setLowStockThresholdPct(inventory.getLowStockThresholdPct());
+        form.setLowStockThresholdQuantity(inventory.getLowStockThresholdQuantity());
         form.setUnits(activeUnitOptions());
         return form;
     }
@@ -150,7 +150,7 @@ public class ShopProductService {
                 imageUrl, variant.getStatus(), variant.getApprovalStatus(), variant.getRejectionReason(),
                 variant.getSubmittedAt(), inventory == null ? 0 : inventory.getQuantityOnHand(),
                 inventory == null ? 0 : inventory.getReservedQuantity(), inventory == null ? 0 : inventory.getAvailableQuantity(),
-                inventory == null ? null : inventory.getLowStockThresholdPct());
+                inventory == null ? null : inventory.getLowStockThresholdQuantity());
     }
 
     @Transactional
@@ -173,8 +173,7 @@ public class ShopProductService {
         if (sku == null || sku.length() > 80) errors.put("sku", "SKU phải có từ 1 đến 80 ký tự.");
         if (sku != null && !sku.equals(variant.getSku()) && variantRepository.existsByShopIdAndSku(variant.getShopId(), sku)) errors.put("sku", "SKU này đã được dùng trong cửa hàng.");
         if (form.getPrice() == null || form.getPrice().signum() <= 0 || (form.getPrice() != null && form.getPrice().stripTrailingZeros().scale() > 0)) errors.put("price", "Giá bán phải là số nguyên VNĐ lớn hơn 0.");
-        if (form.getQuantityOnHand() == null || form.getQuantityOnHand() < inventory.getReservedQuantity()) errors.put("quantityOnHand", "Tồn kho không được thấp hơn số lượng đang giữ cho đơn hàng.");
-        if (form.getLowStockThresholdPct() == null || form.getLowStockThresholdPct().signum() < 0 || form.getLowStockThresholdPct().compareTo(new BigDecimal("100")) > 0) errors.put("lowStockThresholdPct", "Ngưỡng cảnh báo phải từ 0 đến 100.");
+        if (form.getLowStockThresholdQuantity() != null && form.getLowStockThresholdQuantity() < 0) errors.put("lowStockThresholdQuantity", "Ngưỡng cảnh báo phải từ 0 trở lên.");
         String requestedStatus = upperOrNull(form.getStatus());
         if (requestedStatus == null || !Set.of("ACTIVE", "INACTIVE").contains(requestedStatus)) {
             errors.put("status", "Trạng thái biến thể không hợp lệ.");
@@ -202,7 +201,7 @@ public class ShopProductService {
         }
         // Keep a rejected listing offline until Operations approves the edited version.
         variant.setStatus(rejectedBeforeEdit ? "INACTIVE" : requestedStatus);
-        inventory.setQuantityOnHand(form.getQuantityOnHand()); inventory.setLowStockThresholdPct(form.getLowStockThresholdPct());
+        inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
         variantRepository.save(variant); inventoryRepository.save(inventory);
     }
 
@@ -291,7 +290,8 @@ public class ShopProductService {
                 SELECT COUNT(DISTINCT p.id) AS products,
                     COUNT(pv.id) AS variants,
                     COALESCE(SUM(CASE WHEN pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') THEN 1 ELSE 0 END),0) AS active_variants,
-                    COALESCE(SUM(CASE WHEN vi.quantity_on_hand - vi.reserved_quantity <= vi.initial_quantity * vi.low_stock_threshold_pct / 100 THEN 1 ELSE 0 END),0) AS low_stock
+                    COALESCE(SUM(CASE WHEN vi.low_stock_threshold_quantity > 0
+                        AND vi.quantity_on_hand - vi.reserved_quantity <= vi.low_stock_threshold_quantity THEN 1 ELSE 0 END),0) AS low_stock
                 FROM products p LEFT JOIN product_variants pv ON pv.product_id=p.id
                     LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
                 WHERE p.shop_id=?
@@ -422,12 +422,14 @@ public class ShopProductService {
             VariantInventory inventory = new VariantInventory();
             inventory.setVariantId(variant.getId());
             inventory.setInitialQuantity(form.getStockQuantity());
-            inventory.setQuantityOnHand(form.getStockQuantity());
+            inventory.setQuantityOnHand(0);
             inventory.setReservedQuantity(0);
-            inventory.setLowStockThresholdPct(form.getLowStockThresholdPct());
+            inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity());
             inventory.setStatus("ACTIVE");
             inventory.setCreatedBy(ownerUserId);
-            inventoryRepository.save(inventory);
+            inventoryRepository.saveAndFlush(inventory);
+            // Initial stock also receives a real batch so aggregate stock and batch stock stay equal.
+            inventoryBatches.receive(inventory.getId(), form.getStockQuantity(), LocalDateTime.now(BUSINESS_ZONE), "Lô nhập ban đầu", ownerUserId);
 
             if (imageRepository.findByProductIdOrderBySortOrderAsc(product.getId()).isEmpty()) {
                 ProductImage image = new ProductImage();
@@ -676,7 +678,7 @@ public class ShopProductService {
                             inv == null ? 0 : nz(inv.getReservedQuantity()),
                             inv == null ? null : inv.getAvailableQuantity(),
                             inv != null && isLowStock(inv.getAvailableQuantity(),
-                                                      inv.getLowStockThresholdPct()));
+                                                      inv.getLowStockThresholdQuantity()));
                 })
                 .toList();
 
@@ -690,12 +692,12 @@ public class ShopProductService {
         return value == null ? 0 : value;
     }
 
-    /** Cảnh báo tồn kho thấp theo ngưỡng phần trăm lưu trong DB. */
-    private boolean isLowStock(Integer available, BigDecimal thresholdPct) {
-        if (available == null || thresholdPct == null) {
+    /** Compare available units directly with the variant's configured unit threshold. */
+    private boolean isLowStock(Integer available, Integer thresholdQuantity) {
+        if (available == null || thresholdQuantity == null || thresholdQuantity <= 0) {
             return false;
         }
-        return available <= thresholdPct.setScale(0, RoundingMode.CEILING).intValue();
+        return available <= thresholdQuantity;
     }
 
     private String upperOrNull(String value) {

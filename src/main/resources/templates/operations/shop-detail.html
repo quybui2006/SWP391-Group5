@@ -637,92 +637,47 @@
 
         </div>
 
-        <!-- FULL-WIDTH SECTION: METICULOUS POST-AUDIT VARIANT LIST -->
+        <!-- Products stay collapsed until Operations opens one for review. -->
         <section class="panel" style="margin-top: 14px;">
             <div class="panel-heading">
                 <div>
-                    <h2>📦 Danh mục Biến thể Sản phẩm Hậu kiểm</h2>
-                    <p>Operations Manager hậu kiểm hình ảnh, quy cách đóng gói, giá cả, tồn kho và hạn sử dụng của từng biến thể</p>
+                    <h2>Sản phẩm của cửa hàng</h2>
+                    <p>Xem biến thể, lượt bán và trạng thái hậu kiểm.</p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <span class="status-pill open" th:text="${#lists.size(variants) + ' biến thể đang quản lý'}">0 biến thể</span>
+                    <span class="status-pill open" th:text="${#lists.size(variants) + ' biến thể'}">0 biến thể</span>
                 </div>
             </div>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>ẢNH / BIẾN THỂ</th>
-                        <th>HỒ SƠ SẢN PHẨM CHA</th>
-                        <th>MÃ SKU</th>
-                        <th>GIÁ BÁN &amp; ĐƠN VỊ</th>
-                        <th>TỒN KHO (HIỆN CÓ · KHẢ DỤNG)</th>
-                        <th>LÔ HÀNG &amp; HẠN SỬ DỤNG</th>
-                        <th>TRẠNG THÁI BÁN</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="v : ${variants}">
-                        <td>
-                            <div class="product-cell">
-                                <img th:if="${v.imageUrl != null and !#strings.isEmpty(v.imageUrl)}" 
-                                     th:src="${v.imageUrl}" 
-                                     th:alt="${v.variantName}" 
-                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); flex-shrink: 0;"
-                                     onerror="this.hidden=true">
-                                <span th:if="${v.imageUrl == null or #strings.isEmpty(v.imageUrl)}"
-                                      style="width: 40px; height: 40px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-size: 16px; flex-shrink: 0;">
-                                    🍎
-                                </span>
-                                <div>
-                                    <strong style="color: var(--ink); font-size: 12.5px;" th:text="${v.variantName}">Tên biến thể</strong>
-                                    <small style="color: var(--muted);" th:text="'Mã biến thể: #' + ${v.variantId}">#1</small>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td>
-                            <strong style="color: #334155;" th:text="${v.productName}">Tên sản phẩm cha</strong>
-                        </td>
-
-                        <td>
-                            <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #0f172a; font-family: monospace;" 
-                                  th:text="${v.sku}">SKU-001</code>
-                        </td>
-
-                        <td>
-                            <strong style="color: #16a34a; font-size: 12.5px;" th:text="${#numbers.formatInteger(v.price, 1, 'COMMA') + ' ₫'}">0 ₫</strong>
-                            <small style="color: var(--muted); display: block;" th:text="'/ ' + ${v.unitName}">/ Kg</small>
-                        </td>
-
-                        <td>
-                            <div style="font-weight: 700; color: var(--ink);">
-                                <span th:text="${v.quantityOnHand ?: 0}">0</span> <span style="font-size: 10.5px; font-weight: normal; color: var(--muted);">hiện có</span>
-                            </div>
-                            <small style="color: #15803d; font-weight: 600;" th:text="'Khả dụng: ' + ${v.availableQuantity ?: 0}">Khả dụng: 0</small>
-                        </td>
-
-                        <td>
-                            <div style="font-size: 11.5px; color: var(--ink); font-weight: 600;" th:text="'Lô: ' + ${(v.batchCode != null and !#strings.isEmpty(v.batchCode)) ? v.batchCode : 'Mặc định'}">Lô: 01</div>
-                            <div style="font-size: 11px; color: var(--muted);" th:text="'HSD: ' + ${v.expiryDate != null ? #temporals.format(v.expiryDate, 'dd/MM/yyyy') : '—'}">HSD: 01/01/2026</div>
-                        </td>
-
-                        <td>
-                            <span th:if="${v.variantStatus == 'ACTIVE'}" class="status-pill open">ACTIVE</span>
-                            <span th:if="${v.variantStatus != 'ACTIVE'}" class="status-pill draft" th:text="${v.variantStatus}">DRAFT</span>
-                        </td>
-                    </tr>
-
-                    <tr th:if="${#lists.isEmpty(variants)}">
-                        <td colspan="7" style="text-align: center; padding: 32px; color: var(--muted);">
-                            <div style="font-size: 24px; margin-bottom: 6px;">📦</div>
-                            Gian hàng này hiện chưa có biến thể sản phẩm nào được niêm yết trên sàn.
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+            <div th:each="product : ${products}" style="border-top: 1px solid var(--line);">
+                <details>
+                    <summary style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;list-style:none;">
+                        <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}" th:src="${product.imageUrl}" th:alt="${product.productName}" style="width:48px;height:48px;object-fit:cover;border:1px solid var(--line);">
+                        <div style="min-width:0;flex:1;"><strong th:text="${product.productName}">Tên sản phẩm</strong><div class="muted" th:text="${#lists.size(product.variants) + ' biến thể'}">0 biến thể</div></div>
+                        <span aria-hidden="true">⌄</span>
+                    </summary>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Biến thể</th><th>Mã SKU</th><th>Giá</th><th>Đã bán</th><th>Tồn khả dụng</th><th>Hậu kiểm</th></tr></thead>
+                            <tbody>
+                            <tr th:each="v : ${product.variants}">
+                                <td><div class="product-cell"><img th:if="${v.imageUrl != null and !#strings.isEmpty(v.imageUrl)}" th:src="${v.imageUrl}" th:alt="${v.variantName}" style="width:40px;height:40px;object-fit:cover;border:1px solid var(--line);"><div><strong th:text="${v.variantName}">Biến thể</strong><small th:text="${v.unitName}">đơn vị</small></div></div></td>
+                                <td><code th:text="${v.sku}">SKU</code></td>
+                                <td><strong th:text="${#numbers.formatInteger(v.price, 1, 'COMMA') + ' ₫'}">0 ₫</strong><small th:text="'/ ' + ${v.unitName}">/ đơn vị</small></td>
+                                <td th:text="${v.soldQuantity ?: 0}">0</td>
+                                <td th:text="${v.availableQuantity ?: 0}">0</td>
+                                <td>
+                                    <a class="button button-primary" th:if="${v.approvalStatus == 'PENDING'}" th:href="@{/operations/variants/{id}(id=${v.variantId},returnShopId=${shop.id},returnPage=${returnPage})}">Hậu kiểm</a>
+                                    <span class="status-pill open" th:if="${v.approvalStatus == 'APPROVED'}">Đã hậu kiểm</span>
+                                    <span class="status-pill draft" th:if="${v.approvalStatus == 'REJECTED'}">Bị từ chối</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="6">Sản phẩm chưa có biến thể.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
             </div>
+            <p th:if="${#lists.isEmpty(products)}" style="padding:20px;text-align:center;">Cửa hàng chưa có sản phẩm.</p>
         </section>
 
     </main>

@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -42,8 +41,10 @@ public class VariantInventory {
     @Column(name = "available_quantity", insertable = false, updatable = false)
     private Integer availableQuantity;
 
-    @Column(name = "low_stock_threshold_pct", nullable = false, precision = 5, scale = 2)
-    private BigDecimal lowStockThresholdPct = new BigDecimal("10.00");
+    /** Ngưỡng cảnh báo theo đơn vị cơ sở của biến thể; 0 nghĩa là tắt cảnh báo. */
+    @Column(name = "low_stock_threshold_quantity", nullable = false)
+    private Integer lowStockThresholdQuantity = 0;
+
 
     /** ACTIVE / BLOCKED / CLOSED */
     @Column(name = "status", nullable = false)
@@ -67,8 +68,8 @@ public class VariantInventory {
     public void setReservedQuantity(Integer reservedQuantity) { this.reservedQuantity = reservedQuantity; }
     public Integer getAvailableQuantity() { return availableQuantity; }
     public void setAvailableQuantity(Integer availableQuantity) { this.availableQuantity = availableQuantity; }
-    public BigDecimal getLowStockThresholdPct() { return lowStockThresholdPct; }
-    public void setLowStockThresholdPct(BigDecimal lowStockThresholdPct) { this.lowStockThresholdPct = lowStockThresholdPct; }
+    public Integer getLowStockThresholdQuantity() { return lowStockThresholdQuantity; }
+    public void setLowStockThresholdQuantity(Integer lowStockThresholdQuantity) { this.lowStockThresholdQuantity = lowStockThresholdQuantity; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public Long getCreatedBy() { return createdBy; }

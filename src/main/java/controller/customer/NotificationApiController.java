@@ -72,6 +72,20 @@ public class NotificationApiController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteNotification(@PathVariable Long id, HttpSession session) {
+        Long userId = getUserIdFromSession(session);
+        Map<String, Object> response = new HashMap<>();
+        if (userId == null) {
+            response.put("success", false);
+            response.put("message", "Chưa đăng nhập");
+            return ResponseEntity.status(401).body(response);
+        }
+        response.put("success", notificationService.deleteNotification(id, userId));
+        response.put("unreadCount", notificationService.getUnreadCount(userId));
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/read-all")
     public ResponseEntity<Map<String, Object>> markAllAsRead(HttpSession session) {
         Long userId = getUserIdFromSession(session);

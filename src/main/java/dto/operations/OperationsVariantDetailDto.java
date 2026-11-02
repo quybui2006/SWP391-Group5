@@ -33,6 +33,6 @@ public record OperationsVariantDetailDto(
         Integer quantityOnHand,
         Integer reservedQuantity,
         Integer availableQuantity,
-        BigDecimal lowStockThresholdPct,
+        Integer lowStockThresholdQuantity,
         String inventoryStatus
 ) { }
