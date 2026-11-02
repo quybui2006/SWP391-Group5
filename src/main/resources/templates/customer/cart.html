@@ -17,12 +17,19 @@
             margin: 36px auto;
             padding: 0 20px;
             min-height: 55vh;
+            flex: 1;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
         }
 
         .cart-row {
             display: grid;
-            grid-template-columns: 36px minmax(200px, 2fr)
-                1fr 1.5fr 1fr 65px;
+            grid-template-columns: 36px minmax(200px, 2fr) 1fr 1.5fr 1fr 65px;
             gap: 14px;
             align-items: center;
             padding: 18px 0;
@@ -90,7 +97,8 @@
             background-color: #fee2e2;
             color: #dc3545;
             text-decoration: none;
-            font-size: 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -246,14 +254,8 @@
                 gap: 10px;
             }
 
-            .cart-row > *:nth-child(3) {
-                grid-column: 2;
-            }
-
-            .cart-row > *:nth-child(4) {
-                grid-column: 2;
-            }
-
+            .cart-row > *:nth-child(3),
+            .cart-row > *:nth-child(4),
             .cart-row > *:nth-child(5) {
                 grid-column: 2;
             }
@@ -267,16 +269,6 @@
                 align-items: flex-start;
                 flex-direction: column;
             }
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        main {
-            flex: 1;
         }
     </style>
 </head>
@@ -369,6 +361,7 @@
         <div class="shop-header">
             <input type="checkbox"
                    class="shop-check"
+                   th:disabled="${shop['all_unavailable'] == true}"
                    aria-label="Chọn tất cả sản phẩm của shop">
             <span class="shop-icon">🏪</span>
             <a class="shop-name"
@@ -382,112 +375,113 @@
              th:classappend="${item['is_selectable'] == false} ? ' unavailable' : ''"
              class="cart-row cart-item">
 
-        <!-- Checkbox chọn sản phẩm thanh toán -->
-        <div>
-            <input type="checkbox"
-                   class="item-check"
-                   name="selectedVariantIds"
-                   th:value="${item['variant_id']}"
-                   th:attr="data-price=${item['price']}"
-                   th:disabled="${item['is_selectable'] == false}"
-                   form="checkoutForm"
-                   aria-label="Chọn sản phẩm">
-        </div>
+            <!-- Checkbox chọn sản phẩm thanh toán -->
+            <div>
+                <input type="checkbox"
+                       class="item-check"
+                       name="selectedVariantIds"
+                       th:value="${item['variant_id']}"
+                       th:attr="data-price=${item['price']}"
+                       th:disabled="${item['is_selectable'] == false}"
+                       form="checkoutForm"
+                       aria-label="Chọn sản phẩm">
+            </div>
 
-        <!-- Thông tin sản phẩm -->
-        <div class="product">
+            <!-- Thông tin sản phẩm -->
+            <div class="product">
 
-            <img th:src="${item['image_url']}"
-                 th:alt="${item['product_name']}">
+                <img th:src="${item['image_url']}"
+                     th:alt="${item['product_name']}">
 
-            <div class="product-info">
+                <div class="product-info">
 
-                <strong th:text="${item['product_name']}">
-                    Tên sản phẩm
-                </strong>
+                    <strong th:text="${item['product_name']}">
+                        Tên sản phẩm
+                    </strong>
 
-                <div th:text="${item['variant_name']}">
-                    Phân loại
+                    <div th:text="${item['variant_name']}">
+                        Phân loại
+                    </div>
+
+                    <small>
+                        Còn
+                        <span th:text="${item['available_quantity']}">0</span>
+                        sản phẩm
+                    </small>
+
+                    <span class="availability-badge"
+                          th:if="${item['availability_reason'] != null}"
+                          th:classappend="${item['availability_reason'] != null && #strings.startsWith(item['availability_reason'], 'Tối thiểu')} ? ' min-order' : ''"
+                          th:text="${item['availability_reason']}">
+                        Hết hàng
+                    </span>
+
                 </div>
-
-                <small>
-                    Còn
-                    <span th:text="${item['available_quantity']}">0</span>
-                    sản phẩm
-                </small>
-
-                <span class="availability-badge"
-                      th:if="${item['availability_reason'] != null}"
-                      th:classappend="${item['availability_reason'] != null && #strings.startsWith(item['availability_reason'], 'Tối thiểu')} ? ' min-order' : ''"
-                      th:text="${item['availability_reason']}">
-                    Hết hàng
-                </span>
 
             </div>
 
+            <!-- Đơn giá -->
+            <div class="unit-price-wrap">
+                <small class="price-old" th:if="${item['original_price'] != null and item['price'] < item['original_price']}"
+                       th:text="${#numbers.formatDecimal(item['original_price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</small>
+                <strong class="unit-price" th:classappend="${item['original_price'] != null and item['price'] < item['original_price']} ? ' price-promotion' : ''"
+                        th:text="${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
+            </div>
+
+            <!-- Cập nhật số lượng (cập nhật tự động qua AJAX) -->
+            <form class="qty"
+                  th:action="@{/cart/items/{id}/quantity(id=${item['id']})}"
+                  method="post"
+                  onsubmit="return false;">
+
+                <button type="button"
+                        class="qty-btn"
+                        th:disabled="${item['is_selectable'] == false}"
+                        onclick="changeQuantity(this, -1)"
+                        aria-label="Giảm số lượng">
+                    −
+                </button>
+
+                <!-- Thêm data-available để so sánh giới hạn tồn kho -->
+                <input type="number"
+                       class="qty-input"
+                       name="quantity"
+                       min="1"
+                       th:attr="data-available=${item['available_quantity']}"
+                       th:value="${item['quantity']}"
+                       th:disabled="${item['is_selectable'] == false}"
+                       onchange="normalizeQuantity(this)"
+                       required>
+
+                <button type="button"
+                        class="qty-btn"
+                        th:disabled="${item['is_selectable'] == false}"
+                        onclick="changeQuantity(this, 1)"
+                        aria-label="Tăng số lượng">
+                    +
+                </button>
+
+            </form>
+
+            <!-- Thành tiền -->
+            <strong class="row-total-price"
+                    th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                0 ₫
+            </strong>
+
+            <!-- Xóa sản phẩm -->
+            <form th:action="@{/cart/items/{id}/delete(id=${item['id']})}"
+                  method="post">
+
+                <button type="submit"
+                        class="remove"
+                        onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
+                    Xóa
+                </button>
+
+            </form>
+
         </div>
-
-        <!-- Đơn giá -->
-        <div class="unit-price-wrap">
-            <small class="price-old" th:if="${item['original_price'] != null and item['price'] < item['original_price']}"
-                   th:text="${#numbers.formatDecimal(item['original_price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">100.000 ₫</small>
-            <strong class="unit-price" th:classappend="${item['price'] < item['original_price']} ? ' price-promotion' : ''"
-                    th:text="${#numbers.formatDecimal(item['price'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">80.000 ₫</strong>
-        </div>
-
-        <!-- Cập nhật số lượng (Đã xóa nút bấm, cập nhật tự động qua AJAX) -->
-        <form class="qty"
-              th:action="@{/cart/items/{id}/quantity(id=${item['id']})}"
-              method="post">
-
-            <button type="button"
-                    class="qty-btn"
-                    th:disabled="${item['is_selectable'] == false}"
-                    onclick="changeQuantity(this, -1)"
-                    aria-label="Giảm số lượng">
-                −
-            </button>
-
-            <!-- Thêm data-available để so sánh giới hạn tồn kho -->
-            <input type="number"
-                   class="qty-input"
-                   name="quantity"
-                   min="1"
-                   th:attr="data-available=${item['available_quantity']}"
-                   th:value="${item['quantity']}"
-                   th:disabled="${item['is_selectable'] == false}"
-                   onchange="normalizeQuantity(this)"
-                   required>
-
-            <button type="button"
-                    class="qty-btn"
-                    th:disabled="${item['is_selectable'] == false}"
-                    onclick="changeQuantity(this, 1)"
-                    aria-label="Tăng số lượng">
-                +
-            </button>
-
-        </form>
-
-        <!-- Thành tiền -->
-        <strong class="row-total-price"
-                th:text="${#numbers.formatDecimal(item['price'] * item['quantity'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">
-            0 ₫
-        </strong>
-
-        <!-- Xóa sản phẩm -->
-        <form th:action="@{/cart/items/{id}/delete(id=${item['id']})}"
-              method="post">
-
-            <button type="submit"
-                    class="remove"
-                    onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
-                Xóa
-            </button>
-
-        </form>
-
-    </div>
     </div>
 
     <!-- Thanh thanh toán -->
@@ -558,14 +552,12 @@
         const input = button.parentElement.querySelector('.qty-input');
 
         let quantity = parseInt(input.value, 10);
-        // Lấy số lượng tồn kho từ thuộc tính data-available, nếu không có thì mặc định là 99
         const maxAvailable = parseInt(input.getAttribute('data-available'), 10) || 99;
 
         if (Number.isNaN(quantity)) quantity = 1;
 
         let newQuantity = quantity + delta;
 
-        // Kiểm tra vượt quá tồn kho
         if (newQuantity > maxAvailable) {
             alert('Bạn đã đặt quá số lượng hàng hiện có (' + maxAvailable + ' sản phẩm).');
             newQuantity = maxAvailable;
@@ -576,7 +568,7 @@
         input.value = newQuantity;
 
         updateRowTotal(input);
-        syncQuantity(input); // Tự động lưu vào DB
+        syncQuantity(input);
     }
 
     // Xử lý khi người dùng gõ số trực tiếp vào ô input
@@ -587,7 +579,6 @@
         if (Number.isNaN(quantity) || quantity < 1) {
             quantity = 1;
         } else if (quantity > maxAvailable) {
-            // Hiển thị thông báo nếu gõ số quá lớn
             alert('Bạn đã đặt quá số lượng hàng hiện có (' + maxAvailable + ' sản phẩm).');
             quantity = maxAvailable;
         }
@@ -595,7 +586,7 @@
         input.value = quantity;
 
         updateRowTotal(input);
-        syncQuantity(input); // Tự động lưu vào DB
+        syncQuantity(input);
     }
 
     // Đồng bộ số lượng ngầm lên Server (AJAX)
@@ -609,7 +600,7 @@
         }).catch(error => console.error('Lỗi khi cập nhật số lượng:', error));
     }
 
-    // Cập nhật thành tiền của một dòng
+    // Cập nhật thành tiền của một dòng (Đã sửa lỗi thiếu dấu nhân *)
     function updateRowTotal(input) {
         const row = input.closest('.cart-item');
         const checkbox = row.querySelector('.item-check');
@@ -617,14 +608,15 @@
         const price = Number(checkbox.dataset.price || 0);
         const quantity = Math.max(1, Math.min(99, parseInt(input.value, 10) || 1));
 
-        row.querySelector('.row-total-price').textContent = new Intl.NumberFormat('vi-VN').format(price * quantity) + ' ₫';
+        row.querySelector('.row-total-price').textContent =
+            new Intl.NumberFormat('vi-VN').format(price * quantity) + ' ₫';
 
         updateCheckoutState();
     }
 
-    // Cập nhật tổng tiền của những sản phẩm được chọn
+    // Cập nhật tổng tiền của những sản phẩm được chọn (Đã sửa lỗi thiếu dấu nhân *)
     function updateCheckoutState() {
-        const itemChecks = document.querySelectorAll('.item-check');
+        const itemChecks = document.querySelectorAll('.item-check:not(:disabled)');
         const selectAll = document.getElementById('selectAllBottom');
         const countDisplay = document.getElementById('totalSelectedCount');
         const totalPriceDisplay = document.getElementById('totalPrice');
@@ -656,12 +648,13 @@
 
         if (selectAll) {
             selectAll.checked = itemChecks.length > 0 && selectedCount === itemChecks.length;
+            selectAll.indeterminate = selectedCount > 0 && selectedCount < itemChecks.length;
         }
 
         // Đồng bộ checkbox từng shop
         document.querySelectorAll('.shop-group').forEach(function (group) {
             const shopCheck = group.querySelector('.shop-check');
-            const checks = group.querySelectorAll('.item-check');
+            const checks = group.querySelectorAll('.item-check:not(:disabled)');
             if (!shopCheck) return;
             let checked = 0;
             checks.forEach(c => { if (c.checked) checked++; });
@@ -676,15 +669,26 @@
         const selectAll = document.getElementById('selectAllBottom');
         const shopChecks = document.querySelectorAll('.shop-check');
 
+        // Tự động tích chọn sản phẩm nếu chuyển từ nút "Mua ngay" (/cart?selected=...)
+        const params = new URLSearchParams(window.location.search);
+        const selectedVariant = params.get('selected');
+        if (selectedVariant) {
+            itemChecks.forEach(function (checkbox) {
+                if (!checkbox.disabled && checkbox.value === selectedVariant) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
         itemChecks.forEach(function (checkbox) {
             checkbox.addEventListener('change', updateCheckoutState);
         });
 
-        // Checkbox tên shop: chọn/bỏ chọn toàn bộ sản phẩm của shop đó
+        // Checkbox tên shop: chọn/bỏ chọn toàn bộ sản phẩm khả dụng của shop đó
         shopChecks.forEach(function (shopCheck) {
             shopCheck.addEventListener('change', function () {
                 const group = shopCheck.closest('.shop-group');
-                group.querySelectorAll('.item-check').forEach(function (checkbox) {
+                group.querySelectorAll('.item-check:not(:disabled)').forEach(function (checkbox) {
                     checkbox.checked = shopCheck.checked;
                 });
                 updateCheckoutState();
@@ -693,7 +697,7 @@
 
         if (selectAll) {
             selectAll.addEventListener('change', function () {
-                itemChecks.forEach(function (checkbox) {
+                document.querySelectorAll('.item-check:not(:disabled)').forEach(function (checkbox) {
                     checkbox.checked = selectAll.checked;
                 });
                 updateCheckoutState();
@@ -708,5 +712,3 @@
 
 </body>
 </html>
-```eof
-

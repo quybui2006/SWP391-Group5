@@ -3,24 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đơn hàng | FreshFruit</title>
+    <title>Quản lý Đơn hàng | Kênh Người Bán</title>
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
     <link rel="stylesheet" th:href="@{/css/shop-workflows.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --seller-bg: #f5f5f5;
+            --seller-surface: #ffffff;
+            --seller-border: #e2e8f0;
+            --seller-text-main: #1e293b;
+            --seller-text-muted: #64748b;
+            --seller-primary: #16803c;
+            --seller-danger: #ef4444;
+            --seller-warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--seller-bg); color: var(--seller-text-main); }
+        .main-content { padding: 24px 32px; }
+
+        .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 24px; }
+        .topbar h1 { font-size: 24px; font-weight: 700; margin: 8px 0 4px; color: var(--seller-text-main); }
+        .topbar .muted { color: var(--seller-text-muted); font-size: 14px; margin: 0; }
+        .btn-export { background: #fff; border: 1px solid var(--seller-border); color: var(--seller-text-main); padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; box-shadow: 0 1px 2px rgba(0,0,0,.02); white-space: nowrap; }
+        .btn-export:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        .seller-alert { background: #fffbeb; border-left: 4px solid var(--seller-warning); padding: 16px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.02); }
+        .seller-alert-content h4 { margin: 0 0 4px; font-size: 15px; color: #92400e; font-weight: 700; }
+        .seller-alert-content p { margin: 0; font-size: 13px; color: #b45309; line-height: 1.5; }
+        .btn-alert-action { background: var(--seller-warning); color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; border: none; white-space: nowrap; }
+        .btn-alert-action:hover { background: #d97706; }
+
+        .seller-card { background: var(--seller-surface); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.04); border: 1px solid var(--seller-border); overflow: hidden; }
+        .seller-tabs { display: flex; border-bottom: 1px solid var(--seller-border); padding: 0 16px; background: #fafafa; }
+        .seller-tab { padding: 16px 20px; text-decoration: none; font-size: 14px; font-weight: 500; color: var(--seller-text-muted); border-bottom: 2px solid transparent; position: relative; transition: all .2s; }
+        .seller-tab:hover { color: var(--seller-text-main); }
+        .seller-tab.active { color: var(--seller-primary); font-weight: 600; border-bottom-color: var(--seller-primary); }
+        .seller-tab.danger-tab { color: var(--seller-danger); }
+        .seller-tab.danger-tab.active { border-bottom-color: var(--seller-danger); }
+        .tab-badge { background: var(--seller-danger); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 99px; margin-left: 4px; }
+
+        .table-wrap { width: 100%; overflow-x: auto; }
+        .seller-table { width: 100%; min-width: 850px; border-collapse: collapse; text-align: left; }
+        .seller-table th { padding: 14px 20px; font-size: 13px; font-weight: 600; color: var(--seller-text-muted); background: #fff; border-bottom: 1px solid var(--seller-border); white-space: nowrap; }
+        .seller-table td { padding: 16px 20px; font-size: 14px; border-bottom: 1px solid var(--seller-border); vertical-align: top; }
+        .seller-table tbody tr:hover { background-color: #f8fafc; }
+        .seller-table tbody tr:last-child td { border-bottom: none; }
+
+        .order-code-text { font-family: monospace; font-size: 14px; font-weight: 700; color: var(--seller-text-main); display: block; margin-bottom: 6px; }
+        .customer-name { font-weight: 600; color: var(--seller-text-main); }
+        .order-date { font-size: 12.5px; color: var(--seller-text-muted); }
+        .price-text { font-weight: 700; color: var(--seller-danger); font-size: 15px; }
+        .pay-method { font-size: 12.5px; color: var(--seller-text-muted); display: block; margin-top: 4px; }
+
+        .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; border: 1px solid transparent; white-space: nowrap; }
+        .status-pending { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .status-confirmed { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .status-shipping { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+        .status-completed { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+        .status-cancelled { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+        .sub-badge { padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block; margin-top: 6px; line-height: 1.35; }
+        .sub-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .sub-info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .sub-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .sub-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .sub-neutral { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+        .btn-detail, .btn-process, .btn-complain { padding: 7px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600; text-decoration: none; transition: all .2s; white-space: nowrap; display: inline-block; text-align: center; }
+        .btn-detail { background: #fff; border: 1px solid var(--seller-border); color: var(--seller-text-main); }
+        .btn-detail:hover { border-color: var(--seller-primary); color: var(--seller-primary); background: #f0fdf4; }
+        .btn-process { background: var(--seller-primary); color: #fff; border: 1px solid var(--seller-primary); }
+        .btn-process:hover { background: #11632e; }
+        .btn-complain { background: var(--seller-danger); color: #fff; border: 1px solid var(--seller-danger); }
+        .btn-complain:hover { background: #b91c1c; }
+
+        .action-stack { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 126px; }
+        .action-stack form { margin: 0; }
+        .order-action-button { width: 100%; border: 0; border-radius: 5px; padding: 7px 10px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .order-action-button.confirm { background: #16803c; color: #fff; }
+        .order-action-button.confirm:hover { background: #11632e; }
+        .order-action-button.reject { background: #fff; color: #b91c1c; border: 1px solid #fca5a5; }
+        .order-action-button.reject:hover { background: #fef2f2; }
+        .order-reject-menu { border: 1px solid var(--seller-border); border-radius: 6px; padding: 6px 9px; background: #fff; font-size: 12px; }
+        .order-reject-menu summary { cursor: pointer; color: #b91c1c; font-weight: 700; }
+        .order-reject-menu form { display: grid; gap: 6px; margin-top: 8px; }
+        .order-reject-menu label { color: var(--seller-text-muted); font-weight: 600; }
+        .order-reject-menu input[type="text"] { width: 100%; min-width: 0; padding: 7px 8px; border: 1px solid #cbd5e1; border-radius: 5px; font: inherit; font-size: 12px; }
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--seller-text-muted); }
+
+        @media (max-width: 720px) {
+            .main-content { padding: 18px 14px; }
+            .topbar { flex-direction: column; }
+            .seller-alert { align-items: flex-start; flex-direction: column; }
+            .seller-tabs { padding: 0 8px; }
+            .seller-tab { padding: 13px 10px; font-size: 12.5px; }
+        }
+    </style>
 </head>
 <body>
 <div class="app-shell">
     <aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside>
+
     <main class="main-content product-management">
         <header class="topbar">
             <div>
-                <p class="breadcrumb">Shop Owner / <span>Đơn hàng</span></p>
-                <h1>Đơn hàng</h1>
-                <p class="muted">Các đơn hàng thuộc cửa hàng của bạn.</p>
+                <p class="breadcrumb">Shop Owner / <span>Quản lý Đơn hàng</span></p>
+                <h1>Tất cả đơn hàng</h1>
+                <p class="muted">Theo dõi và xử lý các đơn hàng phát sinh từ cửa hàng của bạn.</p>
             </div>
-            <a class="button button-primary" th:href="@{/shopowner/orders/export.xlsx}">Xuất Excel</a>
+            <a class="btn-export" th:href="@{/shopowner/orders/export.xlsx}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a2 2 0 01.707.293l5.414 5.414a2 2 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Xuất danh sách
+            </a>
         </header>
 
+<<<<<<< HEAD
         <!-- BANNER CẢNH BÁO KHIẾU NẠI CHỜ XỬ LÝ (SLA 6H) -->
         <div th:if="${pendingComplaintsCount != null and pendingComplaintsCount > 0}"
              style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -28,33 +127,53 @@
                 <div>
                     <strong style="color: #92400e; font-size: 14.5px;">Bạn có <span th:text="${pendingComplaintsCount}">1</span> đơn hàng đang bị khiếu nại cần xử lý</strong>
                     <p style="margin: 3px 0 0; color: #b45309; font-size: 13px;">Theo quy chế tranh chấp 2 tầng, Shop có tối đa 6 giờ để phản hồi (Đồng ý hoàn tiền hoặc Từ chối kèm giải trình) trước khi hệ thống chuyển hồ sơ lên CSKH.</p>
+=======
+        <!-- Banner khiếu nại đã được Operations phê duyệt và đang chờ Shop xử lý -->
+        <div class="seller-alert" th:if="${pendingComplaintsCount != null and pendingComplaintsCount > 0}">
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <svg width="24" height="24" fill="none" stroke="#d97706" viewBox="0 0 24 24" style="margin-top: 2px; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div class="seller-alert-content">
+                    <h4>Cần xử lý: <span th:text="${pendingComplaintsCount}">1</span> khiếu nại đang chờ Shop</h4>
+                    <p>Các khiếu nại này đã được Ban Vận hành thẩm định. Shop có tối đa 6 giờ để chọn phương án bồi hoàn: tạo đơn giao bù 0₫ hoặc phát hành voucher đền bù.</p>
+>>>>>>> develop
                 </div>
             </div>
-            <a th:href="@{/shopowner/orders(filter='complaint')}"
-               style="background: #d97706; color: #fff; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
-                Xem đơn khiếu nại →
-            </a>
+            <a th:href="@{/shopowner/orders(filter='complaint')}" class="btn-alert-action">Xử lý ngay</a>
         </div>
 
-        <section class="panel">
-            <!-- TAB LỌC ĐƠN HÀNG -->
-            <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+        <section class="seller-card">
+            <div class="seller-tabs">
                 <a th:href="@{/shopowner/orders}"
-                   th:style="${filter == null or filter == 'all'} ? 'background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;' : 'background: #f1f5f9; color: #475569; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;'">
+                   class="seller-tab" th:classappend="${filter == null or filter == 'all'} ? 'active'">
                     Tất cả đơn
                 </a>
                 <a th:href="@{/shopowner/orders(filter='complaint')}"
+<<<<<<< HEAD
                    th:style="${filter == 'complaint'} ? 'background: #dc2626; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;' : 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;'">
                     Có khiếu nại <span th:if="${totalComplaintsCount != null and totalComplaintsCount > 0}" th:text="${'(' + totalComplaintsCount + ')'}"></span>
+=======
+                   class="seller-tab danger-tab" th:classappend="${filter == 'complaint'} ? 'active'">
+                    Đơn khiếu nại / Hoàn trả
+                    <span class="tab-badge" th:if="${totalComplaintsCount != null and totalComplaintsCount > 0}" th:text="${totalComplaintsCount}"></span>
+>>>>>>> develop
                 </a>
             </div>
 
             <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Mã đơn</th><th>Người nhận</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thanh toán</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead>
+                <table class="seller-table">
+                    <thead>
+                    <tr>
+                        <th>Mã Đơn / Ngày Đặt</th>
+                        <th>Khách Hàng</th>
+                        <th>Tổng Tiền / Thanh Toán</th>
+                        <th>Trạng Thái</th>
+                        <th style="text-align: right;">Thao tác</th>
+                    </tr>
+                    </thead>
                     <tbody>
                     <tr th:each="o : ${orders}">
                         <td>
+<<<<<<< HEAD
                             <a th:href="@{/shopowner/orders/{id}(id=${o.id})}" th:text="${o.order_code}"></a>
                             <div th:if="${o.complaint_status != null and o.complaint_status != 'CANCELLED'}" style="margin-top: 4px;">
                                 <span th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}"
@@ -105,9 +224,82 @@
                                     </form>
                                 </details>
                             </th:block>
+=======
+                            <span class="order-code-text" th:text="${o.order_code}"></span>
+                            <span class="order-date" th:text="${o.created_at != null ? #temporals.format(o.created_at, 'HH:mm - dd/MM/yyyy') : 'Chưa có ngày tạo'}"></span>
+                        </td>
+
+                        <td>
+                            <div class="customer-name" th:text="${o.recipient_name}"></div>
+                            <span class="order-date" th:if="${o.recipient_phone != null}" th:text="${o.recipient_phone}"></span>
+                        </td>
+
+                        <td>
+                            <div class="price-text" th:text="${#numbers.formatInteger(o.total_amount, 1, 'COMMA') + ' ₫'}"></div>
+                            <span class="pay-method"
+                                  th:text="${o.payment_method == 'RESEND'} ? 'Đơn giao bù 0₫ (Miễn phí)' : (${o.payment_method == 'COD'} ? 'Thanh toán COD' : (${o.payment_method == 'MOCK_ONLINE'} ? 'Thanh toán trực tuyến (Mock)' : 'Thanh toán VNPAY'))"></span>
+                            <span class="sub-badge sub-success" th:if="${o.payment_status == 'PAID'}">Đã thanh toán</span>
+                            <span class="sub-badge sub-warning" th:if="${o.payment_status != 'PAID'}">Chưa thanh toán</span>
+                        </td>
+
+                        <td>
+                            <span class="status-badge"
+                                  th:classappend="${o.status == 'PENDING'} ? 'status-pending' : (${o.status == 'CONFIRMED' or o.status == 'READY_TO_SHIP' or o.status == 'PREPARING'} ? 'status-confirmed' : (${o.status == 'SHIPPING'} ? 'status-shipping' : (${o.status == 'COMPLETED' or o.status == 'DELIVERED'} ? 'status-completed' : 'status-cancelled')))"
+                                  th:text="${o.status == 'PENDING' ? 'Chờ xác nhận' : (o.status == 'CONFIRMED' ? 'Đã xác nhận' : (o.status == 'READY_TO_SHIP' ? 'Chờ lấy hàng' : (o.status == 'PREPARING' ? 'Đang chuẩn bị' : (o.status == 'SHIPPING' ? 'Đang giao' : (o.status == 'DELIVERED' ? 'Đã giao' : (o.status == 'COMPLETED' ? 'Hoàn tất' : (o.status == 'CANCELLED' ? 'Đã hủy' : o.status)))))))}">
+                            </span>
+
+                            <div th:if="${o.complaint_status != null and o.complaint_status != 'CANCELLED'}">
+                                <span class="sub-badge sub-info" th:if="${o.complaint_status == 'PENDING_OPERATIONS'}">⏳ Chờ Vận hành thẩm định</span>
+                                <span class="sub-badge sub-warning" th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}">⚠️ Chờ Shop xử lý (6h)</span>
+                                <span class="sub-badge sub-info" th:if="${o.complaint_status == 'ESCALATED' or o.complaint_status == 'IN_PROGRESS'}">Đang được CSKH / Vận hành xử lý</span>
+                                <span class="sub-badge sub-success" th:if="${o.complaint_status == 'RESOLVED'}">✓ Đã giải quyết</span>
+                                <span class="sub-badge sub-danger" th:if="${o.complaint_status == 'REJECTED'}">✕ Khiếu nại bị từ chối</span>
+                            </div>
+                        </td>
+
+                        <td style="text-align: right;">
+                            <div class="action-stack">
+                                <a class="btn-detail" th:href="@{/shopowner/orders/{id}(id=${o.id})}">Xem chi tiết</a>
+
+                                <a th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}"
+                                   class="btn-complain" th:href="@{/shopowner/orders/{id}(id=${o.id})}">
+                                    Xử lý khiếu nại
+                                </a>
+
+                                <th:block th:if="${o.status == 'PENDING' and (o.complaint_status == null or o.complaint_status == 'CANCELLED') and ((o.payment_method == 'COD' and o.payment_status == 'UNPAID') or ((o.payment_method == 'VNPAY' or o.payment_method == 'MOCK_ONLINE') and o.payment_status == 'PAID'))}">
+                                    <form method="post" th:action="@{/shopowner/orders/{id}/confirm(id=${o.id})}"
+                                          onsubmit="return confirm('Xác nhận đơn này và ghi nhận số lượng bán?');">
+                                        <input type="hidden" name="token" th:value="${token}">
+                                        <button class="order-action-button confirm" type="submit">Xác nhận đơn</button>
+                                    </form>
+                                    <details class="order-reject-menu">
+                                        <summary>Từ chối đơn</summary>
+                                        <form method="post" th:action="@{/shopowner/orders/{id}/reject(id=${o.id})}"
+                                              onsubmit="return confirm('Bạn chắc chắn muốn từ chối đơn hàng này?');">
+                                            <input type="hidden" name="token" th:value="${token}">
+                                            <label th:for="${'reason-' + o.id}">Lý do từ chối</label>
+                                            <input type="text" th:id="${'reason-' + o.id}" name="reason" maxlength="1000" placeholder="Nhập lý do..." required>
+                                            <button class="order-action-button reject" type="submit">Gửi từ chối</button>
+                                        </form>
+                                    </details>
+                                </th:block>
+
+                                <span class="order-date" th:if="${o.status == 'PENDING' and (o.payment_method == 'VNPAY' or o.payment_method == 'MOCK_ONLINE') and o.payment_status != 'PAID'}">
+                                    Chờ thanh toán
+                                </span>
+                            </div>
                         </td>
                     </tr>
-                    <tr th:if="${#lists.isEmpty(orders)}"><td colspan="7" class="muted">Chưa có đơn hàng nào.</td></tr>
+
+                    <tr th:if="${#lists.isEmpty(orders)}">
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a2 2 0 00-.707.293l-2.414 2.414a2 2 0 01-.707.293h-3.172a2 2 0 01-.707-.293l-2.414-2.414A2 2 0 006.586 13H4"></path></svg>
+                                <div>Chưa có đơn hàng nào trong mục này.</div>
+                            </div>
+>>>>>>> develop
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
