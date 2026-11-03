@@ -35,12 +35,15 @@ class CustomerProductDetailIntegrationTests {
         jdbc.update("INSERT INTO users(full_name, email) VALUES ('Shop Shopee Owner', 'shopee.owner@freshfruit.example')");
         long ownerId = jdbc.queryForObject("SELECT id FROM users WHERE email='shopee.owner@freshfruit.example'", Long.class);
 
-        jdbc.update("INSERT INTO shops(owner_id, name, phone, province_code, ward_name, address_detail, approval_status, operating_status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)", ownerId, "FreshFruit Official Store", "0988776655", "P-SHOPEE", "Phường 1", "123 Đường Láng", "APPROVED", "OPEN");
+        jdbc.update("INSERT INTO shops(owner_id, name, phone, province_code, ward_name, address_detail, approval_status, operating_status, payment_approval_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 'APPROVED', 'OPEN', 'APPROVED')", ownerId, "FreshFruit Official Store", "0988776655", "P-SHOPEE", "Phường 1", "123 Đường Láng");
         long shopId = jdbc.queryForObject("SELECT id FROM shops WHERE owner_id=?", Long.class, ownerId);
 
         jdbc.update("INSERT INTO units(code, name) VALUES ('U-HOP', 'Hộp')");
         long unitId = jdbc.queryForObject("SELECT id FROM units WHERE code='U-HOP'", Long.class);
+
+        jdbc.update("INSERT INTO categories(name, is_active) VALUES ('Trái cây nhập khẩu', true)");
+        long catId = jdbc.queryForObject("SELECT id FROM categories WHERE name='Trái cây nhập khẩu'", Long.class);
 
         jdbc.update("INSERT INTO products(name, selling_status, approval_status, shop_id, description, origin, batch_code) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -48,11 +51,18 @@ class CustomerProductDetailIntegrationTests {
                 "New Zealand", "BATCH-SHOPEE-01");
         long productId = jdbc.queryForObject("SELECT id FROM products WHERE batch_code='BATCH-SHOPEE-01'", Long.class);
 
+        jdbc.update("INSERT INTO product_categories(product_id, category_id) VALUES (?, ?)", productId, catId);
+
         jdbc.update("INSERT INTO product_variants(product_id, name, image_url, price, status, approval_status, reviewed_at, base_unit_id, shop_id, sku, specification, min_order_quantity) " +
                         "VALUES (?, ?, ?, ?, 'ACTIVE', 'APPROVED', CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
                 productId, "Táo Envy New Zealand Hộp 1kg", "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6",
                 new BigDecimal("129000"), unitId, shopId, "SKU-SHOPEE-ENVY", "Hộp 1kg (4-5 quả)", 1);
-        return jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-SHOPEE-ENVY'", Long.class);
+        long variantId = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-SHOPEE-ENVY'", Long.class);
+
+        jdbc.update("INSERT INTO variant_inventory(variant_id, initial_quantity, quantity_on_hand, reserved_quantity, low_stock_threshold_quantity, status, created_by) " +
+                "VALUES (?, 100, 85, 0, 10, 'ACTIVE', ?)", variantId, ownerId);
+
+        return variantId;
     }
 
     @Test
@@ -68,6 +78,16 @@ class CustomerProductDetailIntegrationTests {
                 .andExpect(model().attributeExists("reviewStats"))
                 .andExpect(model().attributeExists("relatedProducts"))
                 .andExpect(model().attribute("isCustomer", false))
+                // Kiểm tra các thông số được binding từ backend thực
+                .andExpect(model().attribute("stockQuantity", 85))
+                .andExpect(model().attribute("soldCount", 0L))
+                .andExpect(model().attribute("soldCountFormatted", "0"))
+                .andExpect(model().attribute("categoryNames", "Trái cây nhập khẩu"))
+                .andExpect(model().attributeExists("shopTotalProducts"))
+                .andExpect(model().attributeExists("shopJoinTime"))
+                .andExpect(content().string(containsString("85 sản phẩm có sẵn")))
+                .andExpect(content().string(containsString("85 sản phẩm")))
+                .andExpect(content().string(containsString("Trái cây nhập khẩu")))
                 // Kiểm tra các phần bố cục Shopee đã dựng
                 .andExpect(content().string(containsString("Yêu thích+")))
                 .andExpect(content().string(containsString("CHI TIẾT SẢN PHẨM")))
@@ -116,6 +136,25 @@ class CustomerProductDetailIntegrationTests {
 
         jdbc.update("INSERT INTO users(full_name, email) VALUES ('Khách Mua Hàng', 'buyer.shopee@test.com')");
         long customerId = jdbc.queryForObject("SELECT id FROM users WHERE email='buyer.shopee@test.com'", Long.class);
+        long shopId = jdbc.queryForObject("SELECT shop_id FROM product_variants WHERE id=?", Long.class, variantId);
+        long inventoryId = jdbc.queryForObject("SELECT id FROM variant_inventory WHERE variant_id=?", Long.class, variantId);
+
+        // Tạo checkout & order đã hoàn thành để thỏa mãn điều kiện canReview
+        jdbc.update("INSERT INTO checkouts(checkout_code, request_key, user_id, contact_email, payment_method, total_amount, status) VALUES ('CHK-TEST-01', 'REQ-KEY-01', ?, 'buyer@test.com', 'COD', 129000, 'COMPLETED')", customerId);
+        long checkoutId = jdbc.queryForObject("SELECT id FROM checkouts WHERE user_id=? ORDER BY id DESC LIMIT 1", Long.class, customerId);
+
+        jdbc.update("INSERT INTO orders(order_code, checkout_id, shop_id, recipient_name, recipient_phone, " +
+                        "delivery_province_code, delivery_province_name, delivery_ward_name, delivery_address, " +
+                        "shop_province_code, subtotal, points_used, points_discount, points_subsidy_amount, qualifying_amount, points_earned, shipping_fee, total_amount, shop_revenue_amount, " +
+                        "payment_method, delivery_code, status, payment_status, delivery_status, completed_at) " +
+                        "VALUES ('ORD-TEST-REV-01', ?, ?, 'Khách Mua', '0911223344', 'P-SHOPEE', 'Hà Nội', 'Phường 1', '123 Đường Láng', " +
+                        "'P-SHOPEE', 129000, 0, 0, 0, 129000, 0, 0, 129000, 129000, 'COD', 'DEL-TEST-REV-01', 'COMPLETED', 'PAID', 'DELIVERED', CURRENT_TIMESTAMP)",
+                checkoutId, shopId);
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code='ORD-TEST-REV-01'", Long.class);
+
+        jdbc.update("INSERT INTO order_items(order_id, shop_id, variant_id, inventory_id, product_name, variant_name, sku, base_unit_name, quantity, unit_price, sale_unit_price, line_total, allocation_status) " +
+                        "VALUES (?, ?, ?, ?, 'Táo Envy', 'Hộp 1kg', 'SKU-SHOPEE-ENVY', 'Hộp', 1, 129000, 129000, 129000, 'ALLOCATED')",
+                orderId, shopId, variantId, inventoryId);
 
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("userId", customerId);

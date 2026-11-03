@@ -263,7 +263,13 @@ public class ShopProductService {
 
     public Map<String, Object> shopDashboard(Long ownerUserId) {
         Shop shop = shopRepository.findByOwnerId(ownerUserId).orElse(null);
-        if (shop == null) return Map.of("name", "Chưa đăng ký cửa hàng", "approvalStatus", "NOT_REGISTERED", "operatingStatus", "CLOSED");
+        if (shop == null) return Map.of(
+                "name", "Chưa đăng ký cửa hàng",
+                "approvalStatus", "NOT_REGISTERED",
+                "operatingStatus", "CLOSED",
+                "paymentApprovalStatus", "UNCONFIGURED",
+                "bankRejectionReason", ""
+        );
         Map<String, Object> map = new HashMap<>();
         map.put("id", shop.getId());
         map.put("name", shop.getName());
@@ -736,7 +742,7 @@ public class ShopProductService {
             statement.setTimestamp(4, java.sql.Timestamp.valueOf(receivedAt));
             statement.setLong(5, ownerId); return statement;
         }, key);
-        long batchId = key.getKey().longValue();
+        long batchId = extractGeneratedId(key);
         String code = "LOT-" + batchId;
         jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", code, batchId);
         jdbc.update("INSERT INTO inventory_transactions(inventory_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,'RECEIVE',?,0,?,0,?,?,?)",
@@ -794,6 +800,18 @@ public class ShopProductService {
         product.setSellingStatus("ACTIVE");
         productRepository.save(product);
     }
+    private long extractGeneratedId(org.springframework.jdbc.support.KeyHolder key) {
+        if (key.getKeys() != null) {
+            Map<String, Object> keys = key.getKeys();
+            if (keys.containsKey("id") && keys.get("id") instanceof Number n) return n.longValue();
+            if (keys.containsKey("ID") && keys.get("ID") instanceof Number n) return n.longValue();
+            for (Object val : keys.values()) {
+                if (val instanceof Number n) return n.longValue();
+            }
+        }
+        Number k = key.getKey();
+        if (k != null) return k.longValue();
+        throw new IllegalStateException("Không lấy được khóa tự sinh.");
+    }
+
 }
-
-

@@ -110,7 +110,7 @@
                 style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); border-color: #3b82f6;">
                 <div class="setup-banner-left">
                     <span class="setup-tag" style="background: #eff6ff; color: #1d4ed8;">BƯỚC BẮT BUỘC ĐỂ MỞ BÁN</span>
-                    <h2 style="color: #ffffff;">Cửa hàng đã được duyệt! Vui lòng gửi "Yêu cầu Đối soát thanh toán"
+                    <h2 style="color: #ffffff;">Cửa hàng đã được duyệt! Vui lòng "Thêm thông tin thanh toán"
                     </h2>
                     <p style="color: #dbeafe;">Để kích hoạt trạng thái mở bán <strong>(Hoạt động: OPEN)</strong> và nhận
                         tiền thanh toán đơn hàng, bạn cần khai báo tài khoản ngân hàng thụ hưởng chính chủ để Ban Quản
@@ -119,7 +119,7 @@
                 <div class="setup-banner-right">
                     <a th:href="@{/shopowner/payment-verification}" class="setup-open-shop-btn"
                         style="background: #28a866; color: #fff; box-shadow: 0 4px 14px rgba(40, 168, 102, 0.4);">
-                        <span>Yêu cầu đối soát thanh toán</span>
+                        <span>Thêm thông tin thanh toán</span>
                         <span class="btn-arrow">➔</span>
                     </a>
                 </div>
@@ -131,7 +131,7 @@
                 style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fcd34d;">
                 <div class="setup-banner-left">
                     <span class="setup-tag pending">ĐANG ĐỐI SOÁT</span>
-                    <h2>Yêu cầu đối soát thanh toán đang chờ Ban Quản Lý thẩm định</h2>
+                    <h2>Thông tin thanh toán đang chờ Ban Quản Lý thẩm định</h2>
                     <p>Thông tin tài khoản ngân hàng của bạn đang được đối chiếu với hồ sơ CCCD đã xác thực. Cửa hàng sẽ
                         tự động chuyển sang trạng thái <strong>MỞ BÁN (Hoạt động: OPEN)</strong> ngay sau khi thẩm định
                         hoàn tất.</p>
@@ -148,7 +148,7 @@
                 class="shop-setup-banner rejected">
                 <div class="setup-banner-left">
                     <span class="setup-tag rejected">CẦN ĐIỀU CHỈNH</span>
-                    <h2>Yêu cầu đối soát thanh toán chưa được phê duyệt</h2>
+                    <h2>Thông tin thanh toán chưa được phê duyệt</h2>
                     <p>Ban Quản Lý phản hồi: <strong
                             th:text="${shop.bankRejectionReason ?: 'Tên chủ tài khoản không trùng khớp với họ tên CCCD'}">Chưa
                             khớp thông tin</strong>. Vui lòng cập nhật lại thông tin tài khoản chính chủ.</p>

@@ -344,7 +344,7 @@ public class NotificationService {
         createNotification(
                 userId,
                 "PAYMENT",
-                "Yêu cầu đối soát thanh toán để kích hoạt Mở bán (OPEN) 💳",
+                "Thêm thông tin thanh toán để kích hoạt Mở bán (OPEN) 💳",
                 "Shop '" + shopName + "' đã được phê duyệt mở shop! Vui lòng khai báo thông tin tài khoản ngân hàng thụ hưởng để Ban vận hành đối soát và kích hoạt trạng thái mở bán.",
                 "PAYMENT_VERIFICATION",
                 shopId
