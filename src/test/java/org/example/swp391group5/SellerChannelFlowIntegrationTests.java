@@ -15,7 +15,9 @@ import service.operations.OperationsShopApprovalService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.springframework.mock.web.MockMultipartFile;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -150,7 +152,23 @@ class SellerChannelFlowIntegrationTests {
         session = newSession;
 
         // 5. Submit /seller/create-shop -> Step 2 success, creates Shop, redirects to /seller/status
-        mvc.perform(post("/seller/create-shop").session(session)
+        MockMultipartFile gpkdFile = new MockMultipartFile(
+                "businessLicenseFile",
+                "giay-phep-kinh-doanh.pdf",
+                "application/pdf",
+                "sample-gpkd-bytes".getBytes()
+        );
+        MockMultipartFile attpFile = new MockMultipartFile(
+                "foodSafetyCertFile",
+                "giay-attp.png",
+                "image/png",
+                "sample-attp-bytes".getBytes()
+        );
+
+        mvc.perform(multipart("/seller/create-shop")
+                        .file(gpkdFile)
+                        .file(attpFile)
+                        .session(session)
                         .param("name", "Nông Trại Trái Cây Ba Vì")
                         .param("description", "Hoa quả sạch chuẩn VietGAP Ba Vì")
                         .param("phone", "0988112233")
@@ -160,13 +178,25 @@ class SellerChannelFlowIntegrationTests {
                         .param("shippingFast", "true")
                         .param("shippingExpress", "true")
                         .param("shippingStandard", "true")
+                        .param("businessLicenseNumber", "0109988776")
+                        .param("businessLicenseDate", "2023-01-15")
+                        .param("businessLicensePlace", "Sở KH&ĐT TP. Hà Nội")
+                        .param("foodSafetyCertNumber", "88/2023/ATTP-CNĐK")
+                        .param("foodSafetyCertDate", "2023-03-20")
+                        .param("foodSafetyCertExpiry", "2026-03-20")
+                        .param("foodSafetyCertPlace", "Chi cục An toàn Vệ sinh Thực phẩm Hà Nội")
                         .param("agreeTerms", "true"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/seller/status"));
 
-        // Check Shop created
+        // Check Shop created with certificates stored
         Long shopId = jdbc.queryForObject("SELECT id FROM shops WHERE owner_id=?", Long.class, userId);
         assertNotNull(shopId);
+        java.util.Map<String, Object> shopRow = jdbc.queryForMap("SELECT * FROM shops WHERE id=?", shopId);
+        assertEquals("0109988776", shopRow.get("business_license_number"));
+        assertEquals("88/2023/ATTP-CNĐK", shopRow.get("food_safety_cert_number"));
+        assertNotNull(shopRow.get("business_license_url"));
+        assertNotNull(shopRow.get("food_safety_cert_url"));
 
         // 6. View /seller/status -> 200 OK (PENDING)
         mvc.perform(get("/seller/status").session(session))
@@ -205,5 +235,39 @@ class SellerChannelFlowIntegrationTests {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/shopowner/home"));
         assertEquals("SHOP_OWNER", session.getAttribute("role"));
+    }
+
+    @Test
+    void createShop_withoutCertFiles_failsValidation() throws Exception {
+        ensureProvince("P-HN-TEST", "Hà Nội");
+        Long userId = createTestUser("test-no-cert@example.com", "Trần Văn Thiếu");
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", userId);
+
+        SellerAccountActivationDto act = new SellerAccountActivationDto();
+        act.setPhone("0988223344");
+        act.setIdCardName("TRẦN VĂN THIẾU");
+        act.setIdCardNumber("001203001122");
+        act.setIdCardDate("2021-02-02");
+        act.setIdCardPlace("Cục CS QLHC về TTXH");
+        session.setAttribute("sellerActivation", act);
+
+        mvc.perform(post("/seller/create-shop").session(session)
+                        .param("name", "Shop Thiếu Hồ Sơ")
+                        .param("phone", "0988223344")
+                        .param("provinceCode", "P-HN-TEST")
+                        .param("wardName", "Phường Mai Dịch")
+                        .param("addressDetail", "Số 1 Hồ Tùng Mậu")
+                        .param("businessLicenseNumber", "0109988776")
+                        .param("businessLicenseDate", "2023-01-15")
+                        .param("businessLicensePlace", "Sở KH&ĐT TP. Hà Nội")
+                        .param("foodSafetyCertNumber", "88/2023/ATTP-CNĐK")
+                        .param("foodSafetyCertDate", "2023-03-20")
+                        .param("foodSafetyCertPlace", "Chi cục ATTP")
+                        .param("agreeTerms", "true"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("seller/create-shop"))
+                .andExpect(model().attributeHasFieldErrors("form", "businessLicenseFile", "foodSafetyCertFile"));
     }
 }

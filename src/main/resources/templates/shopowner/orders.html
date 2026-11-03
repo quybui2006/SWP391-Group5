@@ -80,7 +80,7 @@
                         <td><span class="order-status" th:classappend="${o.status == 'PENDING'} ? ' pending' : (${o.status == 'CONFIRMED'} ? ' confirmed' : (${o.status == 'CANCELLED'} ? ' cancelled' : ''))"
                                   th:text="${o.status == 'PENDING'} ? 'Chờ xác nhận' : (${o.status == 'CONFIRMED'} ? 'Đã xác nhận' : (${o.status == 'CANCELLED'} ? 'Đã hủy' : (${o.status == 'COMPLETED'} ? 'Hoàn tất' : o.status)))">Chờ xác nhận</span></td>
                         <td th:text="${o.payment_method == 'COD'} ? 'Khi nhận hàng' : 'Trực tuyến'"></td>
-                        <td th:text="${#temporals.format(o.created_at, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td th:text="${o.created_at_fmt ?: (o.created_at != null ? #temporals.format(o.created_at, 'dd/MM/yyyy HH:mm') : '')}"></td>
                         <td class="order-row-actions">
                             <a class="order-action-link" th:href="@{/shopowner/orders/{id}(id=${o.id})}">Chi tiết</a>
                             <a th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}"

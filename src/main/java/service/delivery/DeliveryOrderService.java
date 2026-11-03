@@ -224,14 +224,25 @@ public class DeliveryOrderService {
             // Giao thành công vẫn giữ lô cho đến khi khách xác nhận đã nhận hàng.
             if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
                 jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
-                jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',payment_status='PAID',paid_at=?,delivery_status='DELIVERED',delivered_at=?,auto_complete_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now.plusDays(3), now, orderId);
             } else {
-                jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=DATE_ADD(?,INTERVAL 3 DAY),delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now, now, orderId);
+                jdbc.update("UPDATE orders SET status='DELIVERED',delivery_status='DELIVERED',delivered_at=?,auto_complete_at=?,delivery_updated_at=? WHERE id=? AND status='SHIPPING'", now, now.plusDays(3), now, orderId);
             }
             return;
         }
         if ("COMPLETED".equals(target)) {
-            throw new IllegalStateException("Đơn chỉ được hoàn tất sau khi khách hàng xác nhận đã nhận hàng.");
+            if (!"SHIPPING".equals(currentStatus) && !"DELIVERED".equals(currentStatus))
+                throw new IllegalStateException("Chỉ hoàn tất đơn đang vận chuyển hoặc đã giao.");
+            if ("COD".equals(paymentMethod) && "UNPAID".equals(paymentStatus)) {
+                jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE order_id=? AND status='PENDING'", now, orderId);
+            }
+            jdbc.update("UPDATE orders SET status='COMPLETED',payment_status='PAID',paid_at=COALESCE(paid_at,?),delivery_status='DELIVERED',delivered_at=COALESCE(delivered_at,?),completed_at=?,delivery_updated_at=? WHERE id=? AND status IN ('SHIPPING','DELIVERED')", now, now, now, now, orderId);
+            List<Map<String, Object>> items = jdbc.queryForList("SELECT id FROM order_items WHERE order_id=? AND allocation_status='RESERVED'", orderId);
+            for (Map<String, Object> it : items) {
+                inventoryBatches.consumeOrderItem(((Number) it.get("id")).longValue(), firstNonNullStr(order, "order_code", ""));
+                jdbc.update("UPDATE order_items SET allocation_status='CONSUMED' WHERE id=?", ((Number) it.get("id")).longValue());
+            }
+            return;
         }
         if ("CANCELLED".equals(target)) {
             String reason = cancelReason == null || cancelReason.isBlank()

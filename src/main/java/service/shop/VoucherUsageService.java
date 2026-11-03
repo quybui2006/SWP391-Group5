@@ -14,8 +14,8 @@ public class VoucherUsageService {
 
     /** Trả lại một lượt voucher giảm tiền sau khi đơn đã chuyển sang CANCELLED. */
     public void returnDiscountUse(Long orderId) {
-        jdbc.update("UPDATE vouchers v JOIN orders o ON o.voucher_id=v.id " +
-                "SET v.used_count=v.used_count-1 " +
-                "WHERE o.id=? AND o.status='CANCELLED' AND v.voucher_type='DISCOUNT' AND v.used_count>0", orderId);
+        jdbc.update("UPDATE vouchers SET used_count = used_count - 1 " +
+                "WHERE id = (SELECT voucher_id FROM orders WHERE id = ? AND status = 'CANCELLED') " +
+                "AND voucher_type = 'DISCOUNT' AND used_count > 0", orderId);
     }
 }
