@@ -1,4 +1,4 @@
-package dto.customer;
+package dto.shop;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -180,3 +180,4 @@ public class ShopRegistrationDto {
     public void setFoodSafetyCertUrl(String foodSafetyCertUrl) { this.foodSafetyCertUrl = foodSafetyCertUrl; }
 
 }
+

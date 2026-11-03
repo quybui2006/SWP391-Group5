@@ -1,7 +1,7 @@
-package controller.customer;
+package controller.shop;
 
-import dto.customer.ShopPaymentSetupDto;
-import dto.customer.ShopRegistrationDto;
+import dto.shop.ShopPaymentSetupDto;
+import dto.shop.ShopRegistrationDto;
 import dto.seller.SellerAccountActivationDto;
 import dto.seller.SellerCreateShopDto;
 import entity.Shop;
@@ -16,23 +16,23 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.customer.CustomerAccountService;
-import service.customer.CustomerShopRegistrationService;
+import service.shop.ShopRegistrationService;
 import service.shop.ShopCertificateStorage;
 
 import java.util.Map;
 import java.util.Optional;
 
 @Controller
-public class CustomerShopRegistrationController {
+public class ShopRegistrationController {
 
     public static final String SESSION_ACTIVATION_KEY = "sellerActivation";
 
-    private final CustomerShopRegistrationService shopRegistrationService;
+    private final ShopRegistrationService shopRegistrationService;
     private final CustomerAccountService customerAccountService;
     private final ShopCertificateStorage certificateStorage;
 
-    public CustomerShopRegistrationController(
-            CustomerShopRegistrationService shopRegistrationService,
+    public ShopRegistrationController(
+            ShopRegistrationService shopRegistrationService,
             CustomerAccountService customerAccountService,
             ShopCertificateStorage certificateStorage) {
         this.shopRegistrationService = shopRegistrationService;

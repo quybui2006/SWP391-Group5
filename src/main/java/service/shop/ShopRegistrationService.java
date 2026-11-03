@@ -1,6 +1,7 @@
-package service.customer;
+package service.shop;
 
-import dto.customer.ShopRegistrationDto;
+import dto.shop.ShopPaymentSetupDto;
+import dto.shop.ShopRegistrationDto;
 import entity.Province;
 import entity.Shop;
 import entity.User;
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import repository.ProvinceRepository;
 import repository.ShopRepository;
 import repository.UserRepository;
+import service.customer.AddressLocationService;
+import service.customer.NotificationService;
 
 import dto.seller.SellerAccountActivationDto;
 import dto.seller.SellerCreateShopDto;
@@ -20,7 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
-public class CustomerShopRegistrationService {
+public class ShopRegistrationService {
 
     private final ShopRepository shopRepository;
     private final ProvinceRepository provinceRepository;
@@ -29,7 +32,7 @@ public class CustomerShopRegistrationService {
     private final AddressLocationService addressLocationService;
     private final JdbcTemplate jdbcTemplate;
 
-    public CustomerShopRegistrationService(
+    public ShopRegistrationService(
             ShopRepository shopRepository,
             ProvinceRepository provinceRepository,
             UserRepository userRepository,
@@ -249,7 +252,6 @@ public class CustomerShopRegistrationService {
         shop.setFoodSafetyCertPlace(dto.getFoodSafetyCertPlace() != null ? dto.getFoodSafetyCertPlace().trim() : null);
         shop.setFoodSafetyCertUrl(dto.getFoodSafetyCertUrl() != null ? dto.getFoodSafetyCertUrl().trim() : null);
 
-
         java.util.List<String> shipping = new java.util.ArrayList<>();
         if (dto.isShippingFast()) shipping.add("FAST");
         if (dto.isShippingExpress()) shipping.add("EXPRESS");
@@ -329,7 +331,6 @@ public class CustomerShopRegistrationService {
         }
         shop.setFoodSafetyCertPlace(dto.getFoodSafetyCertPlace() != null ? dto.getFoodSafetyCertPlace().trim() : null);
         shop.setFoodSafetyCertUrl(dto.getFoodSafetyCertUrl() != null ? dto.getFoodSafetyCertUrl().trim() : null);
-
 
         java.util.List<String> resubmitShipping = new java.util.ArrayList<>();
         if (dto.isShippingFast()) resubmitShipping.add("FAST");
@@ -432,7 +433,7 @@ public class CustomerShopRegistrationService {
     }
 
     @Transactional
-    public void submitPaymentInfo(Long userId, dto.customer.ShopPaymentSetupDto dto) {
+    public void submitPaymentInfo(Long userId, ShopPaymentSetupDto dto) {
         if (userId == null) {
             throw new IllegalArgumentException("Vui lòng đăng nhập.");
         }
@@ -468,7 +469,7 @@ public class CustomerShopRegistrationService {
     }
 
     @Transactional
-    public Shop registerShopFromSellerOnboarding(Long userId, dto.seller.SellerAccountActivationDto activation, dto.seller.SellerCreateShopDto shopDto) {
+    public Shop registerShopFromSellerOnboarding(Long userId, SellerAccountActivationDto activation, SellerCreateShopDto shopDto) {
         if (activation == null) {
             throw new IllegalArgumentException("Vui lòng hoàn thành bước Kích hoạt tài khoản Người bán trước.");
         }
@@ -507,7 +508,6 @@ public class CustomerShopRegistrationService {
         fullDto.setFoodSafetyCertPlace(shopDto.getFoodSafetyCertPlace());
         fullDto.setFoodSafetyCertUrl(shopDto.getFoodSafetyCertUrl());
 
-
         return registerShop(userId, fullDto);
     }
 
@@ -517,3 +517,4 @@ public class CustomerShopRegistrationService {
         }
     }
 }
+

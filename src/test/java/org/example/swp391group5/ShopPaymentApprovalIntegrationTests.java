@@ -1,7 +1,7 @@
 package org.example.swp391group5;
 
-import dto.customer.ShopPaymentSetupDto;
-import dto.customer.ShopRegistrationDto;
+import dto.shop.ShopPaymentSetupDto;
+import dto.shop.ShopRegistrationDto;
 import dto.operations.ShopApprovalDetailDto;
 import entity.Shop;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import service.customer.CustomerShopRegistrationService;
+import service.shop.ShopRegistrationService;
 import service.operations.OperationsShopApprovalService;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ShopPaymentApprovalIntegrationTests {
 
     @Autowired
-    private CustomerShopRegistrationService customerShopService;
+    private ShopRegistrationService customerShopService;
 
     @Autowired
     private OperationsShopApprovalService operationsShopService;
