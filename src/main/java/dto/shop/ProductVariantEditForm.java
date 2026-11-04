@@ -1,7 +1,7 @@
 package dto.shop;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.math.BigDecimal;
 
 /** Dữ liệu Shop Owner được phép cập nhật cho một biến thể và tồn kho của nó. */
 public class ProductVariantEditForm {
@@ -16,7 +16,7 @@ public class ProductVariantEditForm {
     private BigDecimal price;
     private String status;
     private Integer quantityOnHand;
-    private BigDecimal lowStockThresholdPct;
+    private Integer lowStockThresholdQuantity;
     private List<UnitOption> units;
 
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
@@ -30,7 +30,7 @@ public class ProductVariantEditForm {
     public BigDecimal getPrice() { return price; } public void setPrice(BigDecimal price) { this.price = price; }
     public String getStatus() { return status; } public void setStatus(String status) { this.status = status; }
     public Integer getQuantityOnHand() { return quantityOnHand; } public void setQuantityOnHand(Integer quantityOnHand) { this.quantityOnHand = quantityOnHand; }
-    public BigDecimal getLowStockThresholdPct() { return lowStockThresholdPct; } public void setLowStockThresholdPct(BigDecimal value) { this.lowStockThresholdPct = value; }
+    public Integer getLowStockThresholdQuantity() { return lowStockThresholdQuantity; } public void setLowStockThresholdQuantity(Integer lowStockThresholdQuantity) { this.lowStockThresholdQuantity = lowStockThresholdQuantity; }
     public List<UnitOption> getUnits() { return units; } public void setUnits(List<UnitOption> units) { this.units = units; }
 
     public record UnitOption(Long id, String name) { }

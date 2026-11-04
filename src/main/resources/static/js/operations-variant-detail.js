@@ -31,7 +31,24 @@
             try { body = await response.json(); } catch (_) { /* non-JSON server error */ }
             if (!response.ok || body.success === false) throw new Error(body.message || 'Không thể xử lý biến thể.');
             toast(body.message || 'Đã xử lý biến thể.');
-            window.setTimeout(() => window.location.href = '/operations/variants', 650);
+            const rejected = Boolean(payload);
+            const status = document.getElementById('variantApprovalStatus');
+            if (status) {
+                status.textContent = rejected ? 'Cần sửa' : 'Đã hậu kiểm';
+                status.className = `status-pill ${rejected ? 'rejected' : 'open'}`;
+            }
+            document.getElementById('variantReviewActions')?.remove();
+            if (rejected) {
+                const reason = document.getElementById('variantReviewReason') || document.createElement('div');
+                reason.id = 'variantReviewReason';
+                reason.className = 'alert';
+                reason.style.marginTop = '14px';
+                reason.textContent = `Lý do cần sửa: ${payload.rejectionReason}`;
+                status?.parentElement?.insertAdjacentElement('afterend', reason);
+                dialog?.close();
+                if (reasonInput) reasonInput.value = '';
+            }
+            config.pending = false;
         } catch (error) {
             toast(error.message || 'Có lỗi xảy ra. Vui lòng thử lại.', true);
             buttons.forEach(button => { button.disabled = false; });

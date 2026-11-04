@@ -25,7 +25,6 @@
         <div th:if="${pendingComplaintsCount != null and pendingComplaintsCount > 0}"
              style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 24px;">⚠️</span>
                 <div>
                     <strong style="color: #92400e; font-size: 14.5px;">Bạn có <span th:text="${pendingComplaintsCount}">1</span> đơn hàng đang bị khiếu nại cần xử lý</strong>
                     <p style="margin: 3px 0 0; color: #b45309; font-size: 13px;">Theo quy chế tranh chấp 2 tầng, Shop có tối đa 6 giờ để phản hồi (Đồng ý hoàn tiền hoặc Từ chối kèm giải trình) trước khi hệ thống chuyển hồ sơ lên CSKH.</p>
@@ -46,7 +45,7 @@
                 </a>
                 <a th:href="@{/shopowner/orders(filter='complaint')}"
                    th:style="${filter == 'complaint'} ? 'background: #dc2626; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;' : 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;'">
-                    ⚠️ Có khiếu nại <span th:if="${totalComplaintsCount != null and totalComplaintsCount > 0}" th:text="${'(' + totalComplaintsCount + ')'}"></span>
+                    Có khiếu nại <span th:if="${totalComplaintsCount != null and totalComplaintsCount > 0}" th:text="${'(' + totalComplaintsCount + ')'}"></span>
                 </a>
             </div>
 
@@ -60,11 +59,11 @@
                             <div th:if="${o.complaint_status != null and o.complaint_status != 'CANCELLED'}" style="margin-top: 4px;">
                                 <span th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}"
                                       style="display: inline-block; font-size: 11px; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; border-radius: 99px; padding: 2px 7px;">
-                                    ⚠️ Chờ Shop (6h)
+                                    Chờ Shop (6h)
                                 </span>
                                 <span th:if="${o.complaint_status == 'ESCALATED' or o.complaint_status == 'IN_PROGRESS'}"
                                       style="display: inline-block; font-size: 11px; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 99px; padding: 2px 7px;">
-                                    ⚖️ CSKH phân xử
+                                    CSKH phân xử
                                 </span>
                                 <span th:if="${o.complaint_status == 'RESOLVED'}"
                                       style="display: inline-block; font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 99px; padding: 2px 7px;">
@@ -81,7 +80,7 @@
                         <td><span class="order-status" th:classappend="${o.status == 'PENDING'} ? ' pending' : (${o.status == 'CONFIRMED'} ? ' confirmed' : (${o.status == 'CANCELLED'} ? ' cancelled' : ''))"
                                   th:text="${o.status == 'PENDING'} ? 'Chờ xác nhận' : (${o.status == 'CONFIRMED'} ? 'Đã xác nhận' : (${o.status == 'CANCELLED'} ? 'Đã hủy' : (${o.status == 'COMPLETED'} ? 'Hoàn tất' : o.status)))">Chờ xác nhận</span></td>
                         <td th:text="${o.payment_method == 'COD'} ? 'Khi nhận hàng' : 'Trực tuyến'"></td>
-                        <td th:text="${#temporals.format(o.created_at, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td th:text="${o.created_at_fmt ?: (o.created_at != null ? #temporals.format(o.created_at, 'dd/MM/yyyy HH:mm') : '')}"></td>
                         <td class="order-row-actions">
                             <a class="order-action-link" th:href="@{/shopowner/orders/{id}(id=${o.id})}">Chi tiết</a>
                             <a th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}"

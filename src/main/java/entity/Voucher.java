@@ -26,6 +26,7 @@ public class Voucher {
     @Column(name="created_at", nullable=false, insertable=false, updatable=false) private LocalDateTime createdAt;
     @Column(name="updated_at", nullable=false, insertable=false, updatable=false) private LocalDateTime updatedAt;
 
+    /** Chuẩn hóa dữ liệu trước khi ghi DB để mã voucher luôn nhất quán và bộ đếm có giá trị mặc định. */
     @PrePersist @PreUpdate private void normalize() {
         if (code != null) code = code.trim().toUpperCase(java.util.Locale.ROOT);
         if (name != null) name = name.trim();

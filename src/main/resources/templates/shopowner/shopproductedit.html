@@ -42,7 +42,7 @@
 
                     <label class="field field-wide">
                         <span>Tên sản phẩm <b>*</b></span>
-                        <input type="text" th:field="*{name}" maxlength="200" placeholder="Nhập tên sản phẩm" required
+                        <input type="text" th:field="*{name}" maxlength="200" required
                                th:classappend="${errors.containsKey('name')} ? ' is-invalid' : ''">
                         <em th:if="${errors.containsKey('name')}" th:text="${errors.get('name')}"></em>
                     </label>
@@ -55,7 +55,7 @@
 
                     <label class="field">
                         <span>Xuất xứ</span>
-                        <input type="text" th:field="*{origin}" maxlength="150" placeholder="Ví dụ: Đà Lạt, Việt Nam"
+                        <input type="text" th:field="*{origin}" maxlength="150"
                                th:classappend="${errors.containsKey('origin')} ? ' is-invalid' : ''">
                         <em th:if="${errors.containsKey('origin')}" th:text="${errors.get('origin')}"></em>
                     </label>
@@ -76,7 +76,7 @@
                 <div class="form-grid edit-fields-grid">
                     <label class="field field-wide">
                         <span>Mô tả sản phẩm</span>
-                        <textarea th:field="*{description}" rows="5" maxlength="2000" placeholder="Mô tả đặc điểm, hương vị, cách bảo quản..."
+                        <textarea th:field="*{description}" rows="5" maxlength="2000"
                                   th:classappend="${errors.containsKey('description')} ? ' is-invalid' : ''"></textarea>
                         <div class="edit-field-footer"><small>Nội dung tối đa 2.000 ký tự.</small><em th:if="${errors.containsKey('description')}" th:text="${errors.get('description')}"></em></div>
                     </label>

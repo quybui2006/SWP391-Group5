@@ -173,11 +173,11 @@ class CartCheckoutIntegrationTests {
         long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
         shopOrders.confirmCod(user, orderId);
         assertEquals("CONFIRMED", shopOrders.detail(user, orderId).get("status"));
-        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items", String.class));
+        assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items", String.class));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM inventory_transactions", Integer.class));
-        assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
+        assertEquals("RESERVE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
         assertTrue(cart.items(user).isEmpty());
     }
 
@@ -229,9 +229,9 @@ class CartCheckoutIntegrationTests {
         assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
         assertEquals("PAID", jdbc.queryForObject("SELECT payment_status FROM orders WHERE id=?", String.class, orderId));
         assertThrows(IllegalArgumentException.class, () -> shopOrders.rejectCod(customer, orderId, "Không thể từ chối đơn online đã trả tiền"));
-        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("CONSUMED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
+        assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
 
         deliveryOrders.updateDeliveryStatus(orderId, "SHIPPING", null);
         deliveryOrders.updateDeliveryStatus(orderId, "COMPLETED", null);
@@ -252,7 +252,8 @@ class CartCheckoutIntegrationTests {
         long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, code);
         shopOrders.confirmCod(owner, orderId);
 
-        assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
+        assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         deliveryOrders.updateDeliveryStatus(orderId, "SHIPPING", null);
         deliveryOrders.updateDeliveryStatus(orderId, "CANCELLED", "Khách không nhận hàng");
 
@@ -260,7 +261,7 @@ class CartCheckoutIntegrationTests {
         assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
         assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
-        assertEquals("ADJUST", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE event_key LIKE 'return-delivery-%'", String.class));
+        assertEquals("RELEASE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE event_key LIKE 'delivery-failed-%'", String.class));
     }
 
     @Test
@@ -314,7 +315,7 @@ class CartCheckoutIntegrationTests {
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Xác nhận đơn hàng")));
         mvc.perform(post("/order/submit").session(session).param("selectedVariantIds", String.valueOf(variant))
                         .param("addressId", String.valueOf(address)))
-                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/cart"));
+                .andExpect(status().isOk()).andExpect(view().name("customer/payment-result"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class));
     }
 
@@ -374,7 +375,7 @@ class CartCheckoutIntegrationTests {
                         .param("recipientName", "New recipient").param("recipientPhone", "0912345678")
                         .param("provinceCode", "P-CHECKOUT").param("wardName", "Ward 2")
                         .param("addressDetail", "2 Test St"))
-                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/cart"));
+                .andExpect(status().isOk()).andExpect(view().name("customer/payment-result"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class));
         assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM user_addresses WHERE user_id=?", Integer.class, user));
     }

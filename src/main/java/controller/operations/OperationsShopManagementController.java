@@ -27,6 +27,7 @@ public class OperationsShopManagementController {
     public String list(@RequestParam(defaultValue = "") String keyword, Model model) {
         model.addAttribute("shops", shops.listShops(keyword));
         model.addAttribute("keyword", keyword.trim());
+        model.addAttribute("activePage", "shop-list");
         return "operations/shop-list";
     }
 
@@ -34,8 +35,19 @@ public class OperationsShopManagementController {
     public String detail(@PathVariable Long shopId, Model model) {
         model.addAttribute("shop", approvals.getShopDetail(shopId));
         model.addAttribute("variants", shops.listShopVariants(shopId));
+        // Show the full catalog grouped by product on the shop's audit detail.
+        model.addAttribute("products", shops.listShopProductsWithVariants(shopId));
         model.addAttribute("activeNav", "shop-list");
+        model.addAttribute("returnPage", "shop-list");
         return "operations/shop-detail";
+    }
+
+    @GetMapping("/operations/post-audit")
+    public String postAuditList(@RequestParam(defaultValue = "") String keyword, Model model) {
+        model.addAttribute("shops", shops.listShops(keyword));
+        model.addAttribute("keyword", keyword.trim());
+        model.addAttribute("activePage", "shop-list");
+        return "operations/shop-list";
     }
 
     @PostMapping("/operations/shop-list/{shopId}/block")
