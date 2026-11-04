@@ -12,6 +12,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,7 @@ public class AdminShopPaymentService {
         return jdbc.queryForList("""
                 SELECT s.id AS shop_id, s.name AS shop_name, s.owner_id,
                        u.full_name AS owner_name, u.email AS owner_email,
+                       f.id AS monthly_fee_id, f.status AS fee_status, f.paid_at AS fee_paid_at,
                        COALESCE(SUM(o.shop_revenue_amount), 0) AS revenue,
                        COALESCE(f.fee_amount, ROUND(COALESCE(SUM(o.shop_revenue_amount), 0) *
                            COALESCE(CAST(pc.config_value AS DECIMAL(19,4)), 0.05), 0)) AS fee_amount,
@@ -68,6 +70,36 @@ public class AdminShopPaymentService {
         BigDecimal totalFee = rows.stream().map(r -> (BigDecimal) r.get("fee_amount")).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalPayout = rows.stream().map(r -> (BigDecimal) r.get("payout_amount")).reduce(BigDecimal.ZERO, BigDecimal::add);
         return Map.of("totalRevenue", totalRevenue, "totalFee", totalFee, "totalPayout", totalPayout, "shopCount", rows.size());
+    }
+
+    /** Xác nhận admin đã nhận khoản phí sàn mà shop thanh toán cho kỳ này. */
+    @Transactional
+    public boolean confirmFeeReceived(long shopId, String month) {
+        LocalDate revenueMonth = LocalDate.parse(month + "-01");
+        Map<String, Object> fee;
+        try {
+            fee = jdbc.queryForMap("""
+                    SELECT f.id, f.fee_amount, f.status
+                    FROM shop_monthly_fees f
+                    WHERE f.shop_id = ? AND f.revenue_month = ?
+                    FOR UPDATE
+                    """, shopId, revenueMonth);
+        } catch (EmptyResultDataAccessException ex) {
+            throw new IllegalArgumentException("Phí sàn của shop cho tháng đã chọn chưa được chốt.");
+        }
+
+        if ("PAID".equals(fee.get("status"))) return false;
+
+        long feeId = ((Number) fee.get("id")).longValue();
+        BigDecimal amount = toDecimal(fee.get("fee_amount"));
+        jdbc.update("UPDATE shop_monthly_fees SET status = 'PAID', paid_at = CURRENT_TIMESTAMP(3) WHERE id = ?", feeId);
+        if (amount.signum() > 0) {
+            jdbc.update("""
+                    INSERT IGNORE INTO platform_wallet_transactions(type, amount, monthly_fee_id, event_key)
+                    VALUES ('SHOP_FEE', ?, ?, ?)
+                    """, amount, feeId, "SHOP_FEE:" + feeId);
+        }
+        return true;
     }
 
     public String exportPayoutsCsv(String month) {

@@ -18,6 +18,11 @@
         table{width:100%;border-collapse:collapse;margin-top:20px}
         th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);font-size:14px}
         th{background:#f8fafc;font-size:12.5px;font-weight:700}
+        .alert{margin:18px 0 0;padding:11px 14px;border-radius:9px;font-weight:600}
+        .alert-success{background:#dcfce7;color:#166534}.alert-error{background:#fee2e2;color:#991b1b}
+        .status{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700}
+        .status-pending{color:#a46e1c;background:#fff4df}.status-paid{color:#15803d;background:#dcfce7}.status-muted{color:#64748b;background:#f1f5f9}
+        .confirm-fee{margin-top:7px;background:#0a9e54;color:#fff;border:0;border-radius:7px;padding:6px 9px;font-size:12px;font-weight:700;cursor:pointer}
     </style>
 </head>
 <body>
@@ -33,6 +38,8 @@
         </header>
 
         <section class="panel">
+            <p class="alert alert-success" th:if="${success}" th:text="${success}"></p>
+            <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
             <div class="form-row">
                 <label for="month">Tháng:</label>
                 <input type="month" name="month" th:value="${month}" id="month">
@@ -58,7 +65,17 @@
                     </td>
                     <td th:text="${#numbers.formatInteger(p['revenue'],1,'POINT') + ' ₫'}">0 ₫</td>
                     <td><strong th:text="${#numbers.formatInteger(p['fee_amount'],1,'POINT') + ' ₫'}">0 ₫</strong></td>
-                    <td><span style="color:#a46e1c;background:#fff4df;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700">Chờ shop thanh toán</span></td>
+                    <td>
+                        <span class="status status-paid" th:if="${p['fee_status'] == 'PAID'}">Đã nhận tiền</span>
+                        <span class="status status-pending" th:if="${p['fee_status'] == 'UNPAID'}">Chờ shop thanh toán</span>
+                        <span class="status status-muted" th:if="${p['fee_status'] == null}">Chưa chốt phí</span>
+                        <form th:if="${p['fee_status'] == 'UNPAID'}" method="post"
+                              th:action="@{/admin/shop-payouts/{shopId}/confirm-fee(shopId=${p['shop_id']})}"
+                              onsubmit="return confirm('Xác nhận đã nhận phí sàn từ shop này?');">
+                            <input type="hidden" name="month" th:value="${month}">
+                            <button class="confirm-fee" type="submit">Đã nhận tiền</button>
+                        </form>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(payouts)}"><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px">Không có dữ liệu cho tháng đã chọn.</td></tr>
                 </tbody>
