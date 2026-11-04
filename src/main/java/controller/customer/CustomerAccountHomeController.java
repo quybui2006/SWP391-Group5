@@ -33,7 +33,9 @@ public class CustomerAccountHomeController {
     }
 
     private Long current(HttpSession s) {
-        if (!"CUSTOMER".equals(s.getAttribute("role"))) return null;
+        if (s == null) return null;
+        Object role = s.getAttribute("role");
+        if (!"CUSTOMER".equals(role) && !"ADMIN".equals(role)) return null;
         Object id = s.getAttribute("userId");
         return id instanceof Number n ? n.longValue() : null;
     }
@@ -98,6 +100,7 @@ public class CustomerAccountHomeController {
         if (!java.util.Set.of("all", "pending-payment", "shipping", "completed", "cancelled").contains(status))
             status = "all";
         model.addAttribute("profile", account.profile(id));
+        model.addAttribute("hasBankAccount", account.hasBankAccount(id));
         model.addAttribute("orders", account.orders(id, status));
         model.addAttribute("statusCounts", account.orderStatusCounts(id));
         model.addAttribute("currentStatus", status);
@@ -111,10 +114,11 @@ public class CustomerAccountHomeController {
         String r = login(customerId, "/customer/account/orders/" + id);
         if (r != null) return r;
         model.addAttribute("profile", account.profile(customerId));
+        model.addAttribute("hasBankAccount", account.hasBankAccount(customerId));
         model.addAttribute("order", account.orderDetail(customerId, id));
         var orderComplaints = complaintService.listComplaintsByOrder(id);
         boolean hasActiveComplaint = orderComplaints.stream()
-                .anyMatch(c -> "PENDING_SHOP".equals(c.get("status")) || "ESCALATED".equals(c.get("status")) || "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
+                .anyMatch(c -> "PENDING_OPERATIONS".equals(c.get("status")) || "PENDING_OPS".equals(c.get("status")) || "PENDING_SHOP".equals(c.get("status")) || "ESCALATED".equals(c.get("status")) || "PENDING".equals(c.get("status")) || "IN_PROGRESS".equals(c.get("status")));
         model.addAttribute("orderComplaints", orderComplaints);
         model.addAttribute("hasActiveComplaint", hasActiveComplaint);
         Map<String, Object> eligibility = complaintService.getOrderComplaintEligibility(customerId, id);
@@ -183,6 +187,32 @@ public class CustomerAccountHomeController {
         return Map.of("favorite", account.setFavorite(requireCustomer(session), variantId, favorite));
     }
 
+    @GetMapping("/bank-account")
+    public String bankAccount(Model model, HttpSession session) {
+        Long id = requireCustomer(session);
+        model.addAttribute("profile", account.profile(id));
+        model.addAttribute("bankAccount", account.bankAccount(id));
+        model.addAttribute("hasBankAccount", account.hasBankAccount(id));
+        model.addAttribute("activePage", "bank-account");
+        return "customer/bank-account";
+    }
+
+    @PostMapping("/bank-account")
+    public String saveBankAccount(@RequestParam String bankName,
+                                  @RequestParam String accountNo,
+                                  @RequestParam String accountHolder,
+                                  HttpSession session,
+                                  RedirectAttributes redirect) {
+        Long id = requireCustomer(session);
+        try {
+            account.saveBankAccount(id, bankName, accountNo, accountHolder);
+            redirect.addFlashAttribute("message", "Đã lưu tài khoản ngân hàng nhận hoàn tiền.");
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/customer/account/bank-account";
+    }
+
     @GetMapping("/wallet/coins")
     public String coins(@RequestParam(defaultValue="all") String filter, Model model, HttpSession session) {
         Long id = requireCustomer(session);
@@ -190,11 +220,6 @@ public class CustomerAccountHomeController {
         model.addAttribute("profile", account.profile(id)); model.addAttribute("coinBalance", account.coinBalance(id));
         model.addAttribute("coinHistory", account.coinHistory(id, filter)); model.addAttribute("coinFilter", filter); model.addAttribute("activePage", "wallet-coins");
         return "customer/wallet-coins";
-    }
-
-    @GetMapping("/wallet/money")
-    public String money(Model model, HttpSession session) {
-        Long id = requireCustomer(session); model.addAttribute("profile", account.profile(id)); model.addAttribute("wallet", account.wallet(id)); model.addAttribute("activePage", "wallet-money"); return "customer/wallet-money";
     }
 
     @GetMapping("/wallet/vouchers")

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{customer/account-fragments :: head('Liên kết tài khoản ngân hàng')}"></head>
+<body>
+<div class="customer-shell">
+    <aside th:replace="~{customer/account-fragments :: sidebar('bank-account')}"></aside>
+    <main class="customer-main">
+        <header th:replace="~{customer/account-fragments :: topbar('Liên kết tài khoản ngân hàng')}"></header>
+        <section class="account-panel">
+            <div class="account-heading">
+                <h1>Liên kết tài khoản ngân hàng</h1>
+                <p>Tài khoản này được dùng làm thông tin thụ hưởng khi hệ thống lập lệnh hoàn tiền cho Customer.</p>
+            </div>
+            <div th:if="${message}" class="feedback success" th:text="${message}"></div>
+            <div th:if="${error}" class="feedback error" th:text="${error}"></div>
+            <form method="post" th:action="@{/customer/account/bank-account}" style="max-width:680px;border:1px solid #cbd5e1;border-radius:12px;padding:22px;background:#f8fafc">
+                <label style="display:block;margin-bottom:15px;font-weight:600">Tên ngân hàng
+                    <input name="bankName" required maxlength="100" th:value="${bankAccount['bank_name']}" placeholder="Ví dụ: Vietcombank" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #94a3b8;border-radius:8px;box-sizing:border-box">
+                </label>
+                <label style="display:block;margin-bottom:15px;font-weight:600">Số tài khoản
+                    <input name="accountNo" required maxlength="50" th:value="${bankAccount['bank_account_no']}" placeholder="Nhập số tài khoản nhận tiền" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #94a3b8;border-radius:8px;box-sizing:border-box">
+                </label>
+                <label style="display:block;margin-bottom:20px;font-weight:600">Tên chủ tài khoản
+                    <input name="accountHolder" required maxlength="150" th:value="${bankAccount['bank_account_holder']}" placeholder="NGUYEN VAN A" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #94a3b8;border-radius:8px;box-sizing:border-box;text-transform:uppercase">
+                </label>
+                <button type="submit" class="primary-button">Lưu tài khoản thụ hưởng</button>
+            </form>
+            <p style="color:#64748b;margin-top:16px">Thông tin được dùng cho các khoản hoàn tiền mới và các hồ sơ hoàn tiền đang chờ xuất ngân hàng.</p>
+        </section>
+    </main>
+</div>
+</body>
+</html>
