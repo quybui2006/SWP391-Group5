@@ -268,4 +268,21 @@ public class InventoryService {
                     available, sold, lowStockThresholdQuantity, List.copyOf(batches));
         }
     }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getLowStockAlerts(Long ownerUserId) {
+        return jdbc.queryForList("""
+            SELECT p.name AS product_name,pv.name AS variant_name,pv.sku,
+                   vi.available_quantity,u.name AS unit_name,
+                   vi.low_stock_threshold_quantity AS threshold_quantity
+            FROM variant_inventory vi
+            JOIN product_variants pv ON pv.id=vi.variant_id
+            JOIN products p ON p.id=pv.product_id
+            JOIN units u ON u.id=pv.base_unit_id
+            JOIN shops s ON s.id=pv.shop_id
+            WHERE s.owner_id=? AND vi.low_stock_threshold_quantity>0
+              AND vi.available_quantity<=vi.low_stock_threshold_quantity
+            ORDER BY vi.available_quantity ASC,p.name,pv.name
+            """, ownerUserId);
+    }
 }

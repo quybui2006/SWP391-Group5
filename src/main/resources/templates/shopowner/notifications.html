@@ -20,6 +20,26 @@
             <button type="button" class="button button-primary" id="readAll" th:disabled="${unreadCount == 0}">Đọc tất cả</button>
         </header>
 
+        <section class="panel"
+                 th:if="${!#lists.isEmpty(lowStockAlerts)}"
+                 style="margin-bottom:16px;padding:16px;">
+            <h2 style="margin:0 0 12px;">Cảnh báo tồn kho thấp</h2>
+
+            <div th:each="alert : ${lowStockAlerts}"
+                 style="padding:10px 0;border-top:1px solid #e6ece8;">
+                <strong th:text="${alert.product_name + ' - ' + alert.variant_name}">
+                    Sản phẩm - Biến thể
+                </strong>
+                <span th:text="${' (' + alert.sku + ') còn ' + alert.available_quantity
+            + ' ' + alert.unit_name + ', ngưỡng '
+            + alert.threshold_quantity + ' ' + alert.unit_name}">
+            Tồn thấp
+        </span>
+            </div>
+
+            <a th:href="@{/shopowner/inventory}">Xem tồn kho</a>
+        </section>
+
         <section class="notification-tools panel">
             <form method="get" th:action="@{/shopowner/notifications}" class="notification-filter-form">
                 <label class="notification-search"><span>Tìm thông báo</span><input type="search" name="keyword" th:value="${keyword}" autocomplete="off"></label>
