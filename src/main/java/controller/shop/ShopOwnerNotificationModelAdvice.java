@@ -23,7 +23,7 @@ public class ShopOwnerNotificationModelAdvice {
         if (session == null || !"SHOP_OWNER".equals(session.getAttribute("role"))) return;
         Object userId = session.getAttribute("userId");
         if (userId instanceof Number number) {
-            model.addAttribute("shopOwnerUnreadCount", notifications.getUnreadCount(number.longValue()));
+            model.addAttribute("shopOwnerUnreadCount", notifications.getShopOwnerUnreadCount(number.longValue()));
         }
     }
 }

@@ -47,7 +47,8 @@ public class InventoryBatchService {
             statement.setLong(6, ownerId);
             return statement;
         }, key);
-        long batchId = extractGeneratedId(key);
+        if (key.getKey() == null) throw new InventoryActionException("Không tạo được mã batch.");
+        long batchId = key.getKey().longValue();
         String batchCode = "LOT-" + batchId;
         jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", batchCode, batchId);
         if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", quantity, inventoryId) != 1)
@@ -130,40 +131,6 @@ public class InventoryBatchService {
                 ORDER BY received_at, id
                 FOR UPDATE
                 """, inventoryId);
-        int availableInBatches = batches.stream().mapToInt(b ->
-                ((Number) b.get("quantity_on_hand")).intValue() - ((Number) b.get("reserved_quantity")).intValue()).sum();
-        if (availableInBatches < quantity) {
-            Map<String, Object> inv = jdbc.queryForMap(
-                    "SELECT quantity_on_hand, reserved_quantity, created_by FROM variant_inventory WHERE id=?", inventoryId);
-            int invOnHand = ((Number) inv.get("quantity_on_hand")).intValue();
-            int invReserved = ((Number) inv.get("reserved_quantity")).intValue();
-            int unallocated = (invOnHand - invReserved) - availableInBatches;
-            if (unallocated > 0) {
-                long creator = inv.get("created_by") != null ? ((Number) inv.get("created_by")).longValue() : (createdBy != null ? createdBy : 1L);
-                org.springframework.jdbc.support.GeneratedKeyHolder key = new org.springframework.jdbc.support.GeneratedKeyHolder();
-                jdbc.update(conn -> {
-                    java.sql.PreparedStatement ps = conn.prepareStatement(
-                            "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,note,created_by) " +
-                            "VALUES(?,NULL,?,?,0,CURRENT_TIMESTAMP,'ACTIVE','Lô khởi tạo tồn kho',?)",
-                            java.sql.Statement.RETURN_GENERATED_KEYS);
-                    ps.setLong(1, inventoryId);
-                    ps.setInt(2, unallocated);
-                    ps.setInt(3, unallocated);
-                    ps.setLong(4, creator);
-                    return ps;
-                }, key);
-                long newBatchId = extractGeneratedId(key);
-                jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", "LOT-" + newBatchId, newBatchId);
-                batches = jdbc.queryForList("""
-                        SELECT id,quantity_on_hand,reserved_quantity
-                        FROM inventory_batches
-                        WHERE inventory_id=? AND status='ACTIVE'
-                          AND quantity_on_hand>reserved_quantity
-                        ORDER BY received_at, id
-                        FOR UPDATE
-                        """, inventoryId);
-            }
-        }
         int remaining = quantity;
         for (Map<String, Object> batch : batches) {
             if (remaining == 0) break;
@@ -173,15 +140,7 @@ public class InventoryBatchService {
             int take = Math.min(remaining, onHand - reserved);
             if (jdbc.update("UPDATE inventory_batches SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", take, batchId, take) != 1)
                 throw new IllegalArgumentException("Tồn kho vừa thay đổi. Vui lòng thử lại.");
-            List<Map<String, Object>> existingAlloc = jdbc.queryForList(
-                    "SELECT id, status FROM order_item_batch_allocations WHERE order_item_id=? AND batch_id=?", orderItemId, batchId);
-            if (existingAlloc.isEmpty()) {
-                jdbc.update("INSERT INTO order_item_batch_allocations(order_item_id,batch_id,quantity,status) VALUES(?,?,?,'RESERVED')",
-                        orderItemId, batchId, take);
-            } else {
-                jdbc.update("UPDATE order_item_batch_allocations SET quantity=?, status='RESERVED' WHERE order_item_id=? AND batch_id=?",
-                        take, orderItemId, batchId);
-            }
+            jdbc.update("INSERT INTO order_item_batch_allocations(order_item_id,batch_id,quantity,status) VALUES(?,?,?,'RESERVED') ON DUPLICATE KEY UPDATE quantity=IF(status='RELEASED',VALUES(quantity),quantity),status=IF(status='RELEASED','RESERVED',status)", orderItemId, batchId, take);
             String allocationStatus = jdbc.queryForObject("SELECT status FROM order_item_batch_allocations WHERE order_item_id=? AND batch_id=?", String.class, orderItemId, batchId);
             if (!"RESERVED".equals(allocationStatus)) throw new IllegalStateException("Không thể tạo lại phần hàng giữ cho đơn.");
             batchTransaction(batchId, orderItemId, "RESERVE", 0, take, onHand, reserved + take,
@@ -191,10 +150,6 @@ public class InventoryBatchService {
         if (remaining > 0) throw new IllegalArgumentException("Các lô hiện có không đủ hàng để giữ cho đơn.");
         if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity+? WHERE id=? AND quantity_on_hand-reserved_quantity>=?", quantity, inventoryId, quantity) != 1)
             throw new IllegalArgumentException("Tồn kho tổng vừa thay đổi. Vui lòng thử lại.");
-        int invOnHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-        int invReserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-        jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'RESERVE',0,?,?,?,?,?,?)",
-                inventoryId, orderItemId, quantity, invOnHand, invReserved, "reserve-" + orderItemId, "Giữ hàng cho đơn", createdBy);
     }
 
     @Transactional
@@ -218,10 +173,6 @@ public class InventoryBatchService {
                     ((Number) allocations.get(0).get("batch_id")).longValue());
             if (jdbc.update("UPDATE variant_inventory SET reserved_quantity=reserved_quantity-? WHERE id=? AND reserved_quantity>=?", total, inventoryId, total) != 1)
                 throw new IllegalStateException("Tồn giữ tổng không còn nhất quán.");
-            int invOnHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            int invReserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'RELEASE',0,?,?,?,?,?,?)",
-                    inventoryId, orderItemId, -total, invOnHand, invReserved, eventPrefix + "-" + orderItemId, "Giải phóng hàng giữ cho đơn", null);
         }
     }
 
@@ -239,7 +190,7 @@ public class InventoryBatchService {
             int quantity = ((Number) allocation.get("quantity")).intValue();
             int onHand = ((Number) allocation.get("quantity_on_hand")).intValue();
             int reserved = ((Number) allocation.get("reserved_quantity")).intValue();
-            if (onHand < quantity || reserved < quantity || jdbc.update("UPDATE inventory_batches SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-?,status=CASE WHEN quantity_on_hand-?=0 THEN 'CLOSED' ELSE 'ACTIVE' END WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, quantity, batchId, quantity, quantity) != 1)
+            if (onHand < quantity || reserved < quantity || jdbc.update("UPDATE inventory_batches SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-?,status=IF(quantity_on_hand-?=0,'CLOSED','ACTIVE') WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", quantity, quantity, quantity, batchId, quantity, quantity) != 1)
                 throw new IllegalStateException("Không thể ghi nhận bán hàng từ batch.");
             jdbc.update("UPDATE order_item_batch_allocations SET status='CONSUMED' WHERE order_item_id=? AND batch_id=? AND status='RESERVED'", orderItemId, batchId);
             batchTransaction(batchId, orderItemId, "SALE", -quantity, -quantity, onHand - quantity, reserved - quantity,
@@ -251,10 +202,6 @@ public class InventoryBatchService {
                     ((Number) allocations.get(0).get("batch_id")).longValue());
             if (jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand-?,reserved_quantity=reserved_quantity-? WHERE id=? AND quantity_on_hand>=? AND reserved_quantity>=?", total, total, inventoryId, total, total) != 1)
                 throw new IllegalStateException("Tồn tổng không còn nhất quán khi ghi nhận bán.");
-            int invOnHand = jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            int invReserved = jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE id=?", Integer.class, inventoryId);
-            jdbc.update("INSERT INTO inventory_transactions(inventory_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,'SALE',?,?,?,?,?,?,?)",
-                    inventoryId, orderItemId, -total, -total, invOnHand, invReserved, "sale-" + orderItemId, "Bán theo đơn " + orderCode, null);
         }
     }
 
@@ -283,18 +230,4 @@ public class InventoryBatchService {
             throw new InventoryActionException(message);
         }
     }
-    private long extractGeneratedId(KeyHolder key) {
-        if (key.getKeys() != null) {
-            Map<String, Object> keys = key.getKeys();
-            if (keys.containsKey("id") && keys.get("id") instanceof Number n) return n.longValue();
-            if (keys.containsKey("ID") && keys.get("ID") instanceof Number n) return n.longValue();
-            for (Object val : keys.values()) {
-                if (val instanceof Number n) return n.longValue();
-            }
-        }
-        Number k = key.getKey();
-        if (k != null) return k.longValue();
-        throw new IllegalStateException("Không lấy được khóa tự sinh.");
-    }
-
 }

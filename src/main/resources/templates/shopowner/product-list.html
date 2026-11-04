@@ -24,8 +24,15 @@
                 <label class="sr-only" for="keyword">Tìm sản phẩm hoặc mã hàng</label>
                 <input id="keyword" name="keyword" type="search" th:value="${keyword}"
                        aria-label="Tìm theo tên sản phẩm hoặc mã hàng">
+                <label class="sr-only" for="categoryId">Lọc theo danh mục</label>
+                <select id="categoryId" name="categoryId" aria-label="Lọc theo danh mục">
+                    <option value="">Tất cả danh mục</option>
+                    <option th:each="category : ${categories}" th:value="${category.id}"
+                            th:selected="${selectedCategoryId != null and selectedCategoryId == category.id}"
+                            th:text="${category.name}">Danh mục</option>
+                </select>
                 <button class="button button-dark" type="submit">Tìm kiếm</button>
-                <a class="button button-ghost" th:if="${!keyword.isEmpty()}" th:href="@{/shop/products}">Bỏ lọc</a>
+                <a class="button button-ghost" th:if="${!keyword.isEmpty() or selectedCategoryId != null}" th:href="@{/shop/products}">Bỏ lọc</a>
             </form>
 
             <div class="table-wrap" th:if="${!products.empty}">
@@ -75,20 +82,20 @@
 
             <div class="empty-state" th:if="${products.empty}">
                 <span></span>
-                <h2 th:text="${keyword.isEmpty()} ? 'Chưa có sản phẩm nào' : 'Không tìm thấy sản phẩm phù hợp'">Chưa có sản phẩm nào</h2>
-                <p th:text="${keyword.isEmpty()} ? 'Hãy thêm sản phẩm đầu tiên cho cửa hàng của bạn.' : 'Thử tìm với từ khóa khác.'"></p>
-                <a class="button button-primary" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
+                <h2 th:text="${keyword.isEmpty() and selectedCategoryId == null} ? 'Chưa có sản phẩm nào' : 'Không tìm thấy sản phẩm phù hợp'">Chưa có sản phẩm nào</h2>
+                <p th:text="${keyword.isEmpty() and selectedCategoryId == null} ? 'Hãy thêm sản phẩm đầu tiên cho cửa hàng của bạn.' : 'Thử đổi từ khóa hoặc danh mục.'"></p>
+                <a class="button button-primary" th:if="${keyword.isEmpty() and selectedCategoryId == null}" th:href="@{/shop/products/add}">＋ Thêm sản phẩm</a>
             </div>
 
             <nav class="pagination" th:if="${products.totalPages > 1}" aria-label="Phân trang">
                 <a th:classappend="${products.first} ? ' disabled'"
-                   th:href="@{/shop/products(page=${products.number - 1}, keyword=${keyword})}">← Trước</a>
+                   th:href="@{/shop/products(page=${products.number - 1}, keyword=${keyword}, categoryId=${selectedCategoryId})}">← Trước</a>
                 <a th:each="page : ${#numbers.sequence(0, products.totalPages - 1)}"
                    th:classappend="${page == products.number} ? ' current'"
-                   th:href="@{/shop/products(page=${page}, keyword=${keyword})}"
+                   th:href="@{/shop/products(page=${page}, keyword=${keyword}, categoryId=${selectedCategoryId})}"
                    th:text="${page + 1}">1</a>
                 <a th:classappend="${products.last} ? ' disabled'"
-                   th:href="@{/shop/products(page=${products.number + 1}, keyword=${keyword})}">Sau →</a>
+                   th:href="@{/shop/products(page=${products.number + 1}, keyword=${keyword}, categoryId=${selectedCategoryId})}">Sau →</a>
             </nav>
         </section>
     </main>

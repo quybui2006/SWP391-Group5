@@ -100,16 +100,6 @@
                         <td class="product-actions">
                             <a th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}">Chi tiết</a>
                             <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}" th:text="${variant.approval_status == 'REJECTED' ? 'Sửa và gửi lại' : 'Sửa'}">Sửa</a>
-                            <form class="variant-listing-form" th:if="${variant.approval_status != 'REJECTED' and variant.variant_status == 'ACTIVE'}"
-                                  method="post" th:action="@{/shopowner/product-variants/{id}/hide(id=${variant.variant_id})}"
-                                  onsubmit="return confirm('Ngừng bán biến thể này? Các đơn đã xác nhận vẫn được giữ nguyên.');">
-                                <button class="button button-ghost" type="submit">Ngừng bán</button>
-                            </form>
-                            <form class="variant-listing-form" th:if="${variant.approval_status != 'REJECTED' and variant.variant_status == 'INACTIVE'}"
-                                  method="post" th:action="@{/shopowner/product-variants/{id}/show(id=${variant.variant_id})}"
-                                  onsubmit="return confirm('Đăng bán biến thể này?');">
-                                <button class="button button-primary" type="submit">Đăng bán</button>
-                            </form>
                             <button class="button button-ghost open-variant-complaint" type="button"
                                     th:if="${variant.approval_status == 'REJECTED'}"
                                     th:attr="data-variant-id=${variant.variant_id},data-variant-name=${variant.variant_name}">Khiếu nại</button>

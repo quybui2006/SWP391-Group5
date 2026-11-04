@@ -47,19 +47,7 @@ public class ShopOrderService {
             sql.append(" AND c.status IS NOT NULL AND c.status <> 'CANCELLED' ");
         }
         sql.append(" ORDER BY o.created_at DESC, o.id DESC ");
-        List<Map<String, Object>> rows = jdbc.queryForList(sql.toString(), ownerId);
-        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        for (Map<String, Object> row : rows) {
-            Object ca = row.get("created_at");
-            if (ca instanceof java.sql.Timestamp ts) {
-                java.time.LocalDateTime ldt = ts.toLocalDateTime();
-                row.put("created_at", ldt);
-                row.put("created_at_fmt", ldt.format(dtf));
-            } else if (ca instanceof java.time.LocalDateTime ldt) {
-                row.put("created_at_fmt", ldt.format(dtf));
-            }
-        }
-        return rows;
+        return jdbc.queryForList(sql.toString(), ownerId);
     }
 
     public Map<String, Object> countComplaints(Long ownerId) {
@@ -153,7 +141,7 @@ public class ShopOrderService {
     }
 
     public List<Map<String, Object>> frequentCustomers(Long ownerId) {
-        List<Map<String, Object>> rows = jdbc.queryForList("""
+        return jdbc.queryForList("""
                 SELECT o.recipient_name,
                        o.recipient_phone,
                        COUNT(o.id) AS order_count,
@@ -171,13 +159,6 @@ public class ShopOrderService {
                 ORDER BY total_spent DESC, order_count DESC
                 LIMIT 10
                 """, ownerId);
-        for (Map<String, Object> row : rows) {
-            Object lod = row.get("last_order_date");
-            if (lod instanceof java.sql.Timestamp ts) {
-                row.put("last_order_date", ts.toLocalDateTime());
-            }
-        }
-        return rows;
     }
 
     public List<Map<String, Object>> inventoryStatusList(Long ownerId) {

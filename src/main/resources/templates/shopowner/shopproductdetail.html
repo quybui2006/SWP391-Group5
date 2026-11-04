@@ -54,6 +54,7 @@
                 <form th:if="${!product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/show(id=${product.id})}" method="post">
                     <button class="button button-primary" type="submit">Đăng bán sản phẩm</button>
                 </form>
+                <a th:if="${#lists.isEmpty(product.variants)}" class="button button-primary" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể để đăng bán</a>
                 <form th:if="${product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/hide(id=${product.id})}" method="post" onsubmit="return confirm('Ẩn sản phẩm khỏi khách hàng?');">
                     <button class="button button-ghost" type="submit">Ẩn sản phẩm</button>
                 </form>
@@ -106,48 +107,23 @@
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead>
-                    <tr>
-                        <th>Ảnh</th>
-                        <th>SKU</th>
-                        <th>Tên biến thể</th>
-                        <th>Quy cách</th>
-                        <th>Giá bán</th>
-                        <th>Tồn kho</th>
-                        <th>Có thể bán</th>
-                        <th>Trạng thái duyệt / bán</th>
-                        <th>Thao tác</th>
-                    </tr>
-                    </thead>
+                    <thead><tr><th>Ảnh</th><th>SKU</th><th>Tên biến thể</th><th>Quy cách</th><th>Giá bán</th><th>Tồn kho</th><th>Có thể bán</th><th>Trạng thái duyệt / bán</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="variant : ${product.variants}">
-                        <td>
-                            <img th:if="${variant.imageUrl != null}" th:src="${variant.imageUrl}"
-                                 th:alt="${variant.name}"
-                                 style="width:48px;height:48px;object-fit:cover;border-radius:8px"
-                                 onerror="this.hidden=true">
-                        </td>
+                        <td><img th:if="${variant.imageUrl != null}" th:src="${variant.imageUrl}" th:alt="${variant.name}" style="width:48px;height:48px;object-fit:cover;border-radius:8px" onerror="this.hidden=true"></td>
                         <td><strong th:text="${variant.sku}">SKU</strong></td>
                         <td th:text="${variant.name}">Tên biến thể</td>
                         <td th:text="${variant.specification ?: '-'}">-</td>
                         <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.quantityOnHand}">0</td>
                         <td th:text="${variant.availableQuantity}">0</td>
-                        <td>
-                            <span class="badge"
-                                  th:classappend="${variant.approvalStatus == 'REJECTED' or variant.status == 'INACTIVE'} ? ' badge-draft' : ' badge-active'"
-                                  th:text="${variant.approvalStatus == 'REJECTED' ? 'Bị từ chối' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">
-                                Ngừng bán
-                            </span>
-                        </td>
+                        <td><span class="badge" th:classappend="${variant.approvalStatus == 'REJECTED' or variant.status == 'INACTIVE'} ? ' badge-draft' : ' badge-active'" th:text="${variant.approvalStatus == 'REJECTED' ? 'Bị từ chối' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">Ngừng bán</span></td>
                         <td class="variant-actions">
                             <a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a>
                             <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a>
                         </td>
                     </tr>
-                    <tr th:if="${#lists.isEmpty(product.variants)}">
-                        <td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td>
-                    </tr>
+                    <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>
                     </tbody>
                 </table>
             </div>

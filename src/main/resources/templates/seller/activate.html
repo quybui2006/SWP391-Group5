@@ -11,18 +11,16 @@
 
     <!-- Alert Messages -->
     <div th:if="${errorMessage}" class="seller-alert danger">
-        <span style="font-size:18px;">⚠️</span>
         <div th:text="${errorMessage}">Thông báo lỗi</div>
     </div>
     <div th:if="${successMessage}" class="seller-alert success">
-        <span style="font-size:18px;">✅</span>
         <div th:text="${successMessage}">Thông báo thành công</div>
     </div>
 
     <!-- Card Form -->
     <div class="seller-card">
         <div class="seller-card-title">
-            <span>🛡️</span> Kích hoạt Tài khoản Người bán & Định danh
+            Kích hoạt Tài khoản Người bán & Định danh
         </div>
         <p class="seller-card-subtitle">
             Theo Nghị định 52/2013/NĐ-CP & Luật Giao dịch điện tử, Người bán trên sàn TMĐT FreshFruit bắt buộc phải định danh danh tính CCCD và thông tin thuế trước khi tiến hành khởi tạo gian hàng.
@@ -31,7 +29,7 @@
         <form th:action="@{/seller/activate}" th:object="${form}" method="post">
             <!-- 1. Thông tin liên hệ -->
             <div class="seller-section-title">
-                <span>📞</span> 1. Thông tin liên hệ Người bán
+                1. Thông tin liên hệ Người bán
             </div>
             <div class="form-row-2">
                 <div class="form-group">
@@ -50,7 +48,7 @@
 
             <!-- 2. Thông tin định danh CCCD -->
             <div class="seller-section-title">
-                <span>🪪</span> 2. Thông tin Định danh Cá nhân (CCCD / Hộ chiếu)
+                2. Thông tin Định danh Cá nhân (CCCD / Hộ chiếu)
             </div>
             <div class="form-row-2">
                 <div class="form-group">
