@@ -18,6 +18,11 @@
         table{width:100%;border-collapse:collapse;margin-top:20px}
         th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);font-size:14px}
         th{background:#f8fafc;font-size:12.5px;font-weight:700}
+        .alert{margin:18px 0 0;padding:11px 14px;border-radius:9px;font-weight:600}
+        .alert-success{background:#dcfce7;color:#166534}.alert-error{background:#fee2e2;color:#991b1b}
+        .status{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700}
+        .status-pending{color:#a46e1c;background:#fff4df}.status-paid{color:#15803d;background:#dcfce7}.status-muted{color:#64748b;background:#f1f5f9}
+        .confirm-fee{margin-top:7px;background:#0a9e54;color:#fff;border:0;border-radius:7px;padding:6px 9px;font-size:12px;font-weight:700;cursor:pointer}
     </style>
 </head>
 <body>
@@ -33,29 +38,44 @@
         </header>
 
         <section class="panel">
+            <p class="alert alert-success" th:if="${success}" th:text="${success}"></p>
+            <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
             <div class="form-row">
                 <label for="month">Tháng:</label>
                 <input type="month" name="month" th:value="${month}" id="month">
                 <button class="btn-primary" type="button" onclick="filterMonth()">Tính</button>
-                <a class="btn-ghost" th:href="@{/admin/shop-payouts/export(month=${month})}" download>Xuất CSV</a>
+                <a class="btn-ghost" th:href="@{/admin/shop-payouts/export(month=${month})}" download>Xuất Excel</a>
             </div>
 
             <div class="stat-grid">
-                <div class="stat-box"><span>Tổng doanh thu</span><strong th:text="${#numbers.formatInteger(summary.totalRevenue,1,'POINT') + ' ₫'}">0 ₫</strong></div>
-                <div class="stat-box"><span>Phí sàn thu</span><strong th:text="${#numbers.formatInteger(summary.totalFee,1,'POINT') + ' ₫'}">0 ₫</strong></div>
-                <div class="stat-box"><span>Phải trả Shop Owner</span><strong th:text="${#numbers.formatInteger(summary.totalPayout,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="stat-box"><span>Tổng tiền khách trả</span><strong th:text="${#numbers.formatInteger(summary.totalRevenue,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="stat-box"><span>Tổng phí sàn phải thu</span><strong th:text="${#numbers.formatInteger(summary.totalFee,1,'POINT') + ' ₫'}">0 ₫</strong></div>
+                <div class="stat-box"><span>Shop phải trả phí sàn</span><strong th:text="${#numbers.formatInteger(summary.totalPayout,1,'POINT') + ' ₫'}">0 ₫</strong></div>
                 <div class="stat-box"><span>Số shop</span><strong th:text="${summary.shopCount}">0</strong></div>
             </div>
 
             <table>
-                <thead><tr><th>Shop</th><th>Owner</th><th>Doanh thu</th><th>Phí sàn</th><th>Cần trả</th></tr></thead>
+                <thead><tr><th>Shop</th><th>Chủ shop</th><th>Tiền khách trả</th><th>Phí sàn phải trả</th><th>Trạng thái</th></tr></thead>
                 <tbody>
                 <tr th:each="p : ${payouts}">
                     <td><strong th:text="${p['shop_name']}">FreshFruit</strong></td>
-                    <td th:text="${p['owner_id']}">1</td>
+                    <td>
+                        <strong th:text="${p['owner_name'] ?: 'Chưa cập nhật'}">Chủ shop</strong>
+                        <small style="display:block;color:var(--muted)" th:text="${p['owner_email']}">owner@example.com</small>
+                    </td>
                     <td th:text="${#numbers.formatInteger(p['revenue'],1,'POINT') + ' ₫'}">0 ₫</td>
-                    <td th:text="${#numbers.formatInteger(p['fee_amount'],1,'POINT') + ' ₫'}">0 ₫</td>
-                    <td><strong th:text="${#numbers.formatInteger(p['payout_amount'],1,'POINT') + ' ₫'}">0 ₫</strong></td>
+                    <td><strong th:text="${#numbers.formatInteger(p['fee_amount'],1,'POINT') + ' ₫'}">0 ₫</strong></td>
+                    <td>
+                        <span class="status status-paid" th:if="${p['fee_status'] == 'PAID'}">Đã nhận tiền</span>
+                        <span class="status status-pending" th:if="${p['fee_status'] == 'UNPAID'}">Chờ shop thanh toán</span>
+                        <span class="status status-muted" th:if="${p['fee_status'] == null}">Chưa chốt phí</span>
+                        <form th:if="${p['fee_status'] == 'UNPAID'}" method="post"
+                              th:action="@{/admin/shop-payouts/{shopId}/confirm-fee(shopId=${p['shop_id']})}"
+                              onsubmit="return confirm('Xác nhận đã nhận phí sàn từ shop này?');">
+                            <input type="hidden" name="month" th:value="${month}">
+                            <button class="confirm-fee" type="submit">Đã nhận tiền</button>
+                        </form>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(payouts)}"><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px">Không có dữ liệu cho tháng đã chọn.</td></tr>
                 </tbody>

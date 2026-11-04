@@ -392,34 +392,34 @@ public class CustomerProductDetailController {
         return ResponseEntity.ok(res);
     }
 
-    @PostMapping("/product/{id}/review/{reviewId}/edit")
-    public String updateReview(@PathVariable Long id, @PathVariable Long reviewId,
-                               @RequestParam Integer rating, @RequestParam String content,
-                               HttpSession session, RedirectAttributes redirect) {
-        if (session == null || !"CUSTOMER".equals(session.getAttribute("role")) || !(session.getAttribute("userId") instanceof Number)) {
-            return "redirect:/login?continueTo=/product/" + id;
-        }
-        try {
-            reviewService.updateReview(reviewId, id, ((Number) session.getAttribute("userId")).longValue(), rating, content);
-            redirect.addFlashAttribute("reviewSuccess", "Đã cập nhật đánh giá.");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("reviewError", ex.getMessage());
-        }
-        return "redirect:/product/" + id + "#reviews-section";
-    }
-
-    @PostMapping("/product/{id}/review/{reviewId}/delete")
-    public String deleteReview(@PathVariable Long id, @PathVariable Long reviewId,
-                               HttpSession session, RedirectAttributes redirect) {
-        if (session == null || !"CUSTOMER".equals(session.getAttribute("role")) || !(session.getAttribute("userId") instanceof Number)) {
-            return "redirect:/login?continueTo=/product/" + id;
-        }
-        try {
-            reviewService.deleteReview(reviewId, id, ((Number) session.getAttribute("userId")).longValue());
-            redirect.addFlashAttribute("reviewSuccess", "Đã xóa đánh giá.");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("reviewError", ex.getMessage());
-        }
-        return "redirect:/product/" + id + "#reviews-section";
-    }
+//    @PostMapping("/product/{id}/review/{reviewId}/edit")
+//    public String updateReview(@PathVariable Long id, @PathVariable Long reviewId,
+//                               @RequestParam Integer rating, @RequestParam String content,
+//                               HttpSession session, RedirectAttributes redirect) {
+//        if (session == null || !"CUSTOMER".equals(session.getAttribute("role")) || !(session.getAttribute("userId") instanceof Number)) {
+//            return "redirect:/login?continueTo=/product/" + id;
+//        }
+//        try {
+//            reviewService.updateReview(reviewId, id, ((Number) session.getAttribute("userId")).longValue(), rating, content);
+//            redirect.addFlashAttribute("reviewSuccess", "Đã cập nhật đánh giá.");
+//        } catch (IllegalArgumentException ex) {
+//            redirect.addFlashAttribute("reviewError", ex.getMessage());
+//        }
+//        return "redirect:/product/" + id + "#reviews-section";
+//    }
+//
+//    @PostMapping("/product/{id}/review/{reviewId}/delete")
+//    public String deleteReview(@PathVariable Long id, @PathVariable Long reviewId,
+//                               HttpSession session, RedirectAttributes redirect) {
+//        if (session == null || !"CUSTOMER".equals(session.getAttribute("role")) || !(session.getAttribute("userId") instanceof Number)) {
+//            return "redirect:/login?continueTo=/product/" + id;
+//        }
+//        try {
+//            reviewService.deleteReview(reviewId, id, ((Number) session.getAttribute("userId")).longValue());
+//            redirect.addFlashAttribute("reviewSuccess", "Đã xóa đánh giá.");
+//        } catch (IllegalArgumentException ex) {
+//            redirect.addFlashAttribute("reviewError", ex.getMessage());
+//        }
+//        return "redirect:/product/" + id + "#reviews-section";
+//    }
 }
