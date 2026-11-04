@@ -91,24 +91,24 @@ public class ReviewService {
         return saved;
     }
 
-    @Transactional
-    public Review updateReview(Long reviewId, Long variantId, Long userId, Integer rating, String content) {
-        Review review = reviewRepository.findByIdAndVariantIdAndUserId(reviewId, variantId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Bạn không có quyền sửa đánh giá này."));
-        if (rating == null || rating < 1 || rating > 5) throw new IllegalArgumentException("Số sao phải từ 1 đến 5.");
-        String safeContent = content == null ? "" : content.trim();
-        if (safeContent.isEmpty() || safeContent.length() > 2000) throw new IllegalArgumentException("Nội dung đánh giá phải từ 1 đến 2000 ký tự.");
-        review.setRating(rating); review.setContent(safeContent);
-        return reviewRepository.save(review);
-    }
-
-    @Transactional
-    public void deleteReview(Long reviewId, Long variantId, Long userId) {
-        Review review = reviewRepository.findByIdAndVariantIdAndUserId(reviewId, variantId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Bạn không có quyền xóa đánh giá này."));
-        reviewRepository.delete(review);
-        if (review.getOrderItemId() != null) jdbc.update("UPDATE order_items SET reviewed_at = NULL WHERE id=?", review.getOrderItemId());
-    }
+//    @Transactional
+//    public Review updateReview(Long reviewId, Long variantId, Long userId, Integer rating, String content) {
+//        Review review = reviewRepository.findByIdAndVariantIdAndUserId(reviewId, variantId, userId)
+//                .orElseThrow(() -> new IllegalArgumentException("Bạn không có quyền sửa đánh giá này."));
+//        if (rating == null || rating < 1 || rating > 5) throw new IllegalArgumentException("Số sao phải từ 1 đến 5.");
+//        String safeContent = content == null ? "" : content.trim();
+//        if (safeContent.isEmpty() || safeContent.length() > 2000) throw new IllegalArgumentException("Nội dung đánh giá phải từ 1 đến 2000 ký tự.");
+//        review.setRating(rating); review.setContent(safeContent);
+//        return reviewRepository.save(review);
+//    }
+//
+//    @Transactional
+//    public void deleteReview(Long reviewId, Long variantId, Long userId) {
+//        Review review = reviewRepository.findByIdAndVariantIdAndUserId(reviewId, variantId, userId)
+//                .orElseThrow(() -> new IllegalArgumentException("Bạn không có quyền xóa đánh giá này."));
+//        reviewRepository.delete(review);
+//        if (review.getOrderItemId() != null) jdbc.update("UPDATE order_items SET reviewed_at = NULL WHERE id=?", review.getOrderItemId());
+//    }
 
     @Transactional(readOnly = true)
     public List<ReviewDto> getReviewsForVariant(Long variantId) {
