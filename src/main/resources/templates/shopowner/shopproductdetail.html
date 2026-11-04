@@ -54,7 +54,6 @@
                 <form th:if="${!product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/show(id=${product.id})}" method="post">
                     <button class="button button-primary" type="submit">Đăng bán sản phẩm</button>
                 </form>
-                <a th:if="${#lists.isEmpty(product.variants)}" class="button button-primary" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể để đăng bán</a>
                 <form th:if="${product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/hide(id=${product.id})}" method="post" onsubmit="return confirm('Ẩn sản phẩm khỏi khách hàng?');">
                     <button class="button button-ghost" type="submit">Ẩn sản phẩm</button>
                 </form>
