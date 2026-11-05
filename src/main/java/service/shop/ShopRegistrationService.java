@@ -22,6 +22,36 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * ==============================================================================================
+ * SERVICE: ShopRegistrationService
+ * ==============================================================================================
+ * Mục đích: Quản lý toàn bộ nghiệp vụ (Business Logic) trong quy trình Tạo và Đăng ký Gian hàng
+ * dành cho Người bán (Seller / Shop Owner) trên nền tảng sàn thương mại điện tử FreshFruit.
+ *
+ * Chu trình hoạt động gồm 4 giai đoạn chính do Service này đảm nhận xử lý:
+ * ----------------------------------------------------------------------------------------------
+ * Giai đoạn 1 (Kích hoạt người bán):
+ *   - Tiếp nhận định danh CCCD/Hộ chiếu và mã số thuế cá nhân / doanh nghiệp.
+ *   - Lưu trữ tạm thời vào bảng `seller_activations` và đồng bộ số điện thoại vào bảng `users`.
+ *
+ * Giai đoạn 2 (Tạo hồ sơ gian hàng & Nộp giấy phép):
+ *   - Tiếp nhận thông tin tên Shop, địa chỉ kho lấy hàng, các kênh vận chuyển hỗ trợ.
+ *   - Hợp nhất thông tin CCCD (Giai đoạn 1) và thông tin Shop (Giai đoạn 2) kèm URL giấy phép
+ *     kinh doanh (GPKD) & giấy chứng nhận ATTP từ `ShopCertificateStorage`.
+ *   - Chèn mới bản ghi vào bảng `shops` với:
+ *       + `approval_status = 'PENDING'` (Chờ Ban Quản lý duyệt)
+ *       + `operating_status = 'CLOSED'` (Chưa mở bán cho tới khi duyệt thanh toán)
+ *   - Bắn thông báo xác nhận tới Người bán và thông báo tới Ban Quản Trị (Operations).
+ *
+ * Giai đoạn 3 (Theo dõi trạng thái & Nộp lại hồ sơ):
+ *   - Truy vấn chi tiết tiến trình xét duyệt hồ sơ (`PENDING`, `APPROVED`, `REJECTED`).
+ *   - Nếu bị từ chối (`REJECTED`), hỗ trợ nộp lại hồ sơ (`resubmitShop`) để quay lại `PENDING`.
+ *
+ * Giai đoạn 4 (Thiết lập tài khoản ngân hàng thụ hưởng):
+ *   - Nhập thông tin số tài khoản, tên ngân hàng để đối soát với CCCD trước khi kích hoạt `OPEN`.
+ * ==============================================================================================
+ */
 @Service
 public class ShopRegistrationService {
 
@@ -47,6 +77,10 @@ public class ShopRegistrationService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Tự động khởi tạo bảng `seller_activations` khi ứng dụng khởi chạy nếu bảng chưa tồn tại.
+     * Bảng này dùng để lưu trữ dữ liệu định danh CCCD và thông tin thuế của Người bán trước khi nộp hồ sơ mở Shop.
+     */
     @PostConstruct
     public void initSellerActivationsTable() {
         try {
@@ -71,6 +105,17 @@ public class ShopRegistrationService {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * ==========================================================================================
+     * BƯỚC 1: LƯU THÔNG TIN KÍCH HOẠT ĐỊNH DANH NGƯỜI BÁN (saveSellerActivation)
+     * ==========================================================================================
+     * - Lưu thông tin CCCD, nơi cấp, ngày cấp, loại hình kinh doanh, mã số thuế vào bảng `seller_activations`.
+     * - Sử dụng cú pháp `ON DUPLICATE KEY UPDATE` để người bán có thể chỉnh sửa lại trước khi tạo shop.
+     * - Đồng bộ cập nhật số điện thoại liên lạc vào bảng người dùng `users`.
+     *
+     * @param userId ID người dùng đang đăng nhập
+     * @param form   Dữ liệu form định danh người bán
+     */
     @Transactional
     public void saveSellerActivation(Long userId, SellerAccountActivationDto form) {
         if (userId == null || form == null) return;
@@ -115,6 +160,7 @@ public class ShopRegistrationService {
         form.getTaxEmail() != null ? form.getTaxEmail().trim() : null
         );
 
+        // Đồng bộ số điện thoại vào bảng users nếu có thay đổi
         if (form.getPhone() != null && !form.getPhone().isBlank()) {
             userRepository.findById(userId).ifPresent(u -> {
                 u.setPhone(form.getPhone().trim());
@@ -123,6 +169,12 @@ public class ShopRegistrationService {
         }
     }
 
+    /**
+     * Lấy lại thông tin kích hoạt định danh đã lưu trong database của Người bán (nếu có).
+     *
+     * @param userId ID người dùng
+     * @return Optional chứa SellerAccountActivationDto hoặc rỗng
+     */
     @Transactional(readOnly = true)
     public Optional<SellerAccountActivationDto> getSellerActivation(Long userId) {
         if (userId == null) return Optional.empty();
@@ -152,12 +204,24 @@ public class ShopRegistrationService {
         }
     }
 
+    /**
+     * Tìm thông tin Shop theo ID tài khoản chủ sở hữu (ownerId).
+     *
+     * @param userId ID người dùng sở hữu shop
+     * @return Optional chứa thực thể Shop
+     */
     @Transactional(readOnly = true)
     public Optional<Shop> getShopByOwnerId(Long userId) {
         if (userId == null) return Optional.empty();
         return shopRepository.findByOwnerId(userId);
     }
 
+    /**
+     * Lấy danh sách Tỉnh/Thành phố đang hoạt động để người bán chọn làm địa chỉ kho lấy hàng.
+     * Tự động khởi tạo (seed) dữ liệu địa chỉ mẫu nếu bảng chưa có dữ liệu.
+     *
+     * @return Danh sách các Tỉnh/Thành phố hợp lệ
+     */
     @Transactional
     public List<Province> getAllActiveProvinces() {
         List<Province> list = provinceRepository.findAll().stream()
@@ -181,6 +245,23 @@ public class ShopRegistrationService {
         return list;
     }
 
+    /**
+     * ==========================================================================================
+     * BƯỚC 2A: ĐĂNG KÝ MỞ GIAN HÀNG MỚI LẦN ĐẦU (registerShop)
+     * ==========================================================================================
+     * - Kiểm tra tính hợp lệ của tài khoản: Đã đăng nhập, chưa có gian hàng hoặc chưa có hồ sơ chờ duyệt.
+     * - Validate tỉnh/thành phố kho hàng tồn tại trong hệ thống.
+     * - Khởi tạo thực thể `Shop` với:
+     *     + `approvalStatus = 'PENDING'` (Chờ Ban Quản Trị duyệt)
+     *     + `operatingStatus = 'CLOSED'` (Chưa được phép hiển thị mở bán)
+     * - Lưu đầy đủ thông tin pháp lý: CCCD, MST, Giấy phép kinh doanh, Chứng nhận ATTP.
+     * - Lưu các kênh vận chuyển hỗ trợ: FAST, EXPRESS, STANDARD.
+     * - Bắn 2 thông báo: Xác nhận đã nộp hồ sơ tới Người bán và báo tới Ban Vận Hành (Operations).
+     *
+     * @param userId ID người dùng đăng ký
+     * @param dto    DTO tổng hợp chứa toàn bộ thông tin đăng ký shop
+     * @return Thực thể Shop đã được lưu vào database
+     */
     @Transactional
     public Shop registerShop(Long userId, ShopRegistrationDto dto) {
         if (userId == null) {
@@ -199,11 +280,11 @@ public class ShopRegistrationService {
             if ("APPROVED".equals(existing.getApprovalStatus())) {
                 throw new IllegalStateException("Bạn đã có cửa hàng đang hoạt động.");
             }
-            // If REJECTED, route to resubmit
+            // Nếu hồ sơ trước đó bị REJECTED -> chuyển hướng sang luồng nộp lại (resubmit)
             return resubmitShop(userId, dto);
         }
 
-        // Validate province
+        // Validate tính hợp lệ của Tỉnh/Thành phố
         validateProvince(dto.getProvinceCode());
 
         Shop shop = new Shop();
@@ -217,6 +298,7 @@ public class ShopRegistrationService {
         shop.setApprovalStatus("PENDING");
         shop.setOperatingStatus("CLOSED");
 
+        // Gắn thông tin định danh CCCD & Thuế
         shop.setIdCardNumber(dto.getIdCardNumber() != null ? dto.getIdCardNumber().trim() : null);
         shop.setIdCardName(dto.getIdCardName() != null ? dto.getIdCardName().trim() : null);
         if (dto.getIdCardDate() != null && !dto.getIdCardDate().isBlank()) {
@@ -229,6 +311,8 @@ public class ShopRegistrationService {
         shop.setTaxCode(dto.getTaxCode() != null ? dto.getTaxCode().trim() : null);
         shop.setTaxName(dto.getTaxName() != null ? dto.getTaxName().trim() : null);
         shop.setTaxEmail(dto.getTaxEmail() != null ? dto.getTaxEmail().trim() : null);
+
+        // Gắn thông tin Giấy phép kinh doanh (GPKD)
         shop.setBusinessLicenseNumber(dto.getBusinessLicenseNumber() != null ? dto.getBusinessLicenseNumber().trim() : null);
         if (dto.getBusinessLicenseDate() != null && !dto.getBusinessLicenseDate().isBlank()) {
             try {
@@ -238,6 +322,7 @@ public class ShopRegistrationService {
         shop.setBusinessLicensePlace(dto.getBusinessLicensePlace() != null ? dto.getBusinessLicensePlace().trim() : null);
         shop.setBusinessLicenseUrl(dto.getBusinessLicenseUrl() != null ? dto.getBusinessLicenseUrl().trim() : null);
 
+        // Gắn thông tin Giấy chứng nhận An toàn thực phẩm (ATTP)
         shop.setFoodSafetyCertNumber(dto.getFoodSafetyCertNumber() != null ? dto.getFoodSafetyCertNumber().trim() : null);
         if (dto.getFoodSafetyCertDate() != null && !dto.getFoodSafetyCertDate().isBlank()) {
             try {
@@ -252,6 +337,7 @@ public class ShopRegistrationService {
         shop.setFoodSafetyCertPlace(dto.getFoodSafetyCertPlace() != null ? dto.getFoodSafetyCertPlace().trim() : null);
         shop.setFoodSafetyCertUrl(dto.getFoodSafetyCertUrl() != null ? dto.getFoodSafetyCertUrl().trim() : null);
 
+        // Tổng hợp các phương thức vận chuyển được chọn
         java.util.List<String> shipping = new java.util.ArrayList<>();
         if (dto.isShippingFast()) shipping.add("FAST");
         if (dto.isShippingExpress()) shipping.add("EXPRESS");
@@ -260,7 +346,7 @@ public class ShopRegistrationService {
 
         Shop savedShop = shopRepository.save(shop);
 
-        // Send in-web notification
+        // Bắn thông báo xác nhận nộp hồ sơ tới Người bán và thông báo tới Ban Vận Hành
         try {
             notificationService.notifyShopRegistrationSubmitted(userId, savedShop.getId(), savedShop.getName());
             String ownerName = userRepository.findById(userId).map(entity.User::getFullName).orElse(dto.getIdCardName());
@@ -275,6 +361,20 @@ public class ShopRegistrationService {
         return savedShop;
     }
 
+    /**
+     * ==========================================================================================
+     * BƯỚC 2B: NỘP LẠI HỒ SƠ SAU KHI BỊ BAN VẬN HÀNH TỪ CHỐI (resubmitShop)
+     * ==========================================================================================
+     * - Dành cho trường hợp hồ sơ trước đó có `approval_status = 'REJECTED'`.
+     * - Cập nhật lại toàn bộ thông tin mới do người bán sửa đổi.
+     * - Xóa lý do từ chối cũ (`rejectionReason = null`), xóa thời gian duyệt cũ (`reviewedAt = null`).
+     * - Đưa trạng thái trở lại `approval_status = 'PENDING'` và `operating_status = 'CLOSED'` để Ban Quản Lý thẩm định lại.
+     * - Gửi thông báo tới Ban Vận Hành để xem xét hồ sơ mới nộp lại.
+     *
+     * @param userId ID người dùng
+     * @param dto    DTO chứa thông tin hồ sơ mới cập nhật
+     * @return Thực thể Shop sau khi cập nhật
+     */
     @Transactional
     public Shop resubmitShop(Long userId, ShopRegistrationDto dto) {
         if (userId == null) {
@@ -286,17 +386,21 @@ public class ShopRegistrationService {
 
         validateProvince(dto.getProvinceCode());
 
+        // Cập nhật thông tin gian hàng & địa chỉ kho
         shop.setName(dto.getName().trim());
         shop.setDescription(dto.getDescription() != null ? dto.getDescription().trim() : "");
         shop.setPhone(dto.getPhone().trim());
         shop.setProvinceCode(dto.getProvinceCode());
         shop.setWardName(dto.getWardName().trim());
         shop.setAddressDetail(dto.getAddressDetail().trim());
+
+        // Reset trạng thái về PENDING và xóa lý do từ chối cũ
         shop.setApprovalStatus("PENDING");
         shop.setOperatingStatus("CLOSED");
         shop.setRejectionReason(null);
         shop.setReviewedAt(null);
 
+        // Cập nhật thông tin CCCD & Thuế
         shop.setIdCardNumber(dto.getIdCardNumber() != null ? dto.getIdCardNumber().trim() : null);
         shop.setIdCardName(dto.getIdCardName() != null ? dto.getIdCardName().trim() : null);
         if (dto.getIdCardDate() != null && !dto.getIdCardDate().isBlank()) {
@@ -309,6 +413,8 @@ public class ShopRegistrationService {
         shop.setTaxCode(dto.getTaxCode() != null ? dto.getTaxCode().trim() : null);
         shop.setTaxName(dto.getTaxName() != null ? dto.getTaxName().trim() : null);
         shop.setTaxEmail(dto.getTaxEmail() != null ? dto.getTaxEmail().trim() : null);
+
+        // Cập nhật thông tin Giấy phép kinh doanh
         shop.setBusinessLicenseNumber(dto.getBusinessLicenseNumber() != null ? dto.getBusinessLicenseNumber().trim() : null);
         if (dto.getBusinessLicenseDate() != null && !dto.getBusinessLicenseDate().isBlank()) {
             try {
@@ -318,6 +424,7 @@ public class ShopRegistrationService {
         shop.setBusinessLicensePlace(dto.getBusinessLicensePlace() != null ? dto.getBusinessLicensePlace().trim() : null);
         shop.setBusinessLicenseUrl(dto.getBusinessLicenseUrl() != null ? dto.getBusinessLicenseUrl().trim() : null);
 
+        // Cập nhật thông tin Giấy chứng nhận ATTP
         shop.setFoodSafetyCertNumber(dto.getFoodSafetyCertNumber() != null ? dto.getFoodSafetyCertNumber().trim() : null);
         if (dto.getFoodSafetyCertDate() != null && !dto.getFoodSafetyCertDate().isBlank()) {
             try {
@@ -332,6 +439,7 @@ public class ShopRegistrationService {
         shop.setFoodSafetyCertPlace(dto.getFoodSafetyCertPlace() != null ? dto.getFoodSafetyCertPlace().trim() : null);
         shop.setFoodSafetyCertUrl(dto.getFoodSafetyCertUrl() != null ? dto.getFoodSafetyCertUrl().trim() : null);
 
+        // Cập nhật các phương thức vận chuyển
         java.util.List<String> resubmitShipping = new java.util.ArrayList<>();
         if (dto.isShippingFast()) resubmitShipping.add("FAST");
         if (dto.isShippingExpress()) resubmitShipping.add("EXPRESS");
@@ -340,6 +448,7 @@ public class ShopRegistrationService {
 
         Shop saved = shopRepository.save(shop);
 
+        // Bắn thông báo nộp lại hồ sơ tới người bán và ban vận hành
         try {
             notificationService.notifyShopRegistrationSubmitted(userId, saved.getId(), saved.getName());
             String ownerName = userRepository.findById(userId).map(entity.User::getFullName).orElse(dto.getIdCardName());
@@ -354,6 +463,22 @@ public class ShopRegistrationService {
         return saved;
     }
 
+    /**
+     * ==========================================================================================
+     * BƯỚC 3: TRUY VẤN TIẾN TRÌNH XÉT DUYỆT HỒ SƠ SHOP (getShopRegistrationStatusDetails)
+     * ==========================================================================================
+     * - Dùng để hiển thị trạng thái động trên trang `/seller/status`.
+     * - Tính toán tiêu đề trạng thái (`statusTitle`), mô tả (`statusDescription`), màu badge CSS,
+     *   và bước tiến trình hiện tại (`stepIndex` từ 1 đến 4).
+     * - Xử lý đầy đủ các kịch bản:
+     *     + `PENDING`: Hồ sơ Shop đang chờ duyệt.
+     *     + `REJECTED`: Hồ sơ Shop bị từ chối kèm lý do từ Operations.
+     *     + `APPROVED`: Hồ sơ Shop đã duyệt, kiểm tra tiếp trạng thái đối soát tài khoản thanh toán
+     *       (`paymentApprovalStatus`: `UNCONFIGURED`, `PENDING`, `REJECTED`, `APPROVED`).
+     *
+     * @param userId ID người dùng đang kiểm tra
+     * @return Map chứa các thuộc tính model để Thymeleaf render giao diện
+     */
     @Transactional(readOnly = true)
     public Map<String, Object> getShopRegistrationStatusDetails(Long userId) {
         Map<String, Object> result = new HashMap<>();
@@ -432,6 +557,18 @@ public class ShopRegistrationService {
         return result;
     }
 
+    /**
+     * ==========================================================================================
+     * BƯỚC 4: THIẾT LẬP THÔNG TIN TÀI KHOẢN NGÂN HÀNG THỤ HƯỞNG (submitPaymentInfo)
+     * ==========================================================================================
+     * - Chỉ cho phép thực hiện khi hồ sơ Shop đã được duyệt bước 1 (`approvalStatus == 'APPROVED'`).
+     * - Chuẩn hóa tên chủ tài khoản thành CHỮ IN HOA để phục vụ đối chiếu không dấu với CCCD.
+     * - Cập nhật thông tin ngân hàng và chuyển `payment_approval_status = 'PENDING'`.
+     * - Gửi thông báo đến chuông thông báo của Người bán xác nhận đã gửi tài khoản đối soát.
+     *
+     * @param userId ID người dùng
+     * @param dto    DTO chứa thông tin ngân hàng (Tên ngân hàng, STK, Tên chủ TK, Chi nhánh)
+     */
     @Transactional
     public void submitPaymentInfo(Long userId, ShopPaymentSetupDto dto) {
         if (userId == null) {
@@ -468,6 +605,19 @@ public class ShopRegistrationService {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * ==========================================================================================
+     * CẦU NỐI HỢP NHẤT DỮ LIỆU ONBOARDING (registerShopFromSellerOnboarding)
+     * ==========================================================================================
+     * - Hợp nhất dữ liệu đã lưu ở Bước 1 (CCCD & Thuế từ `SellerAccountActivationDto`)
+     *   và dữ liệu ở Bước 2 (Tên shop, kho hàng, GPKD, ATTP từ `SellerCreateShopDto`).
+     * - Tạo thành đối tượng `ShopRegistrationDto` hoàn chỉnh và gọi hàm `registerShop`.
+     *
+     * @param userId     ID người dùng
+     * @param activation Dữ liệu định danh người bán ở Bước 1
+     * @param shopDto    Dữ liệu thông tin shop & giấy phép ở Bước 2
+     * @return Thực thể Shop đã được đăng ký thành công
+     */
     @Transactional
     public Shop registerShopFromSellerOnboarding(Long userId, SellerAccountActivationDto activation, SellerCreateShopDto shopDto) {
         if (activation == null) {
@@ -489,6 +639,7 @@ public class ShopRegistrationService {
         fullDto.setShippingStandard(shopDto.isShippingStandard());
         fullDto.setAgreeTerms(shopDto.isAgreeTerms());
 
+        // Kế thừa thông tin định danh CCCD & Thuế từ Bước 1
         fullDto.setIdCardNumber(activation.getIdCardNumber());
         fullDto.setIdCardName(activation.getIdCardName());
         fullDto.setIdCardDate(activation.getIdCardDate());
@@ -498,6 +649,7 @@ public class ShopRegistrationService {
         fullDto.setTaxName(activation.getTaxName());
         fullDto.setTaxEmail(activation.getTaxEmail());
 
+        // Kế thừa thông tin giấy phép kinh doanh & an toàn thực phẩm từ Bước 2
         fullDto.setBusinessLicenseNumber(shopDto.getBusinessLicenseNumber());
         fullDto.setBusinessLicenseDate(shopDto.getBusinessLicenseDate());
         fullDto.setBusinessLicensePlace(shopDto.getBusinessLicensePlace());
@@ -511,10 +663,14 @@ public class ShopRegistrationService {
         return registerShop(userId, fullDto);
     }
 
+    /**
+     * Xác thực mã tỉnh/thành phố kho hàng có tồn tại trong hệ thống hay không.
+     *
+     * @param provinceCode Mã tỉnh/thành phố
+     */
     private void validateProvince(String provinceCode) {
         if (provinceCode == null || !provinceRepository.existsById(provinceCode)) {
             throw new IllegalArgumentException("Tỉnh/Thành phố được chọn không hợp lệ.");
         }
     }
 }
-
