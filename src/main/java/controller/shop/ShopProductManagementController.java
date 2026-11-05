@@ -34,13 +34,16 @@ public class ShopProductManagementController {
     /** Danh sách sản phẩm của shop, hỗ trợ tìm kiếm và phân trang. */
     @GetMapping({"/shop/products", "/shopowner/products"})
     public String list(@RequestParam(defaultValue = "") String keyword,
+                       @RequestParam(required = false) Long categoryId,
                        @RequestParam(defaultValue = "0") int page,
                        HttpServletRequest request, Model model) {
         Long ownerId = ownerId(request);
         if (ownerId == null) return "redirect:/login";
-        Page<?> result = products.searchShopProducts(ownerId, keyword, Math.max(0, page), PAGE_SIZE);
+        Page<?> result = products.searchShopProducts(ownerId, keyword, categoryId, Math.max(0, page), PAGE_SIZE);
         model.addAttribute("products", result);
         model.addAttribute("keyword", keyword.trim());
+        model.addAttribute("categories", categoryRepository.findByIsActiveTrue());
+        model.addAttribute("selectedCategoryId", categoryId);
         return "shopowner/product-list";
     }
 

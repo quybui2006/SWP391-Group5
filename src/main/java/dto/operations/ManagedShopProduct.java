@@ -6,4 +6,5 @@ public record ManagedShopProduct(
         Long productId,
         String productName,
         String imageUrl,
+        String categoryName,
         List<ManagedShopVariant> variants) { }

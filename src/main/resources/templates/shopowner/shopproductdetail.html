@@ -121,12 +121,6 @@
                         <td class="variant-actions">
                             <a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a>
                             <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a>
-                            <form class="variant-listing-form" th:if="${variant.approvalStatus != 'REJECTED' and variant.status == 'ACTIVE'}" method="post" th:action="@{/shopowner/product-variants/{id}/hide(id=${variant.id})}">
-                                <button class="button button-ghost" type="submit">Ngừng bán</button>
-                            </form>
-                            <form class="variant-listing-form" th:if="${variant.approvalStatus != 'REJECTED' and variant.status == 'INACTIVE'}" method="post" th:action="@{/shopowner/product-variants/{id}/show(id=${variant.id})}">
-                                <button class="button button-primary" type="submit">Đăng bán</button>
-                            </form>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>

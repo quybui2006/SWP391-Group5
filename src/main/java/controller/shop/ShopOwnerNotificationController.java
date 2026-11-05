@@ -24,8 +24,7 @@ public class ShopOwnerNotificationController {
     public String list(HttpServletRequest request, @RequestParam(defaultValue = "") String keyword,
                        @RequestParam(defaultValue = "all") String status, Model model) {
         Long userId = currentUser.requireUserId(request);
-        notifications.removeCustomerSampleNotificationsForShopOwner(userId);
-        var allNotifications = notifications.getAllNotifications(userId);
+        var allNotifications = notifications.getShopOwnerNotifications(userId);
         allNotifications.stream()
                 .filter(item -> "ORDER".equalsIgnoreCase(item.getTargetType()) && item.getTargetId() != null)
                 .forEach(item -> item.setTargetUrl("/shopowner/orders/" + item.getTargetId()));
@@ -45,7 +44,7 @@ public class ShopOwnerNotificationController {
         model.addAttribute("notifications", filteredNotifications);
         model.addAttribute("keyword", keyword.trim());
         model.addAttribute("selectedStatus", normalizedStatus);
-        model.addAttribute("unreadCount", notifications.getUnreadCount(userId));
+        model.addAttribute("unreadCount", notifications.getShopOwnerUnreadCount(userId));
         return "shopowner/notifications";
     }
 }

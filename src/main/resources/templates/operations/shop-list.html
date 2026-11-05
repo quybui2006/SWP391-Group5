@@ -53,8 +53,10 @@
                                     </td>
                                     <td th:text="${shop.productCount + ' hồ sơ · ' + shop.variantCount + ' biến thể'}">0
                                     </td>
-                                    <td><a class="button button-secondary"
-                                            th:href="@{/operations/shop-list/{id}(id=${shop.id})}">Chi tiết</a></td>
+                                    <td><div class="row-actions">
+                                        <a class="button button-secondary" th:href="@{/operations/shop-list/{id}(id=${shop.id})}">Chi tiết</a>
+                                        <a class="button button-primary" th:href="@{/operations/shop-list/{id}/products(id=${shop.id})}">Sản phẩm</a>
+                                    </div></td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(shops)}">
                                     <td colspan="6" style="text-align: center; padding: 24px; color: var(--muted);">

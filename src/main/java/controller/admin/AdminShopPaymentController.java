@@ -7,8 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.admin.AdminShopPaymentService;
 
 import java.time.LocalDate;
@@ -32,7 +35,7 @@ public class AdminShopPaymentController {
                            Model model, HttpSession session) {
         if (!checkAdmin(session)) return "redirect:/login";
         String effectiveMonth = month == null || month.isBlank()
-                ? LocalDate.now().minusMonths(1).toString().substring(0, 7)
+                ? LocalDate.now().toString().substring(0, 7)
                 : month;
         model.addAttribute("month", effectiveMonth);
         model.addAttribute("payouts", payments.calculateShopPayouts(effectiveMonth));
@@ -41,13 +44,31 @@ public class AdminShopPaymentController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> exportCsv(@RequestParam String month,
-                                            HttpSession session) {
+    public ResponseEntity<byte[]> exportExcel(@RequestParam String month,
+                                              HttpSession session) {
         if (!checkAdmin(session)) return ResponseEntity.status(401).build();
-        byte[] csv = payments.exportPayoutsCsv(month).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] excel = payments.exportPayoutsXlsx(month);
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/csv;charset=UTF-8"));
-        headers.setContentDispositionFormData("attachment", "shop-payouts-" + month + ".csv");
-        return ResponseEntity.ok().headers(headers).body(csv);
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "shop-payouts-" + month + ".xlsx");
+        return ResponseEntity.ok().headers(headers).body(excel);
+    }
+
+    @PostMapping("/{shopId}/confirm-fee")
+    public String confirmFeeReceived(@PathVariable long shopId,
+                                     @RequestParam String month,
+                                     HttpSession session,
+                                     RedirectAttributes redirect) {
+        if (!checkAdmin(session)) return "redirect:/login";
+        try {
+            boolean changed = payments.confirmFeeReceived(shopId, month);
+            redirect.addFlashAttribute("success", changed
+                    ? "Đã xác nhận nhận phí sàn từ shop."
+                    : "Khoản phí này đã được xác nhận trước đó.");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/admin/shop-payouts?month=" + month;
     }
 }

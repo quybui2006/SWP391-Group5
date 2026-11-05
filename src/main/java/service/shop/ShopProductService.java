@@ -86,14 +86,18 @@ public class ShopProductService {
                 .toList();
     }
 
-    public Page<ShopProductListItem> searchShopProducts(Long ownerUserId, String keyword, int page, int size) {
+    public Page<ShopProductListItem> searchShopProducts(Long ownerUserId, String keyword, Long categoryId, int page, int size) {
         Long shopId = requireShopId(ownerUserId);
         String term = keyword == null ? "" : keyword.trim();
         String like = "%" + term.toLowerCase() + "%";
         String condition = "p.shop_id=? AND (?='' OR LOWER(p.name) LIKE ? OR EXISTS "
-                + "(SELECT 1 FROM product_variants pv WHERE pv.product_id=p.id AND LOWER(pv.sku) LIKE ?))";
+                + "(SELECT 1 FROM product_variants pv WHERE pv.product_id=p.id AND LOWER(pv.sku) LIKE ?))"
+                + (categoryId == null ? "" : " AND EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id=p.id AND pc.category_id=?)");
+        Object[] queryArgs = categoryId == null
+                ? new Object[]{shopId, term, like, like}
+                : new Object[]{shopId, term, like, like, categoryId};
         Long total = jdbc.queryForObject("SELECT COUNT(*) FROM products p WHERE " + condition,
-                Long.class, shopId, term, like, like);
+                Long.class, queryArgs);
         List<ShopProductListItem> rows = jdbc.query("""
                 SELECT p.id, p.name, p.selling_status AS status, p.approval_status, p.rejection_reason, p.is_visible, p.created_at,
                     (SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image_url,
@@ -111,8 +115,14 @@ public class ShopProductService {
                 rs.getString("approval_status"), rs.getString("rejection_reason"),
                 rs.getBoolean("is_visible"),
                 rs.getTimestamp("created_at").toLocalDateTime()),
-                shopId, term, like, like, size, (long) page * size);
+                appendArgs(queryArgs, size, (long) page * size));
         return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
+    }
+
+    private Object[] appendArgs(Object[] args, Object... suffix) {
+        Object[] combined = java.util.Arrays.copyOf(args, args.length + suffix.length);
+        System.arraycopy(suffix, 0, combined, args.length, suffix.length);
+        return combined;
     }
 
     public List<ProductVariantEditForm.UnitOption> activeUnitOptions() {
@@ -263,13 +273,7 @@ public class ShopProductService {
 
     public Map<String, Object> shopDashboard(Long ownerUserId) {
         Shop shop = shopRepository.findByOwnerId(ownerUserId).orElse(null);
-        if (shop == null) return Map.of(
-                "name", "Chưa đăng ký cửa hàng",
-                "approvalStatus", "NOT_REGISTERED",
-                "operatingStatus", "CLOSED",
-                "paymentApprovalStatus", "UNCONFIGURED",
-                "bankRejectionReason", ""
-        );
+        if (shop == null) return Map.of("name", "Chưa đăng ký cửa hàng", "approvalStatus", "NOT_REGISTERED", "operatingStatus", "CLOSED");
         Map<String, Object> map = new HashMap<>();
         map.put("id", shop.getId());
         map.put("name", shop.getName());
@@ -742,7 +746,7 @@ public class ShopProductService {
             statement.setTimestamp(4, java.sql.Timestamp.valueOf(receivedAt));
             statement.setLong(5, ownerId); return statement;
         }, key);
-        long batchId = extractGeneratedId(key);
+        long batchId = key.getKey().longValue();
         String code = "LOT-" + batchId;
         jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", code, batchId);
         jdbc.update("INSERT INTO inventory_transactions(inventory_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,'RECEIVE',?,0,?,0,?,?,?)",
@@ -800,18 +804,6 @@ public class ShopProductService {
         product.setSellingStatus("ACTIVE");
         productRepository.save(product);
     }
-    private long extractGeneratedId(org.springframework.jdbc.support.KeyHolder key) {
-        if (key.getKeys() != null) {
-            Map<String, Object> keys = key.getKeys();
-            if (keys.containsKey("id") && keys.get("id") instanceof Number n) return n.longValue();
-            if (keys.containsKey("ID") && keys.get("ID") instanceof Number n) return n.longValue();
-            for (Object val : keys.values()) {
-                if (val instanceof Number n) return n.longValue();
-            }
-        }
-        Number k = key.getKey();
-        if (k != null) return k.longValue();
-        throw new IllegalStateException("Không lấy được khóa tự sinh.");
-    }
-
 }
+
+
