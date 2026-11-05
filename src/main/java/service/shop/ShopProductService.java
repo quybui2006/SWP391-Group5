@@ -37,6 +37,7 @@ import entity.Category;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
@@ -159,9 +160,11 @@ public class ShopProductService {
         form.setId(variant.getId()); form.setProductName(variant.getProduct().getName());
         form.setProductCanSell(true);
         form.setApprovalStatus(variant.getApprovalStatus());
+        form.setOperationsBlocked(variant.isOperationsBlocked());
+        form.setOperationsBlockReason(variant.getOperationsBlockReason());
         form.setVariantName(variant.getName()); form.setSku(variant.getSku()); form.setSpecification(variant.getSpecification());
         // Product là metadata; trạng thái bán chỉ thuộc biến thể.
-        form.setStatus("REJECTED".equals(variant.getApprovalStatus()) || "INACTIVE".equals(variant.getStatus()) ? "INACTIVE" : "ACTIVE");
+        form.setStatus(variant.isOperationsBlocked() || "INACTIVE".equals(variant.getStatus()) ? "INACTIVE" : "ACTIVE");
         form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice());
         form.setQuantityOnHand(inventory.getQuantityOnHand());
         form.setLowStockThresholdQuantity(inventory.getLowStockThresholdQuantity() == 0 ? null : inventory.getLowStockThresholdQuantity());
@@ -180,7 +183,8 @@ public class ShopProductService {
         return new ProductVariantDetailView(variant.getId(), variant.getProduct().getName(), variant.getName(),
                 variant.getSku(), variant.getSpecification(), variant.getPrice(), variant.getBaseUnit().getName(),
                 imageUrl, variant.getStatus(), variant.getApprovalStatus(), variant.getRejectionReason(),
-                variant.getSubmittedAt(), inventory == null ? 0 : inventory.getQuantityOnHand(),
+                variant.getSubmittedAt(), variant.isOperationsBlocked(), variant.getOperationsBlockReason(),
+                inventory == null ? 0 : inventory.getQuantityOnHand(),
                 inventory == null ? 0 : inventory.getReservedQuantity(), inventory == null ? 0 : inventory.getAvailableQuantity());
     }
 
@@ -189,10 +193,6 @@ public class ShopProductService {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
         VariantInventory inventory = inventoryRepository.findByVariantId(variantId)
                 .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy tồn kho biến thể."));
-        boolean rejectedBeforeEdit = "REJECTED".equals(variant.getApprovalStatus());
-        if ("PENDING".equals(variant.getApprovalStatus())) {
-            throw new ProductValidationException("status", "Biến thể đang được Operations hậu kiểm nên chưa thể chỉnh sửa.");
-        }
         Map<String, String> errors = new LinkedHashMap<>();
         String name = blankToNull(form.getVariantName()); String sku = variant.getSku();
         String specification = blankToNull(form.getSpecification());
@@ -207,28 +207,16 @@ public class ShopProductService {
         if (requestedStatus == null || !Set.of("ACTIVE", "INACTIVE").contains(requestedStatus)) {
             errors.put("status", "Trạng thái biến thể không hợp lệ.");
         }
+        if (variant.isOperationsBlocked() && "ACTIVE".equals(requestedStatus)) {
+            errors.put("status", "Operations đang chặn bán biến thể này.");
+        }
         Unit unit = form.getUnitId() == null ? null : unitRepository.findById(form.getUnitId()).filter(u -> Boolean.TRUE.equals(u.getIsActive())).orElse(null);
         if (unit == null) errors.put("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động.");
         if (!errors.isEmpty()) throw new ProductValidationException(errors);
 
-        boolean listingDetailsChanged = !name.equals(variant.getName())
-                || !java.util.Objects.equals(specification, variant.getSpecification())
-                || form.getPrice().compareTo(variant.getPrice()) != 0
-                || !unit.getId().equals(variant.getBaseUnit().getId());
-        if (rejectedBeforeEdit && !listingDetailsChanged) {
-            throw new ProductValidationException("variantName", "Hãy cập nhật thông tin biến thể trước khi gửi hậu kiểm lại.");
-        }
         variant.setName(name); variant.setSku(sku); variant.setSpecification(specification);
         variant.setPrice(form.getPrice()); variant.setBaseUnit(unit);
-        if (listingDetailsChanged || !"APPROVED".equals(variant.getApprovalStatus())) {
-            // Hậu kiểm: thay đổi công khai tiếp tục được bán và được đưa lại vào hàng đợi kiểm tra.
-            variant.setApprovalStatus("PENDING");
-            variant.setSubmittedAt(LocalDateTime.now(BUSINESS_ZONE));
-            variant.setReviewedAt(null);
-            variant.setRejectionReason(null);
-        }
-        // Keep a rejected listing offline until Operations approves the edited version.
-        variant.setStatus(rejectedBeforeEdit ? "INACTIVE" : requestedStatus);
+        variant.setStatus(requestedStatus);
         // Ô trống tương đương với tắt cảnh báo tồn thấp.
         inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
         variantRepository.save(variant); inventoryRepository.save(inventory);
@@ -246,9 +234,9 @@ public class ShopProductService {
     @Transactional
     public void showVariantForSale(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
-        if ("REJECTED".equals(variant.getApprovalStatus())) {
+        if (variant.isOperationsBlocked()) {
             throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
-                    "Operations đã từ chối biến thể này nên không thể bật bán lại.");
+                    "Operations đang chặn bán biến thể này.");
         }
         if ("INACTIVE".equals(variant.getStatus())) {
             variant.setStatus("ACTIVE");
@@ -264,7 +252,7 @@ public class ShopProductService {
         String statusCondition = switch (status == null ? "all" : status) {
             case "hidden" -> " AND p.is_visible = 0";
             case "stopped" -> " AND pv.status = 'INACTIVE'";
-            case "selling" -> " AND pv.status = 'ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND p.is_visible = 1 AND p.selling_status = 'ACTIVE'";
+            case "selling" -> " AND pv.status = 'ACTIVE' AND pv.operations_blocked = 0 AND p.is_visible = 1 AND p.selling_status = 'ACTIVE'";
             default -> "";
         };
         String sql = """
@@ -272,6 +260,8 @@ public class ShopProductService {
                     pv.name AS variant_name, pv.sku, pv.specification, pv.price,
                     COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
                     pv.approval_status, pv.rejection_reason, pv.submitted_at,
+                    pv.operations_blocked AS operations_blocked,
+                    pv.operations_block_reason AS operations_block_reason,
                     u.name AS unit_name, COALESCE(vi.quantity_on_hand, 0) AS stock_quantity,
                     COALESCE(vi.available_quantity, 0) AS available_quantity,
                     pv.status AS variant_status, p.selling_status AS product_status
@@ -291,9 +281,9 @@ public class ShopProductService {
         Long shopId = requireShopId(ownerUserId);
         return jdbc.queryForMap("""
                 SELECT COUNT(*) AS total,
-                    COALESCE(SUM(CASE WHEN pv.status = 'ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') THEN 1 ELSE 0 END), 0) AS active,
-                    COALESCE(SUM(CASE WHEN pv.approval_status = 'DRAFT' THEN 1 ELSE 0 END), 0) AS draft,
-                    COALESCE(SUM(CASE WHEN pv.status = 'INACTIVE' OR pv.approval_status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS paused
+                    COALESCE(SUM(CASE WHEN pv.status = 'ACTIVE' AND pv.operations_blocked = 0 THEN 1 ELSE 0 END), 0) AS active,
+                    0 AS draft,
+                    COALESCE(SUM(CASE WHEN pv.status = 'INACTIVE' OR pv.operations_blocked = 1 THEN 1 ELSE 0 END), 0) AS paused
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 WHERE pv.shop_id = ?
@@ -326,7 +316,7 @@ public class ShopProductService {
         return jdbc.queryForMap("""
                 SELECT COUNT(DISTINCT p.id) AS products,
                     COUNT(pv.id) AS variants,
-                    COALESCE(SUM(CASE WHEN pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') THEN 1 ELSE 0 END),0) AS active_variants,
+                    COALESCE(SUM(CASE WHEN pv.status='ACTIVE' AND pv.operations_blocked=0 THEN 1 ELSE 0 END),0) AS active_variants,
                 0 AS low_stock
                 FROM products p LEFT JOIN product_variants pv ON pv.product_id=p.id
                     LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
@@ -439,6 +429,9 @@ public class ShopProductService {
         if (variantRepository.existsByProduct_IdAndNameIgnoreCase(product.getId(), variantName)) {
             throw new ProductValidationException("variantName", "Tên biến thể này đã tồn tại trong sản phẩm.");
         }
+        if (form.getExpiresAt() == null || form.getExpiresAt().isBefore(LocalDate.now(BUSINESS_ZONE))) {
+            throw new ProductValidationException("expiresAt", "Ngày hết hạn phải từ hôm nay trở đi.");
+        }
 
         Unit unit = unitRepository.findById(form.getUnitId())
                 .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
@@ -457,11 +450,11 @@ public class ShopProductService {
             variant.setName(variantName);
             variant.setBaseUnit(unit);
             variant.setPrice(form.getPrice());
-            // Hậu kiểm: biến thể được đăng bán ngay; Operations kiểm tra sau.
             variant.setStatus("ACTIVE");
-            variant.setApprovalStatus("PENDING");
+            // Giá trị tương thích với cột cũ; không tạo yêu cầu duyệt.
+            variant.setApprovalStatus("APPROVED");
             variant.setSubmittedAt(LocalDateTime.now(BUSINESS_ZONE));
-            variant.setReviewedAt(null);
+            variant.setReviewedAt(LocalDateTime.now(BUSINESS_ZONE));
             variant.setRejectionReason(null);
             variant.setImageUrl(imageUrl);
             variant.setMinOrderQuantity(1);
@@ -478,7 +471,7 @@ public class ShopProductService {
             inventory.setStatus("ACTIVE");
             inventory.setCreatedBy(ownerUserId);
             inventoryRepository.save(inventory);
-            addOpeningBatch(inventory, form.getStockQuantity(), ownerUserId);
+            addOpeningBatch(inventory, form.getStockQuantity(), form.getExpiresAt(), ownerUserId);
 
             if (imageRepository.findByProductIdOrderBySortOrderAsc(product.getId()).isEmpty()) {
                 ProductImage image = new ProductImage();
@@ -774,16 +767,17 @@ public class ShopProductService {
         return value == null ? 0 : value;
     }
 
-    private void addOpeningBatch(VariantInventory inventory, int quantity, Long ownerId) {
+    private void addOpeningBatch(VariantInventory inventory, int quantity, LocalDate expiresAt, Long ownerId) {
         java.time.LocalDateTime receivedAt = LocalDateTime.now(BUSINESS_ZONE);
         org.springframework.jdbc.support.KeyHolder key = new org.springframework.jdbc.support.GeneratedKeyHolder();
         jdbc.update(connection -> {
             java.sql.PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,note,created_by) VALUES(?,NULL,?,?,0,?,'ACTIVE','Lô khởi tạo biến thể',?)",
+                    "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,expires_at,status,note,created_by) VALUES(?,NULL,?,?,0,?,?,'ACTIVE','Lô khởi tạo biến thể',?)",
                     java.sql.Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, inventory.getId()); statement.setInt(2, quantity); statement.setInt(3, quantity);
             statement.setTimestamp(4, java.sql.Timestamp.valueOf(receivedAt));
-            statement.setLong(5, ownerId); return statement;
+            statement.setDate(5, java.sql.Date.valueOf(expiresAt));
+            statement.setLong(6, ownerId); return statement;
         }, key);
         long batchId = key.getKey().longValue();
         String code = "LOT-" + String.format(java.util.Locale.ROOT, "%08d", batchId);
@@ -832,7 +826,7 @@ public class ShopProductService {
         }
         Integer sellableVariants = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM product_variants
-                WHERE product_id=? AND status='ACTIVE' AND approval_status IN ('PENDING','APPROVED')
+                WHERE product_id=? AND status='ACTIVE' AND operations_blocked=0
                 """, Integer.class, productId);
         if (sellableVariants == null || sellableVariants == 0) {
             throw new ProductValidationException("visibility", "Thêm ít nhất một loại hàng trước khi đăng bán.");

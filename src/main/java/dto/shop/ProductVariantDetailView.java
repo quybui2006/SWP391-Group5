@@ -16,6 +16,8 @@ public record ProductVariantDetailView(
         String approvalStatus,
         String rejectionReason,
         LocalDateTime submittedAt,
+        boolean operationsBlocked,
+        String operationsBlockReason,
         Integer quantityOnHand,
         Integer reservedQuantity,
         Integer availableQuantity

@@ -40,6 +40,11 @@ public class ShopOwnerNotificationController {
                         && item.getTargetId() != null)
                 .forEach(item ->
                         item.setTargetUrl("/shopowner/orders/" + item.getTargetId()));
+        allNotifications.stream()
+                .filter(item -> "INVENTORY_BATCH".equalsIgnoreCase(item.getTargetType())
+                        && item.getTargetId() != null)
+                .forEach(item -> item.setTargetUrl(
+                        "/shopowner/inventory/adjust?batchId=" + item.getTargetId()));
 
         String normalizedKeyword = keyword.trim().toLowerCase(Locale.ROOT);
         String normalizedStatus = switch (

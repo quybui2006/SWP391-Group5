@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import repository.ShopRepository;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -97,7 +98,11 @@ public class InventoryService {
                         LIMIT 1)) AS variant_image_url,
                        pv.sku,u.name AS unit_name,vi.id AS inventory_id,
                        vi.quantity_on_hand,vi.reserved_quantity,
-                       vi.available_quantity,vi.low_stock_threshold_quantity,
+                       COALESCE((SELECT SUM(b2.available_quantity)
+                                 FROM inventory_batches b2
+                                 WHERE b2.inventory_id=vi.id AND b2.status='ACTIVE'
+                                   AND b2.expires_at>=CURRENT_DATE()),0) AS sellable_quantity,
+                       vi.low_stock_threshold_quantity,
                        -- Tổng số lượng đã bán trong các đơn hoàn tất.
                        -- Việc giảm kho thủ công không được tính là hàng đã bán.
                        COALESCE(sold.quantity,0) AS sold_quantity,
@@ -105,7 +110,9 @@ public class InventoryService {
                        b.quantity_on_hand AS batch_on_hand,
                        b.reserved_quantity AS batch_reserved,
                        b.available_quantity AS batch_available,
-                       b.received_at,b.status AS batch_status,b.note,
+                       b.received_at,b.expires_at,
+                       CASE WHEN b.expires_at<CURRENT_DATE() THEN 'EXPIRED' ELSE b.status END AS batch_status,
+                       b.note,
                        COALESCE(batch_sold.quantity,0) AS batch_sold
                 FROM products p
                 JOIN shops s ON s.id=p.shop_id
@@ -164,7 +171,7 @@ public class InventoryService {
 
         // Sắp xếp dữ liệu theo sản phẩm, biến thể và thời điểm nhận lô.
         // Nhờ đó các lô của cùng biến thể nằm gần nhau trong kết quả truy vấn.
-        sql.append(" ORDER BY p.name,p.id,pv.name,pv.id,b.received_at,b.id");
+        sql.append(" ORDER BY p.name,p.id,pv.name,pv.id,b.expires_at,b.received_at,b.id");
 
         // Thực thi SQL và nhận từng dòng kết quả dưới dạng Map< tên cột, giá trị >.
         List<Map<String, Object>> rows =
@@ -208,7 +215,7 @@ public class InventoryService {
                             String.valueOf(row.get("unit_name")),
                             number(row, "quantity_on_hand"),
                             number(row, "reserved_quantity"),
-                            number(row, "available_quantity"),
+                            number(row, "sellable_quantity"),
                             number(row, "sold_quantity"),
                             number(row, "low_stock_threshold_quantity")));
 
@@ -224,6 +231,7 @@ public class InventoryService {
                         number(row, "batch_available"),
                         number(row, "batch_sold"),
                         localDateTime(row.get("received_at")),
+                        localDate(row.get("expires_at")),
                         String.valueOf(row.get("batch_status")),
                         (String) row.get("note")));
             }
@@ -285,7 +293,7 @@ public class InventoryService {
         Long shopId = requireShop(ownerUserId).getId();
 
         StringBuilder sql = new StringBuilder("""
-                SELECT b.id,b.batch_code,b.available_quantity,
+                SELECT b.id,b.batch_code,b.available_quantity,b.expires_at,
                        p.name AS product_name,pv.name AS variant_name,
                        pv.sku,u.name AS unit_name
                 FROM inventory_batches b
@@ -294,8 +302,6 @@ public class InventoryService {
                 JOIN products p ON p.id=pv.product_id
                 JOIN units u ON u.id=pv.base_unit_id
                 WHERE pv.shop_id=?
-                  AND b.status='ACTIVE'
-                  AND b.available_quantity>0
                 """);
 
         List<Object> args = new ArrayList<>();
@@ -306,7 +312,7 @@ public class InventoryService {
             args.add(inventoryId);
         }
 
-        sql.append(" ORDER BY b.received_at,b.id");
+        sql.append(" ORDER BY b.expires_at,b.received_at,b.id");
 
         return jdbc.query(
                 sql.toString(),
@@ -317,7 +323,8 @@ public class InventoryService {
                         rs.getString("variant_name"),
                         rs.getString("sku"),
                         rs.getString("unit_name"),
-                        rs.getInt("available_quantity")),
+                        rs.getInt("available_quantity"),
+                        rs.getDate("expires_at").toLocalDate()),
                 args.toArray());
     }
 
@@ -401,7 +408,8 @@ public class InventoryService {
     public void receiveBatch(InventoryBatchForm form, Long ownerUserId) {
         // Kiểm tra DTO và các trường bắt buộc trước khi xử lý.
         if (form == null || form.getInventoryId() == null
-                || form.getQuantity() == null || form.getReceivedAt() == null) {
+                || form.getQuantity() == null || form.getReceivedAt() == null
+                || form.getExpiresAt() == null) {
             throw new InventoryActionException(
                     "Vui lòng nhập đầy đủ thông tin lô hàng.");
         }
@@ -411,14 +419,14 @@ public class InventoryService {
                 form.getInventoryId(),
                 form.getQuantity(),
                 form.getReceivedAt(),
+                form.getExpiresAt(),
                 form.getNote(),
                 ownerUserId);
     }
 
     /**
      * Tiếp nhận yêu cầu điều chỉnh số lượng của một lô hàng.
-     * Method hiện tại cố định hướng điều chỉnh là DECREASE (giảm kho),
-     * sau đó chuyển nghiệp vụ chi tiết cho InventoryBatchService.
+     * Hướng tăng hoặc giảm được xác thực lại trong InventoryBatchService.
      */
     @Transactional
     public void adjustBatch(
@@ -430,10 +438,10 @@ public class InventoryService {
                     "Vui lòng chọn batch và nhập số lượng.");
         }
 
-        // Gọi Service xử lý điều chỉnh lô hàng theo hướng giảm số lượng.
+        // Chuyển hướng và số lượng để service kiểm tra theo trạng thái batch.
         batches.adjust(
                 form.getBatchId(),
-                "DECREASE",
+                form.getDirection(),
                 form.getQuantity(),
                 form.getReason(),
                 ownerUserId);
@@ -510,6 +518,12 @@ public class InventoryService {
             return timestamp.toLocalDateTime();
         }
         return value instanceof LocalDateTime dateTime ? dateTime : null;
+    }
+
+    /** Chuyển giá trị DATE của JDBC thành LocalDate để hiển thị hạn batch. */
+    private static LocalDate localDate(Object value) {
+        if (value instanceof java.sql.Date date) return date.toLocalDate();
+        return value instanceof LocalDate date ? date : null;
     }
 
     /**
@@ -641,7 +655,10 @@ public class InventoryService {
                        p.name AS product_name,
                        pv.name AS variant_name,
                        pv.sku,
-                       vi.available_quantity,
+                       COALESCE((SELECT SUM(b.available_quantity)
+                                 FROM inventory_batches b
+                                 WHERE b.inventory_id=vi.id AND b.status='ACTIVE'
+                                   AND b.expires_at>=CURRENT_DATE()),0) AS available_quantity,
                        u.name AS unit_name,
                        vi.low_stock_threshold_quantity AS threshold_quantity
                 FROM variant_inventory vi
@@ -651,8 +668,11 @@ public class InventoryService {
                 JOIN shops s ON s.id=pv.shop_id
                 WHERE s.owner_id=?
                   AND vi.low_stock_threshold_quantity>0
-                  AND vi.available_quantity<=vi.low_stock_threshold_quantity
-                ORDER BY vi.available_quantity ASC,p.name,pv.name
+                  AND COALESCE((SELECT SUM(b.available_quantity)
+                                FROM inventory_batches b
+                                WHERE b.inventory_id=vi.id AND b.status='ACTIVE'
+                                  AND b.expires_at>=CURRENT_DATE()),0)<=vi.low_stock_threshold_quantity
+                ORDER BY available_quantity ASC,p.name,pv.name
                 """, ownerUserId);
     }
 }

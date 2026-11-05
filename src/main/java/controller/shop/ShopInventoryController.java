@@ -403,8 +403,8 @@ public class ShopInventoryController {
         form.setBatchId(batchId);
         form.setInventoryId(inventoryId);
 
-        // Hướng điều chỉnh mặc định là DECREASE (giảm số lượng).
-        form.setDirection("DECREASE");
+        // Chưa chọn sẵn chiều để người dùng xác nhận rõ tăng hay giảm.
+        form.setDirection("");
 
         // Số lượng điều chỉnh mặc định là 1.
         form.setQuantity(1);
@@ -480,7 +480,7 @@ public class ShopInventoryController {
             // Hiển thị thông báo yêu cầu kiểm tra lại dữ liệu.
             model.addAttribute(
                     "error",
-                    "Chọn lô hàng, nhập số lượng giảm và lý do hợp lệ."
+                    "Chọn lô hàng, hướng điều chỉnh, số lượng và nhập lý do hợp lệ."
             );
 
             // Trả người dùng về biểu mẫu điều chỉnh tồn kho.

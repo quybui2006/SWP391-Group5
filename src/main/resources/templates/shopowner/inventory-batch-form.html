@@ -12,7 +12,7 @@
     <aside th:replace="~{shopowner/fragments :: sidebar('inventory')}"></aside>
     <main class="main-content inventory-page">
         <header class="topbar inventory-topbar">
-            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Nhập lô</span></p><h1>Nhập lô hàng mới</h1><p class="muted">Mỗi lần nhập tạo một lô riêng; hàng được giữ theo thứ tự ngày nhập.</p></div>
+            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Nhập lô</span></p><h1>Nhập lô hàng mới</h1><p class="muted">Mỗi lần nhập tạo một lô riêng; đơn mới ưu tiên lô hết hạn sớm nhất.</p></div>
         </header>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
         <form class="inventory-form" method="post" th:action="@{/shopowner/inventory/batches}" th:object="${form}">
@@ -27,6 +27,7 @@
                 </label>
                 <label class="inventory-field"><span>Số lượng nhập</span><input type="number" min="1" step="1" th:field="*{quantity}" required><small th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></small></label>
                 <label class="inventory-field"><span>Thời điểm nhập</span><input type="datetime-local" th:field="*{receivedAt}" required><small th:if="${#fields.hasErrors('receivedAt')}" th:errors="*{receivedAt}"></small></label>
+                <label class="inventory-field"><span>Ngày hết hạn</span><input type="date" th:field="*{expiresAt}" required><small th:if="${#fields.hasErrors('expiresAt')}" th:errors="*{expiresAt}"></small></label>
                 <label class="inventory-field inventory-field-wide"><span>Ghi chú</span><textarea rows="3" maxlength="1000" th:field="*{note}"></textarea><small th:if="${#fields.hasErrors('note')}" th:errors="*{note}"></small></label>
             </div>
             <div class="inventory-form-actions"><a class="btn btn-outline-secondary" th:href="@{/shopowner/inventory}">Hủy</a><button class="btn btn-success" type="submit">Tạo batch</button></div>

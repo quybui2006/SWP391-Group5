@@ -7,9 +7,9 @@
     <main class="main-content">
         <header class="topbar">
             <div>
-                <p class="breadcrumb">FreshFruit / <span>Giám sát & hậu kiểm</span></p>
+                <p class="breadcrumb">FreshFruit / <span>Quản lý sản phẩm</span></p>
                 <h1>Danh sách sản phẩm</h1>
-                <p class="muted">Toàn bộ sản phẩm và biến thể trên sàn, kèm giá, lượt bán, tồn kho và trạng thái hậu kiểm.</p>
+                <p class="muted">Toàn bộ sản phẩm và biến thể trên sàn, kèm giá bán, tồn kho và trạng thái bán.</p>
             </div>
         </header>
 
@@ -35,16 +35,15 @@
                     </summary>
                     <div class="table-wrap" th:if="${!#lists.isEmpty(product.variants)}">
                         <table class="audit-variant-table">
-                            <thead><tr><th>BIẾN THỂ</th><th>MÃ SKU</th><th>GIÁ / ĐƠN VỊ</th><th>ĐÃ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI BÁN</th><th>HẬU KIỂM</th><th>CHI TIẾT</th></tr></thead>
+                            <thead><tr><th>BIẾN THỂ</th><th>MÃ SKU</th><th>GIÁ / ĐƠN VỊ</th><th>ĐÃ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI BÁN</th><th>CHI TIẾT</th></tr></thead>
                             <tbody><tr th:each="variant : ${product.variants}">
                                 <td><strong th:text="${variant.variantName}">Biến thể</strong></td>
                                 <td><code th:text="${variant.sku}">SKU</code></td>
                                 <td><strong th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</strong><small th:text="${'/ ' + variant.unitName}">/ đơn vị</small></td>
                                 <td th:text="${(variant.soldQuantity ?: 0) + ' ' + variant.unitName}">0</td>
                                 <td><strong th:text="${(variant.quantityOnHand ?: 0) + ' ' + variant.unitName}">0</strong><small th:text="${'Có thể bán: ' + (variant.availableQuantity ?: 0)}">Có thể bán: 0</small></td>
-                                <td><span class="status-pill open" th:if="${variant.variantStatus == 'ACTIVE'}">Đang bán</span><span class="status-pill draft" th:unless="${variant.variantStatus == 'ACTIVE'}" th:text="${variant.variantStatus}">Chưa bán</span></td>
-                                <td><span class="status-pill open" th:if="${variant.approvalStatus == 'APPROVED'}">Đã hậu kiểm</span><span class="status-pill pending" th:if="${variant.approvalStatus == 'PENDING'}">Chờ hậu kiểm</span><span class="status-pill rejected" th:if="${variant.approvalStatus == 'REJECTED'}">Cần sửa</span><span class="status-pill draft" th:if="${variant.approvalStatus == 'DRAFT'}">Chưa gửi</span></td>
-                                <td><a class="button button-primary" th:href="@{/operations/variants/{id}(id=${variant.variantId})}" th:text="${variant.approvalStatus == 'PENDING' ? 'Hậu kiểm' : 'Xem chi tiết'}">Xem chi tiết</a></td>
+                                <td><span class="status-pill open" th:if="${variant.variantStatus == 'ACTIVE'}">Đang bán</span><span class="status-pill draft" th:if="${variant.variantStatus == 'INACTIVE'}">Ngừng bán</span><span class="status-pill draft" th:if="${variant.variantStatus == 'BLOCKED'}">Bị OP chặn</span></td>
+                                <td><a class="button button-primary" th:href="@{/operations/variants/{id}(id=${variant.variantId})}">Xem chi tiết</a></td>
                             </tr></tbody>
                         </table>
                     </div>
