@@ -2,7 +2,6 @@ package controller.operations;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -21,11 +20,9 @@ import java.util.Map;
 public class OperationsComplaintController {
 
     private final ComplaintService complaintService;
-    private final JdbcTemplate jdbc;
 
-    public OperationsComplaintController(ComplaintService complaintService, JdbcTemplate jdbc) {
+    public OperationsComplaintController(ComplaintService complaintService) {
         this.complaintService = complaintService;
-        this.jdbc = jdbc;
     }
 
     private Long requireOperationsUserId(HttpSession session) {
@@ -73,18 +70,11 @@ public class OperationsComplaintController {
         List<Map<String, Object>> tickets = complaintService.listCsComplaints(status, priority, reasonType, overdue, keyword);
         model.addAttribute("tickets", tickets);
 
-        // Thống kê nhanh theo trạng thái cho thanh tab
-        long countPendingOps = queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('PENDING_OPERATIONS', 'PENDING_OPS')");
-        long countPendingShop = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'PENDING_SHOP'");
-        long countResolved = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'RESOLVED'");
-        long countRejected = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'REJECTED'");
-        long countAll = queryCount("SELECT COUNT(*) FROM complaints WHERE status <> 'CANCELLED'");
-
-        model.addAttribute("countPendingOps", countPendingOps);
-        model.addAttribute("countPendingShop", countPendingShop);
-        model.addAttribute("countResolved", countResolved);
-        model.addAttribute("countRejected", countRejected);
-        model.addAttribute("countAll", countAll);
+        // Đổ thống kê trạng thái từ ComplaintService thay vì query SQL trực tiếp
+        Map<String, Long> statusCounts = complaintService.getComplaintStatusCounts();
+        if (statusCounts != null) {
+            model.addAllAttributes(statusCounts);
+        }
 
         Map<String, Object> reports = complaintService.getAnalyticsAndReports();
         model.addAllAttributes(reports);
@@ -93,30 +83,6 @@ public class OperationsComplaintController {
         model.addAttribute("resolutionLabels", complaintService.getResolutionLabels());
 
         return "operations/complaints";
-    }
-
-    @PostMapping("/create")
-    public String createComplaintTicket(
-            @RequestParam String orderCode,
-            @RequestParam(defaultValue = "QUALITY_ISSUE") String reasonType,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String description,
-            @RequestParam(defaultValue = "CS_MANUAL") String sourceType,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        Long opsUserId = requireOperationsUserId(session);
-        try {
-            Long ticketId = complaintService.createTicketByCs(
-                    opsUserId, orderCode, reasonType, title, description, sourceType);
-            redirect.addFlashAttribute("message", "Đã khởi tạo phiếu khiếu nại / hỗ trợ thành công!");
-            return "redirect:/operations/complaints/" + ticketId;
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-            return "redirect:/operations/complaints";
-        } catch (Exception ex) {
-            redirect.addFlashAttribute("error", "Lỗi khởi tạo phiếu khiếu nại: " + ex.getMessage());
-            return "redirect:/operations/complaints";
-        }
     }
 
     @GetMapping("/{id}")
@@ -131,46 +97,29 @@ public class OperationsComplaintController {
         return "operations/complaint-detail";
     }
 
-    @PostMapping("/{id}/approve")
-    public String approveComplaint(
+    @PostMapping("/{id}/resolve")
+    public String resolveComplaint(
             @PathVariable Long id,
-            @RequestParam(required = false) String note,
-            @RequestParam(required = false) String resolutionAction,
+            @RequestParam String resolutionAction,
             @RequestParam(required = false) Long refundAmount,
+            @RequestParam(required = false) String note,
             HttpSession session,
             RedirectAttributes redirect) {
         Long opsUserId = requireOperationsUserId(session);
         try {
             if ("RETURN_REFUND".equalsIgnoreCase(resolutionAction)) {
                 complaintService.approveComplaintRefundByOperations(opsUserId, id, refundAmount, note);
-                redirect.addFlashAttribute("message", "Đã duyệt khiếu nại và ghi nhận lệnh hoàn tiền về tài khoản ngân hàng của khách hàng!");
-            } else {
+                redirect.addFlashAttribute("message", "Đã duyệt khiếu nại và lập lệnh hoàn tiền về tài khoản ngân hàng của khách hàng thành công!");
+            } else if ("APPROVE_ONLY".equalsIgnoreCase(resolutionAction)) {
                 complaintService.approveComplaintByOperations(opsUserId, id, note);
                 redirect.addFlashAttribute("message", "Đã phê duyệt khiếu nại thành công! Hồ sơ đã được chuyển cho Cửa hàng để xử lý giao bù hoặc tặng voucher.");
+            } else {
+                throw new IllegalArgumentException("Hành động xử lý khiếu nại không hợp lệ: " + resolutionAction);
             }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         } catch (Exception ex) {
-            redirect.addFlashAttribute("error", "Lỗi xử lý duyệt khiếu nại: " + ex.getMessage());
-        }
-        return "redirect:/operations/complaints/" + id;
-    }
-
-    @PostMapping("/{id}/approve-refund")
-    public String approveComplaintRefund(
-            @PathVariable Long id,
-            @RequestParam(required = false) Long refundAmount,
-            @RequestParam(required = false) String note,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        Long opsUserId = requireOperationsUserId(session);
-        try {
-            complaintService.approveComplaintRefundByOperations(opsUserId, id, refundAmount, note);
-            redirect.addFlashAttribute("message", "Đã phê duyệt khiếu nại và lập lệnh hoàn tiền về tài khoản ngân hàng của khách hàng thành công!");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        } catch (Exception ex) {
-            redirect.addFlashAttribute("error", "Lỗi xử lý duyệt hoàn tiền khiếu nại: " + ex.getMessage());
+            redirect.addFlashAttribute("error", "Lỗi xử lý khiếu nại: " + ex.getMessage());
         }
         return "redirect:/operations/complaints/" + id;
     }
@@ -209,30 +158,5 @@ public class OperationsComplaintController {
             redirect.addFlashAttribute("error", "Lỗi gửi thông báo đôn đốc Shop: " + ex.getMessage());
         }
         return "redirect:/operations/complaints/" + id;
-    }
-
-    @PostMapping("/violations/{shopId}/escalate")
-    public String escalateShopViolation(
-            @PathVariable Long shopId,
-            @RequestParam(required = false) String reason,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        requireOperationsUserId(session);
-        try {
-            complaintService.escalateShopToOperations(shopId, reason);
-            redirect.addFlashAttribute("message", "Đã ghi nhận cảnh báo vi phạm hậu kiểm cho Shop #" + shopId + ".");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        }
-        return "redirect:/operations/complaints";
-    }
-
-    private long queryCount(String sql, Object... args) {
-        try {
-            Long c = jdbc.queryForObject(sql, Long.class, args);
-            return c != null ? c : 0L;
-        } catch (Exception e) {
-            return 0L;
-        }
     }
 }

@@ -111,7 +111,8 @@
                                     ⚠️ Khi duyệt hoàn tiền, số tiền hoàn sẽ được trích từ quỹ tạm giữ (Escrow) trả về tài khoản khách hàng và tự động khấu trừ khỏi tiền quyết toán của Shop.
                                 </div>
                             </div>
-                            <form th:action="@{/operations/complaints/{id}/approve-refund(id=${complaint['id']})}" method="post">
+                            <form th:action="@{/operations/complaints/{id}/resolve(id=${complaint['id']})}" method="post">
+                                <input type="hidden" name="resolutionAction" value="RETURN_REFUND">
                                 <div style="display: grid; grid-template-columns: 220px 1fr; gap: 10px; margin-bottom: 10px;">
                                     <div>
                                         <label style="display: block; font-size: 12px; font-weight: 700; color: #1e3a8a; margin-bottom: 4px;">
@@ -143,7 +144,8 @@
                             <div style="font-weight: 700; font-size: 14px; color: #166534; margin-bottom: 8px;">
                                 🏪 Phương án 2: Phê duyệt & Chuyển Cửa hàng xử lý (Giao bù 0đ / Tặng Voucher)
                             </div>
-                            <form th:action="@{/operations/complaints/{id}/approve(id=${complaint['id']})}" method="post">
+                            <form th:action="@{/operations/complaints/{id}/resolve(id=${complaint['id']})}" method="post">
+                                <input type="hidden" name="resolutionAction" value="APPROVE_ONLY">
                                 <div style="margin-bottom: 10px;">
                                     <label style="display: block; font-size: 12.5px; font-weight: 700; color: #166534; margin-bottom: 4px;">
                                         Ghi chú thẩm định / Chỉ đạo cho Cửa hàng (tùy chọn):
@@ -225,8 +227,9 @@
                             <summary style="cursor: pointer; font-size: 13px; font-weight: 700; color: #1d4ed8;">
                                 💳 Hoặc Ban Vận hành can thiệp Hoàn tiền trực tiếp cho khách (nếu Shop quá hạn / hết hàng)
                             </summary>
-                            <form th:action="@{/operations/complaints/{id}/approve-refund(id=${complaint['id']})}" method="post"
+                            <form th:action="@{/operations/complaints/{id}/resolve(id=${complaint['id']})}" method="post"
                                   style="margin-top: 10px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #93c5fd;">
+                                <input type="hidden" name="resolutionAction" value="RETURN_REFUND">
                                 <div style="display: grid; grid-template-columns: 180px 1fr; gap: 10px; margin-bottom: 10px;">
                                     <div>
                                         <label style="display: block; font-size: 12px; font-weight: 700; color: #1e3a8a; margin-bottom: 4px;">Số tiền hoàn (VNĐ) *:</label>
