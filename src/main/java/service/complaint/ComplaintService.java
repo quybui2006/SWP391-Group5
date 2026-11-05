@@ -3021,6 +3021,16 @@ public class ComplaintService {
         }
     }
 
+    public Map<String, Long> getComplaintStatusCounts() {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("countPendingOps", queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('PENDING_OPERATIONS', 'PENDING_OPS')"));
+        counts.put("countPendingShop", queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'PENDING_SHOP'"));
+        counts.put("countResolved", queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'RESOLVED'"));
+        counts.put("countRejected", queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'REJECTED'"));
+        counts.put("countAll", queryCount("SELECT COUNT(*) FROM complaints WHERE status <> 'CANCELLED'"));
+        return counts;
+    }
+
     private List<Map<String, Object>> safeQueryList(String sql, Object... args) {
         try {
             return jdbc.queryForList(sql, args);
