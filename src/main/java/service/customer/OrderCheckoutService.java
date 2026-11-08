@@ -4,7 +4,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
-import service.vnpay.VNPayService;
 import service.login.EmailService;
 import service.operations.CustomerRefundService;
 
@@ -23,17 +22,14 @@ public class OrderCheckoutService {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final JdbcTemplate jdbc;
-    private final VNPayService vnPayService;
     private final EmailService emailService;
     private final CustomerRefundService customerRefunds;
 
     public OrderCheckoutService(
             JdbcTemplate jdbc,
-            VNPayService vnPayService,
             EmailService emailService,
             CustomerRefundService customerRefunds) {
         this.jdbc = jdbc;
-        this.vnPayService = vnPayService;
         this.emailService = emailService;
         this.customerRefunds = customerRefunds;
     }
@@ -846,7 +842,7 @@ public class OrderCheckoutService {
     }
 
     // =========================================================================================
-    // KHÁCH HÀNG TỰ HỦY ĐƠN (CÓ HỖ TRỢ HOÀN TIỀN VNPAY)
+    // KHÁCH HÀNG TỰ HỦY ĐƠN
     // =========================================================================================
     @Transactional
     public void cancelMyOrder(Long userId, Long orderId, String reason) {
@@ -876,80 +872,18 @@ public class OrderCheckoutService {
         // 1. Nhả tồn kho (Sử dụng luôn hàm có sẵn trong class)
         releaseReservedItems(orderId, "customer-cancel");
 
-        // 2. Hoàn tiền VNPay nếu đơn đã thanh toán online.
+        // Paid VNPay orders are sent to Operations for manual refund processing.
         if ("VNPAY".equalsIgnoreCase(paymentMethod) && "PAID".equalsIgnoreCase(paymentStatus)) {
             BigDecimal refundAmount = order.get("total_amount") != null
                     ? new BigDecimal(order.get("total_amount").toString())
                     : BigDecimal.ZERO;
-            String orderCode = String.valueOf(order.get("order_code"));
-            Long checkoutIdForRefund = ((Number) order.get("checkout_id")).longValue();
-
-            // VNPay refund phải dùng mã checkout CK-..., không dùng mã đơn FF-...
-            String checkoutCode = jdbc.queryForObject(
-                    "SELECT c.checkout_code FROM checkouts c JOIN orders o ON o.checkout_id=c.id WHERE o.id=?",
-                    String.class, orderId);
-            if (checkoutCode == null || checkoutCode.isBlank()) {
-                throw new IllegalStateException("Không tìm thấy mã checkout của giao dịch VNPay.");
-            }
-
-            Integer orderCount = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM orders WHERE checkout_id=?", Integer.class, checkoutIdForRefund);
-            boolean isFullRefund = orderCount != null && orderCount == 1;
-
-            List<Map<String, Object>> paymentRows = jdbc.queryForList(
-                    "SELECT paid_at,failure_reason FROM payments WHERE order_id=? ORDER BY id DESC LIMIT 1", orderId);
-            String transactionNo = "";
-            String transactionDate = "";
-            java.time.format.DateTimeFormatter formatter =
-                    java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-
-            if (!paymentRows.isEmpty()) {
-                Map<String, Object> payment = paymentRows.get(0);
-                Object transactionNoValue = payment.get("failure_reason");
-                if (transactionNoValue != null && transactionNoValue.toString().trim().matches("\\d+")) {
-                    transactionNo = transactionNoValue.toString().trim();
-                }
-                Object paidAtValue = payment.get("paid_at");
-                if (paidAtValue instanceof java.sql.Timestamp timestamp) {
-                    transactionDate = timestamp.toLocalDateTime().format(formatter);
-                } else if (paidAtValue instanceof LocalDateTime dateTime) {
-                    transactionDate = dateTime.format(formatter);
-                }
-            }
-
-            if (transactionDate.isBlank()) {
-                Object paidAtValue = order.get("paid_at");
-                if (paidAtValue instanceof java.sql.Timestamp timestamp) {
-                    transactionDate = timestamp.toLocalDateTime().format(formatter);
-                } else if (paidAtValue instanceof LocalDateTime dateTime) {
-                    transactionDate = dateTime.format(formatter);
-                }
-            }
-            if (transactionNo.isBlank()) {
-                throw new IllegalStateException("Không tìm thấy vnp_TransactionNo đã lưu. Hãy kiểm tra callback VNPay.");
-            }
-            if (transactionDate.isBlank()) {
-                throw new IllegalStateException("Không tìm thấy thời điểm thanh toán gốc để hoàn tiền VNPay.");
-            }
-
-            var refundRes = vnPayService.refundTransaction(
-                    checkoutCode, transactionNo, refundAmount, isFullRefund, transactionDate,
-                    "Customer_" + userId, "127.0.0.1", "Hoan tien don hang " + checkoutCode
-            );
-
-            String refundNote = cleanReason + " [Hoàn tiền VNPAY: " + refundAmount.toPlainString()
-                    + "đ - GD: " + (refundRes.refundTransactionNo() != null
-                    ? refundRes.refundTransactionNo() : "SANDBOX") + "]";
-            try {
-                jdbc.update("UPDATE orders SET status='CANCELLED',payment_status='REFUNDED',cancelled_at=?,cancellation_reason=? WHERE id=?",
-                        now, refundNote, orderId);
-                jdbc.update("UPDATE payments SET status='REFUNDED',failure_reason=? WHERE order_id=?", refundNote, orderId);
-            } catch (Exception ex) {
-                // Fallback cho schema có CHECK constraint chưa chấp nhận REFUNDED.
-                jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=?",
-                        now, refundNote, orderId);
-                jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=?", refundNote, orderId);
-            }
+            String refundNote = cleanReason + " [Yêu cầu hoàn tiền thủ công đang chờ Operations xử lý: "
+                    + refundAmount.toPlainString() + " VND]";
+            jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=?",
+                    now, refundNote, orderId);
+            jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=?",
+                    refundNote, orderId);
+            customerRefunds.queuePaidOrderRefund(orderId, cleanReason);
         } else {
             // NẾU LÀ ĐƠN COD HOẶC CHƯA THANH TOÁN
             jdbc.update("UPDATE orders SET status='CANCELLED', cancelled_at=?, cancellation_reason=? WHERE id=?", now, cleanReason, orderId);

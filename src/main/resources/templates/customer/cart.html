@@ -484,7 +484,7 @@
         </div>
     </div>
 
-    <!-- Thanh thanh toán -->
+    <!-- Thanh toán -->
     <div class="summary"
          th:unless="${#lists.isEmpty(cartItems)}">
 
@@ -600,7 +600,7 @@
         }).catch(error => console.error('Lỗi khi cập nhật số lượng:', error));
     }
 
-    // Cập nhật thành tiền của một dòng (Đã sửa lỗi thiếu dấu nhân *)
+    // Cập nhật thành tiền của một dòng
     function updateRowTotal(input) {
         const row = input.closest('.cart-item');
         const checkbox = row.querySelector('.item-check');
@@ -614,7 +614,7 @@
         updateCheckoutState();
     }
 
-    // Cập nhật tổng tiền của những sản phẩm được chọn (Đã sửa lỗi thiếu dấu nhân *)
+    // Cập nhật tổng tiền của những sản phẩm được chọn
     function updateCheckoutState() {
         const itemChecks = document.querySelectorAll('.item-check:not(:disabled)');
         const selectAll = document.getElementById('selectAllBottom');
