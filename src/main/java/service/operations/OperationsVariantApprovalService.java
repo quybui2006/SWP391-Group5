@@ -54,7 +54,7 @@ public class OperationsVariantApprovalService {
     @Transactional(readOnly = true)
     public OperationsVariantDetailDto getVariantDetail(Long variantId) {
         List<OperationsVariantDetailDto> rows = jdbc.query("""
-                SELECT pv.id AS variant_id, pv.product_id, pv.name AS variant_name, pv.sku,
+                SELECT pv.id AS variant_id, pv.product_id, pv.shop_id, pv.name AS variant_name, pv.sku,
                        pv.specification,
                        pv.image_url AS image_url,
                        pv.price, pv.min_order_quantity,
@@ -67,7 +67,7 @@ public class OperationsVariantApprovalService {
                        CONCAT_WS(', ', s.address_detail, s.ward_name, s.province_code) AS shop_address,
                        u.name AS unit_name,
                        vi.initial_quantity, vi.quantity_on_hand, vi.reserved_quantity, vi.available_quantity,
-                       vi.low_stock_threshold_pct, vi.status AS inventory_status
+                       vi.low_stock_threshold_quantity, vi.status AS inventory_status
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 JOIN shops s ON s.id = pv.shop_id
@@ -75,7 +75,7 @@ public class OperationsVariantApprovalService {
                 LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
                 WHERE pv.id = ?
                 """, (rs, rowNum) -> new OperationsVariantDetailDto(
-                rs.getLong("variant_id"), rs.getLong("product_id"), rs.getString("variant_name"),
+                rs.getLong("variant_id"), rs.getLong("product_id"), rs.getLong("shop_id"), rs.getString("variant_name"),
                 rs.getString("sku"), rs.getString("specification"), rs.getString("image_url"),
                 rs.getBigDecimal("price"), nullableInt(rs, "min_order_quantity"), rs.getString("unit_name"),
                 rs.getString("variant_status"), rs.getString("approval_status"), rs.getString("rejection_reason"),
@@ -86,7 +86,7 @@ public class OperationsVariantApprovalService {
                 rs.getString("shop_name"), rs.getString("shop_phone"), rs.getString("shop_address"),
                 nullableInt(rs, "initial_quantity"), nullableInt(rs, "quantity_on_hand"),
                 nullableInt(rs, "reserved_quantity"), nullableInt(rs, "available_quantity"),
-                rs.getBigDecimal("low_stock_threshold_pct"), rs.getString("inventory_status")), variantId);
+                nullableInt(rs, "low_stock_threshold_quantity"), rs.getString("inventory_status")), variantId);
         if (rows.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy biến thể sản phẩm.");
         return rows.get(0);
     }

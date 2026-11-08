@@ -134,30 +134,8 @@ public class CustomerAccountHomeController {
         String redirect = login(customerId, "/customer/account/orders/" + id);
         if (redirect != null) return redirect;
         try {
-            boolean paidRefund = checkout.cancelOrderByCustomer(customerId, id);
-            ra.addFlashAttribute("message", paidRefund
-                    ? "Đã hủy đơn thành công. Yêu cầu hoàn tiền đã được chuyển đến bộ phận Vận hành."
-                    : "Đã hủy đơn hàng thành công.");
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().contains("tài khoản ngân hàng")) {
-                ra.addFlashAttribute("bankAccountRequired", true);
-            }
-            ra.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/customer/account/orders/" + id;
-    }
-
-    @PostMapping("/orders/{id}/refuse")
-    public String refuseDelivery(@PathVariable Long id,
-                                 @RequestParam(required = false) String reason,
-                                 HttpSession session,
-                                 RedirectAttributes ra) {
-        Long customerId = current(session);
-        String redirect = login(customerId, "/customer/account/orders/" + id);
-        if (redirect != null) return redirect;
-        try {
-            checkout.refuseDeliveryByCustomer(customerId, id, reason);
-            ra.addFlashAttribute("message", "Đã ghi nhận từ chối nhận hàng. Bạn có thể gửi khiếu nại sự cố giao hàng ngay bên dưới nếu cần hỗ trợ.");
+            checkout.cancelOrderByCustomer(customerId, id);
+            ra.addFlashAttribute("message", "Đã hủy đơn hàng thành công.");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }

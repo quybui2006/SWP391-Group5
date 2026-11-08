@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -1770,6 +1771,79 @@ public class ComplaintService {
         }
         return clean + "-" + (100 + new Random().nextInt(900));
     }
+
+    /**
+     * Scheduled Job: Tự động chuyển các khiếu nại PENDING_SHOP quá hạn SLA (6h) mà Shop không phản hồi sang ESCALATED.
+     */
+    @Scheduled(fixedDelayString = "${complaints.sla-scan-ms:60000}")
+    @Transactional
+    public int autoEscalateOverdueShopComplaints() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Long> overdueIds = safeQueryList("""
+            SELECT id FROM complaints
+            WHERE status IN ('PENDING_SHOP', 'PENDING') AND sla_due_at <= ?
+            ORDER BY id
+        """, Timestamp.valueOf(now)).stream()
+                .map(r -> ((Number) r.get("id")).longValue())
+                .toList();
+
+        int escalatedCount = 0;
+        for (Long complaintId : overdueIds) {
+            List<Map<String, Object>> locked = jdbc.queryForList("""
+                SELECT c.id, c.complaint_code, c.user_id, c.order_id, o.order_code, s.owner_id AS shop_owner_id
+                FROM complaints c
+                JOIN orders o ON o.id = c.order_id
+                JOIN shops s ON s.id = c.shop_id
+                WHERE c.id = ? AND c.status IN ('PENDING_SHOP', 'PENDING') AND c.sla_due_at <= ?
+                FOR UPDATE
+            """, complaintId, Timestamp.valueOf(now));
+            if (locked.isEmpty()) {
+                continue;
+            }
+            Map<String, Object> row = locked.get(0);
+            int updated = jdbc.update("""
+                UPDATE complaints
+                SET status = 'ESCALATED',
+                    escalated_at = ?,
+                    updated_at = ?
+                WHERE id = ? AND status IN ('PENDING_SHOP', 'PENDING')
+            """, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
+
+            if (updated == 1) {
+                escalatedCount++;
+                Long customerId = ((Number) row.get("user_id")).longValue();
+                Long orderId = ((Number) row.get("order_id")).longValue();
+                Long shopOwnerId = row.get("shop_owner_id") instanceof Number n ? n.longValue() : null;
+                String complaintCode = String.valueOf(row.get("complaint_code"));
+                String orderCode = String.valueOf(row.get("order_code"));
+
+                createNotificationSafe(customerId,
+                        "COMPLAINT_SLA_ESCALATED_CUST_" + complaintId,
+                        "COMPLAINT",
+                        "Khiếu nại " + complaintCode + " đã chuyển lên CSKH phân xử",
+                        "Do Cửa hàng không phản hồi trong thời hạn SLA 6 giờ, hệ thống đã tự động chuyển khiếu nại đơn " + orderCode + " lên Bộ phận CSKH phân xử.",
+                        "COMPLAINT", complaintId);
+
+                if (shopOwnerId != null) {
+                    createNotificationSafe(shopOwnerId,
+                            "COMPLAINT_SLA_ESCALATED_SHOP_" + complaintId,
+                            "COMPLAINT",
+                            "⚠️ Quá hạn 6h phản hồi khiếu nại " + complaintCode,
+                            "Khiếu nại trên đơn hàng " + orderCode + " đã quá hạn SLA 6 giờ và được chuyển thẳng lên CSKH phân xử.",
+                            "ORDER", orderId);
+                }
+
+                notifyRoleUsers("CS_STAFF",
+                        "COMPLAINT_SLA_ESCALATED_CS_" + complaintId,
+                        "COMPLAINT",
+                        "⏰ [Quá hạn SLA 6h] Khiếu nại " + complaintCode + " chuyển CSKH phân xử",
+                        "Shop không phản hồi khiếu nại đơn " + orderCode + " trong 6 giờ. Vui lòng tiếp nhận phân xử.",
+                        "COMPLAINT", complaintId);
+            }
+        }
+        return escalatedCount;
+    }
+
 
     /**
      * Tạo phiếu hỗ trợ/khiếu nại thủ công hoặc tự động 1-click từ đơn hàng gặp sự cố.

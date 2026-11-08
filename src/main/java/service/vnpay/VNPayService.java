@@ -17,20 +17,21 @@ import java.util.*;
 @Service
 public class VNPayService {
 
-    @Value("${vnpay.tmn-code:}")
+
+    @Value("${vnpay.tmn-code}")
     private String vnpTmnCode;
 
-    @Value("${vnpay.hash-secret:}")
+    @Value("${vnpay.hash-secret}")
     private String vnpHashSecret;
 
-    @Value("${vnpay.pay-url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
+    @Value("${vnpay.pay-url}")
     private String vnpPayUrl;
 
-    @Value("${vnpay.return-url:http://localhost:8080/checkout/vnpay-return}")
+    @Value("${vnpay.return-url}")
+
     private String vnpReturnUrl;
 
     private static final ZoneId VNPAY_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final DateTimeFormatter VNP_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     public String createPaymentUrl(String checkoutCode, BigDecimal totalAmount, HttpServletRequest request) {
         Map<String, String> vnpParams = new HashMap<>();
@@ -50,9 +51,10 @@ public class VNPayService {
         vnpParams.put("vnp_ReturnUrl", vnpReturnUrl);
         vnpParams.put("vnp_IpAddr", getClientIp(request));
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         LocalDateTime now = LocalDateTime.now(VNPAY_ZONE);
-        vnpParams.put("vnp_CreateDate", now.format(VNP_DATE_FMT));
-        vnpParams.put("vnp_ExpireDate", now.plusMinutes(15).format(VNP_DATE_FMT));
+        vnpParams.put("vnp_CreateDate", now.format(formatter));
+        vnpParams.put("vnp_ExpireDate", now.plusMinutes(15).format(formatter));
 
         // Sắp xếp các tham số theo thứ tự alphabet
         List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
@@ -137,5 +139,4 @@ public class VNPayService {
         }
         return ipAddress;
     }
-
 }

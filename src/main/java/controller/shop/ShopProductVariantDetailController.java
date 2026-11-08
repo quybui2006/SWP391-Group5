@@ -46,7 +46,7 @@ public class ShopProductVariantDetailController {
         products.hideVariantFromSale(id, currentUser.requireUserId(request));
         redirect.addFlashAttribute(
                 "success",
-                "Đã ẩn biến thể khỏi gian hàng. Đơn đã xác nhận và tồn kho đang giữ vẫn được giữ nguyên."
+                "Đã ngừng bán biến thể. Đơn đã xác nhận và tồn kho đang giữ vẫn được giữ nguyên."
         );
         return "redirect:/shopowner/product-variants/" + id;
     }
@@ -61,7 +61,7 @@ public class ShopProductVariantDetailController {
             products.showVariantForSale(id, currentUser.requireUserId(request));
             redirect.addFlashAttribute(
                     "success",
-                    "Đã hiển thị lại biến thể trên gian hàng."
+                    "Đã đăng bán biến thể. Nếu sản phẩm đang ẩn, khách hàng sẽ thấy biến thể sau khi sản phẩm được đăng bán."
             );
         } catch (ResponseStatusException ex) {
             redirect.addFlashAttribute("error", ex.getReason());

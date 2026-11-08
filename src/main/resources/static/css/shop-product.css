@@ -120,6 +120,13 @@ tbody tr:hover { background: #fbfdfb; }
 .alert { margin: 0 0 22px; padding: 13px 15px; border-radius: 12px; font-size: 13px; font-weight: 600; }
 .alert-success { color: #176b30; background: var(--green-light); border: 1px solid #cfe4d2; }
 .alert-error { color: #9b2c2c; background: #fff0f0; border: 1px solid #ffd0d0; }
+.sku-pending { display: flex; min-height: 42px; align-items: center; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; }
+.sku-pending code { color: #475569; font-size: 13px; font-weight: 700; }
+.sku-success { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 18px; padding: 15px 18px; border: 1px solid #86efac; border-left: 4px solid #16a34a; border-radius: 8px; background: #f0fdf4; color: #14532d; }
+.sku-success div { display: grid; gap: 3px; }
+.sku-success strong { font-size: 13px; }
+.sku-success span { color: #4b6654; font-size: 12px; }
+.sku-success code { flex: 0 0 auto; padding: 8px 12px; border: 1px solid #bbf7d0; border-radius: 6px; background: #fff; color: #166534; font-size: 15px; font-weight: 800; }
 
 .product-form { display: grid; gap: 18px; }
 .form-card { padding: 26px; }
@@ -162,6 +169,10 @@ tbody tr:hover { background: #fbfdfb; }
     .search-bar input { flex-basis: 100%; }
 }
 
+@media (max-width: 520px) {
+    .sku-success { align-items: flex-start; flex-direction: column; }
+}
+
 /* Tan PTH: product pages use the Shop Owner dashboard shell while retaining the existing DB form styles. */
 .product-management .topbar { align-items: center; margin-bottom: 24px; }
 .product-management .breadcrumb a { color: var(--green-dark); }
@@ -174,6 +185,8 @@ tbody tr:hover { background: #fbfdfb; }
 .product-management .product-actions { white-space: nowrap; }
 .product-management .product-actions a { color: var(--green-dark); font-size: 12px; font-weight: 700; margin-right: 12px; }
 .product-management .product-actions a:last-child { margin-right: 0; }
+.product-management .variant-listing-form { display: inline-flex; margin: 0 6px 0 0; }
+.product-management .variant-listing-form .button { min-height: 30px; padding: 0 9px; font-size: 11px; }
 .product-management .form-card h2 { color: var(--ink); }
 .product-management .field input,
 .product-management .field select,

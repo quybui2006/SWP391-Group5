@@ -28,17 +28,20 @@ public class VoucherRequest {
     }
 
     public String getVoucherType(){return voucherType;} public void setVoucherType(String v){voucherType=v;}
+    /** Kiểm tra ngày kết thúc phải sau ngày bắt đầu cho mọi voucher. */
     @AssertTrue(message="Ngày kết thúc phải sau ngày bắt đầu.")
     public boolean isDateRangeValid() {
         return startsAt == null || endsAt == null || endsAt.isAfter(startsAt);
     }
 
+    /** Chặn tạo voucher có ngày bắt đầu trước hôm nay theo múi giờ Việt Nam. */
     @AssertTrue(message="Ngày bắt đầu không được trước ngày hôm nay theo giờ Việt Nam.")
     public boolean isStartDateNotBeforeToday() {
         return startsAt == null || !startsAt.toLocalDate().isBefore(
                 LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
     }
 
+    /** Chặn phần trăm giảm vượt 100 phần trăm. */
     @AssertTrue(message="Giảm theo phần trăm phải từ 1 đến 100.")
     public boolean isPercentageValid() {
         // @DecimalMin handles values below 1; this cross-field rule handles only the percentage ceiling.
@@ -46,11 +49,13 @@ public class VoucherRequest {
                 || discountValue.compareTo(new BigDecimal("100")) <= 0;
     }
 
+    /** Không cho nhập trần giảm tiền khi đang chọn giảm số tiền cố định. */
     @AssertTrue(message="Chỉ áp dụng giảm tối đa cho voucher giảm theo phần trăm.")
     public boolean isMaxDiscountValid() {
         return !"FIXED_AMOUNT".equals(discountType) || maxDiscountAmount == null;
     }
 
+    /** Bảo đảm các trường tiền chỉ chứa số nguyên VNĐ. */
     @AssertTrue(message="Các giá trị tiền phải là số nguyên VNĐ (không có phần lẻ).")
     public boolean isVndAmountsWholeNumbers() {
         return isWholeVnd(discountValue) && isWholeVnd(maxDiscountAmount) && isWholeVnd(minOrderValue);

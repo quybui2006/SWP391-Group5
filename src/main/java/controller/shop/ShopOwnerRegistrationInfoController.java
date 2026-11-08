@@ -8,7 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import repository.ProvinceRepository;
-import service.customer.CustomerShopRegistrationService;
+import service.shop.ShopRegistrationService;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -22,11 +22,11 @@ import java.util.Optional;
 @Controller
 public class ShopOwnerRegistrationInfoController {
 
-    private final CustomerShopRegistrationService shopRegistrationService;
+    private final ShopRegistrationService shopRegistrationService;
     private final ProvinceRepository provinceRepository;
 
     public ShopOwnerRegistrationInfoController(
-            CustomerShopRegistrationService shopRegistrationService,
+            ShopRegistrationService shopRegistrationService,
             ProvinceRepository provinceRepository) {
         this.shopRegistrationService = shopRegistrationService;
         this.provinceRepository = provinceRepository;

@@ -7,9 +7,9 @@
     <!-- Brand -->
     <a class="brand" th:href="@{/shopowner/home}">
         <span class="brand-mark">F</span>
-        <span>
-            Fresh<span>Fruit</span>
-            <small>CHỦ CỬA HÀNG</small>
+        <span class="brand-copy">
+            <span class="brand-name">Fresh<span>Fruit</span></span>
+            <small class="brand-role">CHỦ CỬA HÀNG</small>
         </span>
     </a>
 
@@ -27,7 +27,7 @@
     <!-- Nút Đăng ký mở Shop nổi bật trong Sidebar nếu chưa có cửa hàng -->
     <div th:if="${shop != null && shop.approvalStatus == 'NOT_REGISTERED'}" style="margin: 0 5px 20px;">
         <a th:href="@{/seller/activate}" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #fff; font-weight: 700; font-size: 12px; border-radius: 9px; text-decoration: none; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);">
-            <span>🏪</span> Đăng ký mở Shop
+            Đăng ký mở Shop
         </a>
     </div>
 
@@ -79,10 +79,13 @@
 <!--            <span aria-hidden="true">↻</span> Yêu cầu mở lại Shop-->
 <!--        </a>-->
 
-<!--        <a th:classappend="${activePage == 'notifications'} ? ' active' : ''"-->
-<!--           th:href="@{/shopowner/notifications}">-->
-<!--            <span aria-hidden="true">♧</span> Thông báo-->
-<!--        </a>-->
+        <a th:classappend="${activePage == 'notifications'} ? ' active' : ''"
+           th:href="@{/shopowner/notifications}">
+            <span class="notification-nav-icon" aria-hidden="true">&#x1F514;&#xFE0E;</span>
+            <span class="notification-nav-label">Thông báo</span>
+            <span class="notification-unread-badge" th:if="${shopOwnerUnreadCount > 0}"
+                  th:text="${shopOwnerUnreadCount > 99 ? '99+' : shopOwnerUnreadCount}">1</span>
+        </a>
 
         <a th:classappend="${activePage == 'orders'} ? ' active' : ''"
            th:href="@{/shopowner/orders}">
@@ -99,19 +102,9 @@
             <span>💳</span> Thông tin tài khoản ngân hàng
         </a>
 
-        <span class="nav-label">KHÁC</span>
-
-        <a href="#" data-pending>
-            <span>⚙</span> Cài đặt
-        </a>
-
-        <a href="#" data-pending>
-            <span>?</span> Trợ giúp
-        </a>
-
         <form th:action="@{/logout}" method="post" style="margin: 8px 4px 0;">
             <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 8px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                <span>🚪</span> Đăng xuất
+                Đăng xuất
             </button>
         </form>
 

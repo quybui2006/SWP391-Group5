@@ -1,4 +1,4 @@
-package dto.customer;
+package dto.shop;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -64,3 +64,4 @@ public class ShopPaymentSetupDto {
         this.isDefault = isDefault;
     }
 }
+

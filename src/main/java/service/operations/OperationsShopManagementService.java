@@ -1,6 +1,7 @@
 package service.operations;
 
 import dto.operations.ManagedShopListItem;
+import dto.operations.ManagedShopProduct;
 import dto.operations.ManagedShopVariant;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,7 +13,10 @@ import service.customer.NotificationService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -62,11 +66,19 @@ public class OperationsShopManagementService {
                        pv.price, u.name AS unit_name, pv.status AS variant_status, pv.approval_status,
                        COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
                        COALESCE(vi.available_quantity, 0) AS available_quantity,
+                       COALESCE(sold.quantity, 0) AS sold_quantity,
                        p.batch_code
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 JOIN units u ON u.id = pv.base_unit_id
                 LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
+                LEFT JOIN (
+                    SELECT oi.variant_id, SUM(oi.quantity) AS quantity
+                    FROM order_items oi
+                    JOIN orders o ON o.id = oi.order_id
+                    WHERE o.status = 'COMPLETED'
+                    GROUP BY oi.variant_id
+                ) sold ON sold.variant_id = pv.id
                 WHERE pv.shop_id = ?
                 ORDER BY p.name, pv.name, pv.id
                 """, (rs, row) -> new ManagedShopVariant(
@@ -74,7 +86,59 @@ public class OperationsShopManagementService {
                 rs.getString("sku"), rs.getString("image_url"), rs.getBigDecimal("price"),
                 rs.getString("unit_name"), rs.getString("variant_status"), rs.getString("approval_status"),
                 nullableInt(rs, "quantity_on_hand"), nullableInt(rs, "available_quantity"),
+                nullableLong(rs, "sold_quantity"),
                 rs.getString("batch_code")), shopId);
+    }
+
+    public List<ManagedShopProduct> listShopProductsWithVariants(Long shopId) {
+        getShop(shopId);
+        Map<Long, ProductWithVariants> products = new LinkedHashMap<>();
+        jdbc.query("""
+                SELECT p.id AS product_id, p.name AS product_name,
+                       (SELECT pi.image_url FROM product_images pi
+                        WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS product_image_url,
+                       pv.id AS variant_id, pv.name AS variant_name, pv.sku,
+                       COALESCE(NULLIF(pv.image_url, ''),
+                           (SELECT pi.image_url FROM product_images pi
+                            WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                       pv.price, u.name AS unit_name, pv.status AS variant_status, pv.approval_status,
+                       COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
+                       COALESCE(vi.available_quantity, 0) AS available_quantity,
+                       COALESCE(sold.quantity, 0) AS sold_quantity
+                FROM products p
+                LEFT JOIN product_variants pv ON pv.product_id = p.id AND pv.shop_id = p.shop_id
+                LEFT JOIN units u ON u.id = pv.base_unit_id
+                LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
+                LEFT JOIN (
+                    SELECT oi.variant_id, SUM(oi.quantity) AS quantity
+                    FROM order_items oi
+                    JOIN orders o ON o.id = oi.order_id
+                    WHERE o.status = 'COMPLETED'
+                    GROUP BY oi.variant_id
+                ) sold ON sold.variant_id = pv.id
+                WHERE p.shop_id = ?
+                ORDER BY p.name, p.id, pv.name, pv.id
+                """, rs -> {
+            long productId = rs.getLong("product_id");
+            ProductWithVariants product = products.computeIfAbsent(productId, ignored ->
+                    new ProductWithVariants(productId, getString(rs, "product_name"),
+                            getString(rs, "product_image_url")));
+            Long variantId = nullableLong(rs, "variant_id");
+            if (variantId != null) {
+                product.variants.add(new ManagedShopVariant(
+                        variantId, product.name, getString(rs, "variant_name"), getString(rs, "sku"),
+                        getString(rs, "image_url"), rs.getBigDecimal("price"), getString(rs, "unit_name"),
+                        getString(rs, "variant_status"), getString(rs, "approval_status"),
+                        nullableInt(rs, "quantity_on_hand"), nullableInt(rs, "available_quantity"),
+                        nullableLong(rs, "sold_quantity"), null));
+            }
+        }, shopId);
+
+        // Group every product with its variants and preserve products that have none yet.
+        return products.values().stream()
+                .map(product -> new ManagedShopProduct(product.id, product.name, product.imageUrl,
+                        List.copyOf(product.variants)))
+                .toList();
     }
 
     @Transactional
@@ -119,6 +183,32 @@ public class OperationsShopManagementService {
     private static Integer nullableInt(ResultSet rs, String column) throws SQLException {
         Object value = rs.getObject(column);
         return value == null ? null : ((Number) value).intValue();
+    }
+
+    private static Long nullableLong(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private static String getString(ResultSet rs, String column) {
+        try {
+            return rs.getString(column);
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Không thể đọc dữ liệu hậu kiểm cửa hàng.", ex);
+        }
+    }
+
+    private static final class ProductWithVariants {
+        private final Long id;
+        private final String name;
+        private final String imageUrl;
+        private final List<ManagedShopVariant> variants = new ArrayList<>();
+
+        private ProductWithVariants(Long id, String name, String imageUrl) {
+            this.id = id;
+            this.name = name;
+            this.imageUrl = imageUrl;
+        }
     }
 
     private static LocalDateTime localDateTime(ResultSet rs, String column) throws SQLException {

@@ -1,7 +1,7 @@
 package org.example.swp391group5;
 
-import dto.customer.ShopPaymentSetupDto;
-import dto.customer.ShopRegistrationDto;
+import dto.shop.ShopPaymentSetupDto;
+import dto.shop.ShopRegistrationDto;
 import dto.operations.ShopApprovalDetailDto;
 import entity.Shop;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import service.customer.CustomerShopRegistrationService;
+import service.shop.ShopRegistrationService;
 import service.operations.OperationsShopApprovalService;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ShopPaymentApprovalIntegrationTests {
 
     @Autowired
-    private CustomerShopRegistrationService customerShopService;
+    private ShopRegistrationService customerShopService;
 
     @Autowired
     private OperationsShopApprovalService operationsShopService;
@@ -238,7 +238,7 @@ class ShopPaymentApprovalIntegrationTests {
                 productId, unitId, shopId);
         long variantId = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-XOAI-01'", Long.class);
 
-        jdbc.update("INSERT INTO variant_inventory(variant_id, initial_quantity, quantity_on_hand, low_stock_threshold_pct, created_by) VALUES (?, 100, 100, 10, ?)", variantId, ownerId);
+        jdbc.update("INSERT INTO variant_inventory(variant_id, initial_quantity, quantity_on_hand, low_stock_threshold_quantity, created_by) VALUES (?, 100, 100, 10, ?)", variantId, ownerId);
 
         // NGUYÊN TẮC BÁN HÀNG: Khi chưa được duyệt thông tin tài khoản ngân hàng, sản phẩm CHƯA ĐƯỢC ĐẨY LÊN SÀN BÁN HÀNG
         // 1. Không xuất hiện trong danh sách hiển thị sàn bán hàng (catalog)
