@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record OperationsVariantDetailDto(
         Long id,
         Long productId,
+        Long shopId,
         String variantName,
         String sku,
         String specification,
@@ -33,6 +34,6 @@ public record OperationsVariantDetailDto(
         Integer quantityOnHand,
         Integer reservedQuantity,
         Integer availableQuantity,
-        BigDecimal lowStockThresholdPct,
+        Integer lowStockThresholdQuantity,
         String inventoryStatus
 ) { }

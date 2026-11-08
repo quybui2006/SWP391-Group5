@@ -23,6 +23,7 @@ public class HomeService {
         this.promotionalPriceRepository = promotionalPriceRepository;
     }
 
+    /** Lấy sản phẩm đang bán và gắn giá khuyến mãi còn hiệu lực để hiển thị ở trang chủ. */
     public List<ProductVariant> getActiveProductsForHome() {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         List<ProductVariant> variants = productVariantRepository.findApprovedActiveForCatalog();

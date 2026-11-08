@@ -35,7 +35,7 @@ public class CsStaffController {
     }
 
     // =========================================================================
-    // 1. OPERATIONS & CS DASHBOARD (Dispute Reports, CS SLA, Moderation, Alerts)
+    // 1. CS DASHBOARD (Moderation & Customer Overview)
     // =========================================================================
 
     @GetMapping({"", "/", "/dashboard"})
@@ -54,18 +54,15 @@ public class CsStaffController {
         model.addAttribute("totalReviews", totalReviews);
         model.addAttribute("lowRatingReviews", lowRatingReviews);
 
-        // 5 nhóm chỉ số Báo cáo Tranh chấp, SLA CSKH, Kiểm duyệt nội dung & Cảnh báo vi phạm
         Map<String, Object> reports = complaintService.getAnalyticsAndReports();
         model.addAllAttributes(reports);
 
-        // Danh sách yêu cầu khiếu nại mới nhất cần xử lý
         List<Map<String, Object>> recentComplaints = complaintService.listCsComplaints("ALL", "ALL", "ALL", false, null);
         if (recentComplaints.size() > 6) {
             recentComplaints = recentComplaints.subList(0, 6);
         }
         model.addAttribute("recentComplaints", recentComplaints);
 
-        // Đơn hàng bị hủy hoặc giao thất bại gần đây
         List<Map<String, Object>> disputeOrders = safeQueryList(
                 "SELECT o.id, o.order_code, o.recipient_name, o.recipient_phone, o.total_amount, o.status, o.delivery_status, " +
                         "o.cancellation_reason, o.delivery_failure_reason, o.created_at, s.name AS shop_name " +
@@ -75,7 +72,6 @@ public class CsStaffController {
         );
         model.addAttribute("disputeOrders", disputeOrders);
 
-        // Đánh giá kém cần CSKH liên hệ xử lý
         List<Map<String, Object>> recentLowReviews = safeQueryList(
                 "SELECT r.id, r.rating, r.content, r.created_at, COALESCE(r.moderation_status, 'PENDING') AS moderation_status, " +
                         "u.full_name AS customer_name, u.phone AS customer_phone, " +
@@ -95,114 +91,39 @@ public class CsStaffController {
     }
 
     // =========================================================================
-    // 2. DANH SÁCH YÊU CẦU KHIẾU NẠI & TẠO PHIẾU HỖ TRỢ
+    // 2. KHIẾU NẠI ĐÃ CHUYỂN HẾT SANG BAN VẬN HÀNH (/operations/complaints)
     // =========================================================================
 
     @GetMapping("/tickets")
-    public String tickets(
-            @RequestParam(defaultValue = "ALL") String status,
-            @RequestParam(defaultValue = "ALL") String priority,
-            @RequestParam(defaultValue = "ALL") String reasonType,
-            @RequestParam(defaultValue = "false") boolean overdue,
-            @RequestParam(required = false) String keyword,
-            Model model) {
-
-        model.addAttribute("activePage", "tickets");
-        model.addAttribute("selectedStatus", status);
-        model.addAttribute("selectedPriority", priority);
-        model.addAttribute("selectedReason", reasonType);
-        model.addAttribute("overdueOnly", overdue);
-        model.addAttribute("keyword", keyword);
-
-        List<Map<String, Object>> tickets = complaintService.listCsComplaints(status, priority, reasonType, overdue, keyword);
-        model.addAttribute("tickets", tickets);
-
-        Map<String, Object> reports = complaintService.getAnalyticsAndReports();
-        model.addAllAttributes(reports);
-        model.addAttribute("reasonLabels", complaintService.getReasonLabels());
-        model.addAttribute("resolutionLabels", complaintService.getResolutionLabels());
-
-        return "cs/tickets";
+    public String tickets() {
+        return "redirect:/operations/complaints";
     }
 
     @PostMapping("/tickets/create")
-    public String createTicket(
-            @RequestParam String orderCode,
-            @RequestParam(defaultValue = "QUALITY_ISSUE") String reasonType,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String description,
-            @RequestParam(defaultValue = "CS_MANUAL") String sourceType,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        try {
-            Long ticketId = complaintService.createTicketByCs(
-                    currentStaffId(session), orderCode, reasonType, title, description, sourceType);
-            redirect.addFlashAttribute("message", "Đã khởi tạo phiếu khiếu nại / hỗ trợ thành công!");
-            return "redirect:/cs/tickets/" + ticketId;
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-            return "redirect:/cs/tickets";
-        }
+    public String createTicket(RedirectAttributes redirect) {
+        redirect.addFlashAttribute("error", "Chức năng quản lý và khởi tạo khiếu nại đã được chuyển toàn bộ sang phân hệ Vận hành (/operations/complaints).");
+        return "redirect:/operations/complaints";
     }
 
-    // =========================================================================
-    // 3. XEM CHI TIẾT VÀ XỬ LÝ KHIẾU NẠI
-    // =========================================================================
-
     @GetMapping("/tickets/{id}")
-    public String ticketDetail(@PathVariable Long id, Model model) {
-        model.addAttribute("activePage", "tickets");
-        model.addAttribute("complaint", complaintService.getComplaintDetail(id));
-        model.addAttribute("reasonLabels", complaintService.getReasonLabels());
-        model.addAttribute("resolutionLabels", complaintService.getResolutionLabels());
-        return "cs/ticket-detail";
+    public String ticketDetail(@PathVariable Long id) {
+        return "redirect:/operations/complaints/" + id;
     }
 
     @PostMapping("/tickets/{id}/start")
-    public String startTicketProcessing(
-            @PathVariable Long id,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        try {
-            complaintService.startProcessing(id, currentStaffId(session));
-            redirect.addFlashAttribute("message", "Đã tiếp nhận hồ sơ khiếu nại và chuyển sang trạng thái Đang xử lý.");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        }
-        return "redirect:/cs/tickets/" + id;
+    public String startTicketProcessing(@PathVariable Long id) {
+        return "redirect:/operations/complaints/" + id;
     }
 
     @PostMapping("/tickets/{id}/remind-shop")
-    public String remindShopResponse(
-            @PathVariable Long id,
-            @RequestParam(required = false) String requestNote,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        try {
-            complaintService.requestShopResponse(id, currentStaffId(session), requestNote);
-            redirect.addFlashAttribute("message", "Đã gửi thông báo yêu cầu Chủ Shop phản hồi / giải trình khiếu nại!");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        }
-        return "redirect:/cs/tickets/" + id;
+    public String remindShopResponse(@PathVariable Long id) {
+        return "redirect:/operations/complaints/" + id;
     }
 
     @PostMapping("/tickets/{id}/resolve")
-    public String resolveTicket(
-            @PathVariable Long id,
-            @RequestParam String decisionStatus,
-            @RequestParam(required = false) String resolutionType,
-            @RequestParam String resolutionNote,
-            @RequestParam(required = false) Long finalRefundAmount,
-            @RequestParam(required = false) Long compensatedPoints,
-            @RequestParam(defaultValue = "SHOP") String faultParty,
-            @RequestParam(defaultValue = "false") boolean giftFreeShipping,
-            @RequestParam(defaultValue = "false") boolean isShopFault,
-            @RequestParam(defaultValue = "false") boolean escalateToOps,
-            HttpSession session,
-            RedirectAttributes redirect) {
-        redirect.addFlashAttribute("error", "Bộ phận CSKH chỉ có quyền xem báo cáo thống kê, không có thẩm quyền quyết định hay phân xử khiếu nại. Quyền quyết định thuộc về Chủ Cửa hàng.");
-        return "redirect:/cs/tickets/" + id;
+    public String resolveTicket(@PathVariable Long id, RedirectAttributes redirect) {
+        redirect.addFlashAttribute("error", "Toàn bộ luồng xử lý và duyệt hoàn tiền khiếu nại đã được chuyển sang Ban Vận hành (/operations/complaints).");
+        return "redirect:/operations/complaints/" + id;
     }
 
     @PostMapping("/violations/{shopId}/escalate")
@@ -216,11 +137,11 @@ public class CsStaffController {
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/cs/dashboard";
+        return "redirect:/operations/complaints";
     }
 
     // =========================================================================
-    // 4. KIỂM DUYỆT ĐÁNH GIÁ & PHẢN HỒI (CONTENT MODERATION)
+    // 3. KIỂM DUYỆT ĐÁNH GIÁ & PHẢN HỒI (CONTENT MODERATION)
     // =========================================================================
 
     @GetMapping("/reviews")

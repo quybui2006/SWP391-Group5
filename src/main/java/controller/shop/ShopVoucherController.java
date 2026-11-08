@@ -18,8 +18,10 @@ import java.math.BigDecimal;
 @RequestMapping({"/shop/vouchers", "/shop/vouchers/cashback"})
 public class ShopVoucherController {
     private final VoucherService service;
+    /** Nhận nghiệp vụ voucher để các endpoint chuyển tiếp yêu cầu từ giao diện shop. */
     public ShopVoucherController(VoucherService service){this.service=service;}
 
+    /** Danh sách voucher giảm giá của shop, hỗ trợ tìm kiếm và lọc trạng thái. */
     @GetMapping
     public String list(@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="") String status,
                        HttpServletRequest request,Model model){
@@ -38,6 +40,7 @@ public class ShopVoucherController {
         return "shopowner/voucher-list";
     }
 
+    /** Hiển thị biểu mẫu tạo voucher giảm giá cho cửa hàng. */
     @GetMapping("/create")
     public String createForm(HttpServletRequest request,Model model){
         if(ownerId(request)==null)return "redirect:/login";
@@ -47,6 +50,7 @@ public class ShopVoucherController {
         return "shopowner/voucher-form";
     }
 
+    /** Nạp voucher thuộc shop để chỉnh sửa, không cho sửa chéo loại voucher. */
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id,HttpServletRequest request,Model model,RedirectAttributes redirect){
         Long owner=ownerId(request); if(owner==null)return "redirect:/login";
@@ -56,6 +60,7 @@ public class ShopVoucherController {
         } catch(IllegalArgumentException ex){redirect.addFlashAttribute("error",ex.getMessage()); return "redirect:" + (request.getRequestURI().contains("/cashback") ? "/shop/vouchers/cashback" : "/shop/vouchers");}
     }
 
+    /** Tạo hoặc cập nhật voucher giảm giá sau khi kiểm tra dữ liệu đầu vào. */
     @PostMapping("/save")
     public String save(@RequestParam(required=false) Long id,@Valid @ModelAttribute("voucherRequest") VoucherRequest form,BindingResult binding,HttpServletRequest request,Model model,RedirectAttributes redirect){
         Long owner=ownerId(request); if(owner==null)return "redirect:/login";
@@ -66,6 +71,7 @@ public class ShopVoucherController {
         catch(DataIntegrityViolationException ex){binding.reject("voucher.save","Không thể lưu voucher do dữ liệu bị trùng hoặc vi phạm ràng buộc.");model.addAttribute("voucherId",id);model.addAttribute("voucherType",type);return "shopowner/voucher-form";}
     }
 
+    /** Tạm dừng hoặc kích hoạt lại voucher còn hạn và còn lượt sử dụng. */
     @PostMapping("/{id}/toggle")
     public String toggle(@PathVariable Long id,HttpServletRequest request,RedirectAttributes redirect,@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="") String status){
         Long owner=ownerId(request);if(owner==null)return "redirect:/login";String suffix=request.getRequestURI().contains("/cashback")?"/cashback":"";
@@ -73,6 +79,7 @@ public class ShopVoucherController {
         return "redirect:/shop/vouchers"+suffix+"?keyword="+enc(keyword)+"&status="+enc(status);
     }
 
+    /** Xóa voucher chưa sử dụng và giữ nguyên voucher đã có lịch sử dùng. */
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id,HttpServletRequest request,RedirectAttributes redirect,@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="") String status){
         Long owner=ownerId(request);if(owner==null)return "redirect:/login";String suffix=request.getRequestURI().contains("/cashback")?"/cashback":"";
@@ -80,7 +87,12 @@ public class ShopVoucherController {
         return "redirect:/shop/vouchers"+suffix+"?keyword="+enc(keyword)+"&status="+enc(status);
     }
 
+    /** Chuyển entity voucher thành dữ liệu form khi chủ shop mở màn hình chỉnh sửa. */
     private VoucherRequest toRequest(Voucher v){VoucherRequest f=new VoucherRequest();f.setCode(v.getCode());f.setName(v.getName());f.setVoucherType(v.getVoucherType());f.setDiscountType(v.getDiscountType());f.setDiscountValue(v.getDiscountValue());f.setMaxDiscountAmount(v.getMaxDiscountAmount());f.setMinOrderValue(v.getMinOrderValue());f.setMaxUsages(v.getMaxUsages());f.setIsPublic(v.getIsPublic());f.setStartsAt(v.getStartsAt());f.setEndsAt(v.getEndsAt());f.setStatus(v.getStatus());return f;}
+
+    /** Chỉ cho phép endpoint quản lý voucher hoạt động với phiên SHOP_OWNER hợp lệ. */
     private Long ownerId(HttpServletRequest request){HttpSession session=request.getSession(false);if(session==null||!"SHOP_OWNER".equals(session.getAttribute("role")))return null;Object id=session.getAttribute("userId");return id instanceof Number n?n.longValue():null;}
+
+    /** Mã hóa bộ lọc trước khi giữ lại trên URL sau thao tác quản lý voucher. */
     private String enc(String s){return java.net.URLEncoder.encode(s,java.nio.charset.StandardCharsets.UTF_8);}
 }

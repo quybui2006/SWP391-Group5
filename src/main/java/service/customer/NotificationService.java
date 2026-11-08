@@ -58,6 +58,40 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
+    public List<NotificationDto> getShopOwnerNotifications(Long userId) {
+        if (userId == null) return List.of();
+        return notificationRepository.findShopOwnerNotifications(userId).stream()
+                .map(NotificationDto::fromEntity).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationDto> getRecentShopOwnerNotifications(Long userId, int limit) {
+        return getShopOwnerNotifications(userId).stream().limit(Math.max(0, limit)).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public long getShopOwnerUnreadCount(Long userId) {
+        return userId == null ? 0 : notificationRepository.countUnreadShopOwnerNotifications(userId);
+    }
+
+    @Transactional
+    public boolean markShopOwnerNotificationRead(Long notificationId, Long userId) {
+        return notificationId != null && userId != null
+                && notificationRepository.markShopOwnerNotificationRead(notificationId, userId) > 0;
+    }
+
+    @Transactional
+    public boolean deleteShopOwnerNotification(Long notificationId, Long userId) {
+        return notificationId != null && userId != null
+                && notificationRepository.deleteShopOwnerNotification(notificationId, userId) > 0;
+    }
+
+    @Transactional
+    public void markAllShopOwnerNotificationsRead(Long userId) {
+        if (userId != null) notificationRepository.markShopOwnerNotificationsRead(userId);
+    }
+
+    @Transactional(readOnly = true)
     public long getUnreadCount(Long userId) {
         if (userId == null) {
             return 0;
@@ -80,6 +114,23 @@ public class NotificationService {
             return true;
         }
         return false;
+    }
+
+    @Transactional
+    public boolean deleteNotification(Long notificationId, Long userId) {
+        if (notificationId == null || userId == null) return false;
+        return notificationRepository.deleteByIdAndUserId(notificationId, userId) == 1;
+    }
+
+    @Transactional
+    public void removeCustomerSampleNotificationsForShopOwner(Long userId) {
+        if (userId == null || !userRoleRepository.existsByUser_IdAndRole_Code(userId, "SHOP_OWNER")) return;
+        notificationRepository.deleteByUserAndEventKeys(userId, List.of(
+                "WELCOME-" + userId,
+                "ORDER-DEMO-" + userId,
+                "PROD-ARRIVE-" + userId,
+                "SYSTEM-TIP-" + userId
+        ));
     }
 
     @Transactional

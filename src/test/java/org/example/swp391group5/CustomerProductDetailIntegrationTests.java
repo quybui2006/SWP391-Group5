@@ -59,8 +59,8 @@ class CustomerProductDetailIntegrationTests {
                 new BigDecimal("129000"), unitId, shopId, "SKU-SHOPEE-ENVY", "Hộp 1kg (4-5 quả)", 1);
         long variantId = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-SHOPEE-ENVY'", Long.class);
 
-        jdbc.update("INSERT INTO variant_inventory(variant_id, initial_quantity, quantity_on_hand, reserved_quantity, low_stock_threshold_pct, status, created_by) " +
-                "VALUES (?, 100, 85, 0, 10.0, 'ACTIVE', ?)", variantId, ownerId);
+        jdbc.update("INSERT INTO variant_inventory(variant_id, initial_quantity, quantity_on_hand, reserved_quantity, low_stock_threshold_quantity, status, created_by) " +
+                "VALUES (?, 100, 85, 0, 10, 'ACTIVE', ?)", variantId, ownerId);
 
         return variantId;
     }

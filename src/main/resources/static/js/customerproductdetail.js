@@ -25,9 +25,8 @@ function getQuantity() {
     const input = document.getElementById("quantity");
     if (!input) return 1;
     let quantity = parseInt(input.value, 10);
-    const maxVal = parseInt(input.getAttribute("max") || "99", 10);
     if (isNaN(quantity) || quantity < 1) quantity = 1;
-    if (quantity > maxVal) quantity = maxVal;
+    if (quantity > 99) quantity = 99;
     input.value = quantity;
     return quantity;
 }
@@ -35,9 +34,8 @@ function getQuantity() {
 function increaseQuantity() {
     const input = document.getElementById("quantity");
     if (!input) return;
-    const maxVal = parseInt(input.getAttribute("max") || "99", 10);
     let quantity = getQuantity();
-    if (quantity < maxVal) quantity++;
+    if (quantity < 99) quantity++;
     input.value = quantity;
 }
 
@@ -242,18 +240,6 @@ function filterReviews(ratingVal, button) {
         } else {
             emptyBox.style.display = "none";
         }
-    }
-}
-
-function toggleHelpful(button) {
-    if (!button) return;
-    const isVoted = button.classList.contains("voted");
-    if (isVoted) {
-        button.classList.remove("voted");
-        button.innerHTML = '<span class="thumb-icon">👍</span> <span>Hữu ích (12)</span>';
-    } else {
-        button.classList.add("voted");
-        button.innerHTML = '<span class="thumb-icon">👍</span> <span style="color:#ee4d2d;font-weight:600">Đã cảm ơn (13)</span>';
     }
 }
 

@@ -116,6 +116,12 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+
     </dependencies>
 
 
@@ -132,6 +138,9 @@
                             <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <source>21</source>
+                    <target>21</target>
+
                 </configuration>
             </plugin>
 

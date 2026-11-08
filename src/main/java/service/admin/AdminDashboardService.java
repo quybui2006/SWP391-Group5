@@ -26,7 +26,7 @@ public class AdminDashboardService {
         Long cancelledOrders = jdbc.queryForObject("SELECT COUNT(*) FROM orders WHERE status='CANCELLED'", Long.class);
 
         BigDecimal gmv = jdbc.queryForObject(
-                "SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE status='COMPLETED'",
+                "SELECT COALESCE(SUM(shop_revenue_amount),0) FROM orders WHERE status='COMPLETED'",
                 BigDecimal.class);
 
         Long totalShops = jdbc.queryForObject("SELECT COUNT(*) FROM shops", Long.class);

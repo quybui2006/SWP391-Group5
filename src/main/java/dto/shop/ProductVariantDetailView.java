@@ -18,6 +18,5 @@ public record ProductVariantDetailView(
         LocalDateTime submittedAt,
         Integer quantityOnHand,
         Integer reservedQuantity,
-        Integer availableQuantity,
-        BigDecimal lowStockThresholdPct
+        Integer availableQuantity
 ) { }

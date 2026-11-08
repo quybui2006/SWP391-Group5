@@ -51,6 +51,13 @@
             <div class="detail-actions">
                 <a class="button button-ghost" th:href="@{/shop/products}">← Danh sách</a>
                 <a class="button button-primary" th:href="@{/shop/product/{id}/edit(id=${product.id})}">✎ Chỉnh sửa</a>
+                <form th:if="${!product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/show(id=${product.id})}" method="post">
+                    <button class="button button-primary" type="submit">Đăng bán sản phẩm</button>
+                </form>
+                <a th:if="${#lists.isEmpty(product.variants)}" class="button button-primary" th:href="@{/shopowner/product-variants/add(productId=${product.id})}">＋ Thêm biến thể để đăng bán</a>
+                <form th:if="${product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/hide(id=${product.id})}" method="post" onsubmit="return confirm('Ẩn sản phẩm khỏi khách hàng?');">
+                    <button class="button button-ghost" type="submit">Ẩn sản phẩm</button>
+                </form>
                 <form th:action="@{/shop/product/{id}/delete(id=${product.id})}" method="post"
                       onsubmit="return confirm('Bạn chắc chắn muốn xóa sản phẩm? Chỉ sản phẩm chưa có đơn hàng, đánh giá hoặc lịch sử giao dịch kho mới được xóa.');">
                     <button class="button button-danger" type="submit">Xóa sản phẩm</button>
@@ -67,7 +74,7 @@
                 <div class="product-overview">
                     <img class="product-cover" th:if="${product.imageUrls != null and !product.imageUrls.isEmpty()}"
                          th:src="${product.imageUrls[0]}" th:alt="${product.name}">
-                    <div class="product-cover product-cover-placeholder" th:unless="${product.imageUrls != null and !product.imageUrls.isEmpty()}">🍃</div>
+                    <div class="product-cover product-cover-placeholder" th:unless="${product.imageUrls != null and !product.imageUrls.isEmpty()}">Ảnh</div>
                     <div class="detail-list">
                         <div><span>Tên sản phẩm</span><strong th:text="${product.name}">-</strong></div>
                         <div><span>Danh mục</span><strong th:text="${product.categoryName ?: '-'}">-</strong></div>
@@ -84,7 +91,7 @@
 
             <aside class="form-card">
                 <h2>Hồ sơ nhóm biến thể</h2>
-                <p class="muted" style="font-size:13px;line-height:1.65">Sản phẩm này lưu thông tin chung để quản lý các biến thể. Không duyệt hoặc bán trực tiếp ở cấp sản phẩm.</p>
+                <p class="muted" style="font-size:13px;line-height:1.65">Sản phẩm chỉ được đăng bán sau khi có ít nhất một biến thể. Từng biến thể được kiểm tra riêng.</p>
                 <div class="status-meta">
                     <div><span>Số biến thể</span><strong th:text="${#lists.size(product.variants)} + ' biến thể'">0 biến thể</strong></div>
                 </div>
@@ -110,8 +117,11 @@
                         <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.quantityOnHand}">0</td>
                         <td th:text="${variant.availableQuantity}">0</td>
-                        <td><span class="badge" th:classappend="${variant.approvalStatus == 'APPROVED' and variant.status == 'ACTIVE'} ? ' badge-active' : ' badge-draft'" th:text="${variant.approvalStatus == 'PENDING' ? 'Chờ duyệt' : (variant.approvalStatus == 'APPROVED' ? variant.status : variant.approvalStatus)}">DRAFT</span></td>
-                        <td class="variant-actions"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a></td>
+                        <td><span class="badge" th:classappend="${variant.approvalStatus == 'REJECTED' or variant.status == 'INACTIVE'} ? ' badge-draft' : ' badge-active'" th:text="${variant.approvalStatus == 'REJECTED' ? 'Bị từ chối' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">Ngừng bán</span></td>
+                        <td class="variant-actions">
+                            <a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a>
+                            <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a>
+                        </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>
                     </tbody>

@@ -33,7 +33,9 @@ public class CustomerAccountHomeController {
     }
 
     private Long current(HttpSession s) {
-        if (!"CUSTOMER".equals(s.getAttribute("role"))) return null;
+        if (s == null) return null;
+        Object role = s.getAttribute("role");
+        if (!"CUSTOMER".equals(role) && !"ADMIN".equals(role)) return null;
         Object id = s.getAttribute("userId");
         return id instanceof Number n ? n.longValue() : null;
     }
@@ -132,14 +134,9 @@ public class CustomerAccountHomeController {
         String redirect = login(customerId, "/customer/account/orders/" + id);
         if (redirect != null) return redirect;
         try {
-            boolean paidRefund = checkout.cancelOrderByCustomer(customerId, id);
-            ra.addFlashAttribute("message", paidRefund
-                    ? "Đã hủy đơn thành công. Yêu cầu hoàn tiền đã được chuyển đến bộ phận Vận hành."
-                    : "Đã hủy đơn hàng thành công.");
+            checkout.cancelOrderByCustomer(customerId, id);
+            ra.addFlashAttribute("message", "Đã hủy đơn hàng thành công.");
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().contains("tài khoản ngân hàng")) {
-                ra.addFlashAttribute("bankAccountRequired", true);
-            }
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/customer/account/orders/" + id;

@@ -1,12 +1,16 @@
 package controller.operations;
 
 import jakarta.servlet.http.HttpSession;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.complaint.ComplaintService;
+import service.login.CustomerDetailsService;
 
 import java.util.List;
 import java.util.Map;
@@ -16,30 +20,31 @@ import java.util.Map;
 public class OperationsComplaintController {
 
     private final ComplaintService complaintService;
-    private final JdbcTemplate jdbc;
 
-    public OperationsComplaintController(ComplaintService complaintService, JdbcTemplate jdbc) {
+    public OperationsComplaintController(ComplaintService complaintService) {
         this.complaintService = complaintService;
-        this.jdbc = jdbc;
     }
 
-    private Long currentOperationsUserId(HttpSession session) {
+    private Long requireOperationsUserId(HttpSession session) {
         if (session != null) {
+            Object role = session.getAttribute("role");
             Object uid = session.getAttribute("userId");
-            if (uid instanceof Number n) return n.longValue();
+            if (uid instanceof Number n) {
+                if ("OPERATIONS_MANAGER".equals(role) || "ADMIN".equals(role)) {
+                    return n.longValue();
+                }
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tài khoản không có quyền Quản trị Vận hành.");
+            }
         }
-        // Fallback: tìm ID của tài khoản có role OPERATIONS_MANAGER hoặc ADMIN
-        try {
-            List<Long> ids = jdbc.queryForList("""
-                SELECT u.id FROM users u
-                JOIN user_roles ur ON ur.user_id = u.id
-                JOIN roles r ON r.id = ur.role_id
-                WHERE r.code IN ('OPERATIONS_MANAGER', 'ADMIN')
-                ORDER BY u.id ASC LIMIT 1
-            """, Long.class);
-            if (!ids.isEmpty()) return ids.get(0);
-        } catch (Exception ignored) {}
-        return 1L;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomerDetailsService details) {
+            String role = details.getPrimaryRole();
+            if ("OPERATIONS_MANAGER".equals(role) || "ADMIN".equals(role)) {
+                return details.getId();
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tài khoản không có quyền Quản trị Vận hành.");
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vui lòng đăng nhập bằng tài khoản Quản trị Vận hành (OPERATIONS_MANAGER).");
     }
 
     @GetMapping
@@ -49,7 +54,10 @@ public class OperationsComplaintController {
             @RequestParam(defaultValue = "ALL") String reasonType,
             @RequestParam(defaultValue = "false") boolean overdue,
             @RequestParam(required = false) String keyword,
+            HttpSession session,
             Model model) {
+
+        requireOperationsUserId(session);
 
         model.addAttribute("activeNav", "complaints");
         model.addAttribute("activePage", "complaints");
@@ -62,18 +70,14 @@ public class OperationsComplaintController {
         List<Map<String, Object>> tickets = complaintService.listCsComplaints(status, priority, reasonType, overdue, keyword);
         model.addAttribute("tickets", tickets);
 
-        // Thống kê nhanh theo trạng thái cho thanh tab
-        long countPendingOps = queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('PENDING_OPERATIONS', 'PENDING_OPS')");
-        long countPendingShop = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'PENDING_SHOP'");
-        long countResolved = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'RESOLVED'");
-        long countRejected = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'REJECTED'");
-        long countAll = queryCount("SELECT COUNT(*) FROM complaints");
+        // Đổ thống kê trạng thái từ ComplaintService thay vì query SQL trực tiếp
+        Map<String, Long> statusCounts = complaintService.getComplaintStatusCounts();
+        if (statusCounts != null) {
+            model.addAllAttributes(statusCounts);
+        }
 
-        model.addAttribute("countPendingOps", countPendingOps);
-        model.addAttribute("countPendingShop", countPendingShop);
-        model.addAttribute("countResolved", countResolved);
-        model.addAttribute("countRejected", countRejected);
-        model.addAttribute("countAll", countAll);
+        Map<String, Object> reports = complaintService.getAnalyticsAndReports();
+        model.addAllAttributes(reports);
 
         model.addAttribute("reasonLabels", complaintService.getReasonLabels());
         model.addAttribute("resolutionLabels", complaintService.getResolutionLabels());
@@ -82,7 +86,8 @@ public class OperationsComplaintController {
     }
 
     @GetMapping("/{id}")
-    public String complaintDetail(@PathVariable Long id, Model model) {
+    public String complaintDetail(@PathVariable Long id, HttpSession session, Model model) {
+        requireOperationsUserId(session);
         model.addAttribute("activeNav", "complaints");
         model.addAttribute("activePage", "complaints");
         Map<String, Object> complaint = complaintService.getComplaintDetail(id);
@@ -92,20 +97,29 @@ public class OperationsComplaintController {
         return "operations/complaint-detail";
     }
 
-    @PostMapping("/{id}/approve")
-    public String approveComplaint(
+    @PostMapping("/{id}/resolve")
+    public String resolveComplaint(
             @PathVariable Long id,
+            @RequestParam String resolutionAction,
+            @RequestParam(required = false) Long refundAmount,
             @RequestParam(required = false) String note,
             HttpSession session,
             RedirectAttributes redirect) {
+        Long opsUserId = requireOperationsUserId(session);
         try {
-            Long opsUserId = currentOperationsUserId(session);
-            complaintService.approveComplaintByOperations(opsUserId, id, note);
-            redirect.addFlashAttribute("message", "Đã phê duyệt khiếu nại thành công! Hồ sơ đã được chuyển cho Cửa hàng để xử lý giao bù hoặc tặng voucher.");
+            if ("RETURN_REFUND".equalsIgnoreCase(resolutionAction)) {
+                complaintService.approveComplaintRefundByOperations(opsUserId, id, refundAmount, note);
+                redirect.addFlashAttribute("message", "Đã duyệt khiếu nại và lập lệnh hoàn tiền về tài khoản ngân hàng của khách hàng thành công!");
+            } else if ("APPROVE_ONLY".equalsIgnoreCase(resolutionAction)) {
+                complaintService.approveComplaintByOperations(opsUserId, id, note);
+                redirect.addFlashAttribute("message", "Đã phê duyệt khiếu nại thành công! Hồ sơ đã được chuyển cho Cửa hàng để xử lý giao bù hoặc tặng voucher.");
+            } else {
+                throw new IllegalArgumentException("Hành động xử lý khiếu nại không hợp lệ: " + resolutionAction);
+            }
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         } catch (Exception ex) {
-            redirect.addFlashAttribute("error", "Lỗi xử lý duyệt khiếu nại: " + ex.getMessage());
+            redirect.addFlashAttribute("error", "Lỗi xử lý khiếu nại: " + ex.getMessage());
         }
         return "redirect:/operations/complaints/" + id;
     }
@@ -116,8 +130,8 @@ public class OperationsComplaintController {
             @RequestParam String reason,
             HttpSession session,
             RedirectAttributes redirect) {
+        Long opsUserId = requireOperationsUserId(session);
         try {
-            Long opsUserId = currentOperationsUserId(session);
             complaintService.rejectComplaintByOperations(opsUserId, id, reason);
             redirect.addFlashAttribute("message", "Đã từ chối khiếu nại thành công. Kết quả và lý do đã được thông báo tới khách hàng.");
         } catch (IllegalArgumentException ex) {
@@ -128,12 +142,21 @@ public class OperationsComplaintController {
         return "redirect:/operations/complaints/" + id;
     }
 
-    private long queryCount(String sql, Object... args) {
+    @PostMapping("/{id}/remind-shop")
+    public String remindShopResponse(
+            @PathVariable Long id,
+            @RequestParam(required = false) String requestNote,
+            HttpSession session,
+            RedirectAttributes redirect) {
+        Long opsUserId = requireOperationsUserId(session);
         try {
-            Long c = jdbc.queryForObject(sql, Long.class, args);
-            return c != null ? c : 0L;
-        } catch (Exception e) {
-            return 0L;
+            complaintService.requestShopResponse(id, opsUserId, requestNote);
+            redirect.addFlashAttribute("message", "Đã gửi thông báo đôn đốc Chủ Shop xử lý khiếu nại!");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Lỗi gửi thông báo đôn đốc Shop: " + ex.getMessage());
         }
+        return "redirect:/operations/complaints/" + id;
     }
 }

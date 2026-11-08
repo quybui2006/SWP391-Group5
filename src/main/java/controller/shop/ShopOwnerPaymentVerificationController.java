@@ -1,6 +1,6 @@
 package controller.shop;
 
-import dto.customer.ShopPaymentSetupDto;
+import dto.shop.ShopPaymentSetupDto;
 import entity.Shop;
 import entity.ShopBankAccount;
 import jakarta.servlet.http.HttpServletRequest;
