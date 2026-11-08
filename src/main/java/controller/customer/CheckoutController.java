@@ -191,7 +191,7 @@ public class CheckoutController {
         boolean isSuccess = isValidSignature && "00".equals(responseCode);
         String orderCodesStr = "";
 
-        if (checkoutCode != null && !checkoutCode.isEmpty()) {
+        if (checkoutCode != null && !checkoutCode.isEmpty() && isValidSignature) {
             try {
                 List<String> orderCodes = checkout.handleVnPayCallback(checkoutCode, isSuccess);
                 orderCodesStr = String.join(", ", orderCodes);

@@ -6,6 +6,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
+import service.operations.CustomerRefundService;
 import service.shop.VoucherUsageService;
 import service.shop.InventoryBatchService;
 import java.math.BigDecimal;
@@ -25,12 +26,15 @@ public class OrderCheckoutService {
     private static final BigDecimal SHIPPING_FEE = new BigDecimal("20000");
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
+    private final CustomerRefundService customerRefunds;
     private final VoucherUsageService voucherUsage;
     private final InventoryBatchService inventoryBatches;
 
     /** Kết nối truy vấn checkout với nghiệp vụ trả lượt voucher khi đơn bị hủy. */
-    public OrderCheckoutService(JdbcTemplate jdbc, VoucherUsageService voucherUsage, InventoryBatchService inventoryBatches) {
+    public OrderCheckoutService(JdbcTemplate jdbc, CustomerRefundService customerRefunds,
+                                VoucherUsageService voucherUsage, InventoryBatchService inventoryBatches) {
         this.jdbc = jdbc;
+        this.customerRefunds = customerRefunds;
         this.voucherUsage = voucherUsage;
         this.inventoryBatches = inventoryBatches;
     }
@@ -504,7 +508,7 @@ public class OrderCheckoutService {
     /**
      * Hàm xử lý khi VNPay redirect kết quả về
      */
-    /** Xác nhận kết quả VNPay; nếu thất bại thì hủy đơn và hoàn lượt voucher đã giữ. */
+    /** Xác nhận kết quả thanh toán VNPay; đơn thành công vẫn chờ Shop xác nhận. */
     @Transactional
     public List<String> handleVnPayCallback(String checkoutCode, boolean isSuccess) {
         List<Map<String, Object>> checkouts = jdbc.queryForList("SELECT id,payment_method FROM checkouts WHERE checkout_code=? FOR UPDATE", checkoutCode);
@@ -516,26 +520,36 @@ public class OrderCheckoutService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
 
         if (isSuccess) {
-            if (orderRows.stream().allMatch(row -> "CONFIRMED".equals(row.get("status")) && "PAID".equals(row.get("payment_status")))) return orderCodes;
-            if (orderRows.isEmpty() || orderRows.stream().anyMatch(row -> !"PENDING".equals(row.get("status")) || !"UNPAID".equals(row.get("payment_status"))))
+            boolean alreadyPaid = !orderRows.isEmpty() && orderRows.stream().allMatch(row ->
+                    "PENDING".equals(row.get("status")) && "PAID".equals(row.get("payment_status")));
+            if (alreadyPaid) return orderCodes;
+            if (orderRows.isEmpty() || orderRows.stream().anyMatch(row ->
+                    !"PENDING".equals(row.get("status"))
+                            || !("UNPAID".equals(row.get("payment_status")) || "PAID".equals(row.get("payment_status")))))
                 throw new IllegalArgumentException("Đơn đã hết hạn hoặc đã được xử lý; không thể xác nhận thanh toán này.");
             jdbc.update("UPDATE checkouts SET status='CONFIRMED' WHERE id=? AND status='PENDING'", checkoutId);
-            jdbc.update("UPDATE orders SET status='CONFIRMED',payment_status='PAID',paid_at=? WHERE checkout_id=? AND status='PENDING' AND payment_status='UNPAID'", now, checkoutId);
+            jdbc.update("UPDATE orders SET payment_status='PAID',paid_at=? WHERE checkout_id=? AND status='PENDING' AND payment_status='UNPAID'", now, checkoutId);
             jdbc.update("UPDATE payments SET status='SUCCEEDED',paid_at=? WHERE status='PENDING' AND order_id IN (SELECT id FROM orders WHERE checkout_id=?)", now, checkoutId);
-            // Thanh toán online thành công chỉ đổi trạng thái thanh toán; hàng vẫn được giữ đến khi khách xác nhận nhận hàng.
-            notifyCheckoutParties(checkoutId, "ORDER_PAID", "Đơn online đã thanh toán", "Thanh toán VNPay thành công; đơn đã được xác nhận.");
+            notifyCheckoutParties(checkoutId, "ORDER_PAID", "Đơn online đã thanh toán", "Thanh toán VNPay thành công; đơn hàng đang chờ Shop xác nhận.");
         } else {
-            if (orderRows.isEmpty() || orderRows.stream().allMatch(row -> "CANCELLED".equals(row.get("status")))) return orderCodes;
-            if (orderRows.stream().anyMatch(row -> !"PENDING".equals(row.get("status")) || !"UNPAID".equals(row.get("payment_status")))) return orderCodes;
+            if (orderRows.isEmpty() || orderRows.stream().allMatch(row ->
+                    "CANCELLED".equals(row.get("status")) && "UNPAID".equals(row.get("payment_status")))) return orderCodes;
+            if (orderRows.stream().anyMatch(row ->
+                    !("PENDING".equals(row.get("status")) || "CANCELLED".equals(row.get("status")))
+                            || !"UNPAID".equals(row.get("payment_status")))) return orderCodes;
             for (Map<String, Object> order : orderRows) {
                 long orderId = ((Number) order.get("id")).longValue();
                 releaseReservedItems(orderId, "vnpay-failed");
-                int cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Thanh toán VNPay thất bại hoặc bị hủy' WHERE id=? AND status='PENDING'", now, orderId);
+                int cancelled = 0;
+                if (!"CANCELLED".equals(order.get("status"))) {
+                    cancelled = jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason='Thanh toán VNPay thất bại hoặc bị hủy' WHERE id=? AND status='PENDING'", now, orderId);
+                }
                 if (cancelled == 1) returnDiscountVoucherUse(orderId);
-                jdbc.update("UPDATE payments SET status='FAILED',failure_reason='Khách hủy hoặc giao dịch thất bại' WHERE order_id=? AND status='PENDING'", orderId);
+                jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", orderId);
+                jdbc.update("UPDATE payments SET status='FAILED',failure_reason='Khách hủy hoặc giao dịch thất bại' WHERE order_id=? AND status IN ('PENDING','CANCELLED')", orderId);
                 notifyOrderCustomer(orderId, "ORDER_PAYMENT_FAILED", "Thanh toán không thành công", "Thanh toán cho đơn " + order.get("order_code") + " không thành công.");
             }
-            jdbc.update("UPDATE checkouts SET status='CANCELLED' WHERE id=? AND status='PENDING'", checkoutId);
+            jdbc.update("UPDATE checkouts SET status='CANCELLED' WHERE id=? AND status IN ('PENDING','CONFIRMED','PARTIAL')", checkoutId);
         }
         return orderCodes;
     }
@@ -573,6 +587,65 @@ public class OrderCheckoutService {
         }
     }
 
+    // =========================================================================================
+    // KHÁCH HÀNG TỰ HỦY ĐƠN
+    // =========================================================================================
+    @Transactional
+    public void cancelMyOrder(Long userId, Long orderId, String reason) {
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+            SELECT o.*, c.user_id 
+            FROM orders o 
+            JOIN checkouts c ON o.checkout_id = c.id 
+            WHERE o.id = ? AND c.user_id = ? FOR UPDATE
+        """, orderId, userId);
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
+        }
+
+        Map<String, Object> order = rows.get(0);
+        String currentStatus = order.get("status") != null ? String.valueOf(order.get("status")) : "";
+        String paymentMethod = order.get("payment_method") != null ? String.valueOf(order.get("payment_method")) : "COD";
+        String paymentStatus = order.get("payment_status") != null ? String.valueOf(order.get("payment_status")) : "UNPAID";
+
+        if (!"PENDING".equals(currentStatus)) {
+            throw new IllegalStateException("Bạn chỉ có thể tự hủy đơn khi Shop chưa xác nhận.");
+        }
+
+        String cleanReason = (reason == null || reason.isBlank()) ? "Khách hàng đổi ý / Tự hủy đơn" : reason.trim();
+        LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+
+        // 1. Nhả tồn kho (Sử dụng luôn hàm có sẵn trong class)
+        releaseReservedItems(orderId, "customer-cancel");
+
+        // Paid VNPay orders are sent to Operations for manual refund processing.
+        if ("VNPAY".equalsIgnoreCase(paymentMethod) && "PAID".equalsIgnoreCase(paymentStatus)) {
+            BigDecimal refundAmount = order.get("total_amount") != null
+                    ? new BigDecimal(order.get("total_amount").toString())
+                    : BigDecimal.ZERO;
+            String refundNote = cleanReason + " [Yêu cầu hoàn tiền thủ công đang chờ Operations xử lý: "
+                    + refundAmount.toPlainString() + " VND]";
+            jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=?",
+                    now, refundNote, orderId);
+            jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=?",
+                    refundNote, orderId);
+            customerRefunds.queuePaidOrderRefund(orderId, cleanReason);
+        } else {
+            // NẾU LÀ ĐƠN COD HOẶC CHƯA THANH TOÁN
+            jdbc.update("UPDATE orders SET status='CANCELLED', cancelled_at=?, cancellation_reason=? WHERE id=?", now, cleanReason, orderId);
+            jdbc.update("UPDATE payments SET status='CANCELLED', failure_reason=? WHERE order_id=?", cleanReason, orderId);
+        }
+
+        // Cập nhật lại Checkouts (Dùng hàm có sẵn)
+        Long checkoutId = ((Number) order.get("checkout_id")).longValue();
+        updateCheckoutAfterCancel(checkoutId);
+
+        // Gửi thông báo cho Shop Owner
+        Long shopId = ((Number) order.get("shop_id")).longValue();
+        notifyShopOwner(shopId, "ORDER_CANCELLED_BY_CUST_" + orderId, "Khách hàng đã hủy đơn", "Đơn hàng " + order.get("order_code") + " đã bị khách hủy. Lý do: " + cleanReason, orderId);
+    }
+    // =========================================================================================
+
     /** Hàng chỉ được ghi nhận bán khi khách chủ động xác nhận đã nhận hàng. */
     @Transactional
     public int autoCompleteDeliveredOrders() {
@@ -587,7 +660,8 @@ public class OrderCheckoutService {
     @Transactional
     public void cancelOrderByCustomer(Long userId, Long orderId) {
         List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT o.id, o.order_code, o.status, o.payment_status, o.checkout_id
+            SELECT o.id, o.order_code, o.status, o.payment_status, o.payment_method,
+                   o.checkout_id, o.total_amount
             FROM orders o
             JOIN checkouts c ON c.id = o.checkout_id
             WHERE o.id = ? AND c.user_id = ?
@@ -598,22 +672,32 @@ public class OrderCheckoutService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền thao tác.");
         }
         Map<String, Object> order = rows.get(0);
-        if (!"PENDING".equals(order.get("status")) || "PAID".equals(order.get("payment_status"))) {
-            throw new IllegalArgumentException("Shop đã xác nhận hoặc đơn đã thanh toán, bạn không thể hủy đơn từ phía khách hàng.");
+        if (!"PENDING".equals(order.get("status"))) {
+            throw new IllegalArgumentException("Shop đã xác nhận đơn, bạn không thể hủy đơn từ phía khách hàng.");
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         String reason = "Khách hàng hủy đơn trước khi Shop xác nhận";
+        boolean paid = "PAID".equals(order.get("payment_status"));
+        String cancellationNote = paid
+                ? reason + " [Yêu cầu hoàn tiền thủ công đang chờ Operations xử lý: "
+                        + order.get("total_amount") + " VND]"
+                : reason;
         if (jdbc.update("UPDATE orders SET status='CANCELLED',cancelled_at=?,cancellation_reason=? WHERE id=? AND status='PENDING'",
-                now, reason, orderId) != 1) {
+                now, cancellationNote, orderId) != 1) {
             throw new IllegalArgumentException("Đơn hàng vừa được Shop xác nhận, vui lòng tải lại trang.");
         }
 
         releaseReservedItems(orderId, "customer-cancel");
         jdbc.update("UPDATE order_items SET allocation_status='RELEASED' WHERE order_id=? AND allocation_status='UNRESERVED'", orderId);
-        jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status='PENDING'", reason, orderId);
+        jdbc.update("UPDATE payments SET status='CANCELLED',failure_reason=? WHERE order_id=? AND status IN ('PENDING','SUCCEEDED')",
+                cancellationNote, orderId);
+        if (paid) customerRefunds.queuePaidOrderRefund(orderId, reason);
+        returnDiscountVoucherUse(orderId);
         updateCheckoutAfterCancel(((Number) order.get("checkout_id")).longValue());
-        notifyOrderCustomer(orderId, "ORDER_CANCELLED_BY_CUSTOMER", "Đã hủy đơn hàng", "Bạn đã hủy đơn " + order.get("order_code") + " trước khi Shop xác nhận.");
+        String notification = "Bạn đã hủy đơn " + order.get("order_code") + " trước khi Shop xác nhận."
+                + (paid ? " Yêu cầu hoàn tiền đã được chuyển cho Operations xử lý thủ công." : "");
+        notifyOrderCustomer(orderId, "ORDER_CANCELLED_BY_CUSTOMER", "Đã hủy đơn hàng", notification);
     }
 
     /**
@@ -641,7 +725,9 @@ public class OrderCheckoutService {
 
         Integer activeComplaints = jdbc.queryForObject("""
             SELECT COUNT(*) FROM complaints
-            WHERE order_id = ? AND status IN ('PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
+            WHERE order_id = ? AND status IN (
+                'PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS'
+            )
         """, Integer.class, orderId);
         if (activeComplaints != null && activeComplaints > 0) {
             throw new IllegalArgumentException("Đơn hàng đang có khiếu nại chờ xử lý (PENDING_SHOP / ESCALATED). Vui lòng chờ giải quyết xong hoặc hủy khiếu nại trước khi hoàn tất đơn hàng.");

@@ -213,7 +213,7 @@ class CartCheckoutIntegrationTests {
     }
 
     @Test
-    void successfulVnPayOrderIsRecordedAsSaleAtPaymentConfirmation() {
+    void successfulVnPayOrderWaitsForShopConfirmation() {
         long customer = seed();
         long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
         long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
@@ -226,13 +226,15 @@ class CartCheckoutIntegrationTests {
         assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
         checkout.handleVnPayCallback(checkoutCode, true);
         checkout.handleVnPayCallback(checkoutCode, true);
-        assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("PENDING", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
         assertEquals("PAID", jdbc.queryForObject("SELECT payment_status FROM orders WHERE id=?", String.class, orderId));
         assertThrows(IllegalArgumentException.class, () -> shopOrders.rejectCod(customer, orderId, "Không thể từ chối đơn online đã trả tiền"));
         assertEquals(20, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals(2, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals("RESERVED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
 
+        shopOrders.confirmCod(customer, orderId);
+        assertEquals("CONFIRMED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
         deliveryOrders.updateDeliveryStatus(orderId, "SHIPPING", null);
         deliveryOrders.updateDeliveryStatus(orderId, "COMPLETED", null);
         assertEquals("COMPLETED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
@@ -240,6 +242,24 @@ class CartCheckoutIntegrationTests {
         assertEquals(18, jdbc.queryForObject("SELECT quantity_on_hand FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals(0, jdbc.queryForObject("SELECT reserved_quantity FROM variant_inventory WHERE variant_id=?", Integer.class, variant));
         assertEquals("SALE", jdbc.queryForObject("SELECT type FROM inventory_transactions WHERE order_item_id=(SELECT id FROM order_items WHERE order_id=?) ORDER BY id DESC FETCH FIRST 1 ROW ONLY", String.class, orderId));
+    }
+
+    @Test
+    void cancellingPaidVnPayOrderQueuesManualRefund() {
+        long customer = seed();
+        long variant = jdbc.queryForObject("SELECT id FROM product_variants WHERE sku='SKU-CHECKOUT'", Long.class);
+        long address = jdbc.queryForObject("SELECT id FROM user_addresses WHERE user_id=?", Long.class, customer);
+        cart.add(customer, variant, 1);
+        var result = checkout.placeOrder(customer, List.of(variant), address, null, null, null, null, null, null, "VNPAY");
+        long orderId = jdbc.queryForObject("SELECT id FROM orders WHERE order_code=?", Long.class, result.orderCodes().get(0));
+
+        checkout.handleVnPayCallback(result.checkoutCode(), true);
+        checkout.cancelOrderByCustomer(customer, orderId);
+
+        assertEquals("CANCELLED", jdbc.queryForObject("SELECT status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("PAID", jdbc.queryForObject("SELECT payment_status FROM orders WHERE id=?", String.class, orderId));
+        assertEquals("PENDING", jdbc.queryForObject("SELECT status FROM customer_refunds WHERE order_id=? AND refund_type='CANCEL_ORDER'", String.class, orderId));
+        assertEquals("RELEASED", jdbc.queryForObject("SELECT allocation_status FROM order_items WHERE order_id=?", String.class, orderId));
     }
 
     @Test
