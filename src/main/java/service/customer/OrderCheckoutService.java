@@ -488,21 +488,44 @@ public class OrderCheckoutService {
 
     @Transactional
     public void creditCashbackPoints(Long orderId) {
-        List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT cashback_points FROM orders WHERE id=? AND status='COMPLETED' AND cashback_points>0 AND cashback_credited_at IS NULL FOR UPDATE",
-                orderId);
-        if (rows.isEmpty()) return;
+        List<Map<String, Object>> orders = jdbc.queryForList("""
+                SELECT o.qualifying_amount, c.user_id
+                FROM orders o JOIN checkouts c ON c.id = o.checkout_id
+                WHERE o.id = ? AND o.status = 'COMPLETED' AND o.cashback_credited_at IS NULL
+                FOR UPDATE
+                """, orderId);
+        if (orders.isEmpty() || orders.get(0).get("user_id") == null) return;
 
-        long points = ((Number) rows.get(0).get("cashback_points")).longValue();
-        Long userId = jdbc.queryForObject(
-                "SELECT c.user_id FROM orders o JOIN checkouts c ON c.id=o.checkout_id WHERE o.id=? AND c.user_id IS NOT NULL",
-                Long.class, orderId);
-        if (userId != null) {
-            jdbc.update("UPDATE users SET points_balance=COALESCE(points_balance,0)+? WHERE id=?", points, userId);
+        Long userId = ((Number) orders.get(0).get("user_id")).longValue();
+        BigDecimal sixMonthSpend = jdbc.queryForObject("""
+                SELECT COALESCE(SUM(qualifying_amount), 0)
+                FROM orders o JOIN checkouts c ON c.id = o.checkout_id
+                WHERE c.user_id = ? AND o.status = 'COMPLETED'
+                  AND o.completed_at >= DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL 6 MONTH)
+                """, BigDecimal.class, userId);
+        if (sixMonthSpend == null) sixMonthSpend = BigDecimal.ZERO;
+
+        Long tierId = jdbc.queryForObject("""
+                SELECT id FROM membership_tiers
+                WHERE min_spending <= ? ORDER BY min_spending DESC LIMIT 1
+                """, Long.class, sixMonthSpend);
+        if (tierId == null) return;
+        BigDecimal cashbackPercent = jdbc.queryForObject(
+                "SELECT cashback_percent FROM membership_tiers WHERE id = ?", BigDecimal.class, tierId);
+        BigDecimal eligibleAmount = orders.get(0).get("qualifying_amount") == null
+                ? BigDecimal.ZERO : new BigDecimal(orders.get(0).get("qualifying_amount").toString());
+        long points = eligibleAmount.multiply(cashbackPercent)
+                .divide(new BigDecimal("100"), 0, java.math.RoundingMode.DOWN).longValue();
+
+        jdbc.update("UPDATE users SET membership_tier_id = ? WHERE id = ?", tierId, userId);
+        if (points > 0) {
+            jdbc.update("UPDATE users SET points_balance = COALESCE(points_balance, 0) + ? WHERE id = ?", points, userId);
             jdbc.update("INSERT INTO customer_coin_transactions(user_id,amount,type,status,source_type,source_id,event_key,description,expires_at) VALUES(?,?,'RECEIVED','ACTIVE','CASHBACK_VOUCHER',?,?,?,DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 1 MONTH))",
-                    userId, points, orderId, "cashback-order-" + orderId, "Hoàn xu từ đơn hàng " + orderId);
-            jdbc.update("UPDATE orders SET cashback_credited_at=CURRENT_TIMESTAMP(3) WHERE id=? AND cashback_credited_at IS NULL", orderId);
+                    userId, points, orderId, "membership-cashback-order-" + orderId,
+                    "Hoàn " + cashbackPercent.stripTrailingZeros().toPlainString() + "% xu theo hạng thành viên từ đơn hàng " + orderId);
         }
+        jdbc.update("UPDATE orders SET cashback_points = ?, cashback_credited_at = CURRENT_TIMESTAMP(3) WHERE id = ? AND cashback_credited_at IS NULL",
+                points, orderId);
     }
 
     /**
