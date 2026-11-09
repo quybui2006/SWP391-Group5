@@ -21,6 +21,7 @@ import service.customer.CurrentUserProvider;
 import service.shop.ProductValidationException;
 import service.shop.ShopOrderService;
 import service.shop.ShopProductService;
+import java.util.Locale;
 
 @Controller
 public class ShopOwnerController {
@@ -70,6 +71,7 @@ public class ShopOwnerController {
     @GetMapping("/shopowner/product-variants")
     public String productVariants(
             @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "all") String status,
             HttpServletRequest request,
             Model model) {
 
@@ -79,15 +81,18 @@ public class ShopOwnerController {
             return "redirect:/login";
         }
 
-        model.addAttribute(
-                "variants",
-                products.searchShopVariants(ownerId, keyword)
-        );
+        String selectedStatus = switch (status == null ? "all" : status.trim().toLowerCase(Locale.ROOT)) {
+            case "hidden", "stopped", "selling" -> status.trim().toLowerCase(Locale.ROOT);
+            default -> "all";
+        };
+
+        model.addAttribute("variants", products.searchShopVariants(ownerId, keyword, selectedStatus));
         model.addAttribute(
                 "variantSummary",
                 products.shopVariantSummary(ownerId)
         );
         model.addAttribute("keyword", keyword.trim());
+        model.addAttribute("selectedStatus", selectedStatus);
 
         return "shopowner/product-variants";
     }
@@ -138,8 +143,10 @@ public class ShopOwnerController {
         try {
             String sku = products.createVariantInventory(ownerId, form);
 
-            redirect.addFlashAttribute("success", "Đã lưu biến thể và thông tin tồn kho.");
-            redirect.addFlashAttribute("createdSku", sku);
+            redirect.addFlashAttribute(
+                    "success",
+                    "Đã tạo loại hàng. Mã SKU: " + sku
+            );
 
             return "redirect:/shopowner/product-variants";
 
@@ -166,6 +173,7 @@ public class ShopOwnerController {
     }
 
     private void addVariantOptions(Long ownerId, Model model) {
+        model.addAttribute("skuPreview", products.previewNextVariantSku(ownerId));
         model.addAttribute(
                 "products",
                 products.getListByShop(ownerId)

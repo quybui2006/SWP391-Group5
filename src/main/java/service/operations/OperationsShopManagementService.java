@@ -64,7 +64,9 @@ public class OperationsShopManagementService {
                 SELECT pv.id AS variant_id, p.name AS product_name, pv.name AS variant_name, pv.sku,
                        COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi
                            WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
-                       pv.price, u.name AS unit_name, pv.status AS variant_status, pv.approval_status,
+                       pv.price, u.name AS unit_name,
+                       CASE WHEN pv.operations_blocked=1 THEN 'BLOCKED' ELSE pv.status END AS variant_status,
+                       pv.approval_status,
                        COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
                        COALESCE(vi.available_quantity, 0) AS available_quantity,
                        COALESCE(sold.quantity, 0) AS sold_quantity,
@@ -115,7 +117,9 @@ public class OperationsShopManagementService {
                        COALESCE(NULLIF(pv.image_url, ''),
                            (SELECT pi.image_url FROM product_images pi
                             WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
-                       pv.price, u.name AS unit_name, pv.status AS variant_status, pv.approval_status,
+                       pv.price, u.name AS unit_name,
+                       CASE WHEN pv.operations_blocked=1 THEN 'BLOCKED' ELSE pv.status END AS variant_status,
+                       pv.approval_status,
                        COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
                        COALESCE(vi.available_quantity, 0) AS available_quantity,
                        COALESCE(sold.quantity, 0) AS sold_quantity
@@ -169,7 +173,9 @@ public class OperationsShopManagementService {
                        (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS product_image_url,
                        pv.id AS variant_id, pv.name AS variant_name, pv.sku,
                        COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
-                       pv.price, u.name AS unit_name, pv.status AS variant_status, pv.approval_status,
+                       pv.price, u.name AS unit_name,
+                       CASE WHEN pv.operations_blocked=1 THEN 'BLOCKED' ELSE pv.status END AS variant_status,
+                       pv.approval_status,
                        COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
                        COALESCE(vi.available_quantity, 0) AS available_quantity,
                        COALESCE(sold.quantity, 0) AS sold_quantity

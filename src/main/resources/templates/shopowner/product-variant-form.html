@@ -71,6 +71,11 @@
                         <em th:errors="*{stockQuantity}"></em>
                     </label>
                     <label class="field">
+                        <span>Ngày hết hạn batch đầu tiên <b>*</b></span>
+                        <input type="date" th:field="*{expiresAt}" required>
+                        <em th:errors="*{expiresAt}"></em>
+                    </label>
+                    <label class="field">
                         <span>Ngưỡng cảnh báo tồn thấp</span>
                         <input type="number" th:field="*{lowStockThresholdQuantity}" min="0" step="1" required>
                         <small>Tính theo đơn vị của biến thể.</small>

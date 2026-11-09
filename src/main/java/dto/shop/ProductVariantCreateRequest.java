@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /** Dữ liệu cho màn hình riêng Biến thể và tồn kho. */
 public class ProductVariantCreateRequest {
@@ -16,6 +17,7 @@ public class ProductVariantCreateRequest {
     @NotNull private Long unitId;
     @NotNull @jakarta.validation.constraints.DecimalMin("1") private BigDecimal price;
     @NotNull @Positive private Integer stockQuantity;
+    @NotNull private LocalDate expiresAt;
     @NotNull @Min(0) private Integer lowStockThresholdQuantity = 0;
     @NotNull private MultipartFile imageFile;
 
@@ -29,6 +31,8 @@ public class ProductVariantCreateRequest {
     public void setPrice(BigDecimal price) { this.price = price; }
     public Integer getStockQuantity() { return stockQuantity; }
     public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
+    public LocalDate getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(LocalDate expiresAt) { this.expiresAt = expiresAt; }
     public Integer getLowStockThresholdQuantity() { return lowStockThresholdQuantity; }
     public void setLowStockThresholdQuantity(Integer lowStockThresholdQuantity) { this.lowStockThresholdQuantity = lowStockThresholdQuantity; }
     public MultipartFile getImageFile() { return imageFile; }

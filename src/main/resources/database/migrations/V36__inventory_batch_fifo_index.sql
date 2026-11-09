@@ -1,2 +1,2 @@
-CREATE INDEX IX_inventory_batches_fifo_received
-    ON inventory_batches (inventory_id, received_at, id);
+CREATE INDEX IX_inventory_batches_fifo
+    ON inventory_batches (inventory_id, status, expires_at, received_at, id);

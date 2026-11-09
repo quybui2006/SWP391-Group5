@@ -1,7 +1,6 @@
 package service.operations;
 
 import dto.operations.OperationsVariantDetailDto;
-import dto.operations.PendingVariantApprovalDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -11,44 +10,15 @@ import org.springframework.web.server.ResponseStatusException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
-/** Nghiệp vụ duyệt từng biến thể; hồ sơ Product cha không còn nằm trong hàng đợi duyệt. */
+/** Đọc catalog biến thể và xử lý thao tác chặn bán của Operations. */
 @Service
 public class OperationsVariantApprovalService {
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
 
     public OperationsVariantApprovalService(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
-    }
-
-    @Transactional(readOnly = true)
-    public List<PendingVariantApprovalDto> findPendingVariants() {
-        return jdbc.query("""
-                SELECT pv.id AS variant_id, pv.name AS variant_name, pv.sku,
-                       pv.image_url AS image_url,
-                       p.name AS product_name, s.name AS shop_name,
-                       COALESCE((SELECT c.name FROM product_categories pc JOIN categories c ON c.id = pc.category_id
-                                 WHERE pc.product_id = p.id ORDER BY c.name LIMIT 1), 'Chưa phân loại') AS category_name,
-                       pv.price, u.name AS unit_name,
-                       COALESCE(vi.quantity_on_hand, 0) AS quantity_on_hand,
-                       COALESCE(vi.available_quantity, 0) AS available_quantity,
-                       p.batch_code, pv.submitted_at
-                FROM product_variants pv
-                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
-                JOIN shops s ON s.id = pv.shop_id
-                JOIN units u ON u.id = pv.base_unit_id
-                LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
-                WHERE pv.approval_status = 'PENDING'
-                ORDER BY pv.submitted_at ASC, pv.id ASC
-                """, (rs, rowNum) -> new PendingVariantApprovalDto(
-                rs.getLong("variant_id"), rs.getString("variant_name"), rs.getString("sku"),
-                rs.getString("image_url"), rs.getString("product_name"), rs.getString("shop_name"),
-                rs.getString("category_name"), rs.getBigDecimal("price"), rs.getString("unit_name"),
-                nullableInt(rs, "quantity_on_hand"), nullableInt(rs, "available_quantity"),
-                rs.getString("batch_code"), localDateTime(rs, "submitted_at")));
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +28,9 @@ public class OperationsVariantApprovalService {
                        pv.specification,
                        pv.image_url AS image_url,
                        pv.price, pv.min_order_quantity,
-                       pv.status AS variant_status, pv.approval_status, pv.rejection_reason,
+                       CASE WHEN pv.operations_blocked=1 THEN 'BLOCKED' ELSE pv.status END AS variant_status,
+                       pv.operations_blocked,pv.operations_block_reason,
+                       pv.approval_status, pv.rejection_reason,
                        pv.submitted_at, pv.reviewed_at, pv.created_at AS variant_created_at, pv.updated_at AS variant_updated_at,
                        p.name AS product_name, p.description AS product_description, p.origin, p.batch_code,
                        COALESCE((SELECT c.name FROM product_categories pc JOIN categories c ON c.id = pc.category_id
@@ -78,7 +50,9 @@ public class OperationsVariantApprovalService {
                 rs.getLong("variant_id"), rs.getLong("product_id"), rs.getLong("shop_id"), rs.getString("variant_name"),
                 rs.getString("sku"), rs.getString("specification"), rs.getString("image_url"),
                 rs.getBigDecimal("price"), nullableInt(rs, "min_order_quantity"), rs.getString("unit_name"),
-                rs.getString("variant_status"), rs.getString("approval_status"), rs.getString("rejection_reason"),
+                rs.getString("variant_status"), rs.getBoolean("operations_blocked"),
+                rs.getString("operations_block_reason"),
+                rs.getString("approval_status"), rs.getString("rejection_reason"),
                 localDateTime(rs, "submitted_at"), localDateTime(rs, "reviewed_at"),
                 localDateTime(rs, "variant_created_at"), localDateTime(rs, "variant_updated_at"),
                 rs.getString("product_name"), rs.getString("product_description"), rs.getString("category_name"),
@@ -92,32 +66,32 @@ public class OperationsVariantApprovalService {
     }
 
     @Transactional
-    public void approveVariant(Long variantId) {
+    public void blockVariant(Long variantId, String reason) {
+        String cleanReason = normalizeReason(reason);
         requireVariant(variantId);
+        Boolean alreadyBlocked = jdbc.queryForObject(
+                "SELECT operations_blocked FROM product_variants WHERE id=? FOR UPDATE",
+                Boolean.class, variantId);
+        if (Boolean.TRUE.equals(alreadyBlocked)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Biến thể đã bị chặn bán.");
+        }
         int updated = jdbc.update("""
-                UPDATE product_variants pv
-                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
-                   SET pv.approval_status = 'APPROVED', pv.status = 'ACTIVE',
-                       pv.reviewed_at = ?, pv.rejection_reason = NULL
-                 WHERE pv.id = ? AND pv.approval_status = 'PENDING'
-                """, LocalDateTime.now(BUSINESS_ZONE), variantId);
-        if (updated != 1) throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Biến thể không còn ở trạng thái chờ duyệt. Hãy tải lại danh sách.");
+                UPDATE product_variants
+                   SET operations_blocked=1,operations_block_reason=?,status='INACTIVE'
+                 WHERE id=? AND operations_blocked=0
+                """, cleanReason, variantId);
+        if (updated != 1) throw new ResponseStatusException(HttpStatus.CONFLICT, "Trạng thái biến thể vừa thay đổi. Tải lại trang.");
     }
 
     @Transactional
-    public void rejectVariant(Long variantId, String rejectionReason) {
-        String reason = normalizeReason(rejectionReason);
+    public void unblockVariant(Long variantId) {
         requireVariant(variantId);
         int updated = jdbc.update("""
-                UPDATE product_variants pv
-                JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
-                   SET pv.approval_status = 'REJECTED', pv.status = 'INACTIVE',
-                       pv.reviewed_at = ?, pv.rejection_reason = ?
-                 WHERE pv.id = ? AND pv.approval_status = 'PENDING'
-                """, LocalDateTime.now(BUSINESS_ZONE), reason, variantId);
-        if (updated != 1) throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Biến thể không còn ở trạng thái chờ duyệt. Hãy tải lại danh sách.");
+                UPDATE product_variants
+                   SET operations_blocked=0,operations_block_reason=NULL
+                 WHERE id=? AND operations_blocked=1
+                """, variantId);
+        if (updated != 1) throw new ResponseStatusException(HttpStatus.CONFLICT, "Biến thể chưa bị chặn bán.");
     }
 
     private void requireVariant(Long id) {
@@ -129,9 +103,9 @@ public class OperationsVariantApprovalService {
     }
 
     private String normalizeReason(String reason) {
-        if (reason == null || reason.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng nhập lý do từ chối.");
+        if (reason == null || reason.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng nhập lý do chặn bán.");
         String result = reason.trim();
-        if (result.length() > 1000) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Lý do từ chối không được vượt quá 1000 ký tự.");
+        if (result.length() < 5 || result.length() > 1000) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Lý do chặn bán phải từ 5 đến 1000 ký tự.");
         return result;
     }
 

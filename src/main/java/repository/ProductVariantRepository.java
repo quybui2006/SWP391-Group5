@@ -14,6 +14,7 @@ import java.util.List;
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
     boolean existsByShopIdAndSku(Long shopId, String sku);
+    boolean existsByProduct_IdAndNameIgnoreCase(Long productId, String name);
 
     /**
      * Một sản phẩm không nên có hai biến thể cùng tên, ví dụ hai biến thể "Túi 1kg".

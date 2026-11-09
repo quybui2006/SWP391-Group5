@@ -9,6 +9,8 @@ public class ProductVariantEditForm {
     private String productName;
     private boolean productCanSell;
     private String approvalStatus;
+    private boolean operationsBlocked;
+    private String operationsBlockReason;
     private String variantName;
     private String sku;
     private String specification;
@@ -23,6 +25,8 @@ public class ProductVariantEditForm {
     public String getProductName() { return productName; } public void setProductName(String productName) { this.productName = productName; }
     public boolean isProductCanSell() { return productCanSell; } public void setProductCanSell(boolean productCanSell) { this.productCanSell = productCanSell; }
     public String getApprovalStatus() { return approvalStatus; } public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
+    public boolean isOperationsBlocked() { return operationsBlocked; } public void setOperationsBlocked(boolean operationsBlocked) { this.operationsBlocked = operationsBlocked; }
+    public String getOperationsBlockReason() { return operationsBlockReason; } public void setOperationsBlockReason(String operationsBlockReason) { this.operationsBlockReason = operationsBlockReason; }
     public String getVariantName() { return variantName; } public void setVariantName(String variantName) { this.variantName = variantName; }
     public String getSku() { return sku; } public void setSku(String sku) { this.sku = sku; }
     public String getSpecification() { return specification; } public void setSpecification(String specification) { this.specification = specification; }

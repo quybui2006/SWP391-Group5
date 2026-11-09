@@ -12,7 +12,7 @@
     <aside th:replace="~{shopowner/fragments :: sidebar('inventory')}"></aside>
     <main class="main-content inventory-page">
         <header class="topbar inventory-topbar">
-            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Điều chỉnh</span></p><h1>Điều chỉnh lô hàng</h1><p class="muted">Chỉ giảm số lượng của lô hiện có. Muốn tăng tồn, hãy tạo lô hàng mới.</p></div>
+            <div><p class="breadcrumb">Quản lý cửa hàng <span>/ Tồn kho / Điều chỉnh</span></p><h1>Điều chỉnh lô hàng</h1><p class="muted">Tăng hoặc giảm tồn trên đúng batch đã chọn.</p></div>
         </header>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
         <form class="inventory-form" method="post" th:action="@{/shopowner/inventory/adjust}" th:object="${form}">
@@ -22,15 +22,22 @@
                 <label class="inventory-field inventory-field-wide"><span>Batch cần điều chỉnh</span>
                     <select th:field="*{batchId}" required>
                         <option value="">Chọn batch</option>
-                        <option th:each="batch : ${batches}" th:value="${batch.id}" th:text="${batch.code + ' · ' + batch.productName + ' / ' + batch.variantName + ' · SKU ' + batch.sku + ' · còn ' + batch.available + ' ' + batch.unitName}"></option>
+                        <option th:each="batch : ${batches}" th:value="${batch.id}" th:text="${batch.code + ' · hết hạn ' + #temporals.format(batch.expiresAt, 'dd/MM/yyyy') + ' · ' + batch.productName + ' / ' + batch.variantName + ' · SKU ' + batch.sku + ' · khả dụng ' + batch.available + ' ' + batch.unitName}"></option>
                     </select>
                     <small th:if="${#fields.hasErrors('batchId')}" th:errors="*{batchId}"></small>
                 </label>
-                <input type="hidden" th:field="*{direction}" value="DECREASE">
+                <label class="inventory-field"><span>Hướng điều chỉnh</span>
+                    <select th:field="*{direction}" required>
+                        <option value="">Chọn hướng điều chỉnh</option>
+                        <option value="INCREASE">Tăng tồn</option>
+                        <option value="DECREASE">Giảm tồn</option>
+                    </select>
+                    <small th:if="${#fields.hasErrors('direction')}" th:errors="*{direction}"></small>
+                </label>
                 <label class="inventory-field"><span>Số lượng</span><input type="number" min="1" step="1" th:field="*{quantity}" required><small th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></small></label>
                 <label class="inventory-field inventory-field-wide"><span>Lý do</span><textarea rows="3" maxlength="1000" th:field="*{reason}" required></textarea><small th:if="${#fields.hasErrors('reason')}" th:errors="*{reason}"></small></label>
             </div>
-            <p class="inventory-form-note">Không thể giảm phần hàng đang được giữ cho đơn. Muốn tăng tồn, hãy tạo lô hàng mới.</p>
+            <p class="inventory-form-note">Không thể giảm phần hàng đang giữ hoặc tăng vào batch đã hết hạn. Batch giữ nguyên ngày hết hạn.</p>
             <div class="inventory-form-actions"><a class="btn btn-outline-secondary" th:href="@{/shopowner/inventory}">Hủy</a><button class="btn btn-success" type="submit">Lưu điều chỉnh</button></div>
         </form>
     </main>

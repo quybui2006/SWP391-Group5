@@ -4,17 +4,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class InventoryBatchService {
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private final JdbcTemplate jdbc;
 
     public InventoryBatchService(JdbcTemplate jdbc) {
@@ -22,10 +26,16 @@ public class InventoryBatchService {
     }
 
     @Transactional
-    public Long receive(Long inventoryId, int quantity, LocalDateTime receivedAt, String note, Long ownerId) {
+    public Long receive(Long inventoryId, int quantity, LocalDateTime receivedAt,
+                        LocalDate expiresAt, String note, Long ownerId) {
         if (quantity <= 0) throw new InventoryActionException("Số lượng nhập phải lớn hơn 0.");
-        if (receivedAt == null || receivedAt.isAfter(LocalDateTime.now()))
+        if (receivedAt == null || receivedAt.isAfter(LocalDateTime.now(BUSINESS_ZONE)))
             throw new InventoryActionException("Thời điểm nhập không được để trống hoặc ở tương lai.");
+        if (expiresAt == null) throw new InventoryActionException("Vui lòng nhập ngày hết hạn của batch.");
+        if (expiresAt.isBefore(receivedAt.toLocalDate()))
+            throw new InventoryActionException("Ngày hết hạn không được trước ngày nhập batch.");
+        if (expiresAt.isBefore(LocalDate.now(BUSINESS_ZONE)))
+            throw new InventoryActionException("Không thể nhập batch đã hết hạn.");
         if (note != null && note.length() > 1000) throw new InventoryActionException("Ghi chú không được vượt quá 1000 ký tự.");
 
         lockInventory(inventoryId);
@@ -37,14 +47,15 @@ public class InventoryBatchService {
         KeyHolder key = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,note,created_by) VALUES(?,NULL,?,?,0,?,'ACTIVE',?,?)",
+                    "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,expires_at,status,note,created_by) VALUES(?,NULL,?,?,0,?,?,'ACTIVE',?,?)",
                     Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, inventoryId);
             statement.setInt(2, quantity);
             statement.setInt(3, quantity);
             statement.setTimestamp(4, java.sql.Timestamp.valueOf(receivedAt));
-            statement.setString(5, clean(note));
-            statement.setLong(6, ownerId);
+            statement.setDate(5, java.sql.Date.valueOf(expiresAt));
+            statement.setString(6, clean(note));
+            statement.setLong(7, ownerId);
             return statement;
         }, key);
         if (key.getKey() == null) throw new InventoryActionException("Không tạo được mã batch.");
@@ -69,8 +80,9 @@ public class InventoryBatchService {
         String cleanReason = clean(reason);
         if (cleanReason == null) throw new InventoryActionException("Vui lòng nhập lý do điều chỉnh.");
         if (cleanReason.length() > 1000) throw new InventoryActionException("Lý do không được vượt quá 1000 ký tự.");
-        if (!"DECREASE".equals(direction))
-            throw new InventoryActionException("Điều chỉnh chỉ được giảm tồn; muốn tăng số lượng, hãy tạo lô hàng mới.");
+        String normalizedDirection = direction == null ? "" : direction.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!"INCREASE".equals(normalizedDirection) && !"DECREASE".equals(normalizedDirection))
+            throw new InventoryActionException("Hướng điều chỉnh không hợp lệ.");
 
         List<Map<String, Object>> rows = jdbc.queryForList("""
                 SELECT b.*,vi.quantity_on_hand AS aggregate_on_hand,vi.reserved_quantity AS aggregate_reserved,
@@ -90,14 +102,21 @@ public class InventoryBatchService {
         int reserved = ((Number) batch.get("reserved_quantity")).intValue();
         int aggregateOnHand = ((Number) batch.get("aggregate_on_hand")).intValue();
         int aggregateReserved = ((Number) batch.get("aggregate_reserved")).intValue();
-        int delta = -quantity;
-        if (quantity > stock - reserved)
+        LocalDate expiresAt = ((java.sql.Date) batch.get("expires_at")).toLocalDate();
+        if ("INCREASE".equals(normalizedDirection) && expiresAt.isBefore(LocalDate.now(BUSINESS_ZONE)))
+            throw new InventoryActionException("Không thể tăng tồn cho batch đã hết hạn.");
+        int delta = "INCREASE".equals(normalizedDirection) ? quantity : -quantity;
+        if (delta < 0 && quantity > stock - reserved)
             throw new InventoryActionException("Không thể giảm quá số lượng chưa giữ của batch này (" + (stock - reserved) + ").");
         int after = checkedAdd(stock, delta, "Số lượng batch vượt giới hạn cho phép.");
         if (after < reserved) throw new InventoryActionException("Tồn sau điều chỉnh không thể thấp hơn số lượng đang giữ.");
 
-        jdbc.update("UPDATE inventory_batches SET quantity_on_hand=?,status=? WHERE id=?",
-                after, after == 0 ? "CLOSED" : "ACTIVE", batchId);
+        int receivedAfter = delta > 0
+                ? checkedAdd(((Number) batch.get("received_quantity")).intValue(), delta,
+                "Tổng số lượng nhập của batch vượt giới hạn cho phép.")
+                : ((Number) batch.get("received_quantity")).intValue();
+        jdbc.update("UPDATE inventory_batches SET received_quantity=?,quantity_on_hand=?,status=? WHERE id=?",
+                receivedAfter, after, after == 0 ? "CLOSED" : "ACTIVE", batchId);
         jdbc.update("UPDATE variant_inventory SET quantity_on_hand=quantity_on_hand+? WHERE id=?", delta, inventoryId);
         int aggregateAfter = checkedAdd(aggregateOnHand, delta, "Tổng tồn kho vượt giới hạn cho phép.");
         String event = UUID.randomUUID().toString();
@@ -108,8 +127,14 @@ public class InventoryBatchService {
 
     @Transactional
     public void reserveOrderItem(Long orderItemId, Long inventoryId, int quantity, Long createdBy) {
-        if (quantity <= 0) throw new IllegalArgumentException("Số lượng cần giữ phải lớn hơn 0.");
+        if (orderItemId == null || inventoryId == null || quantity <= 0)
+            throw new IllegalArgumentException("Thông tin đơn hàng hoặc số lượng cần giữ không hợp lệ.");
         lockInventory(inventoryId);
+        Integer matchingItem = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM order_items WHERE id=? AND inventory_id=? FOR UPDATE",
+                Integer.class, orderItemId, inventoryId);
+        if (matchingItem == null || matchingItem != 1)
+            throw new IllegalArgumentException("Chi tiết đơn hàng không khớp với biến thể tồn kho.");
         List<Map<String, Object>> existing = jdbc.queryForList(
                 "SELECT status,quantity FROM order_item_batch_allocations WHERE order_item_id=? FOR UPDATE", orderItemId);
         int reservedForItem = 0;
@@ -122,15 +147,16 @@ public class InventoryBatchService {
             if (reservedForItem == quantity) return;
             throw new IllegalStateException("Số lượng đang giữ không khớp với dòng hàng của đơn.");
         }
-        // Reserve the oldest received stock first so all order holds follow FIFO.
+        // Đơn mới chỉ giữ batch chưa hết hạn và ưu tiên batch hết hạn sớm nhất (FEFO).
         List<Map<String, Object>> batches = jdbc.queryForList("""
                 SELECT id,quantity_on_hand,reserved_quantity
                 FROM inventory_batches
                 WHERE inventory_id=? AND status='ACTIVE'
+                  AND expires_at>=?
                   AND quantity_on_hand>reserved_quantity
-                ORDER BY received_at, id
+                ORDER BY expires_at,received_at,id
                 FOR UPDATE
-                """, inventoryId);
+                """, inventoryId, LocalDate.now(BUSINESS_ZONE));
         int remaining = quantity;
         for (Map<String, Object> batch : batches) {
             if (remaining == 0) break;
@@ -154,7 +180,7 @@ public class InventoryBatchService {
 
     @Transactional
     public void releaseOrderItem(Long orderItemId, String eventPrefix) {
-        // Release only live reservations; a retry sees no RESERVED rows and cannot release twice.
+        // Chỉ giải phóng phần đang giữ; gọi lại sẽ không trừ tồn giữ lần thứ hai.
         List<Map<String, Object>> allocations = jdbc.queryForList("SELECT a.batch_id,a.quantity,b.quantity_on_hand,b.reserved_quantity FROM order_item_batch_allocations a JOIN inventory_batches b ON b.id=a.batch_id WHERE a.order_item_id=? AND a.status='RESERVED' ORDER BY a.batch_id FOR UPDATE", orderItemId);
         for (Map<String, Object> allocation : allocations) {
             long batchId = ((Number) allocation.get("batch_id")).longValue();
@@ -178,7 +204,7 @@ public class InventoryBatchService {
 
     @Transactional
     public void consumeOrderItem(Long orderItemId, String orderCode) {
-        // Consume only after explicit customer receipt confirmation; CONSUMED allocations make retries idempotent.
+        // Chỉ ghi nhận bán khi xác nhận nhận hàng; trạng thái CONSUMED ngăn xử lý trùng lần nữa.
         List<Map<String, Object>> allocations = jdbc.queryForList("SELECT a.batch_id,a.quantity,b.quantity_on_hand,b.reserved_quantity FROM order_item_batch_allocations a JOIN inventory_batches b ON b.id=a.batch_id WHERE a.order_item_id=? AND a.status='RESERVED' ORDER BY a.batch_id FOR UPDATE", orderItemId);
         if (allocations.isEmpty()) {
             Integer consumed = jdbc.queryForObject("SELECT COUNT(*) FROM order_item_batch_allocations WHERE order_item_id=? AND status='CONSUMED'", Integer.class, orderItemId);
@@ -215,6 +241,35 @@ public class InventoryBatchService {
         jdbc.update("INSERT INTO inventory_batch_transactions(batch_id,order_item_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,?,?,?,?,?,?,?,?,?)",
                 batchId, orderItemId, type, onHandDelta, reservedDelta, onHandAfter, reservedAfter,
                 eventKey, clean(reason), userId);
+    }
+
+    /** Tạo một thông báo có thể thao tác cho mỗi batch còn hàng đã qua hạn. */
+    @Scheduled(fixedDelayString = "${inventory.expiry-notification-scan-ms:60000}")
+    @Transactional
+    public void notifyExpiredBatches() {
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
+        jdbc.update("""
+                INSERT IGNORE INTO notifications(user_id,event_key,type,title,content,target_type,target_id)
+                SELECT s.owner_id,CONCAT('BATCH-EXPIRED-',b.id),'INVENTORY',
+                       'Batch hàng đã hết hạn',
+                       CONCAT('Batch ',COALESCE(b.batch_code,CONCAT('#',b.id)),
+                              ' của ',p.name,' - ',pv.name,' đã hết hạn ngày ',
+                              DATE_FORMAT(b.expires_at,'%d/%m/%Y'),'. Tồn còn ',
+                              b.quantity_on_hand,' ',u.name,'.'),
+                       'INVENTORY_BATCH',b.id
+                FROM inventory_batches b
+                JOIN variant_inventory vi ON vi.id=b.inventory_id
+                JOIN product_variants pv ON pv.id=vi.variant_id
+                JOIN products p ON p.id=pv.product_id
+                JOIN units u ON u.id=pv.base_unit_id
+                JOIN shops s ON s.id=pv.shop_id
+                WHERE b.expires_at<? AND b.quantity_on_hand>0
+                  AND b.expiry_notified_at IS NULL
+                """, java.sql.Date.valueOf(today));
+
+        // Ghi dấu đã báo để việc xóa thông báo không làm thông báo tự xuất hiện lại.
+        jdbc.update("UPDATE inventory_batches SET expiry_notified_at=CURRENT_TIMESTAMP(3) WHERE expires_at<? AND expiry_notified_at IS NULL",
+                java.sql.Date.valueOf(today));
     }
 
     private String clean(String value) {
