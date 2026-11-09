@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{operations/layout :: head('Danh sách sản phẩm')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{operations/layout :: sidebar('products')}"></aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb">FreshFruit / <span>Quản lý sản phẩm</span></p>
+                <h1>Danh sách sản phẩm</h1>
+                <p class="muted">Toàn bộ sản phẩm và biến thể trên sàn, kèm giá bán, tồn kho và trạng thái bán.</p>
+            </div>
+        </header>
+
+        <section class="panel">
+            <form method="get" th:action="@{/operations/products}" class="filter-form">
+                <label for="keyword">Tìm sản phẩm, cửa hàng hoặc SKU</label>
+                <input id="keyword" name="keyword" type="search" th:value="${keyword}" autocomplete="off">
+                <button class="button button-primary" type="submit">Tìm kiếm</button>
+                <a class="button button-secondary" th:if="${!keyword.isEmpty()}" th:href="@{/operations/products}">Xóa lọc</a>
+            </form>
+            <div class="panel-heading">
+                <div><h2>Catalog toàn sàn</h2><p th:text="${#lists.size(products) + ' sản phẩm'}">0 sản phẩm</p></div>
+            </div>
+            <div class="audit-products" th:if="${!#lists.isEmpty(products)}">
+                <details class="audit-product" th:each="product : ${products}">
+                    <summary>
+                        <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}" th:src="${product.imageUrl}" th:alt="${product.productName}" onerror="this.hidden=true">
+                        <span class="audit-product-name" th:text="${product.productName}">Tên sản phẩm</span>
+                        <span class="audit-product-count" th:text="${product.shopName}">Cửa hàng</span>
+                        <span class="status-pill open" th:if="${product.visible}" th:text="${product.productStatus}">Đang bán</span>
+                        <span class="status-pill draft" th:unless="${product.visible}" th:text="${product.productStatus}">Chưa đăng bán</span>
+                        <span class="audit-product-count" th:text="${#lists.size(product.variants) + ' biến thể'}">0 biến thể</span>
+                    </summary>
+                    <div class="table-wrap" th:if="${!#lists.isEmpty(product.variants)}">
+                        <table class="audit-variant-table">
+                            <thead><tr><th>BIẾN THỂ</th><th>MÃ SKU</th><th>GIÁ / ĐƠN VỊ</th><th>ĐÃ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI BÁN</th><th>CHI TIẾT</th></tr></thead>
+                            <tbody><tr th:each="variant : ${product.variants}">
+                                <td><strong th:text="${variant.variantName}">Biến thể</strong></td>
+                                <td><code th:text="${variant.sku}">SKU</code></td>
+                                <td><strong th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</strong><small th:text="${'/ ' + variant.unitName}">/ đơn vị</small></td>
+                                <td th:text="${(variant.soldQuantity ?: 0) + ' ' + variant.unitName}">0</td>
+                                <td><strong th:text="${(variant.quantityOnHand ?: 0) + ' ' + variant.unitName}">0</strong><small th:text="${'Có thể bán: ' + (variant.availableQuantity ?: 0)}">Có thể bán: 0</small></td>
+                                <td><span class="status-pill open" th:if="${variant.variantStatus == 'ACTIVE'}">Đang bán</span><span class="status-pill draft" th:if="${variant.variantStatus == 'INACTIVE'}">Ngừng bán</span><span class="status-pill draft" th:if="${variant.variantStatus == 'BLOCKED'}">Bị OP chặn</span></td>
+                                <td><a class="button button-primary" th:href="@{/operations/variants/{id}(id=${variant.variantId})}">Xem chi tiết</a></td>
+                            </tr></tbody>
+                        </table>
+                    </div>
+                    <p class="audit-empty-variants" th:if="${#lists.isEmpty(product.variants)}">Sản phẩm chưa có biến thể.</p>
+                </details>
+            </div>
+            <p class="audit-empty-products" th:if="${#lists.isEmpty(products)}">Không tìm thấy sản phẩm phù hợp.</p>
+        </section>
+    </main>
+</div>
+<div th:replace="~{operations/layout :: toastHost}"></div>
+</body>
+</html>

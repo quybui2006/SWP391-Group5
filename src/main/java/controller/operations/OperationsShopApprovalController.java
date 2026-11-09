@@ -30,6 +30,8 @@ import java.util.Map;
  * 5. POST /operations/shops/{id}/operating-status -> Cập nhật trạng thái mở bán (OPEN / CLOSED / SUSPENDED).
  * 6. POST /operations/shops/{id}/payment/approve  -> Duyệt tài khoản đối soát thanh toán và tự động kích hoạt OPEN.
  * 7. POST /operations/shops/{id}/payment/reject   -> Từ chối tài khoản đối soát và gửi phản hồi cho Seller.
+ * 8. POST /operations/bank-accounts/{id}/approve  -> Phê duyệt tài khoản ngân hàng cụ thể của Shop.
+ * 9. POST /operations/bank-accounts/{id}/reject   -> Từ chối tài khoản ngân hàng cụ thể của Shop (kèm lý do).
  * ==============================================================================================
  */
 @Controller
@@ -133,7 +135,6 @@ public class OperationsShopApprovalController {
             @RequestParam(value = "keyword", required = false) String keyword,
             Model model) {
 
-        // Lấy danh sách hồ sơ shop và thống kê số lượng từng trạng thái
         List<ShopApprovalItemDto> shops = approvals.findShops(status, keyword);
         Map<String, Long> stats = approvals.getApprovalStats();
 
@@ -147,7 +148,7 @@ public class OperationsShopApprovalController {
     }
 
     /**
-     * BƯỚC 4: Hiển thị trang chi tiết thẩm định hồ sơ Shop (CCCD, thuế, đối soát tên ngân hàng, danh mục sản phẩm).
+     * BƯỚC 4: Xem chi tiết toàn diện hồ sơ mở Shop để Operations thẩm định.
      */
     @GetMapping("/operations/shops/{id:[0-9]+}")
     public String shopApprovalDetail(@PathVariable Long id, Model model) {
@@ -156,8 +157,10 @@ public class OperationsShopApprovalController {
         model.addAttribute("shop", shop);
         // Lấy danh sách sản phẩm / biến thể của shop để Operations hậu kiểm chất lượng nông sản
         model.addAttribute("variants", shops.listShopVariants(id));
+        model.addAttribute("products", shops.listShopProductsWithVariants(id));
         model.addAttribute("bankAccounts", shopBankAccounts.findByShopIdOrderByIsDefaultDescIdDesc(id));
         model.addAttribute("activeNav", "shops");
+        model.addAttribute("returnPage", "shops");
         return "operations/shop-detail";
     }
 
@@ -180,7 +183,7 @@ public class OperationsShopApprovalController {
 
     /**
      * BƯỚC 6: Xử lý Form từ chối hồ sơ mở Shop.
-     * - Yêu cầu nhập lý do từ chối (rejectionReason).
+     * - Thu thập lý do từ chối (rejectionReason).
      * - Cập nhật database: approval_status = 'REJECTED'.
      * - Bắn thông báo giải thích lý do tới Người bán để họ chỉnh sửa và nộp lại hồ sơ.
      */

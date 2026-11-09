@@ -48,6 +48,10 @@
 
             <span class="nav-label">THẨM ĐỊNH & KIỂM DUYỆT</span>
 
+            <a th:classappend="${activePage == 'complaints'} ? ' active' : ''" th:href="@{/operations/complaints}">
+                <span>⚖</span> Quản lý Khiếu nại
+            </a>
+
             <a th:classappend="${activePage == 'shops'} ? ' active' : ''" th:href="@{/operations/shops}">
                 <span>＋</span> Duyệt mở Shop
             </a>

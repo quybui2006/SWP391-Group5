@@ -86,6 +86,16 @@
     color: var(--ink);
 }
 
+.search-bar select {
+    min-width: 180px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: #fff;
+    color: var(--ink);
+}
+
 .search-bar input:focus, .field input:focus, .field select:focus, .field textarea:focus {
     border-color: var(--green);
     box-shadow: 0 0 0 3px rgba(47, 143, 70, .12);
@@ -167,6 +177,7 @@ tbody tr:hover { background: #fbfdfb; }
     .field-wide { grid-column: auto; }
     .search-bar { flex-wrap: wrap; }
     .search-bar input { flex-basis: 100%; }
+    .search-bar select { flex: 1; min-width: 160px; }
 }
 
 @media (max-width: 520px) {
@@ -185,8 +196,6 @@ tbody tr:hover { background: #fbfdfb; }
 .product-management .product-actions { white-space: nowrap; }
 .product-management .product-actions a { color: var(--green-dark); font-size: 12px; font-weight: 700; margin-right: 12px; }
 .product-management .product-actions a:last-child { margin-right: 0; }
-.product-management .variant-listing-form { display: inline-flex; margin: 0 6px 0 0; }
-.product-management .variant-listing-form .button { min-height: 30px; padding: 0 9px; font-size: 11px; }
 .product-management .form-card h2 { color: var(--ink); }
 .product-management .field input,
 .product-management .field select,

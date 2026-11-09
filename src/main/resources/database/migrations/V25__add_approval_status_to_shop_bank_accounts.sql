@@ -18,13 +18,13 @@ DEALLOCATE PREPARE stmt_v25;
 -- Đồng bộ trạng thái từ bảng shops:
 -- Tài khoản mặc định của shop đã APPROVED thì được APPROVED, nếu shop REJECTED thì REJECTED
 UPDATE shop_bank_accounts ba
-JOIN shops s ON ba.shop_id = s.id
-SET ba.approval_status = CASE 
+JOIN shops s ON s.id = ba.shop_id
+SET ba.approval_status = CASE
     WHEN s.payment_approval_status = 'APPROVED' AND ba.is_default = TRUE THEN 'APPROVED'
     WHEN s.payment_approval_status = 'REJECTED' AND ba.is_default = TRUE THEN 'REJECTED'
     ELSE 'PENDING'
 END,
-ba.rejection_reason = CASE 
+ba.rejection_reason = CASE
     WHEN s.payment_approval_status = 'REJECTED' AND ba.is_default = TRUE THEN s.bank_rejection_reason
     ELSE NULL
 END,

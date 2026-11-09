@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{operations/layout :: head('Sản phẩm - ' + ${shop.name})}"></head>
+<body>
+<div class="operations-shell">
+    <aside th:replace="~{operations/layout :: sidebar('shop-list')}"></aside>
+    <main class="operations-main">
+        <header th:replace="~{operations/layout :: pageHeader('Sản phẩm - ' + ${shop.name}, 'Danh sách sản phẩm và biến thể của riêng cửa hàng này.')}" ></header>
+        <section class="approval-page">
+            <div style="margin-bottom: 14px;">
+                <a class="button button-secondary" th:href="@{/operations/shop-list}">Quay lại danh sách cửa hàng</a>
+            </div>
+            <div class="table-card" style="padding: 18px;">
+                <form class="filter-form" method="get" th:action="@{/operations/shop-list/{id}/products(id=${shop.id})}">
+                    <label for="keyword">Tìm sản phẩm hoặc biến thể
+                        <input id="keyword" name="keyword" type="search" th:value="${keyword}" autocomplete="off">
+                    </label>
+                    <label for="categoryId">Danh mục
+                        <select id="categoryId" name="categoryId">
+                            <option value="">Tất cả danh mục</option>
+                            <option th:each="category : ${categories}" th:value="${category.id}"
+                                    th:selected="${selectedCategoryId != null and selectedCategoryId == category.id}"
+                                    th:text="${category.name}">Danh mục</option>
+                        </select>
+                    </label>
+                    <button class="button button-primary" type="submit">Tìm kiếm</button>
+                    <a class="button button-secondary" th:if="${!keyword.isEmpty() or selectedCategoryId != null}"
+                       th:href="@{/operations/shop-list/{id}/products(id=${shop.id})}">Xóa lọc</a>
+                </form>
+
+                <div class="panel-heading">
+                    <div><h2 th:text="${shop.name}">Tên cửa hàng</h2><p th:text="${#lists.size(products) + ' sản phẩm'}">0 sản phẩm</p></div>
+                </div>
+                <div class="audit-products" th:if="${!#lists.isEmpty(products)}">
+                    <details class="audit-product" th:each="product : ${products}">
+                        <summary>
+                            <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}" th:src="${product.imageUrl}" th:alt="${product.productName}" onerror="this.hidden=true">
+                            <span class="audit-product-name" th:text="${product.productName}">Tên sản phẩm</span>
+                            <span class="audit-product-count" th:text="${product.categoryName}">Danh mục</span>
+                            <span class="audit-product-count" th:text="${#lists.size(product.variants) + ' biến thể'}">0 biến thể</span>
+                        </summary>
+                        <div class="table-wrap" th:if="${!#lists.isEmpty(product.variants)}">
+                            <table class="audit-variant-table">
+                                <thead><tr><th>ẢNH / BIẾN THỂ</th><th>MÃ SKU</th><th>GIÁ / ĐƠN VỊ</th><th>ĐÃ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI BÁN</th><th>CHI TIẾT</th></tr></thead>
+                                <tbody><tr th:each="variant : ${product.variants}">
+                                    <td><div class="audit-variant-cell">
+                                        <img th:if="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}" th:src="${variant.imageUrl}" th:alt="${variant.variantName}" onerror="this.hidden=true">
+                                        <span class="audit-no-image" th:if="${variant.imageUrl == null or #strings.isEmpty(variant.imageUrl)}">SP</span>
+                                        <span><strong th:text="${variant.variantName}">Tên biến thể</strong></span>
+                                    </div></td>
+                                    <td><code th:text="${variant.sku}">SKU</code></td>
+                                    <td><strong class="audit-price" th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">0 ₫</strong><small th:text="${'/ ' + variant.unitName}">/ đơn vị</small></td>
+                                    <td th:text="${(variant.soldQuantity ?: 0) + ' ' + variant.unitName}">0</td>
+                                    <td><strong th:text="${(variant.quantityOnHand ?: 0) + ' ' + variant.unitName}">0</strong><small th:text="${'Có thể bán: ' + (variant.availableQuantity ?: 0) + ' ' + variant.unitName}">Có thể bán: 0</small></td>
+                                    <td><span class="status-pill open" th:if="${variant.variantStatus == 'ACTIVE'}">Đang bán</span><span class="status-pill draft" th:unless="${variant.variantStatus == 'ACTIVE'}" th:text="${variant.variantStatus}">Chưa bán</span></td>
+                                    <td><a class="button button-primary" th:href="@{/operations/variants/{id}(id=${variant.variantId},returnShopId=${shop.id},returnPage='products')}">Xem chi tiết</a></td>
+                                </tr></tbody>
+                            </table>
+                        </div>
+                        <p class="audit-empty-variants" th:if="${#lists.isEmpty(product.variants)}">Sản phẩm chưa có biến thể.</p>
+                    </details>
+                </div>
+                <p class="audit-empty-products" th:if="${#lists.isEmpty(products)}">Shop chưa có sản phẩm phù hợp với bộ lọc.</p>
+            </div>
+        </section>
+    </main>
+</div>
+<div th:replace="~{operations/layout :: toastHost}"></div>
+</body>
+</html>

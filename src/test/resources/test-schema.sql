@@ -363,6 +363,8 @@ CREATE TABLE inventory_batches (
     reserved_quantity INT NOT NULL DEFAULT 0,
     available_quantity INT GENERATED ALWAYS AS (quantity_on_hand - reserved_quantity),
     received_at TIMESTAMP NOT NULL,
+    expires_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    expiry_notified_at TIMESTAMP NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     note VARCHAR(1000),
     created_by BIGINT NOT NULL REFERENCES users(id),

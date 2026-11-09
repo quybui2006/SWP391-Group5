@@ -48,6 +48,12 @@
                     </p>
                 </div>
 
+                <div class="top-actions" style="display:flex; align-items:center; gap:10px;" th:if="${shop != null and shop.approvalStatus != 'NOT_REGISTERED'}">
+                    <a th:href="@{/shopowner/registration-info}" style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: 9px; font-weight: 600; text-decoration: none; font-size: 13px; background: #ffffff; color: #334155; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                        <span>📋</span> Hồ sơ đăng ký Shop
+                    </a>
+                </div>
+
             </header>
 
             <!-- Shop Onboarding Banner (Đăng ký mở Shop khi chưa có cửa hàng) -->

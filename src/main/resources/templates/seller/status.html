@@ -88,8 +88,13 @@
 
     <!-- Registered Shop Summary Card -->
     <div class="seller-card" th:if="${shop != null}">
-        <div class="seller-card-title">
-            <span>📋</span> Chi tiết Hồ sơ đã gửi
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom: 8px;">
+            <div class="seller-card-title" style="margin-bottom:0;">
+                <span>📋</span> Chi tiết Hồ sơ đã gửi
+            </div>
+            <a th:href="@{/seller/registration-info}" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:8px; font-size:12.5px; font-weight:700; text-decoration:none; transition: all 0.2s;">
+                <span>📄</span> Xem toàn bộ Hồ sơ Đăng ký đầy đủ →
+            </a>
         </div>
         <p class="seller-card-subtitle">
             Thông tin đã được mã hóa và lưu trữ an toàn trong hệ thống FreshFruit.

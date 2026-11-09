@@ -34,4 +34,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query(value = "SELECT AVG(r.rating) FROM reviews r WHERE r.variant_id = :variantId " +
             "AND COALESCE(r.moderation_status, 'APPROVED') NOT IN ('REJECTED', 'REMOVED')", nativeQuery = true)
     Double getAverageRatingByVariantId(@Param("variantId") Long variantId);
+
+    @Query("SELECT COUNT(r) FROM Review r JOIN r.variant pv WHERE pv.shopId = :shopId AND r.rating <= :maxRating")
+    long countByShopIdAndMaxRating(@Param("shopId") Long shopId, @Param("maxRating") Integer maxRating);
 }

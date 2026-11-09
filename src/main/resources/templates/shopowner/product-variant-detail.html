@@ -73,26 +73,19 @@
             </div>
             <div class="topbar-actions">
                 <a class="button button-ghost" th:href="@{/shopowner/product-variants}">← Danh sách</a>
-                <a class="button button-primary" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}"
-                   th:text="${variant.approvalStatus == 'REJECTED' ? 'Sửa và gửi lại' : 'Sửa biến thể'}">Sửa biến thể</a>
-                <form th:if="${variant.status == 'ACTIVE' and variant.approvalStatus != 'REJECTED'}"
+                <a class="button button-primary" th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa biến thể</a>
+                <form th:if="${variant.status == 'ACTIVE' and !variant.operationsBlocked}"
                       method="post"
                       th:action="@{/shopowner/product-variants/{id}/hide(id=${variant.id})}"
                       onsubmit="return confirm('Ẩn biến thể này khỏi gian hàng? Đơn đã xác nhận sẽ không bị thay đổi.');">
                     <button class="button button-ghost" type="submit">Ngừng bán</button>
                 </form>
-                <form th:if="${variant.status == 'INACTIVE' and variant.approvalStatus != 'REJECTED'}"
+                <form th:if="${variant.status == 'INACTIVE' and !variant.operationsBlocked}"
                       method="post"
                       th:action="@{/shopowner/product-variants/{id}/show(id=${variant.id})}"
                       onsubmit="return confirm('Hiển thị lại biến thể này cho khách hàng?');">
                     <button class="button button-primary" type="submit">Đăng bán biến thể</button>
                 </form>
-                <button class="button button-primary open-variant-complaint"
-                        type="button"
-                        th:if="${variant.approvalStatus == 'REJECTED'}"
-                        th:attr="data-variant-id=${variant.id},data-variant-name=${variant.variantName}">
-                    Khiếu nại
-                </button>
             </div>
         </header>
 
@@ -119,23 +112,12 @@
                         <div><span>Quy cách</span><strong th:text="${variant.specification ?: '-'}">-</strong></div>
                         <div><span>Đơn vị</span><strong th:text="${variant.unitName}">-</strong></div>
                         <div><span>Giá bán</span><strong th:text="${#numbers.formatInteger(variant.price, 1, 'COMMA') + ' ₫'}">-</strong></div>
-                        <div><span>Trạng thái bán</span><strong th:text="${variant.approvalStatus == 'REJECTED' ? 'Bị từ chối' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">-</strong></div>
+                        <div><span>Trạng thái bán</span><strong th:text="${variant.operationsBlocked ? 'Bị chặn bán' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">-</strong></div>
                         <div><span>Ngày đăng bán</span><strong th:text="${variant.submittedAt != null ? #temporals.format(variant.submittedAt, 'dd/MM/yyyy HH:mm') : '-'}">-</strong></div>
                     </div>
                     <div class="variant-approval-panel">
-                        <strong th:text="${variant.approvalStatus == 'REJECTED' ? 'Biến thể bị từ chối' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">Trạng thái biến thể</strong>
-                        <p th:if="${variant.approvalStatus == 'REJECTED' and variant.rejectionReason != null}"
-                           class="variant-rejection-box"
-                           th:text="${'Lý do từ chối: ' + variant.rejectionReason}">Lý do từ chối</p>
-                        <p th:if="${variant.approvalStatus == 'PENDING' and variant.status == 'ACTIVE'}" class="muted">
-                            Biến thể đang được hiển thị cho khách hàng.
-                        </p>
-                        <p th:if="${variant.approvalStatus == 'PENDING' and variant.status == 'INACTIVE'}" class="muted">
-                            Biến thể hiện chưa được hiển thị cho khách hàng.
-                        </p>
-                        <p th:if="${variant.approvalStatus == 'REJECTED'}" class="muted">
-                            Biến thể đã ngừng bán. Bạn có thể lưu bản nháp khiếu nại và giải trình.
-                        </p>
+                        <strong th:text="${variant.operationsBlocked ? 'Bị Operations chặn bán' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">Trạng thái biến thể</strong>
+                        <p th:if="${variant.operationsBlocked}" th:text="${variant.operationsBlockReason}">Liên hệ Operations để mở chặn.</p>
                     </div>
                 </div>
             </section>
@@ -152,22 +134,5 @@
     </main>
 </div>
 
-<dialog id="variantComplaintDialog" class="rejection-dialog" aria-labelledby="variantComplaintTitle">
-    <form id="variantComplaintForm" novalidate>
-        <div class="dialog-heading">
-            <div><p class="eyebrow">BIẾN THỂ BỊ TỪ CHỐI</p><h2 id="variantComplaintTitle">Khiếu nại quyết định</h2></div>
-            <button type="button" class="icon-button" id="closeVariantComplaint" aria-label="Đóng">×</button>
-        </div>
-        <p id="variantComplaintName" class="dialog-description"></p>
-        <label for="variantComplaintMessage">Nội dung giải trình <span>*</span></label>
-        <textarea id="variantComplaintMessage" rows="5" maxlength="1000" minlength="10" required></textarea>
-        <p class="field-note">Từ 10 đến 1000 ký tự.</p>
-        <div class="dialog-actions">
-            <button type="button" class="button button-secondary" id="cancelVariantComplaint">Hủy</button>
-            <button type="submit" class="button button-reject">Lưu bản nháp khiếu nại</button>
-        </div>
-    </form>
-</dialog>
-<script th:src="@{/js/variant-approval.js}" defer></script>
 </body>
 </html>

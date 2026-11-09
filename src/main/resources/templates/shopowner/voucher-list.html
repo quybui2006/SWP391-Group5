@@ -66,16 +66,16 @@
     </main>
 </div>
 <script>
-async function copyVoucher(button) {
-    const code = button.dataset.code;
-    try { await navigator.clipboard.writeText(code); }
-    catch (e) { const input = document.createElement('textarea'); input.value = code; document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove(); }
-    const toast = document.getElementById('copyToast'); toast.hidden = false; window.clearTimeout(window.__voucherToastTimer); window.__voucherToastTimer = window.setTimeout(() => toast.hidden = true, 1800);
-}
-function confirmDeleteVoucher(form) {
-    const used = Number(form.dataset.used || 0);
-    if (used > 0) { alert('Voucher đã được sử dụng nên không thể xóa. Hãy tắt voucher để ngừng áp dụng.'); return false; }
-    return confirm('Bạn chắc chắn muốn xóa voucher này? Thao tác này không thể hoàn tác.');
-}
+    async function copyVoucher(button) {
+        const code = button.dataset.code;
+        try { await navigator.clipboard.writeText(code); }
+        catch (e) { const input = document.createElement('textarea'); input.value = code; document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove(); }
+        const toast = document.getElementById('copyToast'); toast.hidden = false; window.clearTimeout(window.__voucherToastTimer); window.__voucherToastTimer = window.setTimeout(() => toast.hidden = true, 1800);
+    }
+    function confirmDeleteVoucher(form) {
+        const used = Number(form.dataset.used || 0);
+        if (used > 0) { alert('Voucher đã được sử dụng nên không thể xóa. Hãy tắt voucher để ngừng áp dụng.'); return false; }
+        return confirm('Bạn chắc chắn muốn xóa voucher này? Thao tác này không thể hoàn tác.');
+    }
 </script>
 </body></html>

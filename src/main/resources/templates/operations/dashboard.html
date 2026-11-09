@@ -6,10 +6,10 @@
     <aside th:replace="~{operations/layout :: sidebar('dashboard')}"></aside>
     
     <main class="main-content">
-        <header th:replace="~{operations/layout :: pageHeader('Tổng quan Vận hành', 'Phân tích hiệu suất toàn bộ cửa hàng và chỉ số SLA thời gian thẩm định hồ sơ')}"></header>
+        <header th:replace="~{operations/layout :: pageHeader('Tổng quan Vận hành', 'Phân tích hiệu suất toàn bộ cửa hàng, quản lý khiếu nại và chỉ số SLA thời gian thẩm định hồ sơ')}"></header>
 
-        <!-- KPI STATS CARDS (5 COLUMNS) -->
-        <section class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <!-- KPI STATS CARDS (6 COLUMNS) -->
+        <section class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
             <!-- 1. Tổng cửa hàng -->
             <div class="stat-card">
                 <div class="stat-icon blue">🏪</div>
@@ -34,7 +34,19 @@
                 </div>
             </a>
 
-            <!-- 3. Chờ Đối soát thanh toán -->
+            <!-- 3. Khiếu nại chờ xử lý -->
+            <a th:href="@{/operations/complaints}" class="stat-card">
+                <div class="stat-icon red">⚖️</div>
+                <div class="stat-info">
+                    <div class="stat-label">Khiếu nại chờ duyệt</div>
+                    <strong style="color: #dc2626;" th:text="${countPendingOps ?: 0}">0</strong>
+                    <p class="stat-sub danger">
+                        Thẩm định khiếu nại →
+                    </p>
+                </div>
+            </a>
+
+            <!-- 4. Chờ Đối soát thanh toán -->
             <a th:href="@{/operations/payments(status='PENDING')}" class="stat-card">
                 <div class="stat-icon purple" style="background: #eff6ff; color: #2563eb;">💳</div>
                 <div class="stat-info">
@@ -46,7 +58,7 @@
                 </div>
             </a>
 
-            <!-- 4. Tạm dừng / Từ chối -->
+            <!-- 5. Tạm dừng / Từ chối -->
             <div class="stat-card">
                 <div class="stat-icon red">⚠️</div>
                 <div class="stat-info">
@@ -58,7 +70,7 @@
                 </div>
             </div>
 
-            <!-- 5. Doanh thu toàn sàn -->
+            <!-- 6. Doanh thu toàn sàn -->
             <div class="stat-card">
                 <div class="stat-icon green">💰</div>
                 <div class="stat-info">
@@ -71,7 +83,7 @@
             </div>
         </section>
 
-        <!-- MIDDLE GRID: SLA APPROVAL & AUDIT MONITORING -->
+        <!-- MIDDLE GRID: SLA APPROVAL, COMPLAINT SLA & AUDIT MONITORING -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             
             <!-- SLA Shop Registrations Panel -->
@@ -111,39 +123,39 @@
                 </div>
             </section>
 
-            <!-- SLA Post-Audit / Surveillance Panel -->
-            <section class="panel">
+            <!-- Complaint Management & Dispute SLA Panel -->
+            <section class="panel" th:if="${csSlaReport != null and disputeReport != null}">
                 <div class="panel-heading">
                     <div>
-                        <h2>🔍 Giám sát &amp; Hậu kiểm Cửa hàng</h2>
-                        <p>Cơ chế kiểm soát chất lượng nông sản sau khi đối tác lên sàn</p>
+                        <h2>⚖️ Quản lý Khiếu nại &amp; SLA Giải quyết</h2>
+                        <p>Thẩm định khiếu nại, phê duyệt hoàn tiền và giám sát SLA 6h của Shop</p>
                     </div>
-                    <a th:href="@{/operations/shop-list}" class="text-link">Danh sách Hậu kiểm →</a>
+                    <a th:href="@{/operations/complaints}" class="text-link">Quản lý Khiếu nại →</a>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                     <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 9px; padding: 12px;">
-                        <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Cửa hàng đang mở bán</span>
-                        <div style="font-size: 19px; font-weight: 800; color: #16a34a; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                            <span th:text="${shopPerformance.activeShops}">0</span> Shop
+                        <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Đang xử lý / Tổng KN</span>
+                        <div style="font-size: 19px; font-weight: 800; color: #0284c7; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <span th:text="${disputeReport['activeDisputes']}">0</span> / <span th:text="${disputeReport['totalDisputes']}">0</span>
                         </div>
                     </div>
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 9px; padding: 12px;">
-                        <span style="font-size: 11px; color: #991b1b; font-weight: 600;">Cần kiểm tra / Tạm dừng</span>
-                        <div style="font-size: 19px; font-weight: 800; color: #dc2626; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                            <span th:text="${shopPerformance.suspendedShops}">0</span> Shop
+                    <div style="background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 9px; padding: 12px;">
+                        <span style="font-size: 11px; color: #166534; font-weight: 600;">Tuân thủ SLA Khiếu nại</span>
+                        <div style="font-size: 19px; font-weight: 800; color: #15803d; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <span th:text="${csSlaReport['slaComplianceRate']}">100</span>%
                         </div>
                     </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px;">
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--muted);">Cơ chế kiểm soát:</span>
-                        <strong style="color: var(--ink);">Hậu kiểm sau khi mở bán</strong>
+                        <span style="color: var(--muted);">Khiếu nại quá hạn SLA 6h:</span>
+                        <strong style="color: #dc2626;" th:text="${csSlaReport['overdueActiveTickets'] + ' vụ việc'}">0 vụ việc</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: var(--muted);">Trạng thái chất lượng:</span>
-                        <strong style="color: #15803d;">Tuân thủ quy chế sàn</strong>
+                        <span style="color: var(--muted);">Tỷ lệ giải quyết thành công:</span>
+                        <strong style="color: #15803d;" th:text="${disputeReport['resolutionRatePct'] + '%'}">100%</strong>
                     </div>
                 </div>
             </section>
