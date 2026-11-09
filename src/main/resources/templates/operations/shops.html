@@ -22,7 +22,9 @@
                 </a>
 
                 <a th:href="@{/operations/shops(status='APPROVED')}" class="stat-card">
-                    <div class="stat-icon green">✓</div>
+                    <div class="stat-icon green" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Đã duyệt</div>
                         <strong style="color: #16a34a;" th:text="${stats.approved}">0</strong>
@@ -31,7 +33,9 @@
                 </a>
 
                 <a th:href="@{/operations/shops(status='REJECTED')}" class="stat-card">
-                    <div class="stat-icon red">✕</div>
+                    <div class="stat-icon red" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Từ chối</div>
                         <strong style="color: #dc2626;" th:text="${stats.rejected}">0</strong>
@@ -40,7 +44,9 @@
                 </a>
 
                 <a th:href="@{/operations/shops(status='ALL')}" class="stat-card">
-                    <div class="stat-icon blue">🏪</div>
+                    <div class="stat-icon blue" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Tổng hồ sơ</div>
                         <strong th:text="${stats.total}">0</strong>
@@ -116,15 +122,15 @@
                                     <span th:if="${shop.approvalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;" th:title="${shop.rejectionReason}">HỒ SƠ: TỪ CHỐI</span>
                                 </div>
                                 <div th:if="${shop.approvalStatus == 'APPROVED'}" style="margin-top:4px;">
-                                    <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: CHỜ ĐỐI CHIẾU</span>
-                                    <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: ĐÃ DUYỆT</span>
-                                    <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: TỪ CHỐI</span>
-                                    <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' || shop.paymentApprovalStatus == null}" style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">💳 TT: CHƯA CẤU HÌNH</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">TT: CHỜ ĐỐI CHIẾU</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">TT: ĐÃ DUYỆT</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">TT: TỪ CHỐI</span>
+                                    <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' || shop.paymentApprovalStatus == null}" style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">TT: CHƯA CẤU HÌNH</span>
                                 </div>
                             </td>
                             <td class="row-actions" style="display:flex;align-items:center;gap:6px;">
                                 <a th:href="@{/operations/shops/{id}(id=${shop.id})}" class="button" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:6px 12px;font-size:12px;border-radius:6px;text-decoration:none;font-weight:600;">
-                                    🔍 Chi tiết
+                                    Chi tiết
                                 </a>
                                 <th:block th:if="${shop.approvalStatus == 'PENDING'}">
                                     <button type="button" class="button button-approve" data-approval-action="approve" style="padding:6px 10px;font-size:12px;">Duyệt</button>
@@ -162,7 +168,7 @@
                     <h2 id="rejectionTitle">Từ chối yêu cầu mở Shop</h2>
                 </div>
             </div>
-            <button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">✕</button>
+            <button type="button" class="icon-button" id="closeDialog" aria-label="Đóng">&times;</button>
         </div>
 
         <div class="dialog-body">
@@ -191,17 +197,17 @@
                         Gợi ý lý do nhanh:
                     </div>
                     <div class="quick-reasons-chips">
-                        <button type="button" class="reason-chip" data-reason="Giấy tờ định danh (CCCD) bị mờ, mất góc hoặc thông tin không trùng khớp.">📋 CCCD không rõ / chưa hợp lệ</button>
-                        <button type="button" class="reason-chip" data-reason="Địa chỉ kho hàng không rõ ràng, thiếu số nhà/tên đường hoặc không xác thực được.">📍 Địa chỉ kho hàng chưa xác thực</button>
-                        <button type="button" class="reason-chip" data-reason="Số điện thoại liên hệ không thể kết nối để xác minh mở Shop.">📞 SĐT không liên lạc được</button>
-                        <button type="button" class="reason-chip" data-reason="Tên Shop hoặc mô tả kinh doanh chưa phù hợp với quy định của sàn.">🏷️ Tên Shop / Mô tả chưa phù hợp</button>
+                        <button type="button" class="reason-chip" data-reason="Giấy tờ định danh (CCCD) bị mờ, mất góc hoặc thông tin không trùng khớp.">CCCD không rõ / chưa hợp lệ</button>
+                        <button type="button" class="reason-chip" data-reason="Địa chỉ kho hàng không rõ ràng, thiếu số nhà/tên đường hoặc không xác thực được.">Địa chỉ kho hàng chưa xác thực</button>
+                        <button type="button" class="reason-chip" data-reason="Số điện thoại liên hệ không thể kết nối để xác minh mở Shop.">SĐT không liên lạc được</button>
+                        <button type="button" class="reason-chip" data-reason="Tên Shop hoặc mô tả kinh doanh chưa phù hợp với quy định của sàn.">Tên Shop / Mô tả chưa phù hợp</button>
                     </div>
                 </div>
 
                 <textarea id="rejectionReason" name="rejectionReason" rows="4" maxlength="1000" required placeholder="Nhập lý do rõ ràng, cụ thể (vd: Giấy tờ chưa rõ ràng, địa chỉ không có thật...)..."></textarea>
                 
                 <div class="dialog-hint">
-                    <span>💡</span> Gợi ý: Hãy ghi chi tiết mục cần sửa đổi để giảm thời gian xử lý khi người bán nộp lại hồ sơ.
+                    Gợi ý: Hãy ghi chi tiết mục cần sửa đổi để giảm thời gian xử lý khi người bán nộp lại hồ sơ.
                 </div>
             </div>
         </div>

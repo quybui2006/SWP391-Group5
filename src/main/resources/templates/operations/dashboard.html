@@ -12,7 +12,9 @@
         <section class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
             <!-- 1. Tổng cửa hàng -->
             <div class="stat-card">
-                <div class="stat-icon blue">🏪</div>
+                <div class="stat-icon blue">
+                    <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </div>
                 <div class="stat-info">
                     <div class="stat-label">Tổng cửa hàng</div>
                     <strong th:text="${shopPerformance.totalShops}">0</strong>
@@ -24,7 +26,9 @@
 
             <!-- 2. Hồ sơ chờ duyệt -->
             <a th:href="@{/operations/shops(status='PENDING')}" class="stat-card">
-                <div class="stat-icon orange">⏳</div>
+                <div class="stat-icon orange">
+                    <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
                 <div class="stat-info">
                     <div class="stat-label">Hồ sơ chờ duyệt</div>
                     <strong style="color: #ea580c;" th:text="${shopPerformance.pendingShops}">0</strong>
@@ -36,7 +40,9 @@
 
             <!-- 3. Khiếu nại chờ xử lý -->
             <a th:href="@{/operations/complaints}" class="stat-card">
-                <div class="stat-icon red">⚖️</div>
+                <div class="stat-icon red">
+                    <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                </div>
                 <div class="stat-info">
                     <div class="stat-label">Khiếu nại chờ duyệt</div>
                     <strong style="color: #dc2626;" th:text="${countPendingOps ?: 0}">0</strong>
@@ -48,7 +54,9 @@
 
             <!-- 4. Chờ Đối soát thanh toán -->
             <a th:href="@{/operations/payments(status='PENDING')}" class="stat-card">
-                <div class="stat-icon purple" style="background: #eff6ff; color: #2563eb;">💳</div>
+                <div class="stat-icon purple" style="background: #eff6ff; color: #2563eb;">
+                    <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                </div>
                 <div class="stat-info">
                     <div class="stat-label">Chờ Đối soát</div>
                     <strong style="color: #2563eb;" th:text="${shopPerformance.pendingPayments ?: 0}">0</strong>
@@ -60,7 +68,9 @@
 
             <!-- 5. Tạm dừng / Từ chối -->
             <div class="stat-card">
-                <div class="stat-icon red">⚠️</div>
+                <div class="stat-icon red">
+                    <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
                 <div class="stat-info">
                     <div class="stat-label">Tạm dừng / Từ chối</div>
                     <strong style="color: #dc2626;">
@@ -72,7 +82,9 @@
 
             <!-- 6. Doanh thu toàn sàn -->
             <div class="stat-card">
-                <div class="stat-icon green">💰</div>
+                <div class="stat-icon green">
+                    <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
                 <div class="stat-info">
                     <div class="stat-label">Doanh thu toàn sàn</div>
                     <strong style="color: #16a34a;" th:text="${#numbers.formatInteger(shopPerformance.totalRevenue, 1, 'COMMA') + ' ₫'}">0 ₫</strong>
@@ -90,7 +102,10 @@
             <section class="panel">
                 <div class="panel-heading">
                     <div>
-                        <h2>⏱️ SLA Thẩm định Hồ sơ mở Shop</h2>
+                        <h2 style="display: flex; align-items: center; gap: 8px;">
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            SLA Thẩm định Hồ sơ mở Shop
+                        </h2>
                         <p>Đo lường thời gian xử lý và tỷ lệ đạt chuẩn SLA (&lt; 24 giờ)</p>
                     </div>
                     <a th:href="@{/operations/shops}" class="text-link">Xem danh sách →</a>
@@ -99,13 +114,13 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                     <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 9px; padding: 12px;">
                         <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Thời gian duyệt TB</span>
-                        <div style="font-size: 19px; font-weight: 800; color: var(--ink); margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                        <div style="font-size: 19px; font-weight: 800; color: var(--ink); margin-top: 4px; font-family: var(--font-sans);">
                             <span th:text="${approvalSla.avgShopHours}">0.0</span> giờ
                         </div>
                     </div>
                     <div style="background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 9px; padding: 12px;">
                         <span style="font-size: 11px; color: #166534; font-weight: 600;">Tỷ lệ đạt SLA (&lt; 24h)</span>
-                        <div style="font-size: 19px; font-weight: 800; color: #15803d; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                        <div style="font-size: 19px; font-weight: 800; color: #15803d; margin-top: 4px; font-family: var(--font-sans);">
                             <span th:text="${approvalSla.shopSlaRate}">100</span>%
                         </div>
                     </div>
@@ -127,7 +142,10 @@
             <section class="panel" th:if="${csSlaReport != null and disputeReport != null}">
                 <div class="panel-heading">
                     <div>
-                        <h2>⚖️ Quản lý Khiếu nại &amp; SLA Giải quyết</h2>
+                        <h2 style="display: flex; align-items: center; gap: 8px;">
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            Quản lý Khiếu nại &amp; SLA Giải quyết
+                        </h2>
                         <p>Thẩm định khiếu nại, phê duyệt hoàn tiền và giám sát SLA 6h của Shop</p>
                     </div>
                     <a th:href="@{/operations/complaints}" class="text-link">Quản lý Khiếu nại →</a>
@@ -136,13 +154,13 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                     <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 9px; padding: 12px;">
                         <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Đang xử lý / Tổng KN</span>
-                        <div style="font-size: 19px; font-weight: 800; color: #0284c7; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                        <div style="font-size: 19px; font-weight: 800; color: #0284c7; margin-top: 4px; font-family: var(--font-sans);">
                             <span th:text="${disputeReport['activeDisputes']}">0</span> / <span th:text="${disputeReport['totalDisputes']}">0</span>
                         </div>
                     </div>
                     <div style="background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 9px; padding: 12px;">
                         <span style="font-size: 11px; color: #166534; font-weight: 600;">Tuân thủ SLA Khiếu nại</span>
-                        <div style="font-size: 19px; font-weight: 800; color: #15803d; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                        <div style="font-size: 19px; font-weight: 800; color: #15803d; margin-top: 4px; font-family: var(--font-sans);">
                             <span th:text="${csSlaReport['slaComplianceRate']}">100</span>%
                         </div>
                     </div>
@@ -166,7 +184,10 @@
         <section class="panel">
             <div class="panel-heading">
                 <div>
-                    <h2>🏆 Top Cửa hàng có doanh thu cao nhất trên sàn</h2>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        Top Cửa hàng có doanh thu cao nhất trên sàn
+                    </h2>
                     <p>Các đối tác nông sản dẫn đầu về sản lượng giao dịch và đóng góp doanh số</p>
                 </div>
                 <span class="status-pill open">Dữ liệu thời gian thực</span>
@@ -188,7 +209,9 @@
                     <tr th:each="s : ${shopPerformance.topShops}">
                         <td>
                             <div class="product-cell">
-                                <span class="fruit-thumb" style="width: 28px; height: 28px; border-radius: 6px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-size: 13px; font-weight: 700;">🏪</span>
+                                <span class="fruit-thumb" style="width: 28px; height: 28px; border-radius: 6px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                                </span>
                                 <div>
                                     <a th:href="@{/operations/shop-list/{id}(id=${s.id})}" style="color: var(--green); font-weight: 700;" th:text="${s.name}">Tên Shop</a>
                                     <small th:text="'Mã: #' + ${s.id}">#1</small>
@@ -202,7 +225,7 @@
                             <span th:if="${s.operating_status != 'OPEN'}" class="status-pill closed" th:text="${s.operating_status}">CLOSED</span>
                         </td>
                         <td style="text-align: right; font-weight: 600;" th:text="${s.total_orders}">0</td>
-                        <td style="text-align: right; font-weight: 800; color: #16a34a; font-family: 'Plus Jakarta Sans', sans-serif;" th:text="${#numbers.formatInteger(s.total_revenue, 1, 'COMMA') + ' ₫'}">0 ₫</td>
+                        <td style="text-align: right; font-weight: 800; color: #16a34a; font-family: var(--font-sans);" th:text="${#numbers.formatInteger(s.total_revenue, 1, 'COMMA') + ' ₫'}">0 ₫</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(shopPerformance.topShops)}">
                         <td colspan="6" style="padding: 24px; text-align: center; color: var(--muted);">Chưa có dữ liệu giao dịch từ các shop.</td>

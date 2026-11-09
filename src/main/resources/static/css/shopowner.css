@@ -1,13 +1,15 @@
+@import url('freshfruit-design-system.css');
+
 :root {
-    --green: #28a866;
-    --green-dark: #16804b;
+    --green: #16a34a;
+    --green-dark: #15803d;
     --ink: #0f172a;
     --muted: #64748b;
     --line: #e2e8f0;
     --bg: #f8fafc;
     --white: #fff;
     --shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
-    --font-ui: Arial, sans-serif;
+    --font-ui: var(--font-sans);
 }
 
 * {

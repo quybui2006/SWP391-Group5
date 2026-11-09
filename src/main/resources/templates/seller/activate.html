@@ -10,19 +10,20 @@
     <div th:replace="~{seller/seller-header :: stepper(1)}"></div>
 
     <!-- Alert Messages -->
-    <div th:if="${errorMessage}" class="seller-alert danger">
-        <span style="font-size:18px;">⚠️</span>
+    <div th:if="${errorMessage}" class="seller-alert danger" style="display: flex; align-items: center; gap: 8px;">
+        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <div th:text="${errorMessage}">Thông báo lỗi</div>
     </div>
-    <div th:if="${successMessage}" class="seller-alert success">
-        <span style="font-size:18px;">✅</span>
+    <div th:if="${successMessage}" class="seller-alert success" style="display: flex; align-items: center; gap: 8px;">
+        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <div th:text="${successMessage}">Thông báo thành công</div>
     </div>
 
     <!-- Card Form -->
     <div class="seller-card">
-        <div class="seller-card-title">
-            <span>🛡️</span> Kích hoạt Tài khoản Người bán & Định danh
+        <div class="seller-card-title" style="display: flex; align-items: center; gap: 8px;">
+            <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Kích hoạt Tài khoản Người bán & Định danh</span>
         </div>
         <p class="seller-card-subtitle">
             Theo Nghị định 52/2013/NĐ-CP & Luật Giao dịch điện tử, Người bán trên sàn TMĐT FreshFruit bắt buộc phải định danh danh tính CCCD và thông tin thuế trước khi tiến hành khởi tạo gian hàng.
@@ -30,8 +31,9 @@
 
         <form th:action="@{/seller/activate}" th:object="${form}" method="post">
             <!-- 1. Thông tin liên hệ -->
-            <div class="seller-section-title">
-                <span>📞</span> 1. Thông tin liên hệ Người bán
+            <div class="seller-section-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg class="ui-icon ui-icon-sm" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span>1. Thông tin liên hệ Người bán</span>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
@@ -49,8 +51,9 @@
             </div>
 
             <!-- 2. Thông tin định danh CCCD -->
-            <div class="seller-section-title">
-                <span>🪪</span> 2. Thông tin Định danh Cá nhân (CCCD / Hộ chiếu)
+            <div class="seller-section-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg class="ui-icon ui-icon-sm" style="color: #16a34a;" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                <span>2. Thông tin Định danh Cá nhân (CCCD / Hộ chiếu)</span>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
@@ -158,8 +161,9 @@
             </div>
 
             <!-- 3. Thông tin thuế & Loại hình kinh doanh -->
-            <div class="seller-section-title">
-                <span>💼</span> 3. Thông tin Thuế & Loại hình kinh doanh
+            <div class="seller-section-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg class="ui-icon ui-icon-sm" style="color: #16a34a;" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                <span>3. Thông tin Thuế &amp; Loại hình kinh doanh</span>
             </div>
             <div class="form-group">
                 <label for="businessType">Loại hình kinh doanh <span class="req">*</span></label>
@@ -187,9 +191,13 @@
             </div>
 
             <div class="seller-actions-bar">
-                <a th:href="@{/}" class="btn-seller-secondary">← Hủy bỏ & Quay lại</a>
-                <button type="submit" class="btn-seller-submit">
-                    Xác nhận Kích hoạt & Tiếp tục tạo Shop ➔
+                <a th:href="@{/}" class="btn-seller-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Hủy bỏ &amp; Quay lại</span>
+                </a>
+                <button type="submit" class="btn-seller-submit" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span>Xác nhận Kích hoạt &amp; Tiếp tục tạo Shop</span>
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
             </div>
         </form>

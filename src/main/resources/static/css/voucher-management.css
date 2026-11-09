@@ -1,5 +1,5 @@
 /* Voucher management: page-scoped styles so global Shop Owner styles cannot shrink the table. */
-.voucher-page { color:#17251d; font-family:'DM Sans',Arial,sans-serif; padding-top:30px; }
+.voucher-page { color:#17251d; font-family:var(--font-sans, 'Be Vietnam Pro', Arial, sans-serif); padding-top:30px; }
 .voucher-page-inner { max-width:1600px; margin:0 auto; }
 .voucher-page a { text-decoration:none; }
 .voucher-header { display:flex; justify-content:space-between; align-items:flex-end; gap:28px; margin-bottom:26px; }

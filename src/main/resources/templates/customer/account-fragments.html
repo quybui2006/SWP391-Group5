@@ -3,6 +3,7 @@
 <head th:fragment="head(title)">
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title + ' | FreshFruit'}"></title>
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/customer-account.css}">
     <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
     <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
@@ -10,7 +11,6 @@
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
     <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
     <script th:src="@{/js/notification-dropdown.js}" defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
 </head>
 <body>
 <aside class="customer-sidebar" th:fragment="sidebar(active)">
@@ -27,17 +27,39 @@
     </div>
     <nav class="customer-nav">
         <span class="nav-caption">TÀI KHOẢN CỦA TÔI</span>
-        <a th:classappend="${active == 'dashboard'} ? 'active'" th:href="@{/customer/account/dashboard}">📊 Tổng quan chi tiêu</a>
-        <a th:classappend="${active == 'profile'} ? 'active'" th:href="@{/customer/account}">Thông tin cá nhân</a>
-        <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">Sổ địa chỉ</a>
-        <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
-        <a th:classappend="${active == 'complaints'} ? 'active'" th:href="@{/customer/account/complaints}">🎫 Khiếu nại &amp; Hỗ trợ</a>
-        <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
-        <a th:classappend="${active == 'bank-account'} ? 'active' : ''" th:href="@{/customer/account/bank-account}">🏦 Liên kết tài khoản ngân hàng</a>
+        <a th:classappend="${active == 'dashboard'} ? 'active'" th:href="@{/customer/account/dashboard}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Tổng quan chi tiêu</span>
+        </a>
+        <a th:classappend="${active == 'profile'} ? 'active'" th:href="@{/customer/account}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Thông tin cá nhân</span>
+        </a>
+        <a th:classappend="${active == 'address'} ? 'active'" th:href="@{/customer/account/address}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Sổ địa chỉ</span>
+        </a>
+        <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>Đơn hàng của tôi</span>
+        </a>
+        <a th:classappend="${active == 'complaints'} ? 'active'" th:href="@{/customer/account/complaints}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Khiếu nại &amp; Hỗ trợ</span>
+        </a>
+        <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <span>Sản phẩm yêu thích</span>
+        </a>
+        <a th:classappend="${active == 'bank-account'} ? 'active' : ''" th:href="@{/customer/account/bank-account}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            <span>Liên kết tài khoản ngân hàng</span>
+        </a>
         <div class="nav-expandable" th:classappend="${active == 'wallet-coins' or active == 'wallet-vouchers'} ? ' expanded' : ''">
             <a class="nav-expandable-toggle" th:classappend="${active == 'wallet-coins' or active == 'wallet-vouchers'} ? ' active' : ''"
                href="#wallet-submenu" aria-controls="wallet-submenu" th:attr="aria-expanded=${active == 'wallet-coins' or active == 'wallet-vouchers'}" onclick="this.parentElement.classList.toggle('expanded'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('expanded')); return false;">
-                <span aria-hidden="true">▣</span> Ví của tôi <b class="nav-chevron" aria-hidden="true">⌄</b>
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                <span>Ví của tôi</span> <b class="nav-chevron" aria-hidden="true">⌄</b>
             </a>
             <div id="wallet-submenu" class="nav-submenu">
                 <a th:classappend="${active == 'wallet-coins'} ? ' active' : ''" th:href="@{/customer/account/wallet/coins}">Ví xu</a>
@@ -45,17 +67,28 @@
             </div>
         </div>
         <span class="nav-caption second">KHÁC</span>
-        <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">Thông báo</a>
-        <a th:classappend="${active == 'changePassword'} ? 'active'" th:href="@{/customer/account/change-password}">Đổi mật khẩu</a>
+        <a th:classappend="${active == 'notifications'} ? 'active'" th:href="@{/customer/account/notifications}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span>Thông báo</span>
+        </a>
+        <a th:classappend="${active == 'changePassword'} ? 'active'" th:href="@{/customer/account/change-password}">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9 3 14v7h7l5-5-1.5-1.5L15 13l1.5-1.5L18 10l1.5 1.5L22 9z"/></svg>
+            <span>Đổi mật khẩu</span>
+        </a>
         <form th:action="@{/logout}" method="post" style="margin: 12px 4px 0;">
-            <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 10px; color: #dc3545; background: #fff5f5; border: 1px solid rgba(220, 53, 69, 0.25); border-radius: 9px; padding: 10px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                <span style="font-size: 15px;">🚪</span> Đăng xuất
+            <button type="submit" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                <span>Đăng xuất</span>
             </button>
         </form>
     </nav>
     <div th:replace="~{customer/account-fragments :: help}"></div>
 </aside>
-<a class="sidebar-help" th:fragment="help" th:href="@{/customer/account/complaints}" style="text-decoration:none; color:inherit;"><span>✦</span><div><strong>Cần hỗ trợ?</strong><small>Gửi &amp; theo dõi khiếu nại</small></div><b>→</b></a>
+<a class="sidebar-help" th:fragment="help" th:href="@{/customer/account/complaints}" style="text-decoration:none; color:inherit;">
+    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div><strong>Cần hỗ trợ?</strong><small>Gửi &amp; theo dõi khiếu nại</small></div>
+    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+</a>
 <header class="customer-topbar" th:fragment="topbar(title)">
     <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><a th:href="@{/customer/account}">Tài khoản</a><span>/</span><strong th:text="${title}"></strong></div>
     <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
@@ -67,28 +100,37 @@
     
     <!-- In-web notification center dropdown -->
     <div class="notif-dropdown-wrapper">
-        <button type="button" class="top-icon notif-bell-btn" id="globalNotifBellBtn" title="Thông báo" aria-label="Thông báo" style="font-size: 16px; cursor: pointer; border: 1px solid rgba(0,0,0,0.08); background: #fff;">
-            🔔
+        <button type="button" class="top-icon notif-bell-btn" id="globalNotifBellBtn" title="Thông báo" aria-label="Thông báo" style="font-size: 16px; cursor: pointer; border: 1px solid rgba(0,0,0,0.08); background: #fff; display: inline-flex; align-items: center; justify-content: center;">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
             <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
         </button>
         <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
             <div class="notif-dropdown-header">
-                <h4><span>🔔</span> Thông báo</h4>
+                <h4 style="display: flex; align-items: center; gap: 6px;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    <span>Thông báo</span>
+                </h4>
                 <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
             </div>
             <div class="notif-dropdown-body" id="globalNotifList">
                 <div class="notif-empty-box">Đang tải...</div>
             </div>
             <div class="notif-dropdown-footer">
-                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
+                <a th:href="@{/notifications}" class="notif-view-all-link" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span>Xem tất cả thông báo</span>
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
             </div>
         </div>
     </div>
 
-    <a class="cart-link" th:href="@{/cart}" aria-label="Giỏ hàng">🛒 Giỏ hàng</a>
+    <a class="cart-link" th:href="@{/cart}" aria-label="Giỏ hàng" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+        <span>Giỏ hàng</span>
+    </a>
     <form th:action="@{/logout}" method="post" style="display: inline-flex; margin: 0 0 0 6px;">
-        <button type="submit" class="top-icon logout-top-icon" title="Đăng xuất" aria-label="Đăng xuất" style="cursor: pointer; color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.25); background: #fff5f5; border-radius: 9px; font-size: 14px; width: 34px; height: 34px; display: inline-grid; place-items: center;">
-            🚪
+        <button type="submit" class="top-icon logout-top-icon" title="Đăng xuất" aria-label="Đăng xuất" style="cursor: pointer; color: #dc2626; border: 1px solid #fecaca; background: #fff5f5; border-radius: 9px; width: 34px; height: 34px; display: inline-grid; place-items: center;">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
         </button>
     </form>
 </div>

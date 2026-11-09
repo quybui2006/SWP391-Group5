@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${(variant.product != null ? variant.product.name : variant.name) + ' | FreshFruit - Trái cây tươi mỗi ngày'}">Chi tiết sản phẩm | FreshFruit</title>
 
-    <link rel="stylesheet" th:href="@{/css/customerproductdetail.css}">
-    <link rel="stylesheet" th:href="@{/css/notifications.css}">
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
+    <link rel="stylesheet" th:href="@{/css/customerproductdetail.css}">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
 </head>
 
 <body>
@@ -45,8 +46,8 @@
 
             <!-- Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
-                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
-                    <span class="bell-icon">🔔</span>
+                <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo" style="display:flex;align-items:center;justify-content:center;">
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                     <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
                 </button>
                 <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
@@ -55,8 +56,8 @@
             </div>
 
             <!-- Cart Button -->
-            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng" aria-label="Giỏ hàng">
-                🛒
+            <a class="icon-btn cart-btn" th:href="@{/cart}" title="Giỏ hàng" aria-label="Giỏ hàng" style="display:flex;align-items:center;justify-content:center;">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
                 <span id="cartCount" class="cart-count">0</span>
             </a>
 
@@ -78,29 +79,62 @@
                         <div class="user-dropdown-links">
                             <!-- Customer links -->
                             <th:block th:if="${session.role == 'CUSTOMER'}">
-                                <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
-                                <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
-                                <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
-                                <a th:href="@{/customer/account/favorites}">❤️ Sản phẩm yêu thích</a>
-                                <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
+                                <a th:href="@{/customer/account}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <span>Hồ sơ cá nhân</span>
+                                </a>
+                                <a th:href="@{/customer/account/orders}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                    <span>Đơn hàng của tôi</span>
+                                </a>
+                                <a th:href="@{/customer/account/address}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <span>Sổ địa chỉ</span>
+                                </a>
+                                <a th:href="@{/customer/account/favorites}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                                    <span>Sản phẩm yêu thích</span>
+                                </a>
+                                <a th:href="@{/customer/account/notifications}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                    <span>Thông báo</span>
+                                </a>
                             </th:block>
 
                             <!-- Shop Owner links -->
                             <th:block th:if="${session.role == 'SHOP_OWNER'}">
-                                <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
-                                <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
-                                <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
-                                <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
+                                <a th:href="@{/shopowner/home}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <span>Quản lý cửa hàng</span>
+                                </a>
+                                <a th:href="@{/shop/products}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                                    <span>Danh sách sản phẩm</span>
+                                </a>
+                                <a th:href="@{/shopowner/product-variants}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                                    <span>Biến thể sản phẩm</span>
+                                </a>
+                                <a th:href="@{/shopowner/orders}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                    <span>Quản lý đơn hàng</span>
+                                </a>
                             </th:block>
 
                             <!-- Admin links -->
                             <th:block th:if="${session.role == 'ADMIN'}">
-                                <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
+                                <a th:href="@{/admin}" style="display:flex;align-items:center;gap:8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <span>Bảng điều khiển Quản trị</span>
+                                </a>
                             </th:block>
                         </div>
                         <div class="user-dropdown-logout">
                             <form th:action="@{/logout}" method="post">
-                                <button type="submit">🚪 Đăng xuất</button>
+                                <button type="submit" style="display:flex;align-items:center;gap:6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                                    <span>Đăng xuất</span>
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -150,7 +184,7 @@
 
                     <div id="imagePlaceholder" class="image-placeholder"
                          th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()} ? 'display:none' : 'display:flex'">
-                        <span class="placeholder-emoji">🍎</span>
+                        <svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6a6 6 0 0 0-6 6c0 3.31 2.69 6 6 6s6-2.69 6-6a6 6 0 0 0-6-6z"/></svg>
                         <p>Trái cây tươi FreshFruit</p>
                     </div>
 
@@ -174,7 +208,7 @@
                             onclick="selectThumbnail(this)">
                         <img th:if="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}"
                              th:src="${variant.imageUrl}" th:alt="${variant.name}">
-                        <span th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}">🍎</span>
+                        <svg class="ui-icon ui-icon-md" th:if="${variant.imageUrl == null or variant.imageUrl.isEmpty()}" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6a6 6 0 0 0-6 6c0 3.31 2.69 6 6 6s6-2.69 6-6a6 6 0 0 0-6-6z"/></svg>
                     </button>
                 </div>
 
@@ -183,10 +217,14 @@
                     <div class="share-group">
                         <span class="share-label">Chia sẻ:</span>
                         <button type="button" class="social-circle-btn fb" title="Chia sẻ Facebook" onclick="shareSocial('facebook')">f</button>
-                        <button type="button" class="social-circle-btn messenger" title="Gửi Messenger" onclick="shareSocial('messenger')">💬</button>
+                        <button type="button" class="social-circle-btn messenger" title="Gửi Messenger" onclick="shareSocial('messenger')">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </button>
                         <button type="button" class="social-circle-btn pinterest" title="Ghim Pinterest" onclick="shareSocial('pinterest')">P</button>
-                        <button type="button" class="social-circle-btn twitter" title="Chia sẻ X" onclick="shareSocial('twitter')">𝕏</button>
-                        <button type="button" class="social-circle-btn link-copy" title="Sao chép liên kết" onclick="copyProductLink()">🔗</button>
+                        <button type="button" class="social-circle-btn twitter" title="Chia sẻ X" onclick="shareSocial('twitter')">X</button>
+                        <button type="button" class="social-circle-btn link-copy" title="Sao chép liên kết" onclick="copyProductLink()">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        </button>
                     </div>
 
                     <div class="divider-vertical"></div>
@@ -248,8 +286,10 @@
                           th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">120.000 ₫</span>
                     <span class="price-main" th:if="${variant.price == null}">Liên hệ</span>
 
-
-                    <span class="price-tag-sub">🌿 100% Tươi Sạch Chuẩn VietGAP</span>
+                    <span class="price-tag-sub" style="display:inline-flex;align-items:center;gap:4px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>100% Tươi Sạch Chuẩn VietGAP</span>
+                    </span>
                 </div>
 
                 <!-- Details Rows -->
@@ -280,7 +320,10 @@
                     <div class="detail-line">
                         <span class="detail-label">Bảo Hiểm</span>
                         <div class="detail-content">
-                            <span class="insurance-badge">🛡️ Bảo hiểm Trái Cây Tươi Mới 100%</span>
+                            <span class="insurance-badge" style="display:inline-flex;align-items:center;gap:4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <span>Bảo hiểm Trái Cây Tươi Mới 100%</span>
+                            </span>
                             <span class="insurance-note">Đổi trả ngay nếu quả dập nát khi nhận hàng</span>
                         </div>
                     </div>
@@ -297,7 +340,7 @@
                                 <span th:text="${sv.specification != null && !sv.specification.isEmpty() ? sv.specification : sv.name}">
                                     Hộp tiêu chuẩn 1kg
                                 </span>
-                                <span class="check-tick" th:if="${sv.id == variant.id}">✓</span>
+                                <svg class="ui-icon ui-icon-xs check-tick" th:if="${sv.id == variant.id}" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                             </a>
                             <!-- Fallback khi sản phẩm chỉ có 1 biến thể (siblingVariants rỗng) -->
                             <button type="button" class="variant-spec-chip active"
@@ -305,7 +348,7 @@
                                 <span th:text="${variant.specification != null && !variant.specification.isEmpty() ? variant.specification : (variant.baseUnit != null ? variant.baseUnit.name : 'Hộp tiêu chuẩn 1kg')}">
                                     Hộp tiêu chuẩn 1kg
                                 </span>
-                                <span class="check-tick">✓</span>
+                                <svg class="ui-icon ui-icon-xs check-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                             </button>
                         </div>
                     </div>
@@ -332,7 +375,7 @@
                             th:disabled="${stockQuantity <= 0}"
                             th:attr="data-variant-id=${variant.id}"
                             onclick="addProductToCart(event, this)">
-                        <span class="cart-btn-icon">🛒</span>
+                        <span class="cart-btn-icon"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></span>
                         <span th:text="${stockQuantity > 0 ? 'Thêm Vào Giỏ Hàng' : 'Tạm Hết Hàng'}">Thêm Vào Giỏ Hàng</span>
                     </button>
 
@@ -347,19 +390,19 @@
                 <!-- FreshFruit Guarantee Banner -->
                 <div class="fresh-guarantee-bar">
                     <div class="guarantee-item">
-                        <span class="guarantee-icon">🛡️</span>
+                        <span class="guarantee-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
                         <span>FreshFruit Đảm Bảo</span>
                     </div>
                     <div class="guarantee-sub-item">
-                        <span class="check-icon">✓</span>
+                        <span class="check-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
                         <span>Trả hàng miễn phí 15 ngày</span>
                     </div>
                     <div class="guarantee-sub-item">
-                        <span class="check-icon">✓</span>
+                        <span class="check-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
                         <span>100% Trái cây tươi mới</span>
                     </div>
                     <div class="guarantee-sub-item">
-                        <span class="check-icon">✓</span>
+                        <span class="check-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
                         <span>Giao hỏa tốc 2H</span>
                     </div>
                 </div>

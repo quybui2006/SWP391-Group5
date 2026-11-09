@@ -1,17 +1,19 @@
+@import url('freshfruit-design-system.css');
+
 :root {
-    --green: #2f8f46;
-    --green-dark: #176b30;
-    --green-light: #eaf7ed;
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-light: #dcfce7;
 
-    --ink: #17221a;
-    --muted: #6e786f;
+    --ink: #0f172a;
+    --muted: #64748b;
 
-    --line: #e8ece8;
+    --line: #e2e8f0;
 
-    --bg: #fbfcfa;
+    --bg: #f8fafc;
     --white: #ffffff;
 
-    --shadow: 0 18px 45px rgba(24, 57, 30, 0.09);
+    --shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
 
@@ -34,10 +36,7 @@ body {
 
     background: var(--bg);
 
-    font-family:
-            Inter,
-            Arial,
-            sans-serif;
+    font-family: var(--font-sans);
 
     line-height: 1.55;
 }

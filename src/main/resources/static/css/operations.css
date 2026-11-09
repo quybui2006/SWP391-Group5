@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+@import url('freshfruit-design-system.css');
 
 :root {
-    --green: #28a866;
-    --green-dark: #16804b;
-    --green-soft: #e9f8ee;
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-soft: #f0fdf4;
     --ink: #0f172a;
     --muted: #64748b;
     --line: #e2e8f0;
@@ -30,7 +30,7 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font: 13.5px/1.45 'DM Sans', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font: 13.5px/1.5 var(--font-sans);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -94,7 +94,7 @@ button:disabled {
     align-items: center;
     gap: 8px;
     margin: 0 6px 14px;
-    font: 800 17px 'Plus Jakarta Sans', sans-serif;
+    font: 800 17px var(--font-sans);
     letter-spacing: -0.4px;
     color: #0f172a;
 }
@@ -106,7 +106,7 @@ button:disabled {
 .brand small, .operations-brand small {
     display: block;
     color: #94a3b8;
-    font: 700 8px 'DM Sans', sans-serif;
+    font: 700 8px var(--font-sans);
     letter-spacing: 1.2px;
     margin-top: 1px;
     text-transform: uppercase;
@@ -120,7 +120,7 @@ button:disabled {
     color: #fff;
     display: grid;
     place-items: center;
-    font: bold 16px 'Plus Jakarta Sans', sans-serif;
+    font: bold 16px var(--font-sans);
     flex-shrink: 0;
 }
 
@@ -330,7 +330,7 @@ button:disabled {
 }
 
 .topbar h1, .operations-topbar h1 {
-    font: 800 19px 'Plus Jakarta Sans', sans-serif;
+    font: 800 19px var(--font-sans);
     margin: 0 0 3px;
     letter-spacing: -0.4px;
     color: #0f172a;
@@ -487,7 +487,7 @@ button:disabled {
 
 .stat-card strong, .stat-value {
     display: block;
-    font: 800 17px 'Plus Jakarta Sans', sans-serif;
+    font: 800 17px var(--font-sans);
     color: var(--ink);
     margin: 0 0 2px;
     letter-spacing: -0.3px;
@@ -544,7 +544,7 @@ button:disabled {
 }
 
 .panel-heading h2, .section-heading h2 {
-    font: 700 14px 'Plus Jakarta Sans', sans-serif;
+    font: 700 14px var(--font-sans);
     margin: 0 0 2px;
     color: var(--ink);
     display: flex;
@@ -945,7 +945,7 @@ dialog::backdrop {
 }
 
 .dialog-title-group .eyebrow {
-    font: 700 11px/1.2 'Plus Jakarta Sans', sans-serif;
+    font: 700 11px/1.2 var(--font-sans);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     color: #dc2626;
@@ -953,7 +953,7 @@ dialog::backdrop {
 }
 
 .dialog-title-group h2 {
-    font: 700 16px/1.3 'Plus Jakarta Sans', sans-serif;
+    font: 700 16px/1.3 var(--font-sans);
     color: #0f172a;
     margin: 0;
 }

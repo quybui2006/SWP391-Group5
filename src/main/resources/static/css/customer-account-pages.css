@@ -1,5 +1,5 @@
 .account-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 34px;box-shadow:var(--shadow);margin-top:24px}
-.account-heading{border-bottom:1px solid var(--line);padding-bottom:21px;margin-bottom:28px}.account-heading h1{font:700 22px 'Plus Jakarta Sans',sans-serif;margin:0 0 8px}.account-heading p{color:var(--muted);margin:0;line-height:1.6}
+.account-heading{border-bottom:1px solid var(--line);padding-bottom:21px;margin-bottom:28px}.account-heading h1{font:700 22px var(--font-sans);margin:0 0 8px}.account-heading p{color:var(--muted);margin:0;line-height:1.6}
 /* Personal profile: keep labels, values and avatar in distinct, predictable areas. */
 .profile-layout{padding-top:4px}.profile-row{grid-template-columns:148px minmax(0,1fr);gap:20px}.profile-row>label,.field-caption{font-size:13px;font-weight:500}.profile-value{font-size:13px;flex-wrap:wrap}.profile-value .text-button{font-size:12px}.gender-options label:has(input:checked){background:var(--green-soft);border-color:#a4dabb;color:var(--green-dark)}
 .profile-save-actions{display:flex;flex-direction:column;align-items:flex-start;gap:12px}.profile-save-actions .primary-button{gap:24px;min-height:44px;box-shadow:0 4px 12px rgba(47,143,70,.2)}.profile-save-actions small{font-size:11px;color:var(--muted)}
@@ -68,7 +68,7 @@
 .back-link{font-size:13px;color:var(--muted);font-weight:600}
 .back-link:hover{color:var(--green-dark)}
 .order-detail-title{display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap}
-.order-detail-title h1{font:700 20px "Plus Jakarta Sans",sans-serif;margin:0}
+.order-detail-title h1{font:700 20px var(--font-sans);margin:0}
 
 .tracking-card{border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:18px;background:#fff}
 .tracking-card h3,.detail-card h3{margin:0 0 18px;font-size:15px;font-weight:700}

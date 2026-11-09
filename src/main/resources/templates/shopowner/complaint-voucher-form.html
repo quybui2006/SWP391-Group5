@@ -26,8 +26,14 @@
     <main class="main-content product-management">
         <header class="order-detail-heading">
             <div>
-                <a class="back-link" th:href="@{/shopowner/orders/{id}(id=${order.id})}">← Quay lại đơn hàng gốc</a>
-                <h1>🎟️ Phát hành voucher đền bù khiếu nại</h1>
+                <a class="back-link" th:href="@{/shopowner/orders/{id}(id=${order.id})}" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Quay lại đơn hàng gốc</span>
+                </a>
+                <h1 style="display: flex; align-items: center; gap: 10px;">
+                    <svg class="ui-icon ui-icon-lg" style="color: #9333ea;" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                    <span>Phát hành voucher đền bù khiếu nại</span>
+                </h1>
                 <div class="order-heading-meta">
                     <span>Mã khiếu nại: <strong th:text="${complaint['complaint_code']}">KN-001</strong></span>
                     <span>Đơn gốc: <strong th:text="${order.order_code}">FF-001</strong></span>
@@ -44,7 +50,8 @@
             <div>
                 <div class="panel" style="padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
                     <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 14px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                        <span>📋</span> Thông tin khiếu nại &amp; Khách hàng
+                        <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <span>Thông tin khiếu nại &amp; Khách hàng</span>
                     </h2>
 
                     <div style="background: #fdf4ff; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13.5px; border-left: 3px solid #c026d3;">
@@ -70,8 +77,9 @@
                 </div>
 
                 <div class="panel" style="padding: 18px; border-radius: 12px; border: 1px solid #e9d5ff; background: #faf5ff;">
-                    <div style="font-weight: 700; color: #6b21a8; font-size: 13.5px; margin-bottom: 6px;">
-                        💡 Cơ chế lưu voucher tự động
+                    <div style="font-weight: 700; color: #6b21a8; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span>Cơ chế lưu voucher tự động</span>
                     </div>
                     <p style="font-size: 12.5px; color: #7e22ce; margin: 0; line-height: 1.5;">
                         Voucher đền bù là voucher <strong>riêng tư</strong> (không hiện trên trang sản phẩm chung). Khi Shop phát hành, hệ thống sẽ tự động lưu thẳng vào kho voucher cá nhân của khách hàng để áp dụng cho đơn tiếp theo.
@@ -183,8 +191,9 @@
                             Hủy bỏ
                         </a>
                         <button type="submit"
-                                style="background: #86198f; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;">
-                            🎟️ Xác nhận phát hành voucher vào ví khách
+                                style="background: #86198f; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+                            <span>Xác nhận phát hành voucher vào ví khách</span>
                         </button>
                     </div>
                 </form>

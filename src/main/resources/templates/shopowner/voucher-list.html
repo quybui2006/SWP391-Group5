@@ -17,18 +17,56 @@
                     <div class="voucher-breadcrumb"><span>Shop Owner</span><span>/</span><span>Marketing</span></div>
                     <div class="voucher-title-line"><div><span class="voucher-kicker">MARKETING CỬA HÀNG</span><h1 th:text="${voucherType == 'CASHBACK' ? 'Voucher hoàn xu' : 'Quản lý Voucher'}">Quản lý Voucher</h1><p th:text="${voucherType == 'CASHBACK' ? 'Tạo mã hoàn xu cho khách hàng khi đơn hàng hoàn tất.' : 'Tạo mã giảm giá, quản lý thời hạn và theo dõi lượt sử dụng của khách hàng.'}">Tạo mã giảm giá, quản lý thời hạn và theo dõi lượt sử dụng của khách hàng.</p></div></div>
                 </div>
-                <a class="voucher-primary-button" th:href="${voucherType == 'CASHBACK' ? '/shop/vouchers/cashback/create' : '/shop/vouchers/create'}"><span aria-hidden="true">＋</span> Tạo voucher</a>
+                <a class="voucher-primary-button" th:href="${voucherType == 'CASHBACK' ? '/shop/vouchers/cashback/create' : '/shop/vouchers/create'}" style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Tạo voucher</span>
+                </a>
             </header>
 
-            <div class="voucher-alert voucher-alert-success" th:if="${success}" role="status"><span class="alert-icon">✓</span><span th:text="${success}">Thao tác thành công.</span></div>
-            <div class="voucher-alert voucher-alert-error" th:if="${error}" role="alert"><span class="alert-icon">!</span><span th:text="${error}">Có lỗi xảy ra.</span></div>
-            <div class="voucher-alert voucher-alert-error" th:if="${serviceError}" role="alert"><span class="alert-icon">!</span><span th:text="${serviceError}">Không thể tải voucher.</span></div>
+            <div class="voucher-alert voucher-alert-success" th:if="${success}" role="status">
+                <span class="alert-icon" style="display:inline-flex;align-items:center;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span th:text="${success}">Thao tác thành công.</span>
+            </div>
+            <div class="voucher-alert voucher-alert-error" th:if="${error}" role="alert">
+                <span class="alert-icon" style="display:inline-flex;align-items:center;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </span>
+                <span th:text="${error}">Có lỗi xảy ra.</span>
+            </div>
+            <div class="voucher-alert voucher-alert-error" th:if="${serviceError}" role="alert">
+                <span class="alert-icon" style="display:inline-flex;align-items:center;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </span>
+                <span th:text="${serviceError}">Không thể tải voucher.</span>
+            </div>
 
             <section class="voucher-stats" aria-label="Tổng quan voucher">
-                <article class="voucher-stat"><div class="voucher-stat-icon icon-total">▣</div><div><span>Tổng voucher trong kết quả</span><strong th:text="${totalCount}">0</strong></div></article>
-                <article class="voucher-stat"><div class="voucher-stat-icon icon-active">✓</div><div><span>Đang bật</span><strong th:text="${activeCount}">0</strong></div></article>
-                <article class="voucher-stat"><div class="voucher-stat-icon icon-paused">Ⅱ</div><div><span>Đang tắt</span><strong th:text="${pausedCount}">0</strong></div></article>
-                <article class="voucher-stat"><div class="voucher-stat-icon icon-expired">◷</div><div><span>Hết hạn</span><strong th:text="${expiredCount}">0</strong></div></article>
+                <article class="voucher-stat">
+                    <div class="voucher-stat-icon icon-total" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                    </div>
+                    <div><span>Tổng voucher trong kết quả</span><strong th:text="${totalCount}">0</strong></div>
+                </article>
+                <article class="voucher-stat">
+                    <div class="voucher-stat-icon icon-active" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div><span>Đang bật</span><strong th:text="${activeCount}">0</strong></div>
+                </article>
+                <article class="voucher-stat">
+                    <div class="voucher-stat-icon icon-paused" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    </div>
+                    <div><span>Đang tắt</span><strong th:text="${pausedCount}">0</strong></div>
+                </article>
+                <article class="voucher-stat">
+                    <div class="voucher-stat-icon icon-expired" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div><span>Hết hạn</span><strong th:text="${expiredCount}">0</strong></div>
+                </article>
             </section>
 
             <section class="voucher-filter-card">
@@ -46,9 +84,9 @@
                     <table class="voucher-table">
                         <thead><tr><th>VOUCHER</th><th:block th:if="${voucherType == 'CASHBACK'}"><th>HOÀN XU</th></th:block><th:block th:unless="${voucherType == 'CASHBACK'}"><th>ƯU ĐÃI</th></th:block><th>ĐƠN TỐI THIỂU</th><th>SỬ DỤNG</th><th>THỜI GIAN ÁP DỤNG</th><th>TRẠNG THÁI</th><th class="actions-heading">THAO TÁC</th></tr></thead>
                         <tbody>
-                        <tr th:if="${#lists.isEmpty(vouchers)}"><td colspan="7"><div class="voucher-empty"><div class="empty-graphic">▣</div><strong>Chưa có voucher phù hợp</strong><p>Thử đổi từ khóa hoặc tạo voucher mới để bắt đầu chương trình ưu đãi.</p><a class="voucher-primary-button" th:href="${voucherType == 'CASHBACK' ? '/shop/vouchers/cashback/create' : '/shop/vouchers/create'}"><span aria-hidden="true">＋</span> Tạo voucher đầu tiên</a></div></td></tr>
+                        <tr th:if="${#lists.isEmpty(vouchers)}"><td colspan="7"><div class="voucher-empty"><div class="empty-graphic" style="display:flex;align-items:center;justify-content:center;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></div><strong>Chưa có voucher phù hợp</strong><p>Thử đổi từ khóa hoặc tạo voucher mới để bắt đầu chương trình ưu đãi.</p><a class="voucher-primary-button" th:href="${voucherType == 'CASHBACK' ? '/shop/vouchers/cashback/create' : '/shop/vouchers/create'}" style="display:inline-flex;align-items:center;gap:6px;"><svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg><span>Tạo voucher đầu tiên</span></a></div></td></tr>
                         <tr th:each="v : ${vouchers}">
-                            <td class="voucher-identity"><div class="voucher-code-row"><span class="voucher-code" th:text="${v.code}">WELCOME10</span><button type="button" class="icon-copy-button" th:attr="data-code=${v.code}" onclick="copyVoucher(this)" aria-label="Sao chép mã voucher" title="Sao chép mã">▢</button></div><div class="voucher-name" th:text="${v.name}">Ưu đãi khách hàng</div><span class="visibility-pill public-pill" th:if="${v.isPublic}">● Công khai</span><span class="visibility-pill private-pill" th:unless="${v.isPublic}">◉ Mã ẩn</span></td>
+                            <td class="voucher-identity"><div class="voucher-code-row"><span class="voucher-code" th:text="${v.code}">WELCOME10</span><button type="button" class="icon-copy-button" th:attr="data-code=${v.code}" onclick="copyVoucher(this)" aria-label="Sao chép mã voucher" title="Sao chép mã" style="display:inline-flex;align-items:center;justify-content:center;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button></div><div class="voucher-name" th:text="${v.name}">Ưu đãi khách hàng</div><span class="visibility-pill public-pill" th:if="${v.isPublic}">● Công khai</span><span class="visibility-pill private-pill" th:unless="${v.isPublic}">◉ Mã ẩn</span></td>
                             <td><div class="discount-primary" th:if="${v.discountType == 'PERCENTAGE'}" th:text="${#numbers.formatDecimal(v.discountValue,1,0) + '%'}">10%</div><div class="discount-primary" th:if="${v.discountType == 'FIXED_AMOUNT' and voucherType != 'CASHBACK'}" th:text="${#numbers.formatDecimal(v.discountValue,1,'COMMA',0,'POINT') + ' ₫'}">20.000 ₫</div><div class="table-subtext" th:if="${v.discountType == 'PERCENTAGE' and v.maxDiscountAmount != null}" th:text="${'Tối đa ' + #numbers.formatDecimal(v.maxDiscountAmount,1,'COMMA',0,'POINT') + (voucherType == 'CASHBACK' ? ' xu' : ' ₫')}">Tối đa</div><div class="table-subtext" th:if="${v.discountType == 'PERCENTAGE' and v.maxDiscountAmount == null}">Không giới hạn mức giảm</div></td>
                             <td><span class="money-value" th:text="${#numbers.formatDecimal(v.minOrderValue,1,'COMMA',0,'POINT') + ' ₫'}">100.000 ₫</span></td>
                             <td class="usage-cell"><div class="usage-meta"><strong th:text="${v.usedCount} + ' / ' + ${v.maxUsages}">0 / 100</strong><span th:text="${(v.maxUsages > 0 ? #numbers.formatDecimal(v.usedCount * 100.0 / v.maxUsages,1,0) : '0') + '%'}">0%</span></div><div class="usage-track"><span th:style="'width:' + ${v.maxUsages > 0 ? (v.usedCount * 100.0 / v.maxUsages) : 0} + '%'" aria-hidden="true"></span></div></td>
@@ -62,7 +100,10 @@
                 <div class="voucher-table-footer"><span>Voucher đã sử dụng không thể xóa nhằm bảo toàn lịch sử giao dịch.</span><span>FreshFruit · Quản lý ưu đãi</span></div>
             </section>
         </div>
-        <div id="copyToast" class="voucher-toast" hidden role="status">✓ Đã sao chép mã voucher</div>
+        <div id="copyToast" class="voucher-toast" hidden role="status" style="display:inline-flex;align-items:center;gap:6px;">
+            <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Đã sao chép mã voucher</span>
+        </div>
     </main>
 </div>
 <script>

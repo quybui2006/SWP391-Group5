@@ -31,8 +31,9 @@
                 </div>
             </div>
             <a th:href="@{/shopowner/orders(filter='complaint')}"
-               style="background: #d97706; color: #fff; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
-                Xem đơn khiếu nại →
+               style="background: #d97706; color: #fff; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <span>Xem đơn khiếu nại</span>
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
         </div>
 
@@ -67,11 +68,11 @@
                                 </span>
                                 <span th:if="${o.complaint_status == 'RESOLVED'}"
                                       style="display: inline-block; font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 99px; padding: 2px 7px;">
-                                    ✓ Đã giải quyết
+                                    Đã giải quyết
                                 </span>
                                 <span th:if="${o.complaint_status == 'REJECTED'}"
                                       style="display: inline-block; font-size: 11px; font-weight: 700; color: #b91c1c; background: #fee2e2; border: 1px solid #fecaca; border-radius: 99px; padding: 2px 7px;">
-                                    ✕ Đã từ chối
+                                    Đã từ chối
                                 </span>
                             </div>
                         </td>
@@ -85,9 +86,10 @@
                             <a class="order-action-link" th:href="@{/shopowner/orders/{id}(id=${o.id})}">Chi tiết</a>
                             <a th:if="${o.complaint_status == 'PENDING_SHOP' or o.complaint_status == 'PENDING'}"
                                class="order-action-link"
-                               style="background: #dc2626; color: #ffffff !important; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-decoration: none;"
+                               style="background: #dc2626; color: #ffffff !important; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"
                                th:href="@{/shopowner/orders/{id}(id=${o.id})}">
-                                Xử lý khiếu nại →
+                                <span>Xử lý khiếu nại</span>
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </a>
                             <th:block th:if="${o.status == 'PENDING' and o.payment_method == 'COD' and o.payment_status == 'UNPAID'}">
                                 <form method="post" th:action="@{/shopowner/orders/{id}/confirm(id=${o.id})}"

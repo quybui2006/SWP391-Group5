@@ -32,7 +32,9 @@
               th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
             <section class="form-card edit-section">
                 <div class="edit-section-heading">
-                    <div class="edit-section-icon">✎</div>
+                    <div class="edit-section-icon" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </div>
                     <div><h2>Thông tin cơ bản</h2><p>Những thông tin giúp khách hàng nhận biết sản phẩm.</p></div>
                     <span class="edit-required-note"><b>*</b> Bắt buộc</span>
                 </div>
@@ -87,7 +89,10 @@
                 <div class="edit-footer-copy"><strong>Kiểm tra thông tin trước khi lưu</strong><span>Bạn có thể xem lại toàn bộ thông tin tại trang chi tiết sản phẩm.</span></div>
                 <div class="form-actions">
                     <a class="button button-ghost" th:href="@{/shop/product/{id}(id=${form.id})}">Hủy</a>
-                    <button class="button button-primary edit-save-button" type="submit"><span>✓</span> Lưu thay đổi</button>
+                    <button class="button button-primary edit-save-button" type="submit" style="display:inline-flex;align-items:center;gap:6px;">
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Lưu thay đổi</span>
+                    </button>
                 </div>
             </div>
         </form>

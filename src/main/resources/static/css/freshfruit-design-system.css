@@ -1,0 +1,387 @@
+/**
+ * ==========================================================================
+ * FRESHFRUIT DESIGN SYSTEM (Global Core)
+ * ==========================================================================
+ * Standardized typography, color tokens, SVG icon utilities, component specs,
+ * and layout normalization across all user roles (Customer, Shop Owner, Operations, Admin).
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+
+:root {
+    /* Brand Primary (Fresh Green) */
+    --primary-50: #f0fdf4;
+    --primary-100: #dcfce7;
+    --primary-200: #bbf7d0;
+    --primary-300: #86efac;
+    --primary-400: #4ade80;
+    --primary-500: #22c55e;
+    --primary-600: #16a34a;
+    --primary-700: #15803d;
+    --primary-800: #166534;
+    --primary-900: #14532d;
+
+    /* Legacy compatibility aliases */
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-soft: #f0fdf4;
+    --green-light: #dcfce7;
+
+    /* Neutrals (Slate) */
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #ffffff;
+
+    /* Semantic Accents */
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-200: #bfdbfe;
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+
+    --amber-50: #fffbeb;
+    --amber-100: #fef3c7;
+    --amber-200: #fde68a;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+
+    --orange-50: #fff7ed;
+    --orange-100: #ffedd5;
+    --orange-200: #fed7aa;
+    --orange-600: #ea580c;
+    --orange-700: #c2410c;
+
+    --red-50: #fef2f2;
+    --red-100: #fee2e2;
+    --red-200: #fecaca;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+
+    /* Typography */
+    --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-ui: var(--font-sans);
+
+    /* Elevations & Shadows */
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+    --shadow: var(--shadow-sm);
+
+    /* Border Radii */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    /* Transitions */
+    --ease-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-normal: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   GLOBAL RESET & TYPOGRAPHY ENHANCEMENT
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink);
+    background-color: var(--bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    color: var(--slate-900);
+    letter-spacing: -0.015em;
+    font-weight: 700;
+}
+
+p, span, label, input, button, select, textarea {
+    font-family: var(--font-sans);
+}
+
+/* ==========================================================================
+   ICON SYSTEM (Consistent Inline SVG Icon Utility)
+   ========================================================================== */
+.ui-icon {
+    display: inline-block;
+    vertical-align: middle;
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 1.85;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    flex-shrink: 0;
+    transition: var(--ease-fast);
+}
+
+.ui-icon-xs { width: 12px; height: 12px; stroke-width: 1.75; }
+.ui-icon-sm { width: 14px; height: 14px; stroke-width: 1.85; }
+.ui-icon-md { width: 16px; height: 16px; stroke-width: 1.85; }
+.ui-icon-lg { width: 18px; height: 18px; stroke-width: 1.9; }
+.ui-icon-xl { width: 22px; height: 22px; stroke-width: 2; }
+
+/* ==========================================================================
+   STANDARDIZED BUTTONS
+   ========================================================================== */
+.btn, .btn-action, .primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 14px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--ease-fast);
+    user-select: none;
+    white-space: nowrap;
+}
+
+.btn:focus-visible, .btn-action:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.22);
+}
+
+.btn:disabled, .btn-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn-primary, .btn-action-primary, .primary-button {
+    background: var(--primary-600);
+    color: #ffffff !important;
+    border-color: var(--primary-600);
+    box-shadow: var(--shadow-xs);
+}
+
+.btn-primary:hover, .btn-action-primary:hover, .primary-button:hover {
+    background: var(--primary-700);
+    border-color: var(--primary-700);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary, .btn-action-secondary {
+    background: #ffffff;
+    color: var(--slate-700) !important;
+    border-color: var(--slate-300);
+    box-shadow: var(--shadow-xs);
+}
+
+.btn-secondary:hover, .btn-action-secondary:hover {
+    background: var(--slate-50);
+    border-color: var(--slate-400);
+    color: var(--slate-900) !important;
+}
+
+.btn-outline-primary {
+    background: #ffffff;
+    color: var(--primary-700) !important;
+    border-color: var(--primary-300);
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-50);
+    border-color: var(--primary-600);
+    color: var(--primary-800) !important;
+}
+
+.btn-danger {
+    background: #ffffff;
+    color: var(--red-600) !important;
+    border-color: var(--red-200);
+}
+
+.btn-danger:hover {
+    background: var(--red-50);
+    border-color: var(--red-600);
+    color: var(--red-700) !important;
+}
+
+.btn-danger-solid {
+    background: var(--red-600);
+    color: #ffffff !important;
+    border-color: var(--red-600);
+}
+
+.btn-danger-solid:hover {
+    background: var(--red-700);
+    border-color: var(--red-700);
+}
+
+/* ==========================================================================
+   STANDARDIZED FORM CONTROLS
+   ========================================================================== */
+.form-control, .input-text, input[type="text"], input[type="email"], input[type="password"],
+input[type="number"], input[type="tel"], input[type="date"], select, textarea {
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--slate-900);
+    background-color: #ffffff;
+    border: 1px solid var(--slate-300);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    transition: var(--ease-fast);
+}
+
+.form-control:hover, input[type="text"]:hover, select:hover, textarea:hover {
+    border-color: var(--slate-400);
+}
+
+.form-control:focus, input[type="text"]:focus, input[type="email"]:focus,
+input[type="password"]:focus, input[type="number"]:focus, input[type="tel"]:focus,
+input[type="date"]:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+.form-control::placeholder, input::placeholder, textarea::placeholder {
+    color: var(--slate-400);
+}
+
+.form-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--slate-700);
+    margin-bottom: 5px;
+}
+
+/* ==========================================================================
+   STANDARDIZED STATUS BADGES & TAGS
+   ========================================================================== */
+.status-pill, .badge, .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.status-pill.success, .badge-success {
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border: 1px solid var(--primary-200);
+}
+
+.status-pill.warning, .badge-warning {
+    background: var(--amber-50);
+    color: var(--amber-700);
+    border: 1px solid var(--amber-200);
+}
+
+.status-pill.danger, .badge-danger {
+    background: var(--red-50);
+    color: var(--red-700);
+    border: 1px solid var(--red-200);
+}
+
+.status-pill.info, .badge-info {
+    background: var(--blue-50);
+    color: var(--blue-700);
+    border: 1px solid var(--blue-200);
+}
+
+.status-pill.neutral, .badge-neutral {
+    background: var(--slate-100);
+    color: var(--slate-700);
+    border: 1px solid var(--slate-200);
+}
+
+/* ==========================================================================
+   STANDARDIZED CARDS & PANELS
+   ========================================================================== */
+.card, .panel, .setup-hero, .status-hero {
+    background: #ffffff;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    transition: var(--ease-normal);
+}
+
+/* ==========================================================================
+   STANDARDIZED TABLES
+   ========================================================================== */
+.data-table, .order-table, .inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.data-table th, .order-table th, .inventory-table th {
+    background: var(--slate-50);
+    color: var(--slate-500);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--slate-200);
+    white-space: nowrap;
+}
+
+.data-table td, .order-table td, .inventory-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--slate-100);
+    color: var(--slate-700);
+    vertical-align: middle;
+}
+
+.data-table tr:hover td, .order-table tr:hover td, .inventory-table tr:hover td {
+    background: var(--slate-50);
+}
+
+/* ==========================================================================
+   RESPONSIVE SCROLLBAR & OVERFLOW HELPERS
+   ========================================================================== */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+

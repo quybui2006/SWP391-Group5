@@ -6,8 +6,8 @@
     <title th:text="${title + ' | FreshFruit Kênh Người Bán'}">Kênh Người Bán | FreshFruit</title>
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
     <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <script th:src="@{/js/notification-dropdown.js}" defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --seller-primary: #15803d;
@@ -25,7 +25,7 @@
             padding: 0;
             background: var(--seller-bg);
             color: var(--seller-text);
-            font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+            font-family: var(--font-sans, 'Be Vietnam Pro', system-ui, sans-serif);
             -webkit-font-smoothing: antialiased;
         }
         /* Top Navigation */
@@ -63,13 +63,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 800;
             font-size: 19px;
             box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
         }
         .seller-brand-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 800;
             font-size: 18px;
             color: #0f172a;
@@ -82,7 +82,7 @@
             background: #cbd5e1;
         }
         .seller-badge-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: var(--font-sans);
             font-size: 15px;
             font-weight: 800;
             color: var(--seller-primary-dark);
@@ -225,7 +225,7 @@
             margin-bottom: 24px;
         }
         .seller-card-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: var(--font-sans);
             font-size: 20px;
             font-weight: 800;
             color: #0f172a;
@@ -380,15 +380,18 @@
     </div>
 
     <div class="seller-user-actions">
-        <a th:href="@{/}" class="btn-back-market">
-            ← Mua sắm FreshFruit
+        <a th:href="@{/}" class="btn-back-market" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>Mua sắm FreshFruit</span>
         </a>
         <div class="seller-user-chip" th:if="${session.fullName != null || session.userId != null}">
             <div class="seller-user-avatar" th:text="${session.fullName != null ? #strings.substring(session.fullName, 0, 1).toUpperCase() : 'U'}">U</div>
             <span th:text="${session.fullName ?: 'Người bán'}">Họ tên</span>
         </div>
         <form th:action="@{/logout}" method="post" style="margin:0;">
-            <button type="submit" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:6px;" title="Đăng xuất">🚪</button>
+            <button type="submit" style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:6px;display:flex;align-items:center;" title="Đăng xuất">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+            </button>
         </form>
     </div>
 </header>
@@ -399,7 +402,10 @@
         <!-- Step 1 -->
         <div class="step-node" th:classappend="${activeStep > 1} ? ' completed' : (${activeStep == 1} ? ' active' : '')">
             <div class="step-node-header">
-                <span class="step-num" th:text="${activeStep > 1 ? '✓' : '1'}">1</span>
+                <span class="step-num">
+                    <svg th:if="${activeStep > 1}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span th:unless="${activeStep > 1}">1</span>
+                </span>
                 <span class="step-node-title">1. Kích hoạt tài khoản</span>
             </div>
             <span class="step-node-desc">Định danh CCCD & Thuế</span>
@@ -408,7 +414,10 @@
         <!-- Step 2 -->
         <div class="step-node" th:classappend="${activeStep > 2} ? ' completed' : (${activeStep == 2} ? ' active' : '')">
             <div class="step-node-header">
-                <span class="step-num" th:text="${activeStep > 2 ? '✓' : '2'}">2</span>
+                <span class="step-num">
+                    <svg th:if="${activeStep > 2}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span th:unless="${activeStep > 2}">2</span>
+                </span>
                 <span class="step-node-title">2. Tạo gian hàng</span>
             </div>
             <span class="step-node-desc">Tên Shop, Kho & Vận chuyển</span>
@@ -417,7 +426,10 @@
         <!-- Step 3 -->
         <div class="step-node" th:classappend="${activeStep > 3} ? ' completed' : (${activeStep == 3} ? ' active' : '')">
             <div class="step-node-header">
-                <span class="step-num" th:text="${activeStep > 3 ? '✓' : '3'}">3</span>
+                <span class="step-num">
+                    <svg th:if="${activeStep > 3}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span th:unless="${activeStep > 3}">3</span>
+                </span>
                 <span class="step-node-title">3. Duyệt thanh toán</span>
             </div>
             <span class="step-node-desc">Đối chiếu NH với CCCD</span>
@@ -426,7 +438,10 @@
         <!-- Step 4 -->
         <div class="step-node" th:classappend="${activeStep == 4} ? ' completed active' : ''">
             <div class="step-node-header">
-                <span class="step-num" th:text="${activeStep == 4 ? '✓' : '4'}">4</span>
+                <span class="step-num">
+                    <svg th:if="${activeStep == 4}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span th:unless="${activeStep == 4}">4</span>
+                </span>
                 <span class="step-node-title">4. Hoàn tất mở bán</span>
             </div>
             <span class="step-node-desc">Vào Kênh Quản lý</span>

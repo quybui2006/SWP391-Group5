@@ -1,3 +1,5 @@
+@import url('freshfruit-design-system.css');
+
 .login-main {
     min-height: calc(100vh - 76px);
     display: grid;

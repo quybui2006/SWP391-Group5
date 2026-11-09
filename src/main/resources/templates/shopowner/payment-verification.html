@@ -5,14 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông tin tài khoản ngân hàng | FreshFruit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
     <script th:src="@{/js/notification-dropdown.js}" defer></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
-        rel="stylesheet">
     <style>
         .payment-verify-grid {
             display: grid;
@@ -39,7 +38,7 @@
         }
 
         .info-card h2 {
-            font: 700 16px 'Plus Jakarta Sans', sans-serif;
+            font: 700 16px var(--font-sans);
             color: #0f172a;
             margin: 0;
             display: flex;
@@ -69,7 +68,7 @@
         }
 
         .bank-accounts-header h2 {
-            font: 800 17px 'Plus Jakarta Sans', sans-serif;
+            font: 800 17px var(--font-sans);
             color: #0f172a;
             margin: 0;
             display: flex;
@@ -141,7 +140,7 @@
         }
 
         .bank-card-name {
-            font: 700 14px 'Plus Jakarta Sans', sans-serif;
+            font: 700 14px var(--font-sans);
             color: #38bdf8;
             letter-spacing: 0.3px;
         }
@@ -329,7 +328,7 @@
         }
 
         .purpose-box h3 {
-            font: 700 13px 'Plus Jakarta Sans', sans-serif;
+            font: 700 13px var(--font-sans);
             color: #1e40af;
             margin: 0 0 6px;
         }
@@ -493,20 +492,26 @@
                     <div class="notif-dropdown-wrapper">
                         <button type="button" class="notif-bell-btn" id="globalNotifBellBtn" title="Thông báo"
                             aria-label="Thông báo"
-                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px;">
-                            🔔
+                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center;">
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                             <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
                         </button>
                         <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
                             <div class="notif-dropdown-header">
-                                <h4><span>🔔</span> Thông báo</h4>
+                                <h4 style="display: flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                    <span>Thông báo</span>
+                                </h4>
                                 <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
                             </div>
                             <div class="notif-dropdown-body" id="globalNotifList">
                                 <div class="notif-empty-box">Đang tải...</div>
                             </div>
                             <div class="notif-dropdown-footer">
-                                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
+                                <a th:href="@{/notifications}" class="notif-view-all-link" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span>Xem tất cả thông báo</span>
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -520,10 +525,11 @@
 
                     <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
                         <button type="submit"
-                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
                             onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'"
                             title="Đăng xuất">
-                            🚪 Đăng xuất
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                            Đăng xuất
                         </button>
                     </form>
                 </div>
@@ -532,22 +538,24 @@
             <!-- Flash messages -->
             <div th:if="${successMessage}"
                 style="background:#ecfdf5;border:1px solid #bbf7d0;color:#166534;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-                <span>✓</span>
+                <svg class="ui-icon ui-icon-sm" style="color:#16a34a;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                 <span th:text="${successMessage}">Thao tác thành công!</span>
             </div>
             <div th:if="${errorMessage}"
                 style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-                <span>⚠️</span>
+                <svg class="ui-icon ui-icon-sm" style="color:#dc2626;" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 <span th:text="${errorMessage}">Đã xảy ra lỗi!</span>
             </div>
 
             <!-- Status Alert Banners -->
             <!-- 1. Trạng thái ĐÃ DUYỆT (APPROVED) -->
             <div th:if="${paymentApprovalStatus == 'APPROVED'}"
-                style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">🎉</div>
+                style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
+                <div style="color: #16a34a; margin-top: 2px;">
+                    <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #166534; margin: 0 0 4px;">
+                    <h3 style="font: 700 15px var(--font-sans, inherit); color: #166534; margin: 0 0 4px;">
                         Thông tin tài khoản ngân hàng đã được phê duyệt thành công (APPROVED)
                     </h3>
                     <p style="font-size: 12.5px; color: #14532d; margin: 0 0 6px; line-height: 1.5;">
@@ -560,17 +568,20 @@
                     </div>
                 </div>
                 <a th:href="@{/shopowner/home}" class="button button-primary"
-                    style="padding: 7px 14px; font-size: 12px; text-decoration: none; align-self: center;">
-                    Vào Bảng điều khiển ➔
+                    style="padding: 7px 14px; font-size: 12px; text-decoration: none; align-self: center; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>Vào Bảng điều khiển</span>
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </a>
             </div>
 
             <!-- 2. Trạng thái ĐANG CHỜ DUYỆT (PENDING) -->
             <div th:if="${paymentApprovalStatus == 'PENDING'}"
-                style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">⏳</div>
+                style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
+                <div style="color: #d97706; margin-top: 2px;">
+                    <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #92400e; margin: 0 0 4px;">
+                    <h3 style="font: 700 15px var(--font-sans, inherit); color: #92400e; margin: 0 0 4px;">
                         Thông tin tài khoản ngân hàng đang chờ Ban Quản Lý thẩm định (PENDING)
                     </h3>
                     <p style="font-size: 12.5px; color: #78350f; margin: 0; line-height: 1.5;">
@@ -584,10 +595,12 @@
 
             <!-- 3. Trạng thái BỊ TỪ CHỐI (REJECTED) -->
             <div th:if="${paymentApprovalStatus == 'REJECTED'}"
-                style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
-                <div style="font-size: 26px;">❌</div>
+                style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px;">
+                <div style="color: #dc2626; margin-top: 2px;">
+                    <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
                 <div style="flex: 1;">
-                    <h3 style="font: 700 15px 'Plus Jakarta Sans', sans-serif; color: #991b1b; margin: 0 0 4px;">
+                    <h3 style="font: 700 15px var(--font-sans, inherit); color: #991b1b; margin: 0 0 4px;">
                         Thông tin tài khoản ngân hàng chưa được phê duyệt (REJECTED)
                     </h3>
                     <p style="font-size: 12.5px; color: #7f1d1d; margin: 0 0 6px;">
@@ -607,7 +620,8 @@
                 <div class="bank-accounts-header">
                     <div>
                         <h2>
-                            <span>🏦</span> Tài khoản ngân hàng nhận doanh thu
+                            <svg class="ui-icon ui-icon-md" style="color: #2563eb;" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            Tài khoản ngân hàng nhận doanh thu
                             <span style="font-size: 13px; font-weight: normal; color: #64748b;" th:if="${hasAccounts}" th:text="'(' + ${bankAccounts.size()} + ' tài khoản)'"></span>
                         </h2>
                         <p style="margin: 4px 0 0; font-size: 12.5px; color: #64748b;">
@@ -615,7 +629,8 @@
                         </p>
                     </div>
                     <a href="#form-add-bank" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; transition: background 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-                        <span>➕</span> Thêm tài khoản mới
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Thêm tài khoản mới
                     </a>
                 </div>
 
@@ -625,7 +640,7 @@
                          th:classappend="${acc.default ? ' is-default-card' : (acc.approvalStatus == 'PENDING' ? ' is-pending-card' : (acc.approvalStatus == 'REJECTED' ? ' is-rejected-card' : ''))}">
                         <div class="bank-card-top-row">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:20px;">💳</span>
+                                <svg class="ui-icon ui-icon-md" style="color:#2563eb;" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
                                 <span class="bank-card-name" th:text="${acc.bankName}">Vietcombank (VCB)</span>
                             </div>
 
@@ -634,7 +649,7 @@
                             <th:block th:if="${acc.approvalStatus == 'APPROVED' or (acc.approvalStatus == null and acc.default)}">
                                 <div th:if="${acc.default}" class="bank-tick-wrapper" title="Tài khoản đang nhận doanh thu mặc định">
                                     <div class="bank-tick-box checked">
-                                        <span class="tick-icon">✓</span>
+                                        <span class="tick-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
                                         <span class="tick-label">Mặc định</span>
                                     </div>
                                 </div>
@@ -652,7 +667,7 @@
                             <th:block th:if="${acc.approvalStatus == 'PENDING'}">
                                 <div class="bank-tick-wrapper" title="Tài khoản đang chờ Ban Quản Lý (Operations) thẩm định đối chiếu CCCD">
                                     <div class="bank-tick-box pending-badge">
-                                        <span>⏳</span>
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                         <span>Chờ duyệt</span>
                                     </div>
                                 </div>
@@ -662,7 +677,7 @@
                             <th:block th:if="${acc.approvalStatus == 'REJECTED'}">
                                 <div class="bank-tick-wrapper" title="Tài khoản bị từ chối đối soát do sai lệch thông tin">
                                     <div class="bank-tick-box rejected-badge">
-                                        <span>✕</span>
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                         <span>Bị từ chối</span>
                                     </div>
                                 </div>
@@ -679,11 +694,13 @@
                                 <span class="bank-card-holder-name" th:text="${acc.bankAccountName}">NGUYEN VAN A</span>
                                 <span class="bank-card-branch" th:if="${acc.bankBranch != null and !#strings.isEmpty(acc.bankBranch)}" th:text="'Chi nhánh: ' + ${acc.bankBranch}"></span>
                                 <!-- Ghi chú trạng thái tài khoản -->
-                                <div th:if="${acc.approvalStatus == 'PENDING'}" style="margin-top:5px; font-size:11px; color:#fbbf24; font-weight:600; display:flex; align-items:center; gap:4px;">
-                                    <span>⏳</span> <span>Đang chờ Ban Quản Lý thẩm định đối soát (Chưa thể chọn làm mặc định)</span>
+                                <div th:if="${acc.approvalStatus == 'PENDING'}" style="margin-top:5px; font-size:11px; color:#d97706; font-weight:600; display:flex; align-items:center; gap:4px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    <span>Đang chờ Ban Quản Lý thẩm định đối soát (Chưa thể chọn làm mặc định)</span>
                                 </div>
-                                <div th:if="${acc.approvalStatus == 'REJECTED'}" style="margin-top:5px; font-size:11px; color:#f87171; font-weight:600; display:flex; align-items:center; gap:4px;">
-                                    <span>✕</span> <span>Lý do từ chối: <span th:text="${acc.rejectionReason ?: 'Không khớp CCCD'}"></span></span>
+                                <div th:if="${acc.approvalStatus == 'REJECTED'}" style="margin-top:5px; font-size:11px; color:#dc2626; font-weight:600; display:flex; align-items:center; gap:4px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span>Lý do từ chối: <span th:text="${acc.rejectionReason ?: 'Không khớp CCCD'}"></span></span>
                                 </div>
                             </div>
 
@@ -692,7 +709,7 @@
                                 <form th:if="${bankAccounts.size() > 1 or acc.approvalStatus == 'REJECTED'}" th:action="@{/shopowner/payment-verification/delete}" method="post" style="margin:0;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài khoản ngân hàng này?');">
                                     <input type="hidden" name="accountId" th:value="${acc.id}">
                                     <button type="submit" class="btn-delete-acc" title="Xóa tài khoản này">
-                                        🗑️
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </form>
                             </div>
@@ -702,11 +719,14 @@
 
                 <!-- Khi chưa có tài khoản nào -->
                 <div th:unless="${hasAccounts}" style="text-align: center; padding: 32px 16px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;">
-                    <div style="font-size: 36px; margin-bottom: 8px;">🏦</div>
+                    <div style="color: #94a3b8; margin-bottom: 8px;">
+                        <svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                    </div>
                     <strong style="display: block; font-size: 14px; color: #1e293b;">Chưa có tài khoản ngân hàng nào được liên kết</strong>
                     <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 14px;">Vui lòng điền thông tin tài khoản bên dưới để gửi Ban Quản Lý đối soát mở bán.</p>
                     <a href="#form-add-bank" style="display: inline-flex; align-items: center; gap: 6px; background: #16a34a; color: #fff; text-decoration: none; padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 700;">
-                        Nhập thông tin tài khoản ➔
+                        <span>Nhập thông tin tài khoản</span>
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </a>
                 </div>
             </div>
@@ -722,7 +742,8 @@
                     <!-- KHỐI 1: MỤC ĐÍCH THÊM THÔNG TIN TÀI KHOẢN NGÂN HÀNG -->
                     <div class="info-card">
                         <h2>
-                            <span>🎯</span> Mục đích thêm tài khoản ngân hàng
+                            <svg class="ui-icon ui-icon-md" style="color: #2563eb;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                            Mục đích thêm tài khoản ngân hàng
                         </h2>
 
                         <div class="purpose-box">
@@ -744,7 +765,8 @@
                     <!-- KHỐI 2: NGUYÊN TẮC BÁN HÀNG TRÊN SÀN FRESHFRUIT -->
                     <div class="info-card">
                         <h2>
-                            <span>⚖️</span> Nguyên tắc bán hàng trên FreshFruit
+                            <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                            Nguyên tắc bán hàng trên FreshFruit
                         </h2>
                         <p style="font-size: 12px; color: #64748b; margin: 0 0 12px;">
                             Quy định bắt buộc đối với tất cả các chủ cửa hàng (Shop Owner) khi tham gia kinh doanh trên nền tảng:
@@ -792,7 +814,8 @@
                 <div id="form-add-bank" th:attr="data-existing-stks=${existingStks != null ? #strings.listJoin(existingStks, ',') : ''}">
                     <div class="info-card">
                         <h2>
-                            <span>➕</span> Thêm thông tin tài khoản ngân hàng
+                            <svg class="ui-icon ui-icon-md" style="color: #2563eb;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                            Thêm thông tin tài khoản ngân hàng
                         </h2>
                         <p style="font-size: 12px; color: #64748b; margin: 0 0 10px;">
                             Điền chính xác thông tin tài khoản ngân hàng chính chủ của bạn để thêm vào danh sách và chọn tài khoản nhận quyết toán doanh thu.
@@ -893,8 +916,9 @@
                             </div>
 
                             <!-- Nút gửi yêu cầu -->
-                            <button type="submit" class="btn-submit-verify" id="btnSubmitVerify">
-                                <span>💾</span> Lưu thông tin tài khoản ngân hàng
+                            <button type="submit" class="btn-submit-verify" id="btnSubmitVerify" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                <span>Lưu thông tin tài khoản ngân hàng</span>
                             </button>
                         </form>
 
@@ -974,11 +998,11 @@
                         inputNameElem.classList.add('input-success');
                     }
                     matchBadge.className = 'match-badge matched';
-                    matchBadge.textContent = '✓ Trùng khớp CCCD';
+                    matchBadge.innerHTML = '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Trùng khớp CCCD';
                     if (matchAlert) {
                         matchAlert.style.display = 'block';
                         matchAlert.style.color = '#15803d';
-                        matchAlert.innerHTML = '✓ Tên chủ tài khoản trùng khớp với Họ tên trên CCCD (<strong>' + rawCccdName + '</strong>).';
+                        matchAlert.innerHTML = '<svg class="ui-icon ui-icon-xs" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Tên chủ tài khoản trùng khớp với Họ tên trên CCCD (<strong>' + rawCccdName + '</strong>).';
                     }
                     return true;
                 } else {
@@ -987,11 +1011,11 @@
                         inputNameElem.classList.add('input-error');
                     }
                     matchBadge.className = 'match-badge unmatched';
-                    matchBadge.textContent = '✕ Chưa khớp CCCD';
+                    matchBadge.innerHTML = '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Chưa khớp CCCD';
                     if (matchAlert) {
                         matchAlert.style.display = 'block';
                         matchAlert.style.color = '#dc2626';
-                        matchAlert.innerHTML = '✕ Lỗi: Tên chủ tài khoản không trùng khớp với Họ tên trên CCCD ("<strong>' + rawCccdName + '</strong>"). Theo quy định, tài khoản ngân hàng nhận tiền phải chính chủ.';
+                        matchAlert.innerHTML = '<svg class="ui-icon ui-icon-xs" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Lỗi: Tên chủ tài khoản không trùng khớp với Họ tên trên CCCD ("<strong>' + rawCccdName + '</strong>"). Theo quy định, tài khoản ngân hàng nhận tiền phải chính chủ.';
                     }
                     return false;
                 }
@@ -1015,7 +1039,7 @@
                     inputNumElem.classList.add('input-error');
                     if (numAlert) {
                         numAlert.style.display = 'block';
-                        numAlert.textContent = '✕ Số tài khoản chỉ gồm các chữ số (từ 6 đến 30 chữ số).';
+                        numAlert.innerHTML = '<svg class="ui-icon ui-icon-xs" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Số tài khoản chỉ gồm các chữ số (từ 6 đến 30 chữ số).';
                     }
                     return false;
                 } else if (existingStks.includes(val)) {
@@ -1023,7 +1047,7 @@
                     inputNumElem.classList.add('input-error');
                     if (numAlert) {
                         numAlert.style.display = 'block';
-                        numAlert.textContent = '✕ Số tài khoản này đã có trong danh sách tài khoản của bạn. Mỗi số tài khoản chỉ tạo 1 thẻ.';
+                        numAlert.innerHTML = '<svg class="ui-icon ui-icon-xs" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Số tài khoản này đã có trong danh sách tài khoản của bạn. Mỗi số tài khoản chỉ tạo 1 thẻ.';
                     }
                     return false;
                 } else {

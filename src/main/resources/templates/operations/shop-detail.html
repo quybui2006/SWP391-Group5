@@ -18,8 +18,9 @@
         <!-- NAVIGATION & STATUS BAR -->
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <a class="button button-secondary" th:href="@{/operations/shop-list}" style="padding: 6px 12px; font-weight: 700;">
-                    ← Quay lại danh sách
+                <a class="button button-secondary" th:href="@{/operations/shop-list}" style="padding: 6px 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Quay lại danh sách</span>
                 </a>
                 <span style="color: var(--muted); font-size: 13px;">|</span>
                 <span style="font-weight: 700; color: var(--ink); font-size: 13.5px;" th:text="${shop.name}">Tên Shop</span>
@@ -391,13 +392,13 @@
                                             <div th:if="${acc.bankBranch != null and !#strings.isEmpty(acc.bankBranch)}" style="font-size: 10.5px; color: #64748b;" th:text="${'CN: ' + acc.bankBranch}"></div>
                                         </td>
                                         <td style="padding: 8px 10px; text-align: center;">
-                                            <span th:if="${acc.default}" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;">⭐ Mặc định</span>
+                                            <span th:if="${acc.default}" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 3px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Mặc định</span>
                                             <span th:unless="${acc.default}" style="color: #94a3b8; font-size: 10.5px;">Phụ</span>
                                         </td>
                                         <td style="padding: 8px 10px; text-align: center;">
-                                            <span th:if="${acc.approvalStatus == 'APPROVED'}" style="background: #dcfce7; color: #15803d; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;">✓ Đã duyệt</span>
-                                            <span th:if="${acc.approvalStatus == 'PENDING'}" style="background: #fef3c7; color: #92400e; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;">⏳ Chờ duyệt</span>
-                                            <span th:if="${acc.approvalStatus == 'REJECTED'}" style="background: #fee2e2; color: #991b1b; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;" th:title="${acc.rejectionReason}">✕ Từ chối</span>
+                                            <span th:if="${acc.approvalStatus == 'APPROVED'}" style="background: #dcfce7; color: #15803d; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;">Đã duyệt</span>
+                                            <span th:if="${acc.approvalStatus == 'PENDING'}" style="background: #fef3c7; color: #92400e; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;">Chờ duyệt</span>
+                                            <span th:if="${acc.approvalStatus == 'REJECTED'}" style="background: #fee2e2; color: #991b1b; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;" th:title="${acc.rejectionReason}">Từ chối</span>
                                         </td>
                                         <td style="padding: 8px 10px; text-align: center;">
                                             <!-- Nút Duyệt và Từ chối khi PENDING -->
@@ -405,12 +406,12 @@
                                                 <form th:action="@{/operations/bank-accounts/{accountId}/approve(accountId=${acc.id})}" method="post" style="margin: 0;">
                                                     <input type="hidden" name="redirectUrl" th:value="'/operations/shops/' + ${shop.id}">
                                                     <button type="submit" style="background: #16a34a; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                                                        ✓ Duyệt
+                                                        Duyệt
                                                     </button>
                                                 </form>
                                                 <button type="button" th:onclick="'openAccRejectModal(' + ${acc.id} + ', \'' + ${acc.bankName} + ' - ' + ${acc.bankAccountNumber} + '\')'"
                                                         style="background: #dc2626; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                                                    ✕ Từ chối
+                                                    Từ chối
                                                 </button>
                                             </div>
                                             <!-- Nếu REJECTED: hiển thị lý do & nút duyệt lại -->
@@ -419,11 +420,11 @@
                                                 <form th:action="@{/operations/bank-accounts/{accountId}/approve(accountId=${acc.id})}" method="post" style="margin: 0;">
                                                     <input type="hidden" name="redirectUrl" th:value="'/operations/shops/' + ${shop.id}">
                                                     <button type="submit" style="background: #f1f5f9; color: #2563eb; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 600; cursor: pointer;">
-                                                        ↺ Duyệt lại
+                                                        Duyệt lại
                                                     </button>
                                                 </form>
                                             </div>
-                                            <span th:if="${acc.approvalStatus == 'APPROVED'}" style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Hợp lệ</span>
+                                            <span th:if="${acc.approvalStatus == 'APPROVED'}" style="color: #16a34a; font-size: 10.5px; font-weight: 600;">Hợp lệ</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -441,7 +442,10 @@
                 <section class="panel" style="margin: 0; border: 1px solid var(--line); background: #fff;">
                     <div class="panel-heading" style="border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 12px;">
                         <div>
-                            <h2 style="color: var(--ink);">⚙️ Thao tác &amp; Tiêu chí Thẩm định</h2>
+                            <h2 style="color: var(--ink); display: flex; align-items: center; gap: 6px;">
+                                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span>Thao tác &amp; Tiêu chí Thẩm định</span>
+                            </h2>
                             <p>Quy trình thẩm định và kiểm soát trạng thái hoạt động gian hàng</p>
                         </div>
                     </div>
@@ -450,7 +454,8 @@
                     <div th:if="${shop.operatingStatus == 'SUSPENDED'}" style="display: flex; flex-direction: column; gap: 10px;">
                         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
                             <div style="display: flex; align-items: center; gap: 6px; color: #991b1b; font-weight: 800; font-size: 12px; margin-bottom: 4px;">
-                                <span>⛔</span> GIAN HÀNG ĐANG BỊ TẠM DỪNG
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                <span>GIAN HÀNG ĐANG BỊ TẠM DỪNG</span>
                             </div>
                             <div style="font-size: 11.5px; color: #475569; margin-bottom: 6px;">Lý do đình chỉ hoạt động:</div>
                             <div style="background: #fff; border: 1px solid #fca5a5; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #b91c1c; line-height: 1.4;"
@@ -460,29 +465,35 @@
                         </div>
 
                         <p style="font-size: 11px; color: var(--muted); margin: 0; line-height: 1.4;">
-                            ℹ️ Khi chủ cửa hàng gửi giải trình khắc phục, Operations Manager sẽ xem xét và mở lại hoạt động tại mục 
-                            <a th:href="@{/operations/reopen-requests}" style="color: var(--green); font-weight: 700;">Yêu cầu mở lại Shop →</a>
+                            Khi chủ cửa hàng gửi giải trình khắc phục, Operations Manager sẽ xem xét và mở lại hoạt động tại mục 
+                            <a th:href="@{/operations/reopen-requests}" style="color: var(--green); font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
+                                <span>Yêu cầu mở lại Shop</span>
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
                         </p>
                     </div>
 
                     <!-- TRƯỜNG HỢP 2: HỒ SƠ MỞ SHOP ĐANG CHỜ DUYỆT (APPROVAL PENDING) -->
                     <div th:if="${shop.approvalStatus == 'PENDING'}">
-                        <p style="font-size: 11.5px; color: #c2410c; background: #fff7ed; border: 1px solid #fed7aa; padding: 8px 10px; border-radius: 6px; margin: 0 0 12px; font-weight: 600;">
-                            ⏳ Hồ sơ mở cửa hàng đang ở trạng thái CHỜ THẨM ĐỊNH.
+                        <p style="font-size: 11.5px; color: #c2410c; background: #fff7ed; border: 1px solid #fed7aa; padding: 8px 10px; border-radius: 6px; margin: 0 0 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>Hồ sơ mở cửa hàng đang ở trạng thái CHỜ THẨM ĐỊNH.</span>
                         </p>
 
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <form method="post" th:action="@{/operations/shops/{id}/approve(id=${shop.id})}">
-                                <button class="button button-approve" type="submit" style="width: 100%; padding: 8px; font-size: 12.5px;">
-                                    ✓ Phê duyệt mở Shop
+                                <button class="button button-approve" type="submit" style="width: 100%; padding: 8px; font-size: 12.5px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Phê duyệt mở Shop</span>
                                 </button>
                             </form>
 
                             <form method="post" th:action="@{/operations/shops/{id}/reject(id=${shop.id})}">
                                 <input type="text" name="rejectionReason" placeholder="Lý do từ chối hồ sơ..." required minlength="5"
                                        style="width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11.5px; box-sizing: border-box; margin-bottom: 6px;">
-                                <button class="button button-reject" type="submit" style="width: 100%; padding: 7px; font-size: 12px;">
-                                    ✕ Từ chối hồ sơ mở Shop
+                                <button class="button button-reject" type="submit" style="width: 100%; padding: 7px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    <span>Từ chối hồ sơ mở Shop</span>
                                 </button>
                             </form>
                         </div>
@@ -492,7 +503,8 @@
                     <div th:if="${shop.approvalStatus == 'APPROVED' and shop.operatingStatus != 'SUSPENDED' and shop.paymentApprovalStatus == 'PENDING'}">
                         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                             <div style="display: flex; align-items: center; gap: 6px; color: #1e40af; font-weight: 800; font-size: 12px; margin-bottom: 4px;">
-                                <span>💳</span> TIÊU CHÍ XỬ LÝ CỦA THẨM ĐỊNH VIÊN
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                <span>TIÊU CHÍ XỬ LÝ CỦA THẨM ĐỊNH VIÊN</span>
                             </div>
                             <div style="font-size: 11.5px; color: #1e3a8a; line-height: 1.4;">
                                 Đối chiếu tài khoản ngân hàng thụ hưởng với CCCD trước khi kích hoạt gian hàng sang trạng thái <strong>MỞ BÁN (OPEN)</strong>.
@@ -503,20 +515,26 @@
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
                             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
                                 <div style="display: flex; align-items: flex-start; gap: 6px;">
-                                    <span th:if="${shop.bankAccountMatchesIdCard}" style="color: #16a34a; font-weight: 800; font-size: 13px;">✓</span>
-                                    <span th:if="${!shop.bankAccountMatchesIdCard}" style="color: #dc2626; font-weight: 800; font-size: 13px;">⚠️</span>
+                                    <svg th:if="${shop.bankAccountMatchesIdCard}" class="ui-icon ui-icon-xs" style="color: #16a34a; margin-top: 2px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <svg th:if="${!shop.bankAccountMatchesIdCard}" class="ui-icon ui-icon-xs" style="color: #dc2626; margin-top: 2px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                     <div>
                                         <strong>1. Tiêu chí định danh chính chủ:</strong>
                                         <div style="color: #475569; margin-top: 1px;">
                                             CCCD: <b th:text="${shop.idCardName ?: '—'}">NGUYEN VAN A</b> ↔ TK: <b th:text="${shop.bankAccountName ?: '—'}">NGUYEN VAN A</b>
                                         </div>
-                                        <span th:if="${shop.bankAccountMatchesIdCard}" style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;">✓ KHỚP CHUẨN XÁC</span>
-                                        <span th:if="${!shop.bankAccountMatchesIdCard}" style="background: #fee2e2; color: #b91c1c; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;">⚠️ KHÔNG TRÙNG KHỚP</span>
+                                        <span th:if="${shop.bankAccountMatchesIdCard}" style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; margin-top: 2px;">
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                            KHỚP CHUẨN XÁC
+                                        </span>
+                                        <span th:if="${!shop.bankAccountMatchesIdCard}" style="background: #fee2e2; color: #b91c1c; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; margin-top: 2px;">
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                            KHÔNG TRÙNG KHỚP
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div style="display: flex; align-items: flex-start; gap: 6px;">
-                                    <span style="color: #16a34a; font-weight: 800; font-size: 13px;">✓</span>
+                                    <svg class="ui-icon ui-icon-xs" style="color: #16a34a; margin-top: 2px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                     <div>
                                         <strong>2. Tiêu chí tài khoản ngân hàng:</strong>
                                         <div style="color: #475569;" th:text="${(shop.bankName ?: '—') + ' · STK: ' + (shop.bankAccountNumber ?: '—')}">Vietcombank · 10123456789</div>
@@ -525,7 +543,7 @@
                                 </div>
 
                                 <div style="display: flex; align-items: flex-start; gap: 6px;">
-                                    <span style="color: #16a34a; font-weight: 800; font-size: 13px;">✓</span>
+                                    <svg class="ui-icon ui-icon-xs" style="color: #16a34a; margin-top: 2px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                     <div>
                                         <strong>3. Cam kết pháp lý thụ hưởng:</strong>
                                         <div style="color: #475569;">Shop Owner đã xác nhận cam kết tài khoản nhận tiền quyết toán duy nhất.</div>
@@ -539,13 +557,15 @@
                             <form method="post" th:action="@{/operations/shops/{id}/payment/approve(id=${shop.id})}">
                                 <input type="hidden" name="redirectUrl" th:value="'/operations/shops/' + ${shop.id}">
                                 <button class="button button-approve" type="submit" style="width: 100%; padding: 8px 12px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                    <span>✓</span> Phê duyệt đối soát &amp; Mở Shop (OPEN)
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Phê duyệt đối soát &amp; Mở Shop (OPEN)</span>
                                 </button>
                             </form>
 
                             <button type="button" class="button button-reject" onclick="openShopDetailPaymentRejectModal()"
                                     style="width: 100%; padding: 8px 12px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <span>✕</span> Từ chối đối soát thanh toán
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span>Từ chối đối soát thanh toán</span>
                             </button>
                         </div>
                     </div>
@@ -555,7 +575,8 @@
                          style="display: flex; flex-direction: column; gap: 10px;">
                         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
                             <div style="display: flex; align-items: center; gap: 6px; color: #991b1b; font-weight: 800; font-size: 12px; margin-bottom: 4px;">
-                                <span>❌</span> HỒ SƠ ĐỐI SOÁT ĐANG BỊ TỪ CHỐI
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                <span>HỒ SƠ ĐỐI SOÁT ĐANG BỊ TỪ CHỐI</span>
                             </div>
                             <div style="font-size: 11.5px; color: #475569; margin-bottom: 6px;">Lý do từ chối:</div>
                             <div style="background: #fff; border: 1px solid #fca5a5; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #b91c1c; line-height: 1.4;"
@@ -592,7 +613,8 @@
                     <div th:if="${shop.approvalStatus == 'APPROVED' and shop.operatingStatus != 'SUSPENDED' and shop.paymentApprovalStatus == 'APPROVED'}">
                         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
                             <div style="font-size: 12px; font-weight: 800; color: #166534; display: flex; align-items: center; gap: 6px;">
-                                <span>✓</span> SHOP ĐANG HOẠT ĐỘNG (OPEN)
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>SHOP ĐANG HOẠT ĐỘNG (OPEN)</span>
                             </div>
                             <div style="font-size: 11px; color: #15803d; margin-top: 2px;">
                                 Đã hoàn tất đối soát định danh và tài khoản ngân hàng.
@@ -614,7 +636,8 @@
 
                             <button class="button button-reject" type="submit" 
                                     style="width: 100%; padding: 8px 14px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <span>🚫</span> Tạm dừng hoạt động gian hàng
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                <span>Tạm dừng hoạt động gian hàng</span>
                             </button>
                         </form>
                     </div>
@@ -623,7 +646,8 @@
                 <!-- COMPLIANCE CHECKLIST MINI CARD -->
                 <section class="panel" style="margin: 0; background: #f8fafc;">
                     <h3 style="font-size: 12.5px; font-weight: 700; color: var(--ink); margin: 0 0 8px; display: flex; align-items: center; gap: 6px;">
-                        <span>📋</span> Tiêu chí Hậu kiểm Nông sản
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <span>Tiêu chí Hậu kiểm Nông sản</span>
                     </h3>
                     <ul style="margin: 0; padding-left: 18px; font-size: 11.5px; color: #475569; line-height: 1.6;">
                         <li>Đảm bảo xuất xứ vùng trồng rõ ràng</li>
@@ -641,7 +665,10 @@
         <section class="panel" style="margin-top: 14px;">
             <div class="panel-heading">
                 <div>
-                    <h2>📦 Danh mục Biến thể Sản phẩm Hậu kiểm</h2>
+                    <h2 style="display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                        <span>Danh mục Biến thể Sản phẩm Hậu kiểm</span>
+                    </h2>
                     <p>Operations Manager hậu kiểm hình ảnh, quy cách đóng gói, giá cả, tồn kho và hạn sử dụng của từng biến thể</p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -673,7 +700,7 @@
                                      onerror="this.hidden=true">
                                 <span th:if="${v.imageUrl == null or #strings.isEmpty(v.imageUrl)}"
                                       style="width: 40px; height: 40px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-size: 16px; flex-shrink: 0;">
-                                    🍎
+                                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
                                 </span>
                                 <div>
                                     <strong style="color: var(--ink); font-size: 12.5px;" th:text="${v.variantName}">Tên biến thể</strong>
@@ -716,7 +743,7 @@
 
                     <tr th:if="${#lists.isEmpty(variants)}">
                         <td colspan="7" style="text-align: center; padding: 32px; color: var(--muted);">
-                            <div style="font-size: 24px; margin-bottom: 6px;">📦</div>
+                            <div style="margin-bottom: 6px;"><svg class="ui-icon ui-icon-lg" style="color: #94a3b8;" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></div>
                             Gian hàng này hiện chưa có biến thể sản phẩm nào được niêm yết trên sàn.
                         </td>
                     </tr>
@@ -746,7 +773,7 @@
                     <h2 id="shopPaymentRejectTitle">Từ chối thông tin thanh toán</h2>
                 </div>
             </div>
-            <button type="button" class="icon-button" onclick="document.getElementById('shopPaymentRejectModal').close()" aria-label="Đóng">✕</button>
+            <button type="button" class="icon-button" onclick="document.getElementById('shopPaymentRejectModal').close()" aria-label="Đóng">&times;</button>
         </div>
 
         <div class="dialog-body">
@@ -775,9 +802,9 @@
                         Gợi ý lý do nhanh:
                     </div>
                     <div class="quick-reasons-chips">
-                        <button type="button" class="reason-chip" onclick="setShopPaymentReason('Tên chủ tài khoản ngân hàng không trùng khớp với họ tên trên CCCD của chủ Shop.')">👤 Tên chủ TK không khớp CCCD</button>
-                        <button type="button" class="reason-chip" onclick="setShopPaymentReason('Số tài khoản ngân hàng không tồn tại hoặc sai định dạng.')">🔢 Số tài khoản không hợp lệ</button>
-                        <button type="button" class="reason-chip" onclick="setShopPaymentReason('Ngân hàng thụ hưởng không đúng với thông tin chi nhánh đã khai báo.')">🏦 Ngân hàng không khớp chi nhánh</button>
+                        <button type="button" class="reason-chip" onclick="setShopPaymentReason('Tên chủ tài khoản ngân hàng không trùng khớp với họ tên trên CCCD của chủ Shop.')">Tên chủ TK không khớp CCCD</button>
+                        <button type="button" class="reason-chip" onclick="setShopPaymentReason('Số tài khoản ngân hàng không tồn tại hoặc sai định dạng.')">Số tài khoản không hợp lệ</button>
+                        <button type="button" class="reason-chip" onclick="setShopPaymentReason('Ngân hàng thụ hưởng không đúng với thông tin chi nhánh đã khai báo.')">Ngân hàng không khớp chi nhánh</button>
                     </div>
                 </div>
 
@@ -785,7 +812,7 @@
                           placeholder="Nhập lý do cụ thể (vd: Tên chủ tài khoản NGUYEN VAN B không trùng với họ tên CCCD NGUYEN VAN A...)..."></textarea>
 
                 <div class="dialog-hint">
-                    <span>💡</span> Ghi rõ lý do không khớp giúp chủ Shop bổ sung đúng tài khoản ngân hàng chính chủ.
+                    Ghi rõ lý do không khớp giúp chủ Shop bổ sung đúng tài khoản ngân hàng chính chủ.
                 </div>
             </div>
         </div>
@@ -821,7 +848,7 @@
                     <h2 id="accRejectTitle">Từ chối tài khoản ngân hàng</h2>
                 </div>
             </div>
-            <button type="button" class="icon-button" onclick="document.getElementById('accRejectModal').close()" aria-label="Đóng">✕</button>
+            <button type="button" class="icon-button" onclick="document.getElementById('accRejectModal').close()" aria-label="Đóng">&times;</button>
         </div>
 
         <div class="dialog-body">

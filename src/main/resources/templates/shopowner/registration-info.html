@@ -6,13 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông tin đăng ký Cửa hàng | FreshFruit</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
     <script th:src="@{/js/notification-dropdown.js}" defer></script>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 
     <style>
         /* ==========================================================================
@@ -35,7 +36,7 @@
         }
 
         .reg-header-left h1 {
-            font: 800 24px/1.3 'Plus Jakarta Sans', sans-serif;
+            font: 800 24px/1.3 var(--font-sans);
             color: #0f172a;
             margin: 0 0 6px;
             display: flex;
@@ -139,14 +140,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font: 800 24px 'Plus Jakarta Sans', sans-serif;
+            font: 800 24px var(--font-sans);
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
             flex-shrink: 0;
         }
 
         .shop-name-block strong {
             display: block;
-            font: 800 19px 'Plus Jakarta Sans', sans-serif;
+            font: 800 19px var(--font-sans);
             color: #0f172a;
             margin-bottom: 3px;
         }
@@ -285,7 +286,7 @@
             color: #fff;
             display: grid;
             place-items: center;
-            font: 700 12px 'Plus Jakarta Sans', sans-serif;
+            font: 700 12px var(--font-sans);
             flex-shrink: 0;
             margin-top: 2px;
         }
@@ -333,7 +334,7 @@
             border: 1px solid #e2e8f0;
             padding: 10px 20px;
             border-radius: 10px;
-            font: 600 13.5px 'Plus Jakarta Sans', sans-serif;
+            font: 600 13.5px var(--font-sans);
             color: #475569;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -419,7 +420,7 @@
         }
 
         .section-title h2 {
-            font: 700 16px 'Plus Jakarta Sans', sans-serif;
+            font: 700 16px var(--font-sans);
             color: #0f172a;
             margin: 0;
             display: flex;
@@ -532,7 +533,7 @@
         }
 
         .id-card-top strong {
-            font: 700 12px 'Plus Jakarta Sans', sans-serif;
+            font: 700 12px var(--font-sans);
             letter-spacing: 0.8px;
             text-transform: uppercase;
             color: #a7f3d0;
@@ -569,7 +570,7 @@
         }
 
         .id-name-box h3 {
-            font: 800 18px 'Plus Jakarta Sans', sans-serif;
+            font: 800 18px var(--font-sans);
             color: #ffffff;
             margin: 0;
             letter-spacing: 0.5px;
@@ -618,7 +619,7 @@
         }
 
         .bank-title {
-            font: 800 14px 'Plus Jakarta Sans', sans-serif;
+            font: 800 14px var(--font-sans);
             color: #38bdf8;
             letter-spacing: 0.5px;
         }
@@ -930,7 +931,6 @@
                     <h1>
                         Hồ sơ Đăng ký Gian hàng
                         <span th:text="${shop.name}">Tên Shop</span>
-                        <span>✦</span>
                     </h1>
                 </div>
 
@@ -939,20 +939,26 @@
                     <div class="notif-dropdown-wrapper">
                         <button type="button" class="notif-bell-btn" id="globalNotifBellBtn" title="Thông báo"
                             aria-label="Thông báo"
-                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px;">
-                            🔔
+                            style="background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; border-radius: 9px; padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center;">
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                             <span class="notif-badge-count" id="globalNotifBadge" style="display:none;">0</span>
                         </button>
                         <div class="notif-dropdown-menu" id="globalNotifDropdownMenu">
                             <div class="notif-dropdown-header">
-                                <h4><span>🔔</span> Thông báo</h4>
+                                <h4 style="display: flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                    <span>Thông báo</span>
+                                </h4>
                                 <button type="button" class="notif-mark-read-all" id="globalNotifMarkAllRead">Đã đọc tất cả</button>
                             </div>
                             <div class="notif-dropdown-body" id="globalNotifList">
                                 <div class="notif-empty-box">Đang tải...</div>
                             </div>
                             <div class="notif-dropdown-footer">
-                                <a th:href="@{/notifications}" class="notif-view-all-link">Xem tất cả thông báo →</a>
+                                <a th:href="@{/notifications}" class="notif-view-all-link" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span>Xem tất cả thông báo</span>
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -964,10 +970,11 @@
 
                     <form th:action="@{/logout}" method="post" style="display: inline-block; margin: 0;">
                         <button type="submit"
-                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc3545; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                            style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid #fecdd3; background: #fff0ef; color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
                             onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff0ef'"
                             title="Đăng xuất">
-                            🚪 Đăng xuất
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                            Đăng xuất
                         </button>
                     </form>
                 </div>
@@ -979,22 +986,26 @@
                 <div class="reg-header">
                     <div class="reg-header-left">
                         <h1>
-                            <span>📋</span> Toàn bộ Hồ sơ Đăng ký Shop
+                            <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            Toàn bộ Hồ sơ Đăng ký Shop
                         </h1>
                         <p>Xem lại chi tiết hồ sơ định danh CCCD, thông tin thuế, giấy phép kinh doanh, an toàn thực phẩm và tài khoản ngân hàng đã đăng ký với FreshFruit.</p>
                     </div>
 
                     <div class="reg-header-actions">
                         <button type="button" onclick="window.print()" class="btn-action btn-action-secondary" title="In hoặc lưu file PDF">
-                            <span>🖨️</span> In / Xuất Hồ sơ
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                            In / Xuất Hồ sơ
                         </button>
 
                         <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" title="Cập nhật thông tin gian hàng & kho">
-                            <span>✏️</span> Cập nhật Hồ sơ Shop
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                            Cập nhật Hồ sơ Shop
                         </a>
 
                         <a th:href="@{/shopowner/payment-verification}" class="btn-action btn-action-blue" title="Xem hoặc cập nhật thông tin tài khoản ngân hàng">
-                            <span>💳</span> Thông tin Tài khoản Ngân hàng
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            Thông tin Tài khoản Ngân hàng
                         </a>
                     </div>
                 </div>
@@ -1021,58 +1032,73 @@
                         <div class="status-pills-cluster">
                             <!-- Shop Approval Status -->
                             <span th:if="${shop.approvalStatus == 'APPROVED'}" class="status-pill-lg pill-approved">
-                                ✓ Hồ sơ Shop: ĐÃ DUYỆT
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                Hồ sơ Shop: ĐÃ DUYỆT
                             </span>
                             <span th:if="${shop.approvalStatus == 'PENDING'}" class="status-pill-lg pill-pending">
-                                ⏳ Hồ sơ Shop: CHỜ DUYỆT
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Hồ sơ Shop: CHỜ DUYỆT
                             </span>
                             <span th:if="${shop.approvalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected">
-                                ✕ Hồ sơ Shop: BỊ TỪ CHỐI
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                Hồ sơ Shop: BỊ TỪ CHỐI
                             </span>
 
                             <!-- Payment Approval Status -->
                             <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" class="status-pill-lg pill-approved">
-                                💳 Thanh toán: ĐÃ KHỚP CCCD
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                Thanh toán: ĐÃ KHỚP CCCD
                             </span>
                             <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" class="status-pill-lg pill-pending">
-                                💳 Thanh toán: CHỜ ĐỐI SOÁT
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                Thanh toán: CHỜ ĐỐI SOÁT
                             </span>
                             <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected">
-                                💳 Thanh toán: BỊ TỪ CHỐI
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                Thanh toán: BỊ TỪ CHỐI
                             </span>
                             <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' or shop.paymentApprovalStatus == null}" class="status-pill-lg pill-gray">
-                                💳 Thanh toán: CHƯA CÀI ĐẶT
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                Thanh toán: CHƯA CÀI ĐẶT
                             </span>
 
                             <!-- Operating Status -->
                             <span th:if="${shop.operatingStatus == 'OPEN'}" class="status-pill-lg pill-approved">
-                                ● ĐANG MỞ BÁN
+                                <span class="status-dot-pulse"></span> ĐANG MỞ BÁN
                             </span>
                             <span th:if="${shop.operatingStatus == 'SUSPENDED'}" class="status-pill-lg pill-rejected">
-                                ⛔ TẠM DỪNG BÁN
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                TẠM DỪNG BÁN
                             </span>
                             <span th:if="${shop.operatingStatus == 'CLOSED'}" class="status-pill-lg pill-gray">
-                                ○ ĐANG ĐÓNG CỬA
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                                ĐANG ĐÓNG CỬA
                             </span>
                         </div>
                     </div>
 
                     <!-- Warning box if rejected -->
-                    <div th:if="${shop.approvalStatus == 'REJECTED' and shop.rejectionReason != null}" class="rejection-banner">
-                        <strong>⚠️ Lý do Ban Quản trị từ chối hồ sơ Shop:</strong>
-                        <span th:text="${shop.rejectionReason}">Thông tin chưa đạt yêu cầu.</span>
+                    <div th:if="${shop.approvalStatus == 'REJECTED' and shop.rejectionReason != null}" class="rejection-banner" style="display: flex; align-items: flex-start; gap: 8px;">
+                        <svg class="ui-icon ui-icon-sm" style="color:#dc2626; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div>
+                            <strong>Lý do Ban Quản trị từ chối hồ sơ Shop:</strong>
+                            <span th:text="${shop.rejectionReason}">Thông tin chưa đạt yêu cầu.</span>
+                        </div>
                     </div>
 
-                    <div th:if="${shop.paymentApprovalStatus == 'REJECTED' and shop.bankRejectionReason != null}" class="rejection-banner">
-                        <strong>⚠️ Lý do từ chối tài khoản ngân hàng:</strong>
-                        <span th:text="${shop.bankRejectionReason}">Tên chủ tài khoản không trùng khớp với CCCD.</span>
+                    <div th:if="${shop.paymentApprovalStatus == 'REJECTED' and shop.bankRejectionReason != null}" class="rejection-banner" style="display: flex; align-items: flex-start; gap: 8px;">
+                        <svg class="ui-icon ui-icon-sm" style="color:#dc2626; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div>
+                            <strong>Lý do từ chối tài khoản ngân hàng:</strong>
+                            <span th:text="${shop.bankRejectionReason}">Tên chủ tài khoản không trùng khớp với CCCD.</span>
+                        </div>
                     </div>
 
                     <!-- 4-Step Stepper Timeline (Clickable to switch tab) -->
                     <div class="stepper-container">
                         <!-- Step 1 -->
                         <div class="step-card done" onclick="switchTab('legal-tab', document.getElementById('btn-tab-legal'))" title="Bấm xem Định danh CCCD & Thuế">
-                            <span class="step-num-icon">✓</span>
+                            <span class="step-num-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
                             <div class="step-card-text">
                                 <strong>1. Định danh CCCD &amp; Thuế</strong>
                                 <small th:text="${createdAtFormatted}">Đã xác thực nộp đơn</small>
@@ -1084,7 +1110,11 @@
                              th:classappend="${shop.approvalStatus == 'APPROVED'} ? ' done' : (${shop.approvalStatus == 'REJECTED'} ? ' fail' : ' active-step')"
                              onclick="switchTab('certificates-tab', document.getElementById('btn-tab-certificates'))"
                              title="Bấm xem Giấy phép & Thẩm định hồ sơ">
-                            <span class="step-num-icon" th:text="${shop.approvalStatus == 'APPROVED' ? '✓' : (shop.approvalStatus == 'REJECTED' ? '✕' : '2')}">2</span>
+                            <span class="step-num-icon">
+                                <svg th:if="${shop.approvalStatus == 'APPROVED'}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg th:if="${shop.approvalStatus == 'REJECTED'}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span th:if="${shop.approvalStatus != 'APPROVED' and shop.approvalStatus != 'REJECTED'}">2</span>
+                            </span>
                             <div class="step-card-text">
                                 <strong>2. Thẩm định Hồ sơ Shop</strong>
                                 <small th:text="${reviewedAtFormatted != null ? reviewedAtFormatted : (shop.approvalStatus == 'REJECTED' ? 'Bị từ chối' : 'Đang xử lý trong 24h')}">
@@ -1098,7 +1128,11 @@
                              th:classappend="${shop.paymentApprovalStatus == 'APPROVED'} ? ' done' : (${shop.paymentApprovalStatus == 'REJECTED'} ? ' fail' : (${shop.approvalStatus == 'APPROVED'} ? ' active-step' : ''))"
                              onclick="switchTab('banking-tab', document.getElementById('btn-tab-banking'))"
                              title="Bấm xem Tài khoản Ngân hàng">
-                            <span class="step-num-icon" th:text="${shop.paymentApprovalStatus == 'APPROVED' ? '✓' : (shop.paymentApprovalStatus == 'REJECTED' ? '✕' : '3')}">3</span>
+                            <span class="step-num-icon">
+                                <svg th:if="${shop.paymentApprovalStatus == 'APPROVED'}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg th:if="${shop.paymentApprovalStatus == 'REJECTED'}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span th:if="${shop.paymentApprovalStatus != 'APPROVED' and shop.paymentApprovalStatus != 'REJECTED'}">3</span>
+                            </span>
                             <div class="step-card-text">
                                 <strong>3. Tài khoản Ngân hàng</strong>
                                 <small th:text="${paymentReviewedAtFormatted != null ? paymentReviewedAtFormatted : (shop.paymentApprovalStatus == 'APPROVED' ? 'Đã duyệt khớp CCCD' : 'Đối chiếu Tên TK với CCCD')}">
@@ -1112,7 +1146,10 @@
                              th:classappend="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN'} ? ' done' : ''"
                              onclick="switchTab('shop-tab', document.getElementById('btn-tab-shop'))"
                              title="Bấm xem Gian hàng & Kho bãi">
-                            <span class="step-num-icon" th:text="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN' ? '✓' : '4'}">4</span>
+                            <span class="step-num-icon">
+                                <svg th:if="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN'}" class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span th:unless="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN'}">4</span>
+                            </span>
                             <div class="step-card-text">
                                 <strong>4. Mở bán Chính thức</strong>
                                 <small th:text="${shop.operatingStatus == 'OPEN' ? 'Đang mở bán trên FreshFruit' : 'Sẵn sàng bán hàng'}">
@@ -1120,22 +1157,27 @@
                                 </small>
                             </div>
                         </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Navigation Tabs Filter: Bỏ "Tất cả thông tin", Mặc định là "Gian hàng & Kho bãi" -->
                 <div class="reg-nav-tabs" role="tablist">
                     <button type="button" class="tab-btn active" id="btn-tab-shop" onclick="switchTab('shop-tab', this)">
-                        🏪 Gian hàng &amp; Kho bãi
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        Gian hàng &amp; Kho bãi
                     </button>
                     <button type="button" class="tab-btn" id="btn-tab-legal" onclick="switchTab('legal-tab', this)">
-                        🪪 Định danh &amp; Thuế
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                        Định danh &amp; Thuế
                     </button>
                     <button type="button" class="tab-btn" id="btn-tab-certificates" onclick="switchTab('certificates-tab', this)">
-                        📑 GPKD &amp; An toàn thực phẩm
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        GPKD &amp; An toàn thực phẩm
                     </button>
                     <button type="button" class="tab-btn" id="btn-tab-banking" onclick="switchTab('banking-tab', this)">
-                        💳 Tài khoản Ngân hàng
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                        Tài khoản Ngân hàng
                     </button>
                 </div>
 
@@ -1148,7 +1190,10 @@
                         <div>
                             <div class="section-card">
                                 <div class="section-title">
-                                    <h2><span>🏪</span> Thông tin Gian hàng &amp; Kho vận</h2>
+                                    <h2>
+                                        <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                                        Thông tin Gian hàng &amp; Kho vận
+                                    </h2>
                                     <span class="section-tag">Hồ sơ chính thức</span>
                                 </div>
 
@@ -1157,7 +1202,7 @@
                                         <span class="data-label">Tên gian hàng hiển thị</span>
                                         <span class="data-val">
                                             <b th:text="${shop.name}">FreshFruit Store</b>
-                                            <span style="color:#16a34a; font-size: 15px;" title="Cửa hàng đã xác minh">✓</span>
+                                            <svg class="ui-icon ui-icon-xs" style="color:#16a34a;" title="Cửa hàng đã xác minh" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                         </span>
                                     </div>
 
@@ -1217,7 +1262,10 @@
                         <div>
                             <div class="section-card">
                                 <div class="section-title">
-                                    <h2><span>🚚</span> Kênh Vận chuyển &amp; Vận hành</h2>
+                                    <h2>
+                                        <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+                                        Kênh Vận chuyển &amp; Vận hành
+                                    </h2>
                                     <span class="section-tag">Giao nhận</span>
                                 </div>
 
@@ -1225,18 +1273,18 @@
                                     <div class="data-row horizontal">
                                         <span class="data-label">Trạng thái mở bán</span>
                                         <span class="data-val">
-                                            <span th:if="${shop.operatingStatus == 'OPEN'}" class="status-pill-lg pill-approved" style="padding:4px 10px; font-size:12px;">● ĐANG MỞ BÁN</span>
-                                            <span th:if="${shop.operatingStatus == 'SUSPENDED'}" class="status-pill-lg pill-rejected" style="padding:4px 10px; font-size:12px;">⛔ TẠM DỪNG BÁN</span>
-                                            <span th:if="${shop.operatingStatus == 'CLOSED'}" class="status-pill-lg pill-gray" style="padding:4px 10px; font-size:12px;">○ ĐANG ĐÓNG CỬA</span>
+                                            <span th:if="${shop.operatingStatus == 'OPEN'}" class="status-pill-lg pill-approved" style="padding:4px 10px; font-size:12px;">Đang mở bán</span>
+                                            <span th:if="${shop.operatingStatus == 'SUSPENDED'}" class="status-pill-lg pill-rejected" style="padding:4px 10px; font-size:12px;">Tạm dừng bán</span>
+                                            <span th:if="${shop.operatingStatus == 'CLOSED'}" class="status-pill-lg pill-gray" style="padding:4px 10px; font-size:12px;">Đang đóng cửa</span>
                                         </span>
                                     </div>
 
                                     <div class="data-row horizontal">
                                         <span class="data-label">Hồ sơ thẩm định</span>
                                         <span class="data-val">
-                                            <span th:if="${shop.approvalStatus == 'APPROVED'}" class="status-pill-lg pill-approved" style="padding:4px 10px; font-size:12px;">✓ ĐÃ DUYỆT</span>
-                                            <span th:if="${shop.approvalStatus == 'PENDING'}" class="status-pill-lg pill-pending" style="padding:4px 10px; font-size:12px;">⏳ CHỜ DUYỆT</span>
-                                            <span th:if="${shop.approvalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected" style="padding:4px 10px; font-size:12px;">✕ BỊ TỪ CHỐI</span>
+                                            <span th:if="${shop.approvalStatus == 'APPROVED'}" class="status-pill-lg pill-approved" style="padding:4px 10px; font-size:12px;">Đã duyệt</span>
+                                            <span th:if="${shop.approvalStatus == 'PENDING'}" class="status-pill-lg pill-pending" style="padding:4px 10px; font-size:12px;">Chờ duyệt</span>
+                                            <span th:if="${shop.approvalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected" style="padding:4px 10px; font-size:12px;">Bị từ chối</span>
                                         </span>
                                     </div>
 
@@ -1255,20 +1303,24 @@
                                         <span class="data-label">Kênh vận chuyển đã đăng ký</span>
                                         <div class="shipping-pills">
                                             <span class="ship-pill" th:classappend="${shippingExpress} ? 'active' : 'inactive'">
-                                                ⚡ Giao Hỏa tốc (2h - 4h)
+                                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                                Giao Hỏa tốc (2h - 4h)
                                             </span>
                                             <span class="ship-pill" th:classappend="${shippingFast} ? 'active' : 'inactive'">
-                                                🚚 Giao Nhanh (Trong ngày)
+                                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+                                                Giao Nhanh (Trong ngày)
                                             </span>
                                             <span class="ship-pill" th:classappend="${shippingStandard} ? 'active' : 'inactive'">
-                                                📦 Giao Tiêu chuẩn (2 - 3 ngày)
+                                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                                                Giao Tiêu chuẩn (2 - 3 ngày)
                                             </span>
                                         </div>
                                     </div>
 
                                     <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
-                                        <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="width: 100%; justify-content: center; box-sizing: border-box;">
-                                            <span>✏️</span> Cập nhật thông tin Gian hàng &amp; Kho
+                                        <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="width: 100%; justify-content: center; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px;">
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                            Cập nhật thông tin Gian hàng &amp; Kho
                                         </a>
                                     </div>
                                 </div>
@@ -1277,15 +1329,18 @@
                             <!-- Rules & Support Box -->
                             <div class="section-card">
                                 <div class="section-title">
-                                    <h2><span>📜</span> Cam kết &amp; Quy chuẩn Gian hàng</h2>
+                                    <h2>
+                                        <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                                        Cam kết &amp; Quy chuẩn Gian hàng
+                                    </h2>
                                 </div>
                                 <div style="font-size: 13px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
                                     <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                        <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                        <svg class="ui-icon ui-icon-xs" style="color:#16a34a; margin-top: 3px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                         <span>Hoa quả cung ứng phải đảm bảo nguồn gốc rõ ràng, không sử dụng chất cấm bảo quản.</span>
                                     </div>
                                     <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                        <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                        <svg class="ui-icon ui-icon-xs" style="color:#16a34a; margin-top: 3px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                         <span>Kho hàng cần đóng gói đúng quy chuẩn chống dập nát trước khi bàn giao cho đơn vị vận chuyển.</span>
                                     </div>
                                 </div>
@@ -1302,7 +1357,10 @@
                         <!-- Left: CCCD Mockup & Info -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>🪪</span> Định danh Pháp lý Căn cước công dân</h2>
+                                <h2>
+                                    <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    Định danh Pháp lý Căn cước công dân
+                                </h2>
                                 <span class="section-tag">Bảo mật cao</span>
                             </div>
 
@@ -1375,7 +1433,10 @@
                         <!-- Right: Tax & Invoicing -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>📑</span> Thông tin Thuế &amp; Hóa đơn điện tử</h2>
+                                <h2>
+                                    <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    Thông tin Thuế &amp; Hóa đơn điện tử
+                                </h2>
                                 <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Thuế điện tử</span>
                             </div>
 
@@ -1409,7 +1470,10 @@
                                 </div>
 
                                 <div style="margin-top: 14px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                                    <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 6px;">🔒 Quy chế bảo mật dữ liệu định danh:</strong>
+                                    <strong style="color: #0f172a; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                                        <svg class="ui-icon ui-icon-xs" style="color: #64748b;" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <span>Quy chế bảo mật dữ liệu định danh:</span>
+                                    </strong>
                                     <p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.5;">
                                         Thông tin Căn cước công dân và Mã số thuế được mã hóa theo chuẩn bảo mật và tuân thủ chặt chẽ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. FreshFruit chỉ sử dụng thông tin này để phục vụ kê khai thuế và đối soát thanh toán.
                                     </p>
@@ -1428,9 +1492,12 @@
                         <!-- Card 1: Giấy phép Đăng ký Kinh doanh -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>📄</span> Giấy phép Đăng ký Kinh doanh (GPKD)</h2>
+                                <h2>
+                                    <svg class="ui-icon ui-icon-md" style="color: #2563eb;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                    Giấy phép Đăng ký Kinh doanh (GPKD)
+                                </h2>
                                 <span th:if="${!#strings.isEmpty(shop.businessLicenseNumber) or !#strings.isEmpty(shop.businessLicenseUrl)}"
-                                      class="section-tag">✓ Đã nộp</span>
+                                      class="section-tag">Đã nộp</span>
                                 <span th:unless="${!#strings.isEmpty(shop.businessLicenseNumber) or !#strings.isEmpty(shop.businessLicenseUrl)}"
                                       class="section-tag" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;">Chưa nộp</span>
                             </div>
@@ -1463,12 +1530,14 @@
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                                     <span class="data-label" style="font-weight: 700; color: #0f172a;">Bản chụp Giấy phép Kinh doanh đã nộp:</span>
                                     <div th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}" style="display: flex; gap: 6px;">
-                                        <a th:href="${shop.businessLicenseUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none;">
-                                            🔗 Mở tab mới
+                                        <a th:href="${shop.businessLicenseUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none; display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                            <span>Mở tab mới</span>
                                         </a>
-                                        <button type="button" class="copy-chip" style="background:#059669; color:#fff;"
+                                        <button type="button" class="copy-chip" style="background:#059669; color:#fff; display: inline-flex; align-items: center; gap: 4px;"
                                                 th:attr="onclick='openPreviewModal(\'' + ${shop.businessLicenseUrl} + '\', \'Bản chụp Giấy phép Đăng ký Kinh doanh\')'">
-                                            🔍 Phóng to
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                                            <span>Phóng to</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1481,13 +1550,16 @@
                                     <img th:src="${shop.businessLicenseUrl}" alt="Bản chụp Giấy phép Kinh doanh" class="cert-preview-img"
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                     <div class="cert-zoom-overlay">
-                                        <span>🔍 Bấm để xem ảnh phóng to đầy đủ</span>
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                                        <span>Bấm để xem ảnh phóng to đầy đủ</span>
                                     </div>
                                 </div>
 
                                 <!-- No URL Alert -->
                                 <div th:unless="${!#strings.isEmpty(shop.businessLicenseUrl)}" class="cert-empty-box">
-                                    <div style="font-size: 24px; margin-bottom: 6px;">⚠️</div>
+                                    <div style="color: #d97706; margin-bottom: 6px;">
+                                        <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    </div>
                                     <strong>Chưa tải lên bản chụp Giấy phép Đăng ký Kinh doanh</strong>
                                     <p style="margin: 6px 0 12px; color: #b45309;">Hồ sơ của bạn chưa có bản chụp tài liệu GPKD hợp lệ.</p>
                                     <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="font-size: 12px; padding: 6px 14px;">
@@ -1500,9 +1572,12 @@
                         <!-- Card 2: Giấy chứng nhận An toàn thực phẩm -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>🛡️</span> Giấy chứng nhận An toàn thực phẩm (ATTP)</h2>
+                                <h2>
+                                    <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    Giấy chứng nhận An toàn thực phẩm (ATTP)
+                                </h2>
                                 <span th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber) or !#strings.isEmpty(shop.foodSafetyCertUrl)}"
-                                      class="section-tag">✓ Đã nộp</span>
+                                      class="section-tag">Đã nộp</span>
                                 <span th:unless="${!#strings.isEmpty(shop.foodSafetyCertNumber) or !#strings.isEmpty(shop.foodSafetyCertUrl)}"
                                       class="section-tag" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;">Chưa nộp</span>
                             </div>
@@ -1540,12 +1615,14 @@
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                                     <span class="data-label" style="font-weight: 700; color: #0f172a;">Bản chụp Giấy chứng nhận ATTP đã nộp:</span>
                                     <div th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}" style="display: flex; gap: 6px;">
-                                        <a th:href="${shop.foodSafetyCertUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none;">
-                                            🔗 Mở tab mới
+                                        <a th:href="${shop.foodSafetyCertUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none; display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                            <span>Mở tab mới</span>
                                         </a>
-                                        <button type="button" class="copy-chip" style="background:#059669; color:#fff;"
+                                        <button type="button" class="copy-chip" style="background:#059669; color:#fff; display: inline-flex; align-items: center; gap: 4px;"
                                                 th:attr="onclick='openPreviewModal(\'' + ${shop.foodSafetyCertUrl} + '\', \'Giấy chứng nhận An toàn thực phẩm (ATTP)\')'">
-                                            🔍 Phóng to
+                                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                                            <span>Phóng to</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1558,13 +1635,16 @@
                                     <img th:src="${shop.foodSafetyCertUrl}" alt="Bản chụp Giấy chứng nhận ATTP" class="cert-preview-img"
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                     <div class="cert-zoom-overlay">
-                                        <span>🔍 Bấm để xem ảnh phóng to đầy đủ</span>
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                                        <span>Bấm để xem ảnh phóng to đầy đủ</span>
                                     </div>
                                 </div>
 
                                 <!-- No URL Alert -->
                                 <div th:unless="${!#strings.isEmpty(shop.foodSafetyCertUrl)}" class="cert-empty-box">
-                                    <div style="font-size: 24px; margin-bottom: 6px;">⚠️</div>
+                                    <div style="color: #d97706; margin-bottom: 6px;">
+                                        <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    </div>
                                     <strong>Chưa tải lên bản chụp Giấy chứng nhận ATTP</strong>
                                     <p style="margin: 6px 0 12px; color: #b45309;">Hồ sơ của bạn chưa có bản chụp Giấy chứng nhận an toàn thực phẩm.</p>
                                     <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="font-size: 12px; padding: 6px 14px;">
@@ -1585,7 +1665,10 @@
                         <!-- Left: Virtual Bank Card & Details -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>💳</span> Thông tin Tài khoản Ngân hàng Thụ hưởng</h2>
+                                <h2>
+                                    <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    Thông tin Tài khoản Ngân hàng Thụ hưởng
+                                </h2>
                                 <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Nhận doanh thu</span>
                             </div>
 
@@ -1616,9 +1699,9 @@
                                     </div>
                                     <div style="text-align: right;">
                                         <small>TRẠNG THÁI</small>
-                                        <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="color: #4ade80; font-weight: 700; font-size: 12px;">✓ Đã xác thực</span>
-                                        <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="color: #facc15; font-weight: 700; font-size: 12px;">⏳ Đang đối soát</span>
-                                        <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="color: #f87171; font-weight: 700; font-size: 12px;">✕ Bị từ chối</span>
+                                        <span th:if="${shop.paymentApprovalStatus == 'APPROVED'}" style="color: #4ade80; font-weight: 700; font-size: 12px;">Đã xác thực</span>
+                                        <span th:if="${shop.paymentApprovalStatus == 'PENDING'}" style="color: #facc15; font-weight: 700; font-size: 12px;">Đang đối soát</span>
+                                        <span th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="color: #f87171; font-weight: 700; font-size: 12px;">Bị từ chối</span>
                                         <span th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' or shop.paymentApprovalStatus == null}" style="color: #cbd5e1; font-weight: 700; font-size: 12px;">Chưa cài đặt</span>
                                     </div>
                                 </div>
@@ -1652,7 +1735,8 @@
                                 <div class="data-row horizontal">
                                     <span class="data-label">Quy tắc đối soát tên</span>
                                     <span class="data-val" style="color: #16a34a; font-size: 12.5px;">
-                                        ✓ Bắt buộc trùng khớp với Họ tên trên CCCD (<strong th:text="${shop.idCardName ?: 'Đã định danh'}">Tên CCCD</strong>)
+                                        <svg class="ui-icon ui-icon-xs" style="color:#16a34a;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Bắt buộc trùng khớp với Họ tên trên CCCD (<strong th:text="${shop.idCardName ?: 'Đã định danh'}">Tên CCCD</strong>)
                                     </span>
                                 </div>
                             </div>
@@ -1661,28 +1745,32 @@
                         <!-- Right: Payment Policy & Verification Guide -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>🛡️</span> Quy chuẩn Thanh toán &amp; Đối soát</h2>
+                                <h2>
+                                    <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                                    Quy chuẩn Thanh toán &amp; Đối soát
+                                </h2>
                                 <span class="section-tag">Chính sách</span>
                             </div>
 
                             <div style="font-size: 13px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
                                 <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                    <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                    <svg class="ui-icon ui-icon-xs" style="color:#16a34a; margin-top: 3px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                     <span><strong>Khớp danh tính 100%:</strong> Tên chủ tài khoản nhận doanh thu bắt buộc phải trùng khớp với Họ và tên trên Căn cước công dân đã nộp nhằm phòng chống rửa tiền và gian lận thương mại điện tử.</span>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                    <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                    <svg class="ui-icon ui-icon-xs" style="color:#16a34a; margin-top: 3px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                     <span><strong>Tự động quyết toán:</strong> Tiền hàng sau khi đơn hoàn tất sẽ được ghi nhận vào ví gian hàng và tự động giải ngân về số tài khoản này theo kỳ quy định.</span>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                    <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                    <svg class="ui-icon ui-icon-xs" style="color:#16a34a; margin-top: 3px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                                     <span><strong>Thay đổi tài khoản:</strong> Bất kỳ điều chỉnh số tài khoản ngân hàng nào cũng sẽ chuyển sang trạng thái <em>Chờ đối soát</em> trước khi nhận các đợt thanh toán tiếp theo.</span>
                                 </div>
                             </div>
 
                             <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
                                 <a th:href="@{/shopowner/payment-verification}" class="btn-action btn-action-primary" style="width: 100%; justify-content: center; box-sizing: border-box;">
-                                    <span>💳</span> Cập nhật / Xác thực Tài khoản Ngân hàng
+                                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    Cập nhật / Xác thực Tài khoản Ngân hàng
                                 </a>
                             </div>
                         </div>
@@ -1699,13 +1787,14 @@
         <div class="lightbox-content" onclick="event.stopPropagation()">
             <div class="lightbox-header">
                 <h3 id="previewModalTitle">
-                    <span>📑</span> Bản chụp Giấy phép
+                    <svg class="ui-icon ui-icon-md" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Bản chụp Giấy phép
                 </h3>
                 <div class="lightbox-header-actions">
                     <a id="previewModalNewTabBtn" href="#" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none; padding: 4px 10px;">
-                        🔗 Mở file gốc
+                        Mở file gốc
                     </a>
-                    <button type="button" class="lightbox-close-btn" onclick="closePreviewModal()" title="Đóng">✕</button>
+                    <button type="button" class="lightbox-close-btn" onclick="closePreviewModal()" title="Đóng">&times;</button>
                 </div>
             </div>
             <div class="lightbox-body">
@@ -1715,8 +1804,9 @@
     </div>
 
     <!-- Toast Notification for Copy -->
-    <div id="copyToast">
-        <span>✓</span> Đã sao chép vào bộ nhớ tạm!
+    <div id="copyToast" style="display: flex; align-items: center; gap: 8px;">
+        <svg class="ui-icon ui-icon-xs" style="color:#4ade80;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Đã sao chép vào bộ nhớ tạm!</span>
     </div>
 
     <script>
@@ -1778,7 +1868,7 @@
             var modalNewTabBtn = document.getElementById('previewModalNewTabBtn');
 
             modalImg.src = url;
-            modalTitle.innerHTML = '<span>📑</span> ' + (title || 'Bản chụp giấy phép');
+            modalTitle.innerHTML = '<svg class="ui-icon ui-icon-md" style="color: #16a34a; vertical-align: middle; margin-right: 6px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ' + (title || 'Bản chụp giấy phép');
             modalNewTabBtn.href = url;
 
             modal.classList.add('show');

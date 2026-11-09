@@ -1,6 +1,8 @@
-body{font-family:'Inter',Arial,sans-serif}
+@import url('freshfruit-design-system.css');
+
+body{font-family:var(--font-sans)}
 button,input,select,textarea{font-family:inherit}
-.brand,.brand>span:last-child,.brand>span:last-child>span,.brand small,.brand-mark{font-family:'Inter',Arial,sans-serif}
+.brand,.brand>span:last-child,.brand>span:last-child>span,.brand small,.brand-mark{font-family:var(--font-sans)}
 .brand{font-weight:700;letter-spacing:-.4px}
 .brand small{font-weight:700;letter-spacing:1.5px}
-.admin-main h1,.main-content h1,.topbar h1{font-family:'Inter',Arial,sans-serif;font-weight:700;letter-spacing:-.4px}
+.admin-main h1,.main-content h1,.topbar h1{font-family:var(--font-sans);font-weight:700;letter-spacing:-.4px}

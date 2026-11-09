@@ -13,7 +13,7 @@
     <aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside>
     <main class="main-content product-management">
         <header class="order-detail-heading">
-            <div><a class="back-link" th:href="@{/shopowner/orders}">← Đơn hàng</a><h1 th:text="${order.order_code}">Mã đơn</h1>
+            <div><a class="back-link" th:href="@{/shopowner/orders}" style="display: inline-flex; align-items: center; gap: 4px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg><span>Đơn hàng</span></a><h1 th:text="${order.order_code}">Mã đơn</h1>
                 <div class="order-heading-meta"><span class="order-status" th:classappend="${order.status == 'PENDING'} ? ' pending' : (${order.status == 'CONFIRMED'} ? ' confirmed' : (${order.status == 'CANCELLED'} ? ' cancelled' : ''))"
                      th:text="${order.status == 'PENDING'} ? 'Chờ xác nhận' : (${order.status == 'CONFIRMED'} ? 'Đã xác nhận' : (${order.status == 'CANCELLED'} ? 'Đã hủy' : (${order.status == 'COMPLETED'} ? 'Hoàn tất' : order.status)))">Chờ xác nhận</span>
                     <span th:text="${order.payment_method == 'RESEND'} ? 'Đơn giao bù 0₫ (Miễn phí)' : (${order.payment_method == 'COD'} ? 'Thanh toán khi nhận hàng' : 'Đã chọn thanh toán trực tuyến')"></span>
@@ -73,7 +73,10 @@
         <section class="panel" th:if="${orderComplaints != null and !#lists.isEmpty(orderComplaints)}"
                  style="margin-top: 20px; border: 1.5px solid #fde68a; background: #fffdf5; padding: 20px; border-radius: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
-                <h2 style="margin: 0; color: #92400e; font-size: 17px;">🎫 Yêu cầu khiếu nại trên đơn hàng này</h2>
+                <h2 style="margin: 0; color: #92400e; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+                    <svg class="ui-icon ui-icon-md" style="color: #d97706;" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+                    Yêu cầu khiếu nại trên đơn hàng này
+                </h2>
                 <span style="font-size: 12.5px; color: #166534; background: #dcfce7; padding: 4px 10px; border-radius: 99px; font-weight: 600;">
                     SLA phản hồi của Shop: 6 giờ
                 </span>
@@ -92,8 +95,9 @@
 
                 <!-- Mong muốn của khách hàng -->
                 <div style="background: #f8fafc; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; border-left: 3px solid #0284c7;">
-                    <div style="color: #0369a1; font-weight: 600; margin-bottom: 4px; font-size: 13.5px;">
-                        🎯 Mong muốn xử lý của khách:
+                    <div style="color: #0369a1; font-weight: 600; margin-bottom: 4px; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                        <span>Mong muốn xử lý của khách:</span>
                         <strong style="color: #0c4a6e;" th:text="${cp['desired_resolution_label'] ?: 'Giao hàng bù'}"></strong>
                     </div>
                     <div style="font-size: 13.5px; color: #334155;">
@@ -102,13 +106,18 @@
                 </div>
 
                 <div th:if="${cp['evidence_image_url'] != null}" style="margin-bottom: 12px;">
-                    <a th:href="${cp['evidence_image_url']}" target="_blank" style="font-size: 13px; color: #0284c7; font-weight: 600;">📷 Xem ảnh minh chứng khách gửi →</a>
+                    <a th:href="${cp['evidence_image_url']}" target="_blank" style="font-size: 13px; color: #0284c7; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                        <span>Xem ảnh minh chứng khách gửi</span>
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
                 </div>
 
                 <!-- Đã giải quyết: Đơn giao bù -->
                 <div th:if="${cp['replacement_order_code'] != null}" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
-                    <div style="font-weight: 700; color: #065f46; font-size: 13.5px; margin-bottom: 4px;">
-                        ✓ Đã tạo đơn giao bù 0 ₫ thành công:
+                    <div style="font-weight: 700; color: #065f46; font-size: 13.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>Đã tạo đơn giao bù 0 ₫ thành công:</span>
                     </div>
                     <div style="font-size: 13px; color: #047857;">
                         Mã đơn: <a th:href="@{/shopowner/orders/{id}(id=${cp['replacement_order_id']})}" style="font-weight: 700; color: #047857; text-decoration: underline;" th:text="${cp['replacement_order_code']}"></a>
@@ -119,8 +128,9 @@
 
                 <!-- Đã giải quyết: Tặng voucher -->
                 <div th:if="${cp['voucher_code'] != null}" style="background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
-                    <div style="font-weight: 700; color: #86198f; font-size: 13.5px; margin-bottom: 4px;">
-                        ✓ Đã tặng voucher đền bù vào ví của khách hàng:
+                    <div style="font-weight: 700; color: #86198f; font-size: 13.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>Đã tặng voucher đền bù vào ví của khách hàng:</span>
                     </div>
                     <div style="font-size: 13px; color: #a21caf;">
                         Mã voucher: <strong style="background: #fae8ff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 14px;" th:text="${cp['voucher_code']}"></strong>
@@ -137,14 +147,15 @@
                 <!-- Khách đã hủy khiếu nại -->
                 <div th:if="${cp['status'] == 'CANCELLED'}"
                      style="background: #f1f5f9; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #64748b; margin-top: 10px;">
-                    ✓ Khách hàng đã rút lại yêu cầu khiếu nại này.
+                    Khách hàng đã rút lại yêu cầu khiếu nại này.
                 </div>
 
                 <!-- TRƯỜNG HỢP 1: ĐANG CHỜ BAN VẬN HÀNH THẨM ĐỊNH -->
                 <div th:if="${cp['status'] == 'PENDING_OPERATIONS'}"
                      style="background: #fffaf0; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 18px; margin-top: 14px;">
-                    <div style="font-size: 13.5px; font-weight: 700; color: #ea580c; margin-bottom: 4px;">
-                        ⏳ Đang chờ Ban Vận hành (Operations) thẩm định khiếu nại
+                    <div style="font-size: 13.5px; font-weight: 700; color: #ea580c; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>Đang chờ Ban Vận hành (Operations) thẩm định khiếu nại</span>
                     </div>
                     <p style="margin: 0; font-size: 13px; color: #7c2d12; line-height: 1.5;">
                         Khách hàng đã gửi khiếu nại. Ban Vận hành sàn đang kiểm tra tính hợp lệ và bằng chứng. Khi Ban Vận hành phê duyệt, Shop sẽ thực hiện tạo đơn giao bù hoặc tặng voucher đền bù.
@@ -156,13 +167,17 @@
                      style="background: #fffdf5; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 18px; margin-top: 14px;">
 
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;">
-                        <strong style="color: #15803d; font-size: 13.5px;">✓ Ban Vận hành đã thẩm định và phê duyệt khiếu nại:</strong>
+                        <strong style="color: #15803d; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Ban Vận hành đã thẩm định và phê duyệt khiếu nại:</span>
+                        </strong>
                         <p style="margin: 4px 0 0; font-size: 13px; color: #166534;" th:if="${cp['operations_note'] != null and !cp['operations_note'].isEmpty()}" th:text="${'Ghi chú từ Vận hành: ' + cp['operations_note']}"></p>
                         <small style="color: #15803d; display: block; margin-top: 4px;">Cửa hàng vui lòng chọn 1 trong 2 phương án bồi hoàn dưới đây để hoàn tất xử lý cho khách hàng.</small>
                     </div>
 
-                    <label style="display: block; font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 12px;">
-                        ⚙️ Chọn phương án bồi hoàn:
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 12px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <span>Chọn phương án bồi hoàn:</span>
                     </label>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -170,24 +185,36 @@
                         <a th:href="@{/shopowner/orders/{oid}/complaints/{cid}/resend(oid=${order.id},cid=${cp['id']})}"
                            style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px; text-decoration: none; color: #166534; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
                             <div>
-                                <strong style="font-size: 14px; display: block; margin-bottom: 4px;">📦 Tạo đơn giao bù sản phẩm →</strong>
+                                <strong style="font-size: 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>Tạo đơn giao bù sản phẩm</span>
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </strong>
                                 <small style="color: #15803d; font-size: 12px; line-height: 1.4; display: block;">
                                     Chuyển sang màn hình chọn sản phẩm trong kho (giống hoặc khác món cũ), tạo đơn giao bù 0 ₫ và theo dõi vận chuyển.
                                 </small>
                             </div>
-                            <span style="display: inline-block; margin-top: 10px; font-weight: 700; font-size: 12.5px; color: #16a34a;">Vào màn hình tạo đơn bù »</span>
+                            <span style="display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-weight: 700; font-size: 12.5px; color: #16a34a;">
+                                <span>Vào màn hình tạo đơn bù</span>
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                            </span>
                         </a>
 
                         <!-- NÚT 2: CHUYỂN SANG MÀN HÌNH PHÁT HÀNH VOUCHER -->
                         <a th:href="@{/shopowner/orders/{oid}/complaints/{cid}/voucher(oid=${order.id},cid=${cp['id']})}"
                            style="background: #faf5ff; border: 1.5px solid #d8b4fe; border-radius: 8px; padding: 14px; text-decoration: none; color: #6b21a8; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
                             <div>
-                                <strong style="font-size: 14px; display: block; margin-bottom: 4px;">🎟️ Phát hành voucher đền bù →</strong>
+                                <strong style="font-size: 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>Phát hành voucher đền bù</span>
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </strong>
                                 <small style="color: #7e22ce; font-size: 12px; line-height: 1.4; display: block;">
                                     Chuyển sang màn hình thiết lập mệnh giá voucher, thời hạn dùng và tự động lưu thẳng vào ví voucher của khách hàng.
                                 </small>
                             </div>
-                            <span style="display: inline-block; margin-top: 10px; font-weight: 700; font-size: 12.5px; color: #9333ea;">Vào màn hình tạo voucher »</span>
+                            <span style="display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-weight: 700; font-size: 12.5px; color: #9333ea;">
+                                <span>Vào màn hình tạo voucher</span>
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                            </span>
                         </a>
                     </div>
                 </div>

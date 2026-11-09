@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng ký tài khoản Người Bán | FreshFruit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/login.css}">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         .seller-reg-container {
             min-height: 100vh;
             display: flex;
             background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-            font-family: 'DM Sans', sans-serif;
+            font-family: var(--font-sans);
         }
         .seller-hero-side {
             flex: 1;
@@ -46,7 +49,7 @@
         }
         .hero-brand span { color: #86efac; }
         .hero-heading {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: var(--font-sans);
             font-size: 38px;
             font-weight: 800;
             line-height: 1.25;
@@ -79,14 +82,15 @@
             font-weight: 500;
         }
         .feature-icon {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            color: #86efac;
+            flex-shrink: 0;
         }
         .seller-form-side {
             width: 540px;
@@ -99,7 +103,7 @@
             box-shadow: -10px 0 30px rgba(0,0,0,0.05);
         }
         .form-card-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: var(--font-sans);
             font-size: 24px;
             font-weight: 800;
             color: #0f172a;
@@ -186,19 +190,27 @@
 
         <ul class="features-list">
             <li class="feature-item">
-                <span class="feature-icon">✨</span>
+                <span class="feature-icon">
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </span>
                 <span>Miễn phí mở gian hàng trực tuyến 100%</span>
             </li>
             <li class="feature-item">
-                <span class="feature-icon">🚚</span>
+                <span class="feature-icon">
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                </span>
                 <span>Mạng lưới giao hàng nhanh trong ngày đảm bảo độ tươi ngon</span>
             </li>
             <li class="feature-item">
-                <span class="feature-icon">📊</span>
+                <span class="feature-icon">
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                </span>
                 <span>Dashboard quản lý doanh thu, tồn kho & khách hàng chuyên nghiệp</span>
             </li>
             <li class="feature-item">
-                <span class="feature-icon">💳</span>
+                <span class="feature-icon">
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                </span>
                 <span>Thanh toán minh bạch, đối soát tự động, bảo vệ quyền lợi người bán</span>
             </li>
         </ul>
@@ -210,11 +222,13 @@
 
         <!-- If user has customer account already -->
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:10px;margin-bottom:24px;">
-            <p style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600;">
-                ✦ Bạn đã là thành viên FreshFruit?
+            <p style="margin:0 0 10px;font-size:13px;color:#166534;font-weight:600;display:flex;align-items:center;gap:6px;">
+                <svg class="ui-icon ui-icon-xs" style="stroke:#16a34a" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                Bạn đã là thành viên FreshFruit?
             </p>
-            <a th:href="@{/seller/channel}" style="display:inline-block;padding:9px 18px;background:#16a34a;color:#fff;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px;">
-                Nộp hồ sơ mở Shop ngay ➔
+            <a th:href="@{/seller/channel}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:#16a34a;color:#fff;font-size:13px;font-weight:700;text-decoration:none;border-radius:8px;">
+                <span>Nộp hồ sơ mở Shop ngay</span>
+                <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </a>
         </div>
 
@@ -246,8 +260,9 @@
                 <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" required>
             </div>
 
-            <button type="submit" class="submit-btn">
-                Tạo tài khoản & Tiếp tục mở Shop ➔
+            <button type="submit" class="submit-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+                <span>Tạo tài khoản & Tiếp tục mở Shop</span>
+                <svg class="ui-icon ui-icon-sm" style="stroke:#fff" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </button>
         </form>
 
