@@ -1,5 +1,6 @@
 package service.shop;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -23,6 +24,25 @@ public class InventoryBatchService {
 
     public InventoryBatchService(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
+    }
+
+    @PostConstruct
+    public void initDb() {
+        try {
+            jdbc.execute("ALTER TABLE inventory_batches ADD COLUMN expires_at DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL 30 DAY)");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE inventory_batches ADD COLUMN expiry_notified_at DATETIME(3) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE product_variants ADD COLUMN operations_blocked TINYINT(1) NOT NULL DEFAULT 0");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("ALTER TABLE product_variants ADD COLUMN operations_block_reason VARCHAR(1000) NULL");
+        } catch (Exception ignored) {}
+        try {
+            jdbc.execute("CREATE INDEX IX_inventory_batches_fifo ON inventory_batches (inventory_id, status, expires_at, received_at, id)");
+        } catch (Exception ignored) {}
     }
 
     @Transactional
