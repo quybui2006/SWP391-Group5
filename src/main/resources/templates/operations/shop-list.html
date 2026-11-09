@@ -14,8 +14,12 @@
             <p class="alert alert-error" th:if="${error}" th:text="${error}"></p>
             <section class="approval-page">
                 <form class="table-toolbar" method="get" th:action="@{/operations/shop-list}">
-                    <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" name="keyword"
-                            th:value="${keyword}" placeholder="Tìm Shop, chủ Shop hoặc email"></label>
+                    <label class="search-field">
+                        <span aria-hidden="true" style="display:flex;align-items:center;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </span>
+                        <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm Shop, chủ Shop hoặc email">
+                    </label>
                     <button class="button button-primary" type="submit">Tìm kiếm</button>
                 </form>
                 <div class="table-card">

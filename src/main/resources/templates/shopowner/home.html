@@ -269,7 +269,7 @@
                             <strong th:if="${shop.paymentApprovalStatus == 'REJECTED'}" style="color: #dc2626;">TỪ
                                 CHỐI</strong>
                             <strong
-                                th:if="${shop.paymentApprovalStatus == 'UNCONFIGURED' or shop.paymentApprovalStatus == null}"
+                                th:if="${shop.paymentApprovalStatus != 'APPROVED' and shop.paymentApprovalStatus != 'PENDING' and shop.paymentApprovalStatus != 'REJECTED'}"
                                 style="color: #64748b;">CHƯA KHAI BÁO</strong>
                         </span>
                         <span
@@ -284,19 +284,19 @@
                             Xu hướng doanh thu 7 ngày qua</h4>
                         <div
                             style="display: flex; align-items: flex-end; gap: 8px; height: 86px; padding: 4px 0; border-bottom: 1px solid #f1f5f9;">
-                            <th:block th:each="day : ${revenueAnalytics.dailyTrend}">
+                            <th:block th:if="${revenueAnalytics != null and revenueAnalytics.dailyTrend != null}" th:each="day : ${revenueAnalytics.dailyTrend}">
                                 <div
                                     style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end;">
                                     <span style="font-size: 9.5px; font-weight: 700; color: #16a34a;"
-                                        th:text="${#numbers.formatInteger(day.revenue, 1, 'COMMA')}">0</span>
+                                        th:text="${day.revenue != null ? #numbers.formatInteger(day.revenue, 1, 'COMMA') : 0}">0</span>
                                     <div style="width: 100%; max-width: 24px; background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); border-radius: 3px 3px 0 0; min-height: 5px;"
-                                        th:styleappend="${day.revenue > 0 ? 'height:' + (day.revenue > 500000 ? 56 : 30) + 'px;' : 'height:5px;background:#e2e8f0;'}">
+                                        th:styleappend="${day.revenue != null and day.revenue > 0 ? 'height:' + (day.revenue > 500000 ? 56 : 30) + 'px;' : 'height:5px;background:#e2e8f0;'}">
                                     </div>
                                     <span style="font-size: 10px; color: #64748b;"
                                         th:text="${day.day_label}">01/01</span>
                                 </div>
                             </th:block>
-                            <div th:if="${#lists.isEmpty(revenueAnalytics.dailyTrend)}"
+                            <div th:if="${revenueAnalytics == null or revenueAnalytics.dailyTrend == null or #lists.isEmpty(revenueAnalytics.dailyTrend)}"
                                 style="width: 100%; text-align: center; color: #94a3b8; font-size: 12px; padding-top: 25px;">
                                 Chưa có dữ liệu doanh thu trong 7 ngày gần đây.
                             </div>
@@ -307,17 +307,17 @@
                             <div style="background: #f8fafc; padding: 5px 8px; border-radius: 6px; text-align: center;">
                                 <small style="color: #64748b; font-size: 10px; display: block;">Chờ xác nhận</small>
                                 <strong style="color: #ea580c; font-size: 13px;"
-                                    th:text="${revenueAnalytics.statusCounts.pending}">0</strong>
+                                    th:text="${revenueAnalytics != null and revenueAnalytics.statusCounts != null ? revenueAnalytics.statusCounts.pending : 0}">0</strong>
                             </div>
                             <div style="background: #f8fafc; padding: 5px 8px; border-radius: 6px; text-align: center;">
                                 <small style="color: #64748b; font-size: 10px; display: block;">Đang giao</small>
                                 <strong style="color: #0284c7; font-size: 13px;"
-                                    th:text="${revenueAnalytics.statusCounts.shipping}">0</strong>
+                                    th:text="${revenueAnalytics != null and revenueAnalytics.statusCounts != null ? revenueAnalytics.statusCounts.shipping : 0}">0</strong>
                             </div>
                             <div style="background: #f8fafc; padding: 5px 8px; border-radius: 6px; text-align: center;">
                                 <small style="color: #64748b; font-size: 10px; display: block;">Hoàn thành</small>
                                 <strong style="color: #16a34a; font-size: 13px;"
-                                    th:text="${revenueAnalytics.statusCounts.completed}">0</strong>
+                                    th:text="${revenueAnalytics != null and revenueAnalytics.statusCounts != null ? revenueAnalytics.statusCounts.completed : 0}">0</strong>
                             </div>
                         </div>
                     </div>
@@ -524,7 +524,7 @@
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <span
                             style="background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;"
-                            th:text="${revenueAnalytics.inventoryCounts.out_of_stock_count + ' hết hàng'}">0 hết
+                            th:text="${(revenueAnalytics != null and revenueAnalytics.inventoryCounts != null ? revenueAnalytics.inventoryCounts.out_of_stock_count : 0) + ' hết hàng'}">0 hết
                             hàng</span>
                         <a class="text-link" th:href="@{/shopowner/product-variants}">
                             Quản lý kho

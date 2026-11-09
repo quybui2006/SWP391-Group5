@@ -48,14 +48,22 @@
             <!-- Header: shop + trạng thái -->
             <div class="order-card-header">
                 <a class="order-shop" th:href="@{/shop/{id}(id=${o['shop_id']})}">
-                    <span class="shop-icon">🏪</span>
+                    <span class="shop-icon" style="display:inline-flex;align-items:center;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    </span>
                     <span th:text="${o['shop_name']}">Tên shop</span>
                 </a>
                 <div class="order-status-area">
                     <span class="delivery-tag"
-                          th:if="${o['delivery_status'] == 'IN_TRANSIT'}">🚚 Đang giao</span>
+                          th:if="${o['delivery_status'] == 'IN_TRANSIT'}" style="display:inline-flex;align-items:center;gap:4px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                        <span>Đang giao</span>
+                    </span>
                     <span class="delivery-tag delivered"
-                          th:if="${o['delivery_status'] == 'DELIVERED'}">📦 Đã giao</span>
+                          th:if="${o['delivery_status'] == 'DELIVERED'}" style="display:inline-flex;align-items:center;gap:4px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span>Đã giao</span>
+                    </span>
                     <span class="order-status"
                           th:classappend="${o['status'] == 'COMPLETED'} ? ' completed' : (${o['status'] == 'CANCELLED'} ? ' cancelled' : '')"
                           th:switch="${o['status']}">
@@ -112,8 +120,9 @@
                        th:href="@{/customer/account/orders/{id}(id=${o['id']})}">Đánh giá</a>
                     <a th:if="${o['status'] == 'COMPLETED' or o['status'] == 'DELIVERED'}"
                        th:href="@{'/customer/account/orders/' + ${o['id']} + '#complaint-section'}"
-                       style="display:inline-block; padding:8px 16px; border:1px solid #fecaca; border-radius:8px; font-size:13px; font-weight:700; color:#dc2626; background:#fef2f2; text-decoration:none;">
-                        ⚠️ Khiếu nại
+                       style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:1px solid #fecaca; border-radius:8px; font-size:13px; font-weight:700; color:#dc2626; background:#fef2f2; text-decoration:none;">
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#dc2626" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>Khiếu nại</span>
                     </a>
                     <a class="btn-outline" th:href="@{/shop/{id}(id=${o['shop_id']})}">Mua lại</a>
                 </div>

@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FreshFruit - Trái cây tươi mỗi ngày</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/home.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet">
 </head>
 
 <body>
@@ -41,7 +41,10 @@
             <a class="icon-btn"
                th:href="@{/search}"
                title="Tìm kiếm"
-               aria-label="Tìm kiếm">⌕</a>
+               aria-label="Tìm kiếm"
+               style="display: inline-flex; align-items: center; justify-content: center;">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </a>
 
             <!-- Shopee Style Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
@@ -186,9 +189,9 @@
                 </div>
 
                 <div class="hero-features">
-                    <div><span>✓</span> Tươi mỗi ngày</div>
-                    <div><span>✓</span> Nguồn gốc rõ ràng</div>
-                    <div><span>✓</span> Giao hàng nhanh</div>
+                    <div><span><svg class="ui-icon ui-icon-xs" style="color: #16a34a;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Tươi mỗi ngày</div>
+                    <div><span><svg class="ui-icon ui-icon-xs" style="color: #16a34a;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Nguồn gốc rõ ràng</div>
+                    <div><span><svg class="ui-icon ui-icon-xs" style="color: #16a34a;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> Giao hàng nhanh</div>
                 </div>
             </div>
 
@@ -196,12 +199,8 @@
                 <div class="hero-orbit orbit-one"></div>
                 <div class="hero-orbit orbit-two"></div>
 
-                <div class="fruit-bowl">
-                    <span class="fruit fruit-orange">🍊</span>
-                    <span class="fruit fruit-apple">🍎</span>
-                    <span class="fruit fruit-grape">🍇</span>
-                    <span class="fruit fruit-lemon">🍋</span>
-                    <span class="fruit fruit-watermelon">🍉</span>
+                <div class="fruit-bowl" style="display: flex; align-items: center; justify-content: center; width: 140px; height: 140px; background: rgba(255,255,255,0.92); border-radius: 50%; box-shadow: 0 12px 36px rgba(22, 163, 74, 0.18);">
+                    <svg class="ui-icon" style="width: 68px; height: 68px; color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
                 </div>
 
                 <div class="fresh-badge">
@@ -277,28 +276,28 @@
 
                 <a class="category-card category-red"
                    th:href="@{/search(categoryId=1)}">
-                    <span class="category-emoji">🍎</span>
+                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
                     <strong>Táo</strong>
                     <span>Trái cây nhập khẩu</span>
                 </a>
 
                 <a class="category-card category-yellow"
                    th:href="@{/search(categoryId=2)}">
-                    <span class="category-emoji">🍌</span>
+                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
                     <strong>Chuối</strong>
                     <span>Tươi ngon mỗi ngày</span>
                 </a>
 
                 <a class="category-card category-purple"
                    th:href="@{/search(categoryId=3)}">
-                    <span class="category-emoji">🍇</span>
+                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg></span>
                     <strong>Nho</strong>
                     <span>Ngọt mọng tự nhiên</span>
                 </a>
 
                 <a class="category-card category-green"
                    th:href="@{/search(categoryId=4)}">
-                    <span class="category-emoji">🥝</span>
+                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg></span>
                     <strong>Trái cây xanh</strong>
                     <span>Giàu vitamin</span>
                 </a>
@@ -318,7 +317,9 @@
                 </div>
 
                 <div class="search-box">
-                    <span>⌕</span>
+                    <span style="display: flex; align-items: center;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </span>
                     <input id="productSearch"
                            type="search"
                            placeholder="Tìm trái cây..."
@@ -350,8 +351,8 @@
 
                         <div class="image-placeholder"
                              th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
-                                ? 'display:none' : 'display:grid'">
-                            🍎
+                                ? 'display:none' : 'display:flex;align-items:center;justify-content:center;'">
+                            <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
                         </div>
 
                         <span class="fresh-tag">Đang bán</span>
@@ -362,7 +363,7 @@
                                 aria-label="Thêm vào yêu thích"
                                 th:attr="data-favorite-id=${variant.id}"
                                 onclick="toggleFavorite(event, this)">
-                            ♡
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                         </button>
                     </div>
 
@@ -401,7 +402,9 @@
             <div class="empty-state"
                  th:if="${products == null or products.isEmpty()}">
 
-                <div>🍃</div>
+                <div>
+                    <svg class="ui-icon ui-icon-xl" style="color: #16a34a;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
 
                 <h3>Chưa có sản phẩm đang bán</h3>
 
@@ -448,11 +451,13 @@
                 </a>
             </div>
 
-            <div class="promo-visual">
-                <span>🍓</span>
-                <span>🍊</span>
-                <span>🍇</span>
-                <span>🥭</span>
+            <div class="promo-visual" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+                    <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                </div>
+                <div style="width: 78px; height: 78px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,0.08);">
+                    <svg class="ui-icon" style="width: 44px; height: 44px; color: #15803d;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                </div>
             </div>
 
         </div>
@@ -522,7 +527,7 @@
         event.stopPropagation();
 
         const button = form.querySelector('button[type="submit"]');
-        const oldText = button.textContent;
+        const oldHtml = button.innerHTML;
 
         button.disabled = true;
 
@@ -559,10 +564,10 @@
                 await refreshCartCount();
             }
 
-            button.textContent = '✓';
+            button.innerHTML = '<svg class="ui-icon ui-icon-xs" style="color:currentColor;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
 
             setTimeout(() => {
-                button.textContent = oldText;
+                button.innerHTML = oldHtml;
             }, 1000);
 
         } catch (error) {

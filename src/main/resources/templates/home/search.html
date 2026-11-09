@@ -7,15 +7,12 @@
 
     <title>Tìm kiếm sản phẩm - FreshFruit</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/search.css}">
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
-
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-
-    <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet">
     <style>
         .price-display { display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
         .price-old { color:#858585; font-size:.86em; text-decoration:line-through; }
@@ -50,12 +47,16 @@
             <a class="icon-btn"
                th:href="@{/search}"
                title="Tìm kiếm"
-               aria-label="Tìm kiếm">⌕</a>
+               aria-label="Tìm kiếm">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </a>
 
             <!-- Shopee Style Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
                 <button type="button" class="icon-btn notif-btn" id="notifBellBtn" aria-label="Thông báo" title="Thông báo">
-                    <span class="bell-icon">🔔</span>
+                    <span class="bell-icon">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    </span>
                     <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
                 </button>
                 <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
@@ -67,7 +68,7 @@
                th:href="@{/cart}"
                title="Giỏ hàng"
                aria-label="Giỏ hàng">
-                🛒
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
                 <span id="cartCount" class="cart-count">0</span>
             </a>
 
@@ -89,29 +90,62 @@
                         <div class="user-dropdown-links">
                             <!-- Customer links -->
                             <th:block th:if="${session.role == 'CUSTOMER'}">
-                                <a th:href="@{/customer/account}">👤 Hồ sơ cá nhân</a>
-                                <a th:href="@{/customer/account/orders}">📦 Đơn hàng của tôi</a>
-                                <a th:href="@{/customer/account/address}">📍 Sổ địa chỉ</a>
-                                <a th:href="@{/customer/account/favorites}">❤️ Sản phẩm yêu thích</a>
-                                <a th:href="@{/customer/account/notifications}">🔔 Thông báo</a>
+                                <a th:href="@{/customer/account}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    Hồ sơ cá nhân
+                                </a>
+                                <a th:href="@{/customer/account/orders}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                    Đơn hàng của tôi
+                                </a>
+                                <a th:href="@{/customer/account/address}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    Sổ địa chỉ
+                                </a>
+                                <a th:href="@{/customer/account/favorites}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                                    Sản phẩm yêu thích
+                                </a>
+                                <a th:href="@{/customer/account/notifications}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                    Thông báo
+                                </a>
                             </th:block>
 
                             <!-- Shop Owner links -->
                             <th:block th:if="${session.role == 'SHOP_OWNER'}">
-                                <a th:href="@{/shopowner/home}">🏪 Quản lý cửa hàng</a>
-                                <a th:href="@{/shop/products}">▦ Danh sách sản phẩm</a>
-                                <a th:href="@{/shopowner/product-variants}">▤ Biến thể sản phẩm</a>
-                                <a th:href="@{/shopowner/orders}">📦 Quản lý đơn hàng</a>
+                                <a th:href="@{/shopowner/home}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg>
+                                    Quản lý cửa hàng
+                                </a>
+                                <a th:href="@{/shop/products}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                                    Danh sách sản phẩm
+                                </a>
+                                <a th:href="@{/shopowner/product-variants}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                                    Biến thể sản phẩm
+                                </a>
+                                <a th:href="@{/shopowner/orders}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+                                    Quản lý đơn hàng
+                                </a>
                             </th:block>
 
                             <!-- Admin links -->
                             <th:block th:if="${session.role == 'ADMIN'}">
-                                <a th:href="@{/admin}">⚙ Bảng điều khiển Quản trị</a>
+                                <a th:href="@{/admin}">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    Bảng điều khiển Quản trị
+                                </a>
                             </th:block>
                         </div>
                         <div class="user-dropdown-logout">
                             <form th:action="@{/logout}" method="post">
-                                <button type="submit">🚪 Đăng xuất</button>
+                                <button type="submit" style="display: flex; align-items: center; gap: 8px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                                    Đăng xuất
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -161,7 +195,7 @@
                     method="get">
 
                 <span class="search-icon">
-                    ⌕
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </span>
 
 
@@ -187,12 +221,12 @@
             <!-- Quick search suggestion chips -->
             <div class="quick-tags">
                 <span class="quick-tag-label">Gợi ý tìm kiếm:</span>
-                <a th:href="@{/search(keyword='Đà Lạt')}" class="quick-tag">🍓 Dâu tây Đà Lạt</a>
-                <a th:href="@{/search(keyword='Xoài')}" class="quick-tag">🥭 Xoài Cát Chu</a>
-                <a th:href="@{/search(keyword='Táo')}" class="quick-tag">🍎 Táo Envy</a>
-                <a th:href="@{/search(keyword='Cam')}" class="quick-tag">🍊 Cam sành</a>
-                <a th:href="@{/search(keyword='VietGAP')}" class="quick-tag">🛡️ Chuẩn VietGAP</a>
-                <a th:href="@{/search(keyword='Organic')}" class="quick-tag">🌿 Hữu cơ Organic</a>
+                <a th:href="@{/search(keyword='Đà Lạt')}" class="quick-tag">Dâu tây Đà Lạt</a>
+                <a th:href="@{/search(keyword='Xoài')}" class="quick-tag">Xoài Cát Chu</a>
+                <a th:href="@{/search(keyword='Táo')}" class="quick-tag">Táo Envy</a>
+                <a th:href="@{/search(keyword='Cam')}" class="quick-tag">Cam sành</a>
+                <a th:href="@{/search(keyword='VietGAP')}" class="quick-tag">Chuẩn VietGAP</a>
+                <a th:href="@{/search(keyword='Organic')}" class="quick-tag">Hữu cơ Organic</a>
             </div>
 
         </div>
@@ -330,14 +364,13 @@
                         <label class="check-row">
                             <input type="checkbox" name="inStockOnly" value="true" th:checked="${inStockOnly}">
                             <span class="custom-check"></span>
-                            <span class="check-label" style="font-weight: 600; color: #166534;">🟢 Chỉ hiện Còn hàng</span>
+                            <span class="check-label" style="font-weight: 600; color: #166534;">Chỉ hiện Còn hàng</span>
                         </label>
                     </div>
 
                     <!-- APPLY -->
                     <button class="apply-btn" type="submit" style="margin-top: 18px;">
                         Áp dụng bộ lọc
-                        <span>→</span>
                     </button>
 
                 </form>
@@ -367,11 +400,11 @@
                     <div class="results-toolbar-right">
                         <label for="sortSelector" class="sort-select-label">Sắp xếp:</label>
                         <select id="sortSelector" class="sort-select" onchange="applySort(this.value)">
-                            <option value="popular" th:selected="${sort == 'popular' || sort == null}">⚡ Phổ biến nhất</option>
-                            <option value="newest" th:selected="${sort == 'newest'}">🆕 Mới nhất</option>
-                            <option value="priceAsc" th:selected="${sort == 'priceAsc'}">💰 Giá: Thấp đến Cao</option>
-                            <option value="priceDesc" th:selected="${sort == 'priceDesc'}">💎 Giá: Cao đến Thấp</option>
-                            <option value="nameAsc" th:selected="${sort == 'nameAsc'}">🔤 Tên: A - Z</option>
+                            <option value="popular" th:selected="${sort == 'popular' || sort == null}">Phổ biến nhất</option>
+                            <option value="newest" th:selected="${sort == 'newest'}">Mới nhất</option>
+                            <option value="priceAsc" th:selected="${sort == 'priceAsc'}">Giá: Thấp đến Cao</option>
+                            <option value="priceDesc" th:selected="${sort == 'priceDesc'}">Giá: Cao đến Thấp</option>
+                            <option value="nameAsc" th:selected="${sort == 'nameAsc'}">Tên: A - Z</option>
                         </select>
                     </div>
 
@@ -384,13 +417,17 @@
                     <!-- Keyword chip -->
                     <span class="filter-chip" th:if="${keyword != null and !keyword.isEmpty()}">
                         Từ khóa: "<span th:text="${keyword}"></span>"
-                        <a th:href="@{/search(categoryId=${selectedCategories}, priceRange=${priceRange}, minPrice=${minPrice}, maxPrice=${maxPrice}, origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc từ khóa">✕</a>
+                        <a th:href="@{/search(categoryId=${selectedCategories}, priceRange=${priceRange}, minPrice=${minPrice}, maxPrice=${maxPrice}, origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc từ khóa">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </a>
                     </span>
 
                     <!-- Price range chip -->
                     <span class="filter-chip" th:if="${minPrice != null or maxPrice != null}">
                         Giá: <span th:text="${(minPrice != null ? #numbers.formatDecimal(minPrice, 0, 'COMMA', 0, 'POINT') : '0') + ' - ' + (maxPrice != null ? #numbers.formatDecimal(maxPrice, 0, 'COMMA', 0, 'POINT') + ' ₫' : '∞')}"></span>
-                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange='all', origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc giá">✕</a>
+                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange='all', origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc giá">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </a>
                     </span>
                     <span class="filter-chip" th:if="${(minPrice == null and maxPrice == null) and priceRange != null and priceRange != 'all'}">
                         Mức giá:
@@ -399,13 +436,17 @@
                         <span th:if="${priceRange == '100to200'}">100k - 200k</span>
                         <span th:if="${priceRange == 'over200'}">Trên 200k</span>
                         <span th:if="${priceRange == 'over100'}">Trên 100k</span>
-                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange='all', origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc giá">✕</a>
+                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange='all', origin=${selectedOrigins}, inStockOnly=${inStockOnly}, sort=${sort})}" title="Bỏ lọc giá">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </a>
                     </span>
 
                     <!-- In stock chip -->
                     <span class="filter-chip" th:if="${inStockOnly}">
-                        🟢 Còn hàng
-                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange=${priceRange}, minPrice=${minPrice}, maxPrice=${maxPrice}, origin=${selectedOrigins}, inStockOnly=false, sort=${sort})}" title="Bỏ lọc tồn kho">✕</a>
+                        Còn hàng
+                        <a th:href="@{/search(keyword=${keyword}, categoryId=${selectedCategories}, priceRange=${priceRange}, minPrice=${minPrice}, maxPrice=${maxPrice}, origin=${selectedOrigins}, inStockOnly=false, sort=${sort})}" title="Bỏ lọc tồn kho">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </a>
                     </span>
 
                     <!-- Reset all -->
@@ -450,16 +491,16 @@
                                     class="image-placeholder"
                                     th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
                                     ? 'display:none'
-                                    : 'display:grid'">
+                                    : 'display:flex;align-items:center;justify-content:center;'">
 
-                                🍎
+                                <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
 
                             </div>
 
 
                             <!-- STATUS & PROMO -->
                             <span class="discount-badge" th:if="${variant.promotionalPrice != null}">
-                                🔥 GIẢM GIÁ
+                                GIẢM GIÁ
                             </span>
                             <span class="fresh-tag" th:if="${variant.promotionalPrice == null}">
                                 Đang bán
@@ -475,7 +516,7 @@
                                     th:attr="data-favorite-id=${variant.id}"
                                     onclick="toggleFavorite(event, this)">
 
-                                ♡
+                                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
 
                             </button>
 
@@ -528,7 +569,7 @@
 
 
                     <div class="empty-icon">
-                        🍃
+                        <svg class="ui-icon ui-icon-xl" style="color: #16a34a;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     </div>
 
 

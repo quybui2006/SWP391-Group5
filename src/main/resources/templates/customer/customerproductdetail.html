@@ -42,7 +42,9 @@
         <div class="header-actions">
 
             <!-- Search Button -->
-            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm">⌕</a>
+            <a class="icon-btn" th:href="@{/search}" title="Tìm kiếm" aria-label="Tìm kiếm" style="display:flex;align-items:center;justify-content:center;">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </a>
 
             <!-- Notification Bell -->
             <div class="notif-wrapper" id="notifWrapper">
@@ -234,7 +236,9 @@
                                 th:classappend="${isFavorite} ? ' active liked' : ''"
                                 th:attr="data-favorite-id=${variant.id},data-saved=${isFavorite}"
                                 type="button" onclick="toggleFavorite(event, this)">
-                            <span class="heart-icon" th:text="${isFavorite ? '♥' : '♡'}">♡</span>
+                            <span class="heart-icon">
+                                <svg class="ui-icon ui-icon-xs" style="color: currentColor;" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                            </span>
                             <span class="favorite-text" th:text="'Đã thích (' + ${favoriteCount} + ')'">Đã thích (0)</span>
                         </button>
                     </div>
@@ -424,8 +428,8 @@
                 <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-avatar-link" title="Xem cửa hàng">
                     <div class="shop-avatar-container">
                         <div class="shop-avatar-circle"
-                             th:text="${shop != null && shop.name != null && !shop.name.isEmpty() ? #strings.substring(shop.name, 0, 1).toUpperCase() : '🏪'}">
-                            🏪
+                             th:text="${shop != null && shop.name != null && !shop.name.isEmpty() ? #strings.substring(shop.name, 0, 1).toUpperCase() : 'S'}">
+                            S
                         </div>
                         <span class="shop-mall-badge">Mall</span>
                     </div>
@@ -447,7 +451,7 @@
 
                     <div class="shop-buttons-row">
                         <a th:href="@{/shops/{id}(id=${shop != null ? shop.id : 1})}" class="shop-action-btn view-shop-btn">
-                            <span class="btn-icon">🏬</span>
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                             <span>Xem Shop</span>
                         </a>
                     </div>
@@ -577,7 +581,10 @@
                 </p>
 
                 <div class="desc-feature-block desc-green">
-                    <h4>🍎 ĐẶC ĐIỂM NỔI BẬT VÀ CHẤT LƯỢNG</h4>
+                    <h4 style="display: flex; align-items: center; gap: 8px;">
+                        <svg class="ui-icon ui-icon-sm" style="color: #16a34a;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        ĐẶC ĐIỂM NỔI BẬT VÀ CHẤT LƯỢNG
+                    </h4>
                     <ul>
                         <li><strong th:text="${variant.name}">Sản phẩm</strong> được thu hoạch trực tiếp tại các nông trại đạt chuẩn VietGAP / GlobalGAP, đảm bảo độ tươi giòn và ngọt thanh tự nhiên.</li>
                         <li>Trái cây được tuyển chọn kỹ lưỡng từng quả, kích thước đồng đều, vỏ căng bóng mọng nước, không bị trầy xước hay dập úng.</li>
@@ -587,7 +594,10 @@
                 </div>
 
                 <div class="desc-feature-block desc-yellow">
-                    <h4>❄️ HƯỚNG DẪN BẢO QUẢN & SỬ DỤNG</h4>
+                    <h4 style="display: flex; align-items: center; gap: 8px;">
+                        <svg class="ui-icon ui-icon-sm" style="color: #0284c7;" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        HƯỚNG DẪN BẢO QUẢN &amp; SỬ DỤNG
+                    </h4>
                     <ul>
                         <li>Nên bảo quản trong ngăn mát tủ lạnh ở nhiệt độ từ <strong>4°C - 8°C</strong> để giữ trọn độ tươi giòn tốt nhất từ 5 - 7 ngày.</li>
                         <li>Rửa nhẹ dưới vòi nước sạch hoặc ngâm nước muối loãng trước khi thưởng thức.</li>
@@ -596,7 +606,10 @@
                 </div>
 
                 <div class="desc-feature-block desc-pink">
-                    <h4>🛡️ CAM KẾT VÀ CHÍNH SÁCH TỪ FRESHFRUIT</h4>
+                    <h4 style="display: flex; align-items: center; gap: 8px;">
+                        <svg class="ui-icon ui-icon-sm" style="color: #e11d48;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                        CAM KẾT VÀ CHÍNH SÁCH TỪ FRESHFRUIT
+                    </h4>
                     <ul>
                         <li><strong>Đổi trả 1 - 1 hoặc hoàn tiền 100%:</strong> Nếu khách hàng phát hiện sản phẩm bị dập nát, hỏng hóc hoặc không đúng mô tả khi nhận hàng.</li>
                         <li><strong>Đóng gói chuyên nghiệp:</strong> Đóng thùng carton 3 lớp có màng xốp lưới chống sốc chuyên dụng bảo vệ từng quả trái cây trong suốt quá trình vận chuyển.</li>
@@ -622,11 +635,11 @@
 
             <!-- Alerts -->
             <div class="fresh-alert success" th:if="${reviewSuccess}">
-                <span class="alert-icon">✓</span>
+                <span class="alert-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
                 <span th:text="${reviewSuccess}">Đánh giá thành công!</span>
             </div>
             <div class="fresh-alert error" th:if="${reviewError}">
-                <span class="alert-icon">⚠️</span>
+                <span class="alert-icon"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                 <span th:text="${reviewError}">Đã xảy ra lỗi</span>
             </div>
 
@@ -740,7 +753,10 @@
                     <div class="reviewer-content-col">
                         <div class="reviewer-name-row">
                             <span class="reviewer-username" th:text="${rev.userName}">Customer Demo</span>
-                            <span class="verified-buyer-tag">✓ Đã mua hàng tại FreshFruit</span>
+                            <span class="verified-buyer-tag" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Đã mua hàng tại FreshFruit</span>
+                            </span>
                         </div>
 
                         <div class="reviewer-stars-row">
@@ -760,7 +776,7 @@
                         <!-- Helpful Button -->
                         <div class="review-helpful-row">
                             <button type="button" class="helpful-vote-btn" onclick="toggleHelpful(this)">
-                                <span class="thumb-icon">👍</span>
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.5L12 3a2 2 0 0 1 3 2.88Z"/></svg>
                                 <span>Hữu ích</span>
                             </button>
                         </div>
@@ -769,7 +785,9 @@
 
                 <!-- Empty State -->
                 <div class="reviews-empty-box" id="reviewsEmpty" th:if="${reviews == null or reviews.empty}">
-                    <div class="empty-leaf-icon">🍃</div>
+                    <div class="empty-leaf-icon" style="display: flex; align-items: center; justify-content: center;">
+                        <svg class="ui-icon ui-icon-xl" style="color: #94a3b8;" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
                     <h3>Chưa có đánh giá nào cho sản phẩm này</h3>
                     <p>Hãy là người đầu tiên đặt mua và chia sẻ cảm nhận trải nghiệm nhé!</p>
                 </div>
@@ -810,7 +828,7 @@
                              th:src="${rel.imageUrl}" th:alt="${rel.name}"
                              onerror="this.style.display='none'">
                         <div class="image-placeholder" th:if="${rel.imageUrl == null or rel.imageUrl.isEmpty()}">
-                            🍎
+                            <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6a6 6 0 0 0-6 6"/></svg>
                         </div>
                     </div>
 
@@ -835,7 +853,9 @@
                 <a th:href="@{/search}" class="product-card-link">
                     <div class="product-image bg-pastel-red">
                         <span class="fresh-tag">Đang bán</span>
-                        <div class="image-placeholder">🍎</div>
+                        <div class="image-placeholder">
+                            <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6a6 6 0 0 0-6 6"/></svg>
+                        </div>
                     </div>
                     <div class="product-content">
                         <h4 class="product-card-name">Táo Envy New Zealand Tươi Giòn</h4>

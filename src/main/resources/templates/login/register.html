@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Đăng ký - FreshFruit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/home.css}">
     <link rel="stylesheet" th:href="@{/css/login.css}">
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 <header class="site-header">
@@ -29,10 +30,10 @@
         <!-- Flipgrid-style Account Type Tabs -->
         <div class="role-selector-header" role="tablist" aria-label="Loại tài khoản đăng ký">
             <button type="button" class="role-tab-btn active" id="tabCustomer" data-role="CUSTOMER" role="tab" aria-selected="true">
-                <span class="tab-check" id="checkCustomer">✓</span> KHÁCH HÀNG
+                <span class="tab-check" id="checkCustomer"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> KHÁCH HÀNG
             </button>
             <button type="button" class="role-tab-btn" id="tabShopOwner" data-role="SHOP_OWNER" role="tab" aria-selected="false">
-                <span class="tab-check" id="checkShopOwner" style="display:none;">✓</span> BÁN HÀNG
+                <span class="tab-check" id="checkShopOwner" style="display:none;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span> BÁN HÀNG
             </button>
         </div>
 

@@ -16,11 +16,13 @@
             </div>
 
             <!-- Flash Message / Error -->
-            <div th:if="${message}" style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #166534; font-size: 13.5px; font-weight: 600;">
-                ✓ <span th:text="${message}"></span>
+            <div th:if="${message}" style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #166534; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                <svg class="ui-icon ui-icon-sm" style="color: #16a34a;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <span th:text="${message}"></span>
             </div>
-            <div th:if="${error}" style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #991b1b; font-size: 13.5px; font-weight: 600;">
-                ✕ <span th:text="${error}"></span>
+            <div th:if="${error}" style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #991b1b; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                <svg class="ui-icon ui-icon-sm" style="color: #dc2626;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span th:text="${error}"></span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
@@ -54,7 +56,10 @@
 
                             <!-- Ảnh bằng chứng -->
                             <div>
-                                <span style="font-size: 12.5px; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px;">📷 HÌNH ẢNH MINH CHỨNG THỰC TẾ:</span>
+                                <span style="font-size: 12.5px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    HÌNH ẢNH MINH CHỨNG THỰC TẾ:
+                                </span>
                                 <div th:if="${complaint['evidence_image_url'] != null}">
                                     <a th:href="${complaint['evidence_image_url']}" target="_blank">
                                         <img th:src="${complaint['evidence_image_url']}" alt="Ảnh bằng chứng"
@@ -70,16 +75,19 @@
                             <div>
                                 <span style="font-size: 12.5px; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">HÌNH THỨC BỒI HOÀN MONG MUỐN:</span>
                                 <span th:if="${complaint['desired_resolution'] == 'RESEND_ITEMS'}"
-                                      style="background: #f0fdf4; color: #166534; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block;">
-                                    📦 Khách mong muốn Shop Giao bù hàng mới (0đ)
+                                      style="background: #f0fdf4; color: #166534; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                                    Khách mong muốn Shop Giao bù hàng mới (0đ)
                                 </span>
                                 <span th:if="${complaint['desired_resolution'] == 'ISSUE_VOUCHER'}"
-                                      style="background: #faf5ff; color: #7e22ce; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block;">
-                                    🎟️ Khách mong muốn nhận Voucher đền bù
+                                      style="background: #faf5ff; color: #7e22ce; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                                    Khách mong muốn nhận Voucher đền bù
                                 </span>
                                 <span th:if="${complaint['desired_resolution'] == 'RETURN_REFUND'}"
-                                      style="background: #eff6ff; color: #1d4ed8; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block;">
-                                    💳 Khách mong muốn Hoàn tiền về Tài khoản ngân hàng
+                                      style="background: #eff6ff; color: #1d4ed8; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    Khách mong muốn Hoàn tiền về Tài khoản ngân hàng
                                 </span>
                             </div>
                         </div>
@@ -89,7 +97,7 @@
                     <div th:if="${complaint['status'] == 'PENDING_OPERATIONS' or complaint['status'] == 'PENDING'}"
                          style="background: #fffdf5; border: 2px solid #fed7aa; border-radius: 12px; padding: 22px; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.08);">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                            <span style="font-size: 18px;">⚖️</span>
+                            <svg class="ui-icon ui-icon-md" style="color: #ea580c;" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
                             <h3 style="margin: 0; font-size: 16px; color: #9a3412;">Quyết định Thẩm định của Ban Vận hành:</h3>
                         </div>
                         <p style="margin: 0 0 16px; font-size: 13.5px; color: #7c2d12; line-height: 1.5;">
@@ -98,8 +106,9 @@
 
                         <!-- TÙY CHỌN A: DUYỆT & HOÀN TIỀN TRỰC TIẾP VỀ TÀI KHOẢN NGÂN HÀNG KHÁCH HÀNG -->
                         <div style="background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                            <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 8px;">
-                                💳 Phương án 1: Duyệt Khiếu nại &amp; Hoàn tiền 100% cho Khách hàng (Approve Refund)
+                            <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                <span>Phương án 1: Duyệt Khiếu nại &amp; Hoàn tiền 100% cho Khách hàng (Approve Refund)</span>
                             </div>
                             <div style="font-size: 12.5px; color: #1e3a8a; margin-bottom: 10px;">
                                 Số tiền thực trả được hoàn (100% tiền hàng thực trả, không gồm phí ship):
@@ -107,8 +116,9 @@
                                 <span th:if="${complaint['customer_bank_account_no'] != null}">
                                     • TK nhận: <strong th:text="${complaint['customer_bank_name'] + ' - ' + complaint['customer_bank_account_no'] + ' (' + complaint['customer_bank_account_holder'] + ')'}"></strong>
                                 </span>
-                                <div style="margin-top: 4px; color: #b45309; font-weight: 600;">
-                                    ⚠️ Khi duyệt hoàn tiền, số tiền hoàn sẽ được trích từ quỹ tạm giữ (Escrow) trả về tài khoản khách hàng và tự động khấu trừ khỏi tiền quyết toán của Shop.
+                                <div style="margin-top: 4px; color: #b45309; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                                    <svg class="ui-icon ui-icon-xs" style="color: #b45309;" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    <span>Khi duyệt hoàn tiền, số tiền hoàn sẽ được trích từ quỹ tạm giữ (Escrow) trả về tài khoản khách hàng và tự động khấu trừ khỏi tiền quyết toán của Shop.</span>
                                 </div>
                             </div>
                             <form th:action="@{/operations/complaints/{id}/resolve(id=${complaint['id']})}" method="post">
@@ -121,16 +131,18 @@
                                            style="width: 100%; padding: 8px 12px; border: 1px solid #93c5fd; border-radius: 8px; font-size: 13px; box-sizing: border-box; background: #fff;">
                                 </div>
                                 <button type="submit"
-                                        style="background: #2563eb; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;">
-                                    💳 Xác nhận Duyệt &amp; Hoàn tiền 100%
+                                        style="background: #2563eb; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    <span>Xác nhận Duyệt &amp; Hoàn tiền 100%</span>
                                 </button>
                             </form>
                         </div>
 
                         <!-- TÙY CHỌN B: DUYỆT & CHUYỂN SHOP XỬ LÝ GIAO BÙ / TẶNG VOUCHER -->
                         <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 16px; margin-bottom: 14px;">
-                            <div style="font-weight: 700; font-size: 14px; color: #166534; margin-bottom: 8px;">
-                                🏪 Phương án 2: Phê duyệt &amp; Chuyển Cửa hàng xử lý (Giao bù 0đ / Tặng Voucher)
+                            <div style="font-weight: 700; font-size: 14px; color: #166534; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                <span>Phương án 2: Phê duyệt &amp; Chuyển Cửa hàng xử lý (Giao bù 0đ / Tặng Voucher)</span>
                             </div>
                             <form th:action="@{/operations/complaints/{id}/resolve(id=${complaint['id']})}" method="post">
                                 <input type="hidden" name="resolutionAction" value="APPROVE_ONLY">
@@ -142,16 +154,18 @@
                                               style="width: 100%; padding: 8px 12px; border: 1px solid #86efac; border-radius: 8px; font-size: 13px; box-sizing: border-box; background: #fff;"></textarea>
                                 </div>
                                 <button type="submit"
-                                        style="background: #16a34a; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;">
-                                    ✓ Phê duyệt &amp; Chuyển Shop xử lý
+                                        style="background: #16a34a; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Phê duyệt &amp; Chuyển Shop xử lý</span>
                                 </button>
                             </form>
                         </div>
 
                         <!-- FORM TỪ CHỐI KHIẾU NẠI -->
                         <details style="border-top: 1px dashed #fed7aa; padding-top: 14px;">
-                            <summary style="cursor: pointer; font-size: 13.5px; font-weight: 700; color: #dc2626; padding: 4px 0;">
-                                ✕ Hoặc Bác bỏ / Từ chối khiếu nại (Không đạt căn cứ)
+                            <summary style="cursor: pointer; font-size: 13.5px; font-weight: 700; color: #dc2626; padding: 4px 0; display: flex; align-items: center; gap: 6px;">
+                                <svg class="ui-icon ui-icon-xs" style="color: #dc2626;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span>Hoặc Bác bỏ / Từ chối khiếu nại (Không đạt căn cứ)</span>
                             </summary>
                             <form th:action="@{/operations/complaints/{id}/reject(id=${complaint['id']})}" method="post"
                                   style="margin-top: 12px; background: #fff; padding: 14px; border-radius: 8px; border: 1px solid #fecaca;">
@@ -163,8 +177,9 @@
                                           style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box;"></textarea>
                                 <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
                                     <button type="submit"
-                                            style="background: #dc2626; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
-                                        ✕ Xác nhận từ chối khiếu nại
+                                            style="background: #dc2626; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        <span>Xác nhận từ chối khiếu nại</span>
                                     </button>
                                 </div>
                             </form>
@@ -174,12 +189,24 @@
                     <!-- 3. Kết quả thẩm định của Ban Vận hành (nếu đã qua bước 1) -->
                     <div th:if="${complaint['operations_reviewed_at'] != null}"
                          style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px;">
-                        <h3 style="margin: 0 0 10px; font-size: 15px; color: #0f172a;">📋 Lịch sử Thẩm định của Ban Vận hành:</h3>
+                        <h3 style="margin: 0 0 10px; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            <span>Lịch sử Thẩm định của Ban Vận hành:</span>
+                        </h3>
                         <div style="font-size: 13.5px; margin-bottom: 6px;">
                             Quyết định:
-                            <strong th:if="${complaint['operations_decision'] == 'APPROVED' and complaint['resolution_type'] == 'RETURN_REFUND'}" style="color: #2563eb;">💳 Đã phê duyệt &amp; Hoàn tiền ngân hàng</strong>
-                            <strong th:if="${complaint['operations_decision'] == 'APPROVED' and complaint['resolution_type'] != 'RETURN_REFUND'}" style="color: #16a34a;">✓ Đã phê duyệt và chuyển Shop</strong>
-                            <strong th:if="${complaint['operations_decision'] == 'REJECTED'}" style="color: #dc2626;">✕ Đã từ chối khiếu nại</strong>
+                            <strong th:if="${complaint['operations_decision'] == 'APPROVED' and complaint['resolution_type'] == 'RETURN_REFUND'}" style="color: #2563eb; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                Đã phê duyệt &amp; Hoàn tiền ngân hàng
+                            </strong>
+                            <strong th:if="${complaint['operations_decision'] == 'APPROVED' and complaint['resolution_type'] != 'RETURN_REFUND'}" style="color: #16a34a; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                Đã phê duyệt và chuyển Shop
+                            </strong>
+                            <strong th:if="${complaint['operations_decision'] == 'REJECTED'}" style="color: #dc2626; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Đã từ chối khiếu nại
+                            </strong>
                         </div>
                         <div th:if="${complaint['operations_note'] != null}" style="font-size: 13px; color: #475569; background: #f8fafc; padding: 8px 12px; border-radius: 6px; margin-top: 6px;">
                             Ghi chú Vận hành: <span th:text="${complaint['operations_note']}"></span>
@@ -191,8 +218,9 @@
                     <!-- 4. Kết quả xử lý của Shop & Đôn đốc Shop (nếu đang PENDING_SHOP hoặc ESCALATED) -->
                     <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED'}"
                          style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 18px;">
-                        <div style="font-weight: 700; color: #0369a1; font-size: 14.5px; margin-bottom: 4px;">
-                            ⏳ Đang chờ Cửa hàng xử lý bồi hoàn (SLA: <span th:text="${complaint['sla_badge_text']}"></span>)
+                        <div style="font-weight: 700; color: #0369a1; font-size: 14.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>Đang chờ Cửa hàng xử lý bồi hoàn (SLA: <span th:text="${complaint['sla_badge_text']}"></span>)</span>
                         </div>
                         <p style="margin: 0 0 12px; font-size: 13px; color: #0284c7; line-height: 1.5;">
                             Hồ sơ đã được Ban Vận hành phê duyệt. Cửa hàng đang tiến hành tạo đơn giao bù hàng mới 0đ hoặc phát hành voucher đền bù cho khách hàng.
@@ -205,15 +233,17 @@
                             <input type="text" name="requestNote" placeholder="Nhập nội dung nhắc nhở Chủ Shop xử lý đúng hạn..."
                                    style="flex: 1; padding: 8px 12px; border: 1px solid #7dd3fc; border-radius: 8px; font-size: 13px; background: #fff;">
                             <button type="submit"
-                                    style="background: #0284c7; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap;">
-                                🔔 Đôn đốc Shop
+                                    style="background: #0284c7; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <span>Đôn đốc Shop</span>
                             </button>
                         </form>
 
                         <!-- OP có thể can thiệp Hoàn tiền trực tiếp nếu Shop chậm xử lý -->
                         <details style="border-top: 1px dashed #bae6fd; padding-top: 10px;">
-                            <summary style="cursor: pointer; font-size: 13px; font-weight: 700; color: #1d4ed8;">
-                                💳 Hoặc Ban Vận hành can thiệp Hoàn tiền 100% trực tiếp cho khách (nếu Shop quá hạn / hết hàng)
+                            <summary style="cursor: pointer; font-size: 13px; font-weight: 700; color: #1d4ed8; display: flex; align-items: center; gap: 6px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                <span>Hoặc Ban Vận hành can thiệp Hoàn tiền 100% trực tiếp cho khách (nếu Shop quá hạn / hết hàng)</span>
                             </summary>
                             <form th:action="@{/operations/complaints/{id}/resolve(id=${complaint['id']})}" method="post"
                                   style="margin-top: 10px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #93c5fd;">
@@ -228,8 +258,9 @@
                                            style="width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
                                 </div>
                                 <button type="submit"
-                                        style="background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;">
-                                    💳 Duyệt Hoàn tiền 100% &amp; Đóng khiếu nại
+                                        style="background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    <span>Duyệt Hoàn tiền 100% &amp; Đóng khiếu nại</span>
                                 </button>
                             </form>
                         </details>
@@ -237,8 +268,9 @@
 
                     <div th:if="${complaint['status'] == 'RESOLVED'}"
                          style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px;">
-                        <div style="font-weight: 700; color: #15803d; font-size: 14.5px; margin-bottom: 8px;">
-                            ✅ Đã hoàn tất giải quyết bồi hoàn (<span th:text="${complaint['resolution_label']}"></span>):
+                        <div style="font-weight: 700; color: #15803d; font-size: 14.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" style="color: #16a34a;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Đã hoàn tất giải quyết bồi hoàn (<span th:text="${complaint['resolution_label']}"></span>):</span>
                         </div>
                         <div th:if="${complaint['resolution_type'] == 'RETURN_REFUND'}" style="margin-bottom: 8px;">
                             Số tiền hoàn trả ngân hàng:
@@ -248,9 +280,12 @@
                                 Đã ghi sổ cái Hoàn tiền (RETURN_REFUND)
                             </span>
                         </div>
-                        <div th:if="${complaint['replacement_order_id'] != null}" style="margin-bottom: 8px;">
-                            Đơn hàng giao bù:
-                            <strong style="color: #0284c7;">📦 <span th:text="${complaint['replacement_order_code']}"></span></strong>
+                        <div th:if="${complaint['replacement_order_id'] != null}" style="margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span>Đơn hàng giao bù:</span>
+                            <strong style="color: #0284c7; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                                <span th:text="${complaint['replacement_order_code']}"></span>
+                            </strong>
                             <small style="color: #16a34a; font-weight: 600;" th:text="${'(' + complaint['replacement_delivery_status'] + ') - Miễn phí 0đ'}"></small>
                         </div>
                         <div th:if="${complaint['voucher_code'] != null}" style="margin-bottom: 8px;">
@@ -268,7 +303,10 @@
                     <!-- 5. Danh sách sản phẩm trong đơn hàng gốc -->
                     <div th:if="${complaint['orderItems'] != null and !#lists.isEmpty(complaint['orderItems'])}"
                          style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px;">
-                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a;">🛒 Chi tiết Sản phẩm trong Đơn hàng gốc</h3>
+                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                            <span>Chi tiết Sản phẩm trong Đơn hàng gốc</span>
+                        </h3>
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                             <thead>
                             <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 700;">
@@ -298,7 +336,10 @@
 
                     <!-- Khách hàng -->
                     <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px;">
-                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a;">👤 Khách hàng gửi khiếu nại</h3>
+                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>Khách hàng gửi khiếu nại</span>
+                        </h3>
                         <div style="font-size: 13.5px; display: grid; gap: 8px;">
                             <div>Họ tên: <strong style="color: #0f172a;" th:text="${complaint['customer_name']}"></strong></div>
                             <div>SĐT: <strong style="color: #0f172a;" th:text="${complaint['customer_phone']}"></strong></div>
@@ -306,7 +347,10 @@
                             <div>Điểm thưởng hiện tại: <strong style="color: #d97706;" th:text="${complaint['customer_points']}"></strong> điểm</div>
                             <div th:if="${complaint['customer_bank_account_no'] != null}"
                                  style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed #e2e8f0;">
-                                <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 2px;">🏦 TÀI KHOẢN NHẬN HOÀN TIỀN:</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+                                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                    <span>TÀI KHOẢN NHẬN HOÀN TIỀN:</span>
+                                </div>
                                 <div><strong style="color: #1d4ed8;" th:text="${complaint['customer_bank_name'] + ' - ' + complaint['customer_bank_account_no']}"></strong></div>
                                 <div style="font-size: 12.5px; color: #334155;">Chủ TK: <span th:text="${complaint['customer_bank_account_holder']}"></span></div>
                             </div>
@@ -315,7 +359,10 @@
 
                     <!-- Cửa hàng & Lịch sử vi phạm -->
                     <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px;">
-                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a;">🏪 Cửa hàng liên quan &amp; Hồ sơ chất lượng</h3>
+                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            <span>Cửa hàng liên quan &amp; Hồ sơ chất lượng</span>
+                        </h3>
                         <div style="font-size: 13.5px; display: grid; gap: 8px;">
                             <div>Tên Shop: <strong style="color: #0f172a;" th:text="${complaint['shop_name']}"></strong></div>
                             <div>Chủ Shop: <span style="color: #334155;" th:text="${complaint['shop_owner_name']}"></span></div>
@@ -324,14 +371,17 @@
                             <div style="margin-top: 6px; padding-top: 8px; border-top: 1px dashed #e2e8f0; display: grid; gap: 6px;">
                                 <div>Tổng khiếu nại của Shop: <strong th:text="${complaint['shopTotalComplaints'] ?: 0}">0</strong></div>
                                 <div>Khiếu nại xác định lỗi Shop: <strong style="color: #dc2626;" th:text="${complaint['shopFaultComplaints'] ?: 0}">0</strong></div>
-                                <div>Đánh giá tiêu cực (1-2★): <strong style="color: #d97706;" th:text="${complaint['shopLowReviews'] ?: 0}">0</strong></div>
+                                <div>Đánh giá tiêu cực (1-2 sao): <strong style="color: #d97706;" th:text="${complaint['shopLowReviews'] ?: 0}">0</strong></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Đơn hàng gốc -->
                     <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px;">
-                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a;">📦 Đơn hàng gốc</h3>
+                        <h3 style="margin: 0 0 12px; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                            <span>Đơn hàng gốc</span>
+                        </h3>
                         <div style="font-size: 13.5px; display: grid; gap: 8px;">
                             <div>Mã đơn: <strong style="color: #0284c7;" th:text="${complaint['order_code']}"></strong></div>
                             <div>Tổng tiền đơn: <strong style="color: #dc2626;" th:text="${#numbers.formatDecimal(complaint['total_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong></div>

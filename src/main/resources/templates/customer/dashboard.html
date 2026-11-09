@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tổng quan chi tiêu & Mua sắm | FreshFruit</title>
+    <link rel="stylesheet" th:href="@{/css/freshfruit-design-system.css}">
     <link rel="stylesheet" th:href="@{/css/customer-account.css}">
     <link rel="stylesheet" th:href="@{/css/customer-account-pages.css}">
     <link rel="stylesheet" th:href="@{/css/customer-topbar.css}">
@@ -11,8 +12,13 @@
     <link rel="stylesheet" th:href="@{/css/notifications.css}">
     <link rel="stylesheet" th:href="@{/css/notification-dropdown.css}">
     <script th:src="@{/js/notification-dropdown.js}" defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: var(--font-sans);
+        }
         .tier-hero-card {
             background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
             border-radius: 16px;
@@ -24,12 +30,14 @@
             box-shadow: 0 4px 15px rgba(27, 67, 50, 0.15);
         }
         .tier-hero-card::after {
-            content: '👑';
+            content: '';
             position: absolute;
-            right: 20px;
-            bottom: -15px;
-            font-size: 110px;
-            opacity: 0.12;
+            right: -20px;
+            bottom: -20px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(254, 240, 138, 0.15) 0%, transparent 70%);
             pointer-events: none;
         }
         .tier-badge {
@@ -149,7 +157,8 @@
         <!-- Tier & Loyalty Hero -->
         <div class="tier-hero-card">
             <div class="tier-badge">
-                <span>✦ Hạng thành viên:</span>
+                <svg class="ui-icon ui-icon-xs" style="stroke:#fef08a" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Hạng thành viên:</span>
                 <span th:text="${user.tier_name ?: 'Đồng (BRONZE)'}">Đồng (BRONZE)</span>
             </div>
 
@@ -184,8 +193,9 @@
                 </small>
             </div>
 
-            <div th:unless="${hasNextTier}" style="margin-top: 14px; font-size: 13px; color: #fef08a; font-weight: 600;">
-                🎉 Bạn đã đạt hạng cao nhất của FreshFruit! Hưởng trọn vẹn đặc quyền và ưu đãi điểm thưởng tối đa.
+            <div th:unless="${hasNextTier}" style="margin-top: 14px; font-size: 13px; color: #fef08a; font-weight: 600; display:flex; align-items:center; gap:6px;">
+                <svg class="ui-icon ui-icon-xs" style="stroke:#fef08a" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Bạn đã đạt hạng cao nhất của FreshFruit! Hưởng trọn vẹn đặc quyền và ưu đãi điểm thưởng tối đa.</span>
             </div>
         </div>
 
@@ -219,7 +229,10 @@
         <!-- Monthly Spending Chart -->
         <div class="chart-box">
             <div class="card-header-clean">
-                <h3><span>📈</span> Chi tiêu theo tháng gần đây</h3>
+                <h3>
+                    <svg class="ui-icon ui-icon-xs" style="stroke:#16a34a" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    <span>Chi tiêu theo tháng gần đây</span>
+                </h3>
                 <span style="font-size: 12px; color: #64748b;">Dữ liệu 6 tháng qua</span>
             </div>
 
@@ -244,13 +257,16 @@
             <!-- Top Categories -->
             <div class="behavior-card">
                 <div class="card-header-clean">
-                    <h3><span>🍎</span> Danh mục trái cây mua nhiều nhất</h3>
+                    <h3>
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#ea580c" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                        <span>Danh mục trái cây mua nhiều nhất</span>
+                    </h3>
                 </div>
 
                 <div th:each="cat : ${topCategories}" class="item-row">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                            🍇
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
                         </div>
                         <div>
                             <strong style="color: #0f172a; font-size: 14px;" th:text="${cat.category_name}">Tên danh mục</strong>
@@ -270,14 +286,17 @@
             <!-- Favorite Fruits / Products -->
             <div class="behavior-card">
                 <div class="card-header-clean">
-                    <h3><span>🍊</span> Sản phẩm yêu thích thường mua</h3>
+                    <h3>
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#dc2626" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <span>Sản phẩm yêu thích thường mua</span>
+                    </h3>
                 </div>
 
                 <div th:each="p : ${topVariants}" class="item-row">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <img th:if="${p.image_url != null}" th:src="${p.image_url}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover;">
-                        <div th:if="${p.image_url == null}" style="width: 36px; height: 36px; border-radius: 8px; background: #e0f2fe; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                            🍊
+                        <div th:if="${p.image_url == null}" style="width: 36px; height: 36px; border-radius: 8px; background: #e0f2fe; display: flex; align-items: center; justify-content: center;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                         </div>
                         <div>
                             <strong style="color: #0f172a; font-size: 13px;" th:text="${p.product_name}">Tên quả</strong>
@@ -301,13 +320,16 @@
             <!-- Favorite Shops -->
             <div class="behavior-card">
                 <div class="card-header-clean">
-                    <h3><span>🏪</span> Cửa hàng yêu thích</h3>
+                    <h3>
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#059669" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                        <span>Cửa hàng yêu thích</span>
+                    </h3>
                 </div>
 
                 <div th:each="s : ${favoriteShops}" class="item-row">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 34px; height: 34px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                            🏪
+                        <div style="width: 34px; height: 34px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
                         </div>
                         <div>
                             <a th:href="@{/shops/{id}(id=${s.shop_id})}" style="color: #0f172a; font-size: 14px; font-weight: 700; text-decoration: none;" th:text="${s.shop_name}">Tên Shop</a>
@@ -327,7 +349,10 @@
             <!-- Recent Orders with Buy Again -->
             <div class="behavior-card">
                 <div class="card-header-clean">
-                    <h3><span>📦</span> Đơn hàng gần đây</h3>
+                    <h3>
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#2563eb" viewBox="0 0 24 24"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span>Đơn hàng gần đây</span>
+                    </h3>
                     <a th:href="@{/customer/account/orders}" style="font-size: 12px; color: #2e7d32; font-weight: 600; text-decoration: none;">Xem tất cả →</a>
                 </div>
 
@@ -340,11 +365,18 @@
                     </div>
                     <div style="text-align: right;">
                         <div style="font-weight: 700; color: #0f172a; font-size: 13px;" th:text="${#numbers.formatInteger(o.total_amount, 1, 'COMMA') + ' ₫'}">0 ₫</div>
-                        <a th:href="@{/search}" style="display: inline-block; margin-top: 3px; font-size: 11px; color: #16a34a; font-weight: 700; text-decoration: none; background: #ecfdf5; padding: 2px 8px; border-radius: 4px;">
-                            Mua lại ↻
+                        <a th:href="@{/search}" style="display: inline-flex; align-items:center; gap:4px; margin-top: 3px; font-size: 11px; color: #16a34a; font-weight: 700; text-decoration: none; background: #ecfdf5; padding: 2px 8px; border-radius: 4px;">
+                            <span>Mua lại</span>
+                            <svg class="ui-icon ui-icon-xs" style="stroke:#16a34a" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         </a>
                     </div>
                 </div>
+
+                <div th:if="${#lists.isEmpty(recentOrders)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
+                    Bạn chưa có đơn hàng nào gần đây.
+                </div>
+            </div>
+        </div>
 
                 <div th:if="${#lists.isEmpty(recentOrders)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
                     Bạn chưa có đơn hàng nào gần đây.

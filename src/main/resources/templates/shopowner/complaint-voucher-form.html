@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,217 +16,284 @@
             align-items: start;
             margin-top: 20px;
         }
+
         @media (max-width: 992px) {
-            .voucher-grid { grid-template-columns: 1fr; }
+            .voucher-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
+
 <body>
-<div class="app-shell">
-    <aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside>
-    <main class="main-content product-management">
-        <header class="order-detail-heading">
-            <div>
-                <a class="back-link" th:href="@{/shopowner/orders/{id}(id=${order.id})}" style="display: inline-flex; align-items: center; gap: 4px;">
-                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                    <span>Quay lại đơn hàng gốc</span>
-                </a>
-                <h1 style="display: flex; align-items: center; gap: 10px;">
-                    <svg class="ui-icon ui-icon-lg" style="color: #9333ea;" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
-                    <span>Phát hành voucher đền bù khiếu nại</span>
-                </h1>
-                <div class="order-heading-meta">
-                    <span>Mã khiếu nại: <strong th:text="${complaint['complaint_code']}">KN-001</strong></span>
-                    <span>Đơn gốc: <strong th:text="${order.order_code}">FF-001</strong></span>
-                    <span style="color: #86198f; font-weight: 700;">Tặng trực tiếp vào ví khách</span>
-                </div>
-            </div>
-        </header>
-
-        <p th:if="${message}" class="order-notice" th:text="${message}" role="status"></p>
-        <p th:if="${error}" class="order-notice" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;" th:text="${error}" role="alert"></p>
-
-        <div class="voucher-grid">
-            <!-- CỘT TRÁI: THÔNG TIN KHIẾU NẠI & ĐỐI TƯỢNG ĐỀN BÙ -->
-            <div>
-                <div class="panel" style="padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-                    <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 14px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                        <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                        <span>Thông tin khiếu nại &amp; Khách hàng</span>
-                    </h2>
-
-                    <div style="background: #fdf4ff; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13.5px; border-left: 3px solid #c026d3;">
-                        <div style="margin-bottom: 6px;">
-                            <span style="color: #64748b; font-size: 12px; display: block;">Khách hàng nhận voucher</span>
-                            <strong style="color: #86198f;" th:text="${complaint['customer_name']}">Nguyễn Văn A</strong>
-                            <small style="color: #64748b; display: block;" th:text="${complaint['customer_phone'] ?: complaint['customer_email']}"></small>
-                        </div>
-                        <div style="margin-bottom: 6px;">
-                            <span style="color: #64748b; font-size: 12px; display: block;">Lý do khiếu nại</span>
-                            <strong style="color: #dc2626;" th:text="${complaint['reason_label']}">Chất lượng hoa quả</strong>
-                        </div>
-                        <div>
-                            <span style="color: #64748b; font-size: 12px; display: block;">Mô tả từ khách</span>
-                            <p style="margin: 4px 0 0; color: #1e293b; line-height: 1.4;" th:text="${complaint['description']}"></p>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 13px;">
-                        <span style="color: #475569;">Tổng tiền hàng đơn gốc:</span>
-                        <strong style="color: #0f172a; font-size: 14.5px;" th:text="${#numbers.formatInteger(order.subtotal, 1, 'COMMA') + ' ₫'}">0 ₫</strong>
+    <div class="app-shell">
+        <aside th:replace="~{shopowner/fragments :: sidebar('orders')}"></aside>
+        <main class="main-content product-management">
+            <header class="order-detail-heading">
+                <div>
+                    <a class="back-link" th:href="@{/shopowner/orders/{id}(id=${order.id})}"
+                        style="display: inline-flex; align-items: center; gap: 4px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                        <span>Quay lại đơn hàng gốc</span>
+                    </a>
+                    <h1 style="display: flex; align-items: center; gap: 10px;">
+                        <svg class="ui-icon ui-icon-lg" style="color: #9333ea;" viewBox="0 0 24 24">
+                            <path
+                                d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                            <path d="M13 5v2" />
+                            <path d="M13 17v2" />
+                            <path d="M13 11v2" />
+                        </svg>
+                        <span>Phát hành voucher đền bù khiếu nại</span>
+                    </h1>
+                    <div class="order-heading-meta">
+                        <span>Mã khiếu nại: <strong th:text="${complaint['complaint_code']}">KN-001</strong></span>
+                        <span>Đơn gốc: <strong th:text="${order.order_code}">FF-001</strong></span>
+                        <span style="color: #86198f; font-weight: 700;">Tặng trực tiếp vào ví khách</span>
                     </div>
                 </div>
+            </header>
 
-                <div class="panel" style="padding: 18px; border-radius: 12px; border: 1px solid #e9d5ff; background: #faf5ff;">
-                    <div style="font-weight: 700; color: #6b21a8; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                        <span>Cơ chế lưu voucher tự động</span>
+            <p th:if="${message}" class="order-notice" th:text="${message}" role="status"></p>
+            <p th:if="${error}" class="order-notice" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;"
+                th:text="${error}" role="alert"></p>
+
+            <div class="voucher-grid">
+                <!-- CỘT TRÁI: THÔNG TIN KHIẾU NẠI & ĐỐI TƯỢNG ĐỀN BÙ -->
+                <div>
+                    <div class="panel"
+                        style="padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <h2
+                            style="font-size: 16px; margin-top: 0; margin-bottom: 14px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <svg class="ui-icon ui-icon-sm" style="color: #64748b;" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                            <span>Thông tin khiếu nại &amp; Khách hàng</span>
+                        </h2>
+
+                        <div
+                            style="background: #fdf4ff; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 13.5px; border-left: 3px solid #c026d3;">
+                            <div style="margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 12px; display: block;">Khách hàng nhận
+                                    voucher</span>
+                                <strong style="color: #86198f;" th:text="${complaint['customer_name']}">Nguyễn Văn
+                                    A</strong>
+                                <small style="color: #64748b; display: block;"
+                                    th:text="${complaint['customer_phone'] ?: complaint['customer_email']}"></small>
+                            </div>
+                            <div style="margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 12px; display: block;">Lý do khiếu nại</span>
+                                <strong style="color: #dc2626;" th:text="${complaint['reason_label']}">Chất lượng hoa
+                                    quả</strong>
+                            </div>
+                            <div>
+                                <span style="color: #64748b; font-size: 12px; display: block;">Mô tả từ khách</span>
+                                <p style="margin: 4px 0 0; color: #1e293b; line-height: 1.4;"
+                                    th:text="${complaint['description']}"></p>
+                            </div>
+                        </div>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 13px;">
+                            <span style="color: #475569;">Tổng tiền hàng đơn gốc:</span>
+                            <strong style="color: #0f172a; font-size: 14.5px;"
+                                th:text="${#numbers.formatInteger(order.subtotal, 1, 'COMMA') + ' ₫'}">0 ₫</strong>
+                        </div>
                     </div>
-                    <p style="font-size: 12.5px; color: #7e22ce; margin: 0; line-height: 1.5;">
-                        Voucher đền bù là voucher <strong>riêng tư</strong> (không hiện trên trang sản phẩm chung). Khi Shop phát hành, hệ thống sẽ tự động lưu thẳng vào kho voucher cá nhân của khách hàng để áp dụng cho đơn tiếp theo.
-                    </p>
+
+                    <div class="panel"
+                        style="padding: 18px; border-radius: 12px; border: 1px solid #e9d5ff; background: #faf5ff;">
+                        <div
+                            style="font-weight: 700; color: #6b21a8; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            <span>Cơ chế lưu voucher tự động</span>
+                        </div>
+                        <p style="font-size: 12.5px; color: #7e22ce; margin: 0; line-height: 1.5;">
+                            Voucher đền bù là voucher <strong>riêng tư</strong> (không hiện trên trang sản phẩm chung).
+                            Khi Shop phát hành, hệ thống sẽ tự động lưu thẳng vào kho voucher cá nhân của khách hàng để
+                            áp dụng cho đơn tiếp theo.
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- CỘT PHẢI: FORM CẤU HÌNH VOUCHER ĐỀN BÙ -->
-            <div>
-                <form th:action="@{/shopowner/orders/{oid}/complaints/{cid}/voucher(oid=${order.id},cid=${complaint['id']})}"
-                      method="post" class="panel" style="padding: 24px; border-radius: 12px; border: 1.5px solid #d8b4fe; background: #fff;">
+                <!-- CỘT PHẢI: FORM CẤU HÌNH VOUCHER ĐỀN BÙ -->
+                <div>
+                    <form
+                        th:action="@{/shopowner/orders/{oid}/complaints/{cid}/voucher(oid=${order.id},cid=${complaint['id']})}"
+                        method="post" class="panel"
+                        style="padding: 24px; border-radius: 12px; border: 1.5px solid #d8b4fe; background: #fff;">
 
-                    <h2 style="font-size: 17px; margin-top: 0; color: #6b21a8; margin-bottom: 16px;">
-                        Thiết lập thông tin voucher đền bù
-                    </h2>
+                        <h2 style="font-size: 17px; margin-top: 0; color: #6b21a8; margin-bottom: 16px;">
+                            Thiết lập thông tin voucher đền bù
+                        </h2>
 
-                    <!-- Mã voucher & Tên voucher -->
-                    <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; margin-bottom: 14px;">
-                        <div>
-                            <label for="voucherCode" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                                Mã voucher *:
-                            </label>
-                            <input type="text" id="voucherCode" name="voucherCode" th:value="${suggestedCode}" required maxlength="50"
-                                   style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-weight: 700; font-size: 13.5px; text-transform: uppercase; box-sizing: border-box;">
+                        <!-- Mã voucher & Tên voucher -->
+                        <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; margin-bottom: 14px;">
+                            <div>
+                                <label for="voucherCode"
+                                    style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                    Mã voucher *:
+                                </label>
+                                <input type="text" id="voucherCode" name="voucherCode" th:value="${suggestedCode}"
+                                    required maxlength="50"
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-weight: 700; font-size: 13.5px; text-transform: uppercase; box-sizing: border-box;">
+                            </div>
+                            <div>
+                                <label for="voucherName"
+                                    style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                    Tên voucher *:
+                                </label>
+                                <input type="text" id="voucherName" name="voucherName"
+                                    th:value="${'Voucher đền bù khiếu nại ' + complaint['complaint_code']}" required
+                                    maxlength="150"
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+                            </div>
                         </div>
-                        <div>
-                            <label for="voucherName" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                                Tên voucher *:
+
+                        <!-- Loại giảm giá -->
+                        <div
+                            style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 8px; margin-bottom: 14px;">
+                            <label
+                                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                                Hình thức giảm giá *:
                             </label>
-                            <input type="text" id="voucherName" name="voucherName"
-                                   th:value="${'Voucher đền bù khiếu nại ' + complaint['complaint_code']}" required maxlength="150"
-                                   style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+                            <div style="display: flex; gap: 20px;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #1e293b; cursor: pointer;">
+                                    <input type="radio" name="discountType" value="FIXED_AMOUNT" checked
+                                        onchange="toggleDiscountType(this.value)">
+                                    Giảm số tiền cố định (VNĐ)
+                                </label>
+                                <label
+                                    style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #1e293b; cursor: pointer;">
+                                    <input type="radio" name="discountType" value="PERCENTAGE"
+                                        onchange="toggleDiscountType(this.value)">
+                                    Giảm theo % đơn hàng
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Loại giảm giá -->
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 8px; margin-bottom: 14px;">
-                        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">
-                            Hình thức giảm giá *:
-                        </label>
-                        <div style="display: flex; gap: 20px;">
-                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #1e293b; cursor: pointer;">
-                                <input type="radio" name="discountType" value="FIXED_AMOUNT" checked onchange="toggleDiscountType(this.value)">
-                                Giảm số tiền cố định (VNĐ)
+                        <!-- Mệnh giá giảm -->
+                        <div style="margin-bottom: 14px;">
+                            <label id="lblDiscountValue" for="discountValue"
+                                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                Số tiền giảm (VNĐ) *:
                             </label>
-                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #1e293b; cursor: pointer;">
-                                <input type="radio" name="discountType" value="PERCENTAGE" onchange="toggleDiscountType(this.value)">
-                                Giảm theo % đơn hàng
+                            <div style="position: relative;">
+                                <input type="number" id="discountValue" name="discountValue"
+                                    th:value="${suggestedDiscount}" min="1000" step="1000" required
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; font-weight: 700; color: #15803d; box-sizing: border-box;">
+                            </div>
+                            <small id="hintDiscountValue"
+                                style="display: block; color: #64748b; font-size: 11.5px; margin-top: 3px;">
+                                Gợi ý mặc định theo giá trị tiền hàng bị khiếu nại. Shop có thể điều chỉnh tùy ý.
+                            </small>
+                        </div>
+
+                        <!-- Mức giảm tối đa (khi chọn %) -->
+                        <div id="maxDiscountGroup" style="display: none; margin-bottom: 14px;">
+                            <label for="maxDiscountAmount"
+                                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                Mức giảm tối đa (VNĐ) - Tùy chọn:
                             </label>
+                            <input type="number" id="maxDiscountAmount" name="maxDiscountAmount" min="1000" step="1000"
+                                placeholder="VD: 50000 (Để trống nếu không giới hạn)"
+                                style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
                         </div>
-                    </div>
 
-                    <!-- Mệnh giá giảm -->
-                    <div style="margin-bottom: 14px;">
-                        <label id="lblDiscountValue" for="discountValue" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                            Số tiền giảm (VNĐ) *:
-                        </label>
-                        <div style="position: relative;">
-                            <input type="number" id="discountValue" name="discountValue" th:value="${suggestedDiscount}" min="1000" step="1000" required
-                                   style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; font-weight: 700; color: #15803d; box-sizing: border-box;">
+                        <!-- Đơn hàng tối thiểu & Hạn dùng -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                            <div>
+                                <label for="minOrderValue"
+                                    style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                    Đơn tối thiểu (VNĐ):
+                                </label>
+                                <input type="number" id="minOrderValue" name="minOrderValue" value="0" min="0"
+                                    step="1000"
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+                                <small style="display: block; color: #64748b; font-size: 11px; margin-top: 2px;">Để 0đ
+                                    để áp dụng cho mọi đơn.</small>
+                            </div>
+                            <div>
+                                <label for="validDays"
+                                    style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                    Hạn sử dụng (Số ngày):
+                                </label>
+                                <input type="number" id="validDays" name="validDays" value="30" min="1" max="365"
+                                    required
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+                                <small style="display: block; color: #64748b; font-size: 11px; margin-top: 2px;">Tính từ
+                                    ngày hôm nay.</small>
+                            </div>
                         </div>
-                        <small id="hintDiscountValue" style="display: block; color: #64748b; font-size: 11.5px; margin-top: 3px;">
-                            Gợi ý mặc định theo giá trị tiền hàng bị khiếu nại. Shop có thể điều chỉnh tùy ý.
-                        </small>
-                    </div>
 
-                    <!-- Mức giảm tối đa (khi chọn %) -->
-                    <div id="maxDiscountGroup" style="display: none; margin-bottom: 14px;">
-                        <label for="maxDiscountAmount" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                            Mức giảm tối đa (VNĐ) - Tùy chọn:
-                        </label>
-                        <input type="number" id="maxDiscountAmount" name="maxDiscountAmount" min="1000" step="1000" placeholder="VD: 50000 (Để trống nếu không giới hạn)"
-                               style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
-                    </div>
-
-                    <!-- Đơn hàng tối thiểu & Hạn dùng -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                        <div>
-                            <label for="minOrderValue" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                                Đơn tối thiểu (VNĐ):
+                        <!-- Lời nhắn / Ghi chú gửi khách -->
+                        <div style="margin-bottom: 20px;">
+                            <label for="shopResponse"
+                                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                                Lời xin lỗi / Ghi chú gửi kèm voucher cho khách:
                             </label>
-                            <input type="number" id="minOrderValue" name="minOrderValue" value="0" min="0" step="1000"
-                                   style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
-                            <small style="display: block; color: #64748b; font-size: 11px; margin-top: 2px;">Để 0đ để áp dụng cho mọi đơn.</small>
+                            <textarea id="shopResponse" name="shopResponse" rows="2" maxlength="1500"
+                                placeholder="Nhập lời xin lỗi hoặc hướng dẫn sử dụng voucher gửi khách hàng..."
+                                style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box;"></textarea>
                         </div>
-                        <div>
-                            <label for="validDays" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                                Hạn sử dụng (Số ngày):
-                            </label>
-                            <input type="number" id="validDays" name="validDays" value="30" min="1" max="365" required
-                                   style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
-                            <small style="display: block; color: #64748b; font-size: 11px; margin-top: 2px;">Tính từ ngày hôm nay.</small>
-                        </div>
-                    </div>
 
-                    <!-- Lời nhắn / Ghi chú gửi khách -->
-                    <div style="margin-bottom: 20px;">
-                        <label for="shopResponse" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                            Lời xin lỗi / Ghi chú gửi kèm voucher cho khách:
-                        </label>
-                        <textarea id="shopResponse" name="shopResponse" rows="2" maxlength="1500"
-                                  placeholder="Nhập lời xin lỗi hoặc hướng dẫn sử dụng voucher gửi khách hàng..."
-                                  style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box;"></textarea>
-                    </div>
-
-                    <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                        <a th:href="@{/shopowner/orders/{id}(id=${order.id})}"
-                           style="padding: 10px 18px; border: 1px solid #cbd5e1; border-radius: 8px; color: #475569; text-decoration: none; font-weight: 600; font-size: 13.5px;">
-                            Hủy bỏ
-                        </a>
-                        <button type="submit"
+                        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                            <a th:href="@{/shopowner/orders/{id}(id=${order.id})}"
+                                style="padding: 10px 18px; border: 1px solid #cbd5e1; border-radius: 8px; color: #475569; text-decoration: none; font-weight: 600; font-size: 13.5px;">
+                                Hủy bỏ
+                            </a>
+                            <button type="submit"
                                 style="background: #86198f; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
-                            <span>Xác nhận phát hành voucher vào ví khách</span>
-                        </button>
-                    </div>
-                </form>
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                                    <path
+                                        d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                                </svg>
+                                <span>Xác nhận phát hành voucher vào ví khách</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
-    </main>
-</div>
+        </main>
+    </div>
 
-<script>
-    function toggleDiscountType(type) {
-        var lbl = document.getElementById('lblDiscountValue');
-        var input = document.getElementById('discountValue');
-        var maxGrp = document.getElementById('maxDiscountGroup');
-        var hint = document.getElementById('hintDiscountValue');
+    <script>
+        function toggleDiscountType(type) {
+            var lbl = document.getElementById('lblDiscountValue');
+            var input = document.getElementById('discountValue');
+            var maxGrp = document.getElementById('maxDiscountGroup');
+            var hint = document.getElementById('hintDiscountValue');
 
-        if (type === 'PERCENTAGE') {
-            lbl.innerText = 'Tỷ lệ giảm (%) *:';
-            input.min = '1';
-            input.max = '100';
-            input.step = '1';
-            if (parseInt(input.value, 10) > 100) input.value = '20';
-            maxGrp.style.display = 'block';
-            hint.innerText = 'Nhập phần trăm từ 1 đến 100.';
-        } else {
-            lbl.innerText = 'Số tiền giảm (VNĐ) *:';
-            input.min = '1000';
-            input.removeAttribute('max');
-            input.step = '1000';
-            maxGrp.style.display = 'none';
-            hint.innerText = 'Gợi ý mặc định theo giá trị tiền hàng bị khiếu nại. Shop có thể điều chỉnh tùy ý.';
+            if (type === 'PERCENTAGE') {
+                lbl.innerText = 'Tỷ lệ giảm (%) *:';
+                input.min = '1';
+                input.max = '100';
+                input.step = '1';
+                if (parseInt(input.value, 10) > 100) input.value = '20';
+                maxGrp.style.display = 'block';
+                hint.innerText = 'Nhập phần trăm từ 1 đến 100.';
+            } else {
+                lbl.innerText = 'Số tiền giảm (VNĐ) *:';
+                input.min = '1000';
+                input.removeAttribute('max');
+                input.step = '1000';
+                maxGrp.style.display = 'none';
+                hint.innerText = 'Gợi ý mặc định theo giá trị tiền hàng bị khiếu nại. Shop có thể điều chỉnh tùy ý.';
+            }
         }
-    }
-</script>
+    </script>
 </body>
+
 </html>

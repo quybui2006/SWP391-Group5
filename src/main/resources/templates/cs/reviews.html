@@ -13,11 +13,11 @@
         </div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <a th:href="@{/cs/reviews(modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == null} ? 'background:#0284c7; color:#fff;' : ''">Tất cả sao</a>
-            <a th:href="@{/cs/reviews(rating=1, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 1} ? 'background:#dc2626; color:#fff;' : ''">★ 1 Sao</a>
-            <a th:href="@{/cs/reviews(rating=2, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 2} ? 'background:#ea580c; color:#fff;' : ''">★ 2 Sao</a>
-            <a th:href="@{/cs/reviews(rating=3, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 3} ? 'background:#eab308; color:#fff;' : ''">★ 3 Sao</a>
-            <a th:href="@{/cs/reviews(rating=4, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 4} ? 'background:#16a34a; color:#fff;' : ''">★ 4 Sao</a>
-            <a th:href="@{/cs/reviews(rating=5, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 5} ? 'background:#16a34a; color:#fff;' : ''">★ 5 Sao</a>
+            <a th:href="@{/cs/reviews(rating=1, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 1} ? 'background:#dc2626; color:#fff;' : ''">1 Sao</a>
+            <a th:href="@{/cs/reviews(rating=2, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 2} ? 'background:#ea580c; color:#fff;' : ''">2 Sao</a>
+            <a th:href="@{/cs/reviews(rating=3, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 3} ? 'background:#eab308; color:#fff;' : ''">3 Sao</a>
+            <a th:href="@{/cs/reviews(rating=4, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 4} ? 'background:#16a34a; color:#fff;' : ''">4 Sao</a>
+            <a th:href="@{/cs/reviews(rating=5, modStatus=${selectedModStatus})}" class="btn-cs-sm" th:style="${selectedRating == 5} ? 'background:#16a34a; color:#fff;' : ''">5 Sao</a>
         </div>
     </header>
 
@@ -32,7 +32,11 @@
                 <div>
                     <div class="cs-stat-label">Tổng đánh giá trên sàn</div>
                     <div class="cs-stat-value" th:text="${moderationMetrics.totalReviews}">0</div>
-                    <small style="color: #64748b; font-size: 12px;">Điểm TB: <strong th:text="${moderationMetrics.avgRating + ' ★'}">0.0 ★</strong></small>
+                    <small style="color: #64748b; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>Điểm TB:</span>
+                        <strong th:text="${moderationMetrics.avgRating}">0.0</strong>
+                        <svg class="ui-icon ui-icon-xs" style="color: #eab308;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </small>
                 </div>
             </div>
             <div class="cs-stat-card">
@@ -99,8 +103,10 @@
                             <small style="color: var(--cs-text-sub);" th:text="${rev['variant_name']}">Hộp 1kg</small>
                         </td>
                         <td>
-                            <span th:style="${rev['rating'] <= 2} ? 'color: #dc2626; font-weight: 800; font-size: 14.5px;' : 'color: #eab308; font-weight: 800; font-size: 14.5px;'"
-                                  th:text="${'★ ' + rev['rating'] + '/5'}">★ 5/5</span>
+                            <span th:style="${rev['rating'] <= 2} ? 'color: #dc2626; font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; gap: 4px;' : 'color: #eab308; font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; gap: 4px;'">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <span th:text="${rev['rating'] + '/5'}">5/5</span>
+                            </span>
                         </td>
                         <td>
                             <div style="max-width: 380px; line-height: 1.4;" th:text="${rev['content'] ?: 'Không có nội dung'}">Hàng tươi ngon, giao nhanh.</div>
@@ -120,7 +126,10 @@
                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                 <form th:if="${rev['moderation_status'] != 'APPROVED'}"
                                       th:action="@{/cs/reviews/{id}/approve(id=${rev['id']})}" method="post" style="display:inline;">
-                                    <button type="submit" class="btn-cs-sm" style="background:#16a34a; color:#fff; font-size: 11.5px;">✓ Duyệt</button>
+                                    <button type="submit" class="btn-cs-sm" style="background:#16a34a; color:#fff; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
+                                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <span>Duyệt</span>
+                                    </button>
                                 </form>
                                 <form th:if="${rev['moderation_status'] != 'REJECTED'}"
                                       th:action="@{/cs/reviews/{id}/reject(id=${rev['id']})}" method="post" style="display:inline;">

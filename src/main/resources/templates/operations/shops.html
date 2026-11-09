@@ -13,7 +13,9 @@
             <!-- KPI Summary Cards -->
             <div class="stats-grid">
                 <a th:href="@{/operations/shops(status='PENDING')}" class="stat-card">
-                    <div class="stat-icon orange">⏳</div>
+                    <div class="stat-icon orange" style="display:flex;align-items:center;justify-content:center;">
+                        <svg class="ui-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
                     <div class="stat-info">
                         <div class="stat-label">Chờ duyệt</div>
                         <strong style="color: #ea580c;" th:text="${stats.pending}">0</strong>
@@ -78,7 +80,9 @@
 
                 <form th:action="@{/operations/shops}" method="get" class="search-field" style="margin: 0;">
                     <input type="hidden" name="status" th:value="${currentStatus}">
-                    <span aria-hidden="true">⌕</span>
+                    <span aria-hidden="true" style="display:flex;align-items:center;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </span>
                     <input type="search" name="keyword" th:value="${keyword}" placeholder="Tìm tên shop, chủ shop, email...">
                     <button type="submit" class="button button-primary" style="padding: 4px 10px; font-size: 11px;">Tìm</button>
                     <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/operations/shops(status=${currentStatus})}" style="font-size: 11.5px; color: #dc2626; margin-left: 4px;">Xóa tìm</a>

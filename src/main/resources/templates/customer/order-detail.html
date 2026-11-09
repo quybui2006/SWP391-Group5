@@ -14,7 +14,10 @@
 
         <!-- Header: quay lại + mã đơn + trạng thái + nút Hoàn tất đơn / Khiếu nại -->
         <div class="order-detail-top">
-            <a class="back-link" th:href="@{/customer/account/orders}">← Đơn hàng của tôi</a>
+            <a class="back-link" th:href="@{/customer/account/orders}" style="display:inline-flex;align-items:center;gap:6px;">
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <span>Đơn hàng của tôi</span>
+            </a>
             <div class="order-detail-title" style="justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
                     <h1 th:text="${'Đơn hàng ' + order['order_code']}">Đơn hàng FF-XXX</h1>
@@ -38,7 +41,8 @@
                         <button th:if="${hasActiveComplaint}" type="button" disabled
                                 title="Đơn hàng đang có khiếu nại chưa xử lý xong, không thể hoàn tất đơn."
                                 style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #e2e8f0; color: #94a3b8; font-size: 13px; font-weight: 700; border: none; cursor: not-allowed;">
-                            ✓ Đã nhận được hàng (Đang khiếu nại)
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Đã nhận được hàng (Đang khiếu nại)</span>
                         </button>
                         <form th:if="${!hasActiveComplaint}"
                               th:action="@{/customer/account/orders/{id}/complete(id=${order['id']})}"
@@ -46,7 +50,8 @@
                               onsubmit="return confirm('Bạn xác nhận đã nhận đầy đủ hàng và hài lòng với đơn hàng này?');">
                             <button type="submit"
                                     style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700; border: none; cursor: pointer;">
-                                ✓ Đã nhận được hàng
+                                <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Đã nhận được hàng</span>
                             </button>
                         </form>
                     </div>
@@ -56,12 +61,14 @@
                        href="#complaint-section"
                        onclick="setTimeout(() => { const el = document.getElementById('complaintDescInput'); if(el) el.focus(); }, 150);"
                        style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #dc2626; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none;">
-                        ⚠️ Gửi khiếu nại
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>Gửi khiếu nại</span>
                     </a>
                     <a th:if="${hasActiveComplaint}"
                        href="#complaint-section"
                        style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 13px; font-weight: 700; text-decoration: none;">
-                        🎫 Xem khiếu nại đang xử lý
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+                        <span>Xem khiếu nại đang xử lý</span>
                     </a>
                 </div>
             </div>
@@ -70,7 +77,10 @@
         <!-- Timeline theo dõi đơn hàng -->
         <div class="tracking-card" th:if="${order['status'] != 'CANCELLED'}"
              th:with="tracking=${order['tracking']}">
-            <h3>📍 Trạng thái đơn hàng</h3>
+            <h3 style="display:flex;align-items:center;gap:8px;">
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span>Trạng thái đơn hàng</span>
+            </h3>
             <div class="tracking-steps">
                 <div class="track-step done">
                     <div class="track-dot"></div>
@@ -110,7 +120,9 @@
 
         <!-- Banner đơn đã hủy -->
         <div class="cancelled-banner" th:if="${order['status'] == 'CANCELLED'}">
-            <span class="cancel-icon">✕</span>
+            <span class="cancel-icon" style="display:flex;align-items:center;justify-content:center;">
+                <svg class="ui-icon ui-icon-xs" style="stroke:#dc2626" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </span>
             <div>
                 <strong>Đơn hàng đã bị hủy</strong>
                 <p th:if="${order['cancellation_reason'] != null}" th:text="${'Lý do: ' + order['cancellation_reason']}"></p>
@@ -122,7 +134,10 @@
             <!-- CỘT TRÁI: thông tin nhận hàng + thanh toán -->
             <div>
                 <div class="detail-card">
-                    <h3>📍 Địa chỉ nhận hàng</h3>
+                    <h3 style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span>Địa chỉ nhận hàng</span>
+                    </h3>
                     <div class="addr-name" th:text="${order['recipient_name']}">Người nhận</div>
                     <div class="addr-phone" th:text="${order['recipient_phone']}">09xx</div>
                     <div class="addr-full"
@@ -133,7 +148,10 @@
                 </div>
 
                 <div class="detail-card">
-                    <h3>💳 Thanh toán</h3>
+                    <h3 style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                        <span>Thanh toán</span>
+                    </h3>
                     <div class="pay-row">
                         <span>Phương thức</span>
                         <strong th:text="${order['payment_method'] == 'RESEND'} ? 'Đơn giao bù 0₫ (Miễn phí)' : (${order['payment_method'] == 'VNPAY'} ? 'VNPay' : 'Thanh toán khi nhận hàng (COD)')">COD</strong>
@@ -163,8 +181,9 @@
             <div>
                 <div class="detail-card">
                     <h3>
-                        <a class="order-shop" th:href="@{/shop/{id}(id=${order['shop_id']})}">
-                            🏪 <span th:text="${order['shop_name']}">Shop</span>
+                        <a class="order-shop" th:href="@{/shop/{id}(id=${order['shop_id']})}" style="display:inline-flex;align-items:center;gap:6px;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                            <span th:text="${order['shop_name']}">Shop</span>
                         </a>
                     </h3>
                     <div class="detail-item" th:each="item : ${order['items']}">
@@ -188,8 +207,9 @@
                                    href="#complaint-section"
                                    th:attr="data-item-id=${item['order_item_id']}"
                                    onclick="selectItemForComplaint(this.getAttribute('data-item-id'));"
-                                   style="display: inline-block; font-size: 12px; font-weight: 700; color: #dc2626; border: 1px solid #fca5a5; background: #fef2f2; border-radius: 6px; padding: 4px 12px; text-decoration: none;">
-                                    ⚠️ Khiếu nại món này
+                                   style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #dc2626; border: 1px solid #fca5a5; background: #fef2f2; border-radius: 6px; padding: 4px 12px; text-decoration: none;">
+                                    <svg class="ui-icon ui-icon-xs" style="stroke:#dc2626" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    <span>Khiếu nại món này</span>
                                 </a>
                             </div>
                         </div>
@@ -203,7 +223,10 @@
                 </div>
 
                 <div class="detail-card">
-                    <h3>🧾 Tổng tiền</h3>
+                    <h3 style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span>Tổng tiền</span>
+                    </h3>
                     <div class="pay-row">
                         <span>Tổng tiền hàng</span>
                         <span th:text="${#numbers.formatDecimal(order['subtotal'], 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
@@ -233,7 +256,10 @@
         <div id="complaint-section" class="detail-card" style="margin-top: 20px; border: 1.5px solid #fecaca; border-radius: 14px; padding: 20px; background: #ffffff;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
                 <div>
-                    <h3 style="margin: 0; font-size: 16.5px; color: #0f172a;">🎫 Hỗ trợ &amp; Khiếu nại đơn hàng</h3>
+                    <h3 style="margin: 0; font-size: 16.5px; color: #0f172a; display:flex; align-items:center; gap:8px;">
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+                        <span>Hỗ trợ &amp; Khiếu nại đơn hàng</span>
+                    </h3>
                     <p style="margin: 3px 0 0; font-size: 13px; color: #64748b;">
                         Gửi phản ánh về tình trạng đơn hàng để được hỗ trợ bồi hoàn sớm nhất.
                     </p>
@@ -258,26 +284,28 @@
 
                     <p style="font-size: 13.5px; color: #334155; margin: 0 0 8px;" th:text="${cp['description']}">Mô tả</p>
 
-                    <div th:if="${cp['replacement_order_code'] != null}" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; color: #065f46;">
-                        📦 Đơn hàng giao bù 0₫:
+                    <div th:if="${cp['replacement_order_code'] != null}" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; color: #065f46; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#059669" viewBox="0 0 24 24"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span>Đơn hàng giao bù 0₫:</span>
                         <a th:href="@{/customer/account/orders/{id}(id=${cp['replacement_order_id']})}"
                            style="font-weight: 700; color: #047857; text-decoration: underline;"
                            th:text="${cp['replacement_order_code']}"></a>
                         <span th:if="${cp['replacement_order_status'] != null}" th:text="${' (' + cp['replacement_order_status'] + ')'}"></span>
                     </div>
 
-                    <div th:if="${cp['voucher_code'] != null}" style="background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; color: #86198f;">
-                        🎟️ Voucher đền bù đã lưu vào ví:
+                    <div th:if="${cp['voucher_code'] != null}" style="background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; color: #86198f; display: flex; align-items: center; gap: 6px;">
+                        <svg class="ui-icon ui-icon-xs" style="stroke:#9333ea" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+                        <span>Voucher đền bù đã lưu vào ví:</span>
                         <strong style="font-family: monospace; background: #fae8ff; padding: 2px 6px; border-radius: 4px;" th:text="${cp['voucher_code']}"></strong>
                     </div>
 
                     <div th:if="${cp['shop_response'] != null}" style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; border-radius: 4px;">
-                        <strong>🏪 Cửa hàng phản hồi (<span th:text="${cp['shop_decision'] == 'RESEND_ITEMS' ? 'Giao bù sản phẩm' : (cp['shop_decision'] == 'ISSUE_VOUCHER' ? 'Tặng voucher đền bù' : 'Phản hồi')}"></span>):</strong>
+                        <strong>Cửa hàng phản hồi (<span th:text="${cp['shop_decision'] == 'RESEND_ITEMS' ? 'Giao bù sản phẩm' : (cp['shop_decision'] == 'ISSUE_VOUCHER' ? 'Tặng voucher đền bù' : 'Phản hồi')}"></span>):</strong>
                         <span th:text="${cp['shop_response']}"></span>
                     </div>
 
                     <div th:if="${cp['resolution_note'] != null}" style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; border-radius: 4px;">
-                        <strong>📋 Kết quả xử lý (<span th:text="${cp['resolution_label']}"></span>):</strong>
+                        <strong>Kết quả xử lý (<span th:text="${cp['resolution_label']}"></span>):</strong>
                         <span th:text="${cp['resolution_note']}"></span>
                     </div>
 
@@ -288,12 +316,13 @@
                                   th:action="@{/customer/account/complaints/{cid}/cancel(cid=${cp['id']})}" method="post"
                                   onsubmit="return confirm('Bạn có chắc chắn muốn rút lại khiếu nại này?');" style="margin: 0;">
                                 <button type="submit"
-                                        style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer;">
-                                    ✕ Rút lại khiếu nại
+                                        style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                    <svg class="ui-icon ui-icon-xs" style="stroke:#e11d48" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    <span>Rút lại khiếu nại</span>
                                 </button>
                             </form>
                             <a th:href="@{/customer/account/complaints/{cid}(cid=${cp['id']})}"
-                               style="font-weight: 700; color: #0284c7; text-decoration: none;">Xem chi tiết →</a>
+                                style="font-weight: 700; color: #0284c7; text-decoration: none;">Xem chi tiết →</a>
                         </div>
                     </div>
                 </div>
@@ -301,8 +330,9 @@
 
             <!-- Thông báo chặn khiếu nại nếu không đủ điều kiện -->
             <div th:if="${eligibility != null and !eligibility['canCreateComplaint'] and !hasActiveComplaint}"
-                 style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px 16px; color: #64748b; font-size: 13.5px; line-height: 1.5;">
-                ℹ️ <span th:text="${eligibility['blockReason']}">Đơn hàng hiện tại không đủ điều kiện tạo khiếu nại mới.</span>
+                 style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px 16px; color: #64748b; font-size: 13.5px; line-height: 1.5; display: flex; align-items: center; gap: 8px;">
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span th:text="${eligibility['blockReason']}">Đơn hàng hiện tại không đủ điều kiện tạo khiếu nại mới.</span>
             </div>
 
             <!-- Form gửi khiếu nại mới -->
@@ -340,19 +370,20 @@
                         <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #047857;">
                                 <input type="radio" name="desiredResolution" value="RESEND_ITEMS" checked style="accent-color: #059669; transform: scale(1.15);">
-                                📦 Giao bù hàng (Tạo đơn giao hàng mới 0đ)
+                                Giao bù hàng (Tạo đơn giao hàng mới 0đ)
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #b45309;">
                                 <input type="radio" name="desiredResolution" value="ISSUE_VOUCHER" style="accent-color: #d97706; transform: scale(1.15);">
-                                🎟️ Đền bù voucher (Tặng mã giảm giá mua sắm)
+                                Đền bù voucher (Tặng mã giảm giá mua sắm)
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #1d4ed8;">
                                 <input type="radio" name="desiredResolution" value="RETURN_REFUND" style="accent-color: #2563eb; transform: scale(1.15);">
-                                💳 Hoàn tiền 100% về Tài khoản ngân hàng
+                                Hoàn tiền 100% về Tài khoản ngân hàng
                             </label>
                         </div>
-                        <div style="margin-top: 8px; font-size: 12px; color: #475569; line-height: 1.5; background: #eff6ff; border-left: 3px solid #3b82f6; padding: 6px 10px; border-radius: 4px;">
-                            💡 <strong>Lưu ý:</strong> Đây là nguyện vọng của bạn để Ban Vận hành và Cửa hàng tham khảo khi thẩm định và xử lý bồi hoàn.
+                        <div style="margin-top: 8px; font-size: 12px; color: #475569; line-height: 1.5; background: #eff6ff; border-left: 3px solid #3b82f6; padding: 6px 10px; border-radius: 4px; display: flex; align-items: center; gap: 6px;">
+                            <svg class="ui-icon ui-icon-xs" style="stroke:#2563eb" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span><strong>Lưu ý:</strong> Đây là nguyện vọng của bạn để Ban Vận hành và Cửa hàng tham khảo khi thẩm định và xử lý bồi hoàn.</span>
                         </div>
                     </div>
 
@@ -365,8 +396,9 @@
 
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 4px;">
                         <div>
-                            <label style="font-size: 12.5px; font-weight: 600; color: #475569; margin-right: 8px;">
-                                📷 Ảnh chụp thực tế (JPG/PNG, tối đa 5MB) <span id="photoRequiredBadge" style="color: #dc2626;">*</span>:
+                            <label style="font-size: 12.5px; font-weight: 600; color: #475569; margin-right: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                <span>Ảnh chụp thực tế (JPG/PNG, tối đa 5MB)</span> <span id="photoRequiredBadge" style="color: #dc2626;">*</span>:
                             </label>
                             <input type="file" id="evidenceImageInput" name="evidenceImage" accept="image/jpeg,image/png"
                                    style="font-size: 12.5px; color: #475569;">

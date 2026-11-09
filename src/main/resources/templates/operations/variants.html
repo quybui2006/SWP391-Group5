@@ -20,7 +20,10 @@
                             th:text="${#lists.size(variants) + ' biến thể'}">0 biến thể</span></span>
                 </div>
                 <div class="table-toolbar">
-                    <label class="search-field"><span aria-hidden="true">⌕</span>
+                    <label class="search-field">
+                        <span aria-hidden="true" style="display:flex;align-items:center;">
+                            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </span>
                         <input type="search" id="tableSearch" placeholder="Tìm biến thể, SKU, sản phẩm hoặc shop..."
                             autocomplete="off">
                     </label>
