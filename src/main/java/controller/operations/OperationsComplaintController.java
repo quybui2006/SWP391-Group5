@@ -70,7 +70,6 @@ public class OperationsComplaintController {
         List<Map<String, Object>> tickets = complaintService.listCsComplaints(status, priority, reasonType, overdue, keyword);
         model.addAttribute("tickets", tickets);
 
-        // Đổ thống kê trạng thái từ ComplaintService thay vì query SQL trực tiếp
         Map<String, Long> statusCounts = complaintService.getComplaintStatusCounts();
         if (statusCounts != null) {
             model.addAllAttributes(statusCounts);
@@ -80,7 +79,6 @@ public class OperationsComplaintController {
         model.addAllAttributes(reports);
 
         model.addAttribute("reasonLabels", complaintService.getReasonLabels());
-        model.addAttribute("resolutionLabels", complaintService.getResolutionLabels());
 
         return "operations/complaints";
     }
@@ -92,8 +90,6 @@ public class OperationsComplaintController {
         model.addAttribute("activePage", "complaints");
         Map<String, Object> complaint = complaintService.getComplaintDetail(id);
         model.addAttribute("complaint", complaint);
-        model.addAttribute("reasonLabels", complaintService.getReasonLabels());
-        model.addAttribute("resolutionLabels", complaintService.getResolutionLabels());
         return "operations/complaint-detail";
     }
 
@@ -101,15 +97,14 @@ public class OperationsComplaintController {
     public String resolveComplaint(
             @PathVariable Long id,
             @RequestParam String resolutionAction,
-            @RequestParam(required = false) Long refundAmount,
             @RequestParam(required = false) String note,
             HttpSession session,
             RedirectAttributes redirect) {
         Long opsUserId = requireOperationsUserId(session);
         try {
             if ("RETURN_REFUND".equalsIgnoreCase(resolutionAction)) {
-                complaintService.approveComplaintRefundByOperations(opsUserId, id, refundAmount, note);
-                redirect.addFlashAttribute("message", "Đã duyệt khiếu nại và lập lệnh hoàn tiền về tài khoản ngân hàng của khách hàng thành công!");
+                complaintService.approveComplaintRefundByOperations(opsUserId, id, note);
+                redirect.addFlashAttribute("message", "Đã duyệt khiếu nại và lập lệnh hoàn tiền 100% về tài khoản ngân hàng của khách hàng thành công!");
             } else if ("APPROVE_ONLY".equalsIgnoreCase(resolutionAction)) {
                 complaintService.approveComplaintByOperations(opsUserId, id, note);
                 redirect.addFlashAttribute("message", "Đã phê duyệt khiếu nại thành công! Hồ sơ đã được chuyển cho Cửa hàng để xử lý giao bù hoặc tặng voucher.");
@@ -158,5 +153,23 @@ public class OperationsComplaintController {
             redirect.addFlashAttribute("error", "Lỗi gửi thông báo đôn đốc Shop: " + ex.getMessage());
         }
         return "redirect:/operations/complaints/" + id;
+    }
+
+    @PostMapping("/violations/{shopId}/escalate")
+    public String escalateShopViolation(
+            @PathVariable Long shopId,
+            @RequestParam(required = false) String reason,
+            HttpSession session,
+            RedirectAttributes redirect) {
+        requireOperationsUserId(session);
+        try {
+            complaintService.escalateShopToOperations(shopId, reason);
+            redirect.addFlashAttribute("message", "Đã ghi nhận cảnh báo vi phạm và đánh dấu hậu kiểm khẩn cấp cho Shop #" + shopId + ".");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        } catch (Exception ex) {
+            redirect.addFlashAttribute("error", "Lỗi gửi cảnh báo hậu kiểm Shop: " + ex.getMessage());
+        }
+        return "redirect:/operations/complaints";
     }
 }

@@ -184,34 +184,6 @@ public class ShopOrderController {
         return "redirect:/shopowner/orders/" + orderId;
     }
 
-    @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{orderId}/complaints/{complaintId}/respond")
-    public String respondComplaint(@org.springframework.web.bind.annotation.PathVariable Long orderId,
-                                   @org.springframework.web.bind.annotation.PathVariable Long complaintId,
-                                   @RequestParam(defaultValue = "RESEND_ITEMS") String decision,
-                                   @RequestParam(required = false) String shopResponse,
-                                   @RequestParam(required = false) org.springframework.web.multipart.MultipartFile shopEvidenceImage,
-                                   @RequestParam(required = false) Long voucherDiscount,
-                                   HttpServletRequest request,
-                                   org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
-        Long owner = currentUser.requireUserId(request);
-        verifyComplaintBelongsToOrderAndShop(owner, orderId, complaintId);
-        try {
-            complaintService.submitShopDecision(owner, complaintId, decision, shopResponse, shopEvidenceImage, voucherDiscount);
-            if ("RESEND_ITEMS".equalsIgnoreCase(decision)) {
-                redirect.addFlashAttribute("message", "Đã chấp thuận khiếu nại và tự động tạo đơn hàng giao bù 0đ cho khách hàng!");
-            } else if ("ISSUE_VOUCHER".equalsIgnoreCase(decision)) {
-                redirect.addFlashAttribute("message", "Đã chấp thuận khiếu nại và tặng voucher đền bù vào ví của khách hàng!");
-            } else {
-                redirect.addFlashAttribute("message", "Đã cập nhật quyết định xử lý khiếu nại.");
-            }
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        } catch (Exception ex) {
-            redirect.addFlashAttribute("error", "Đã xảy ra lỗi khi xử lý khiếu nại: " + (ex.getMessage() != null ? ex.getMessage() : "Vui lòng kiểm tra lại."));
-        }
-        return "redirect:/shopowner/orders/" + orderId;
-    }
-
     @org.springframework.web.bind.annotation.PostMapping("/shopowner/orders/{id}/confirm")
     public String confirm(@org.springframework.web.bind.annotation.PathVariable Long id,
                           @RequestParam(required=false) String token,

@@ -1,16 +1,18 @@
 package service.complaint;
 
+import entity.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import repository.*;
 import service.operations.CustomerRefundService;
 
 import javax.imageio.ImageIO;
@@ -19,8 +21,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -43,13 +43,8 @@ public class ComplaintService {
     public static final String STATUS_REJECTED = ComplaintStatus.REJECTED.getCode();
     public static final String STATUS_CANCELLED = ComplaintStatus.CANCELLED.getCode();
 
-    public static final Set<String> PRODUCT_DEFECT_REASONS = Set.of(
-            "QUALITY_ISSUE",
-            "QUANTITY_SHORTAGE",
-            "WRONG_PRODUCT",
-            "WEIGHT_OR_QUANTITY_SHORTAGE",
-            "WRONG_SPECIFICATION",
-            "DELIVERY_ISSUE"
+    private static final List<String> ACTIVE_COMPLAINT_STATUSES = List.of(
+            STATUS_PENDING_OPERATIONS, "PENDING_OPS", STATUS_PENDING_SHOP, STATUS_ESCALATED, "PENDING", "IN_PROGRESS"
     );
 
     public static final Set<String> ACTIVE_REASONS = Set.of(
@@ -59,42 +54,17 @@ public class ComplaintService {
             "DELIVERY_ISSUE"
     );
 
-    public static final Set<String> SERVICE_ISSUE_REASONS = Set.of(
-            "PACKAGING_DAMAGE",
-            "DELIVERY_OR_SERVICE",
-            "OTHER"
-    );
-
-    public static final Set<String> SHIPPING_OR_CANCELLED_ALLOWED_REASONS = Set.of(
-            "DELIVERY_ISSUE",
-            "DELIVERY_OR_SERVICE",
-            "OTHER"
-    );
-
     public static final Map<String, String> REASON_LABELS = new LinkedHashMap<>();
-    public static final Map<String, String> ACTIVE_REASON_LABELS = new LinkedHashMap<>();
-    public static final Map<String, String> DELIVERY_ONLY_REASON_LABELS = new LinkedHashMap<>();
     public static final Map<String, String> RESOLUTION_LABELS = new LinkedHashMap<>();
     public static final Map<String, String> DESIRED_RESOLUTION_LABELS = new LinkedHashMap<>();
     public static final Map<String, String> STATUS_LABELS = new LinkedHashMap<>();
     public static final Map<String, String> PRIORITY_LABELS = new LinkedHashMap<>();
 
     static {
-        ACTIVE_REASON_LABELS.put("QUALITY_ISSUE", "Chất lượng hoa quả không đạt (dập nát, hư hỏng)");
-        ACTIVE_REASON_LABELS.put("QUANTITY_SHORTAGE", "Thiếu số lượng / thiếu cân");
-        ACTIVE_REASON_LABELS.put("WRONG_PRODUCT", "Giao sai sản phẩm / sai loại");
-        ACTIVE_REASON_LABELS.put("DELIVERY_ISSUE", "Sự cố giao hàng (Hư hỏng do vận chuyển / giao trễ / shipper)");
-
-        DELIVERY_ONLY_REASON_LABELS.put("DELIVERY_ISSUE", "Sự cố giao hàng (Từ chối nhận hàng / hư hỏng do vận chuyển / giao trễ / shipper)");
-        DELIVERY_ONLY_REASON_LABELS.put("DELIVERY_OR_SERVICE", "Sự cố giao hàng / thái độ phục vụ");
-        DELIVERY_ONLY_REASON_LABELS.put("OTHER", "Lý do khác liên quan đến giao nhận");
-
-        REASON_LABELS.putAll(ACTIVE_REASON_LABELS);
-        REASON_LABELS.put("WEIGHT_OR_QUANTITY_SHORTAGE", "Giao thiếu số lượng / thiếu cân");
-        REASON_LABELS.put("WRONG_SPECIFICATION", "Sai chủng loại / sai kích cỡ (Biến thể)");
-        REASON_LABELS.put("PACKAGING_DAMAGE", "Quy cách đóng gói / bảo quản kém");
-        REASON_LABELS.put("DELIVERY_OR_SERVICE", "Sự cố giao hàng / thái độ phục vụ");
-        REASON_LABELS.put("OTHER", "Lý do khác");
+        REASON_LABELS.put("QUALITY_ISSUE", "Chất lượng hoa quả không đạt (dập nát, hư hỏng)");
+        REASON_LABELS.put("QUANTITY_SHORTAGE", "Thiếu số lượng / thiếu cân");
+        REASON_LABELS.put("WRONG_PRODUCT", "Giao sai sản phẩm / sai loại");
+        REASON_LABELS.put("DELIVERY_ISSUE", "Sự cố giao hàng (Hư hỏng do vận chuyển / giao trễ / shipper)");
 
         DESIRED_RESOLUTION_LABELS.put("RESEND_ITEMS", "Giao bù hàng");
         DESIRED_RESOLUTION_LABELS.put("ISSUE_VOUCHER", "Đền bù voucher");
@@ -104,10 +74,6 @@ public class ComplaintService {
         RESOLUTION_LABELS.put("RESEND_ITEMS", "Chấp thuận & Giao bù hàng (Đơn mới 0đ)");
         RESOLUTION_LABELS.put("ISSUE_VOUCHER", "Chấp thuận & Tặng voucher đền bù");
         RESOLUTION_LABELS.put("REJECTED", "Từ chối khiếu nại");
-        // Tương thích hiển thị bản ghi cũ
-        RESOLUTION_LABELS.put("COMPENSATE_POINTS", "Chấp thuận & Hoàn tiền vào Ví tiền của Khách");
-        RESOLUTION_LABELS.put("SHOP_WARNING_ESCALATE", "Nhắc nhở / Cảnh cáo Shop & Chuyển Hậu kiểm");
-        RESOLUTION_LABELS.put("EXPLANATION_ONLY", "Ghi nhận phản ánh dịch vụ & Nhắc nhở Shop");
 
         STATUS_LABELS.put(STATUS_PENDING_OPERATIONS, ComplaintStatus.PENDING_OPERATIONS.getLabel());
         STATUS_LABELS.put(STATUS_PENDING_SHOP, ComplaintStatus.PENDING_SHOP.getLabel());
@@ -124,202 +90,73 @@ public class ComplaintService {
         PRIORITY_LABELS.put("LOW", "Thấp (SLA Shop 6h)");
     }
 
-    private final JdbcTemplate jdbc;
+    private final ComplaintRepository complaintRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final CheckoutRepository checkoutRepository;
+    private final PaymentRepository paymentRepository;
+    private final ShopRepository shopRepository;
+    private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final VoucherRepository voucherRepository;
+    private final CustomerSavedVoucherRepository customerSavedVoucherRepository;
+    private final VariantInventoryRepository variantInventoryRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final ProductVariantRepository productVariantRepository;
+    private final NotificationRepository notificationRepository;
+    private final CustomerBankAccountRepository customerBankAccountRepository;
+    private final ReviewRepository reviewRepository;
     private final CustomerRefundService customerRefundService;
+    private final JdbcTemplate jdbc;
     private final Path uploadDirectory;
 
-    public ComplaintService(
-            JdbcTemplate jdbc,
-            @Value("${app.upload.complaint-dir:uploads/complaints}") String uploadDir) {
-        this(jdbc, new CustomerRefundService(jdbc), uploadDir);
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public ComplaintService(
-            JdbcTemplate jdbc,
+            ComplaintRepository complaintRepository,
+            OrderRepository orderRepository,
+            OrderItemRepository orderItemRepository,
+            CheckoutRepository checkoutRepository,
+            PaymentRepository paymentRepository,
+            ShopRepository shopRepository,
+            UserRepository userRepository,
+            UserRoleRepository userRoleRepository,
+            VoucherRepository voucherRepository,
+            CustomerSavedVoucherRepository customerSavedVoucherRepository,
+            VariantInventoryRepository variantInventoryRepository,
+            InventoryTransactionRepository inventoryTransactionRepository,
+            ProductVariantRepository productVariantRepository,
+            NotificationRepository notificationRepository,
+            CustomerBankAccountRepository customerBankAccountRepository,
+            ReviewRepository reviewRepository,
             CustomerRefundService customerRefundService,
+            JdbcTemplate jdbc,
             @Value("${app.upload.complaint-dir:uploads/complaints}") String uploadDir) {
-        this.jdbc = jdbc;
+        this.complaintRepository = complaintRepository;
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.checkoutRepository = checkoutRepository;
+        this.paymentRepository = paymentRepository;
+        this.shopRepository = shopRepository;
+        this.userRepository = userRepository;
+        this.userRoleRepository = userRoleRepository;
+        this.voucherRepository = voucherRepository;
+        this.customerSavedVoucherRepository = customerSavedVoucherRepository;
+        this.variantInventoryRepository = variantInventoryRepository;
+        this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.productVariantRepository = productVariantRepository;
+        this.notificationRepository = notificationRepository;
+        this.customerBankAccountRepository = customerBankAccountRepository;
+        this.reviewRepository = reviewRepository;
         this.customerRefundService = customerRefundService;
+        this.jdbc = jdbc;
         this.uploadDirectory = Path.of(uploadDir).toAbsolutePath().normalize();
-        ensureSchemaSafe();
-    }
-
-    private void ensureSchemaSafe() {
-        try {
-            jdbc.execute("""
-                CREATE TABLE IF NOT EXISTS complaints (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    complaint_code VARCHAR(40) NOT NULL UNIQUE,
-                    order_id BIGINT NOT NULL,
-                    order_item_id BIGINT NULL,
-                    user_id BIGINT NOT NULL,
-                    shop_id BIGINT NOT NULL,
-                    reason_type VARCHAR(40) NOT NULL,
-                    title VARCHAR(200) NOT NULL,
-                    description VARCHAR(2000) NOT NULL,
-                    evidence_image_url VARCHAR(1000) NULL,
-                    priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
-                    status VARCHAR(25) NOT NULL DEFAULT 'PENDING_OPERATIONS',
-                    source_type VARCHAR(25) NOT NULL DEFAULT 'CUSTOMER',
-                    requested_refund_amount BIGINT NOT NULL DEFAULT 0,
-                    final_refund_amount BIGINT NOT NULL DEFAULT 0,
-                    shop_decision VARCHAR(25) NULL,
-                    shop_response VARCHAR(1500) NULL,
-                    shop_evidence_image_url VARCHAR(1000) NULL,
-                    shop_responded_at DATETIME(3) NULL,
-                    escalated_at DATETIME(3) NULL,
-                    shop_remind_count INT NOT NULL DEFAULT 0,
-                    last_reminded_at DATETIME(3) NULL,
-                    cs_shop_request_note VARCHAR(1000) NULL,
-                    resolution_type VARCHAR(40) NULL,
-                    resolution_note VARCHAR(1500) NULL,
-                    compensated_points BIGINT NOT NULL DEFAULT 0,
-                    is_shop_fault TINYINT(1) NOT NULL DEFAULT 0,
-                    escalated_to_ops TINYINT(1) NOT NULL DEFAULT 0,
-                    sla_due_at DATETIME(3) NOT NULL,
-                    assigned_to BIGINT NULL,
-                    resolved_by BIGINT NULL,
-                    resolved_at DATETIME(3) NULL,
-                    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-                    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
-                )
-            """);
-        } catch (Exception e1) {
-            try {
-                jdbc.execute("""
-                    CREATE TABLE IF NOT EXISTS complaints (
-                        id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                        complaint_code VARCHAR(40) NOT NULL UNIQUE,
-                        order_id BIGINT NOT NULL,
-                        order_item_id BIGINT NULL,
-                        user_id BIGINT NOT NULL,
-                        shop_id BIGINT NOT NULL,
-                        reason_type VARCHAR(40) NOT NULL,
-                        title VARCHAR(200) NOT NULL,
-                        description VARCHAR(2000) NOT NULL,
-                        evidence_image_url VARCHAR(1000) NULL,
-                        priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
-                        status VARCHAR(25) NOT NULL DEFAULT 'PENDING_OPERATIONS',
-                        source_type VARCHAR(25) NOT NULL DEFAULT 'CUSTOMER',
-                        requested_refund_amount BIGINT NOT NULL DEFAULT 0,
-                        final_refund_amount BIGINT NOT NULL DEFAULT 0,
-                        shop_decision VARCHAR(25) NULL,
-                        shop_response VARCHAR(1500) NULL,
-                        shop_evidence_image_url VARCHAR(1000) NULL,
-                        shop_responded_at TIMESTAMP NULL,
-                        escalated_at TIMESTAMP NULL,
-                        shop_remind_count INT NOT NULL DEFAULT 0,
-                        last_reminded_at TIMESTAMP NULL,
-                        cs_shop_request_note VARCHAR(1000) NULL,
-                        resolution_type VARCHAR(40) NULL,
-                        resolution_note VARCHAR(1500) NULL,
-                        compensated_points BIGINT NOT NULL DEFAULT 0,
-                        is_shop_fault TINYINT NOT NULL DEFAULT 0,
-                        escalated_to_ops TINYINT NOT NULL DEFAULT 0,
-                        sla_due_at TIMESTAMP NOT NULL,
-                        assigned_to BIGINT NULL,
-                        resolved_by BIGINT NULL,
-                        resolved_at TIMESTAMP NULL,
-                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    )
-                """);
-            } catch (Exception ignored) {
-            }
-        }
-
-        // Gỡ bỏ các CHECK constraint cũ trên MySQL nếu CSDL được tạo từ phiên bản cũ
-        for (int i = 1; i <= 8; i++) {
-            safeExecuteAlter("ALTER TABLE complaints DROP CHECK complaints_chk_" + i);
-        }
-        for (int i = 1; i <= 10; i++) {
-            safeExecuteAlter("ALTER TABLE orders DROP CHECK orders_chk_" + i);
-        }
-
-        // Bổ sung an toàn các cột mới cho CSDL hiện hữu (bao gồm V19 & V22)
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN requested_refund_amount BIGINT NOT NULL DEFAULT 0");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN final_refund_amount BIGINT NOT NULL DEFAULT 0");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN shop_decision VARCHAR(25) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN shop_evidence_image_url VARCHAR(1000) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN escalated_at TIMESTAMP NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN shop_remind_count INT NOT NULL DEFAULT 0");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN last_reminded_at TIMESTAMP NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN cs_shop_request_note VARCHAR(1000) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN fault_party VARCHAR(25) NOT NULL DEFAULT 'SHOP'");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN gifted_freeship_voucher VARCHAR(50) NULL");
-        safeExecuteAlter("ALTER TABLE shops ADD COLUMN reputation_score INT NOT NULL DEFAULT 100");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN desired_resolution VARCHAR(30) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN replacement_order_id BIGINT NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN voucher_id BIGINT NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN voucher_code VARCHAR(50) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN operations_decision VARCHAR(25) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN operations_note VARCHAR(1500) NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN operations_reviewed_at TIMESTAMP NULL");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN refund_method VARCHAR(30) DEFAULT 'WALLET'");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN refund_status VARCHAR(25) DEFAULT 'NONE'");
-        safeExecuteAlter("ALTER TABLE complaints ADD COLUMN refund_completed_at TIMESTAMP NULL");
-        safeExecuteAlter("ALTER TABLE orders ADD COLUMN original_order_id BIGINT NULL");
-        safeExecuteAlter("ALTER TABLE orders ADD COLUMN order_type VARCHAR(30) DEFAULT 'STANDARD'");
-
-        try {
-            jdbc.execute("""
-                CREATE TABLE IF NOT EXISTS shop_reputation_logs (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    shop_id BIGINT NOT NULL,
-                    complaint_id BIGINT NULL,
-                    points_change INT NOT NULL,
-                    current_reputation INT NOT NULL,
-                    reason VARCHAR(255) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """);
-        } catch (Exception e1) {
-            try {
-                jdbc.execute("""
-                    CREATE TABLE IF NOT EXISTS shop_reputation_logs (
-                        id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                        shop_id BIGINT NOT NULL,
-                        complaint_id BIGINT NULL,
-                        points_change INT NOT NULL,
-                        current_reputation INT NOT NULL,
-                        reason VARCHAR(255) NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """);
-            } catch (Exception ignored) {
-            }
-        }
-
-        // Đồng bộ trạng thái cũ sang mô hình V22
-        safeExecuteAlter("UPDATE complaints SET status = 'PENDING_SHOP' WHERE status = 'PENDING'");
-        safeExecuteAlter("UPDATE complaints SET status = 'PENDING_OPERATIONS' WHERE status = 'PENDING_OPS'");
-        safeExecuteAlter("UPDATE complaints SET final_refund_amount = compensated_points WHERE status = 'RESOLVED' AND final_refund_amount = 0 AND compensated_points > 0");
-    }
-
-    private void safeExecuteAlter(String sql) {
-        try {
-            jdbc.execute(sql);
-        } catch (Exception ignored) {
-        }
     }
 
     public Map<String, String> getReasonLabels() {
         return REASON_LABELS;
-    }
-
-    public Map<String, String> getResolutionLabels() {
-        return RESOLUTION_LABELS;
-    }
-
-    public Map<String, String> getReasonLabelsForOrderStatus(String orderStatus) {
-        if ("DELIVERED".equalsIgnoreCase(orderStatus)) {
-            return ACTIVE_REASON_LABELS;
-        }
-        if ("SHIPPING".equalsIgnoreCase(orderStatus) || "CANCELLED".equalsIgnoreCase(orderStatus)) {
-            return DELIVERY_ONLY_REASON_LABELS;
-        }
-        return Collections.emptyMap();
     }
 
     // =========================================================================
@@ -332,35 +169,29 @@ public class ComplaintService {
      */
     @Transactional(readOnly = true)
     public long calculateActualPaidAmount(Long orderId, Long orderItemId) {
-        List<Map<String, Object>> orders = safeQueryList(
-                "SELECT id, subtotal, voucher_discount, points_discount, total_amount, shipping_fee FROM orders WHERE id = ?",
-                orderId
-        );
-        if (orders.isEmpty()) {
+        if (orderId == null) {
             return 0L;
         }
-        return calculateActualPaidAmountFromOrderMap(orders.get(0), orderItemId);
+        return orderRepository.findById(orderId)
+                .map(order -> calculateActualPaidAmountFromOrder(order, orderItemId))
+                .orElse(0L);
     }
 
-    private long calculateActualPaidAmountFromOrderMap(Map<String, Object> order, Long orderItemId) {
-        BigDecimal subtotal = toBigDecimal(order.get("subtotal"));
-        BigDecimal voucherDiscount = toBigDecimal(order.get("voucher_discount"));
-        BigDecimal pointsDiscount = toBigDecimal(order.get("points_discount"));
+    private long calculateActualPaidAmountFromOrder(Order order, Long orderItemId) {
+        BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
+        BigDecimal voucherDiscount = order.getVoucherDiscount() != null ? order.getVoucherDiscount() : BigDecimal.ZERO;
+        BigDecimal pointsDiscount = order.getPointsDiscount() != null ? order.getPointsDiscount() : BigDecimal.ZERO;
         BigDecimal orderPaidGoods = subtotal.subtract(voucherDiscount).subtract(pointsDiscount).max(BigDecimal.ZERO);
 
         if (orderItemId == null) {
             return orderPaidGoods.setScale(0, RoundingMode.DOWN).longValue();
         }
 
-        Long orderId = ((Number) order.get("id")).longValue();
-        List<Map<String, Object>> items = safeQueryList(
-                "SELECT line_total FROM order_items WHERE id = ? AND order_id = ?",
-                orderItemId, orderId
-        );
-        if (items.isEmpty()) {
+        Optional<OrderItem> itemOpt = orderItemRepository.findByIdAndOrderId(orderItemId, order.getId());
+        if (itemOpt.isEmpty()) {
             return orderPaidGoods.setScale(0, RoundingMode.DOWN).longValue();
         }
-        BigDecimal lineTotal = toBigDecimal(items.get(0).get("line_total"));
+        BigDecimal lineTotal = itemOpt.get().getLineTotal() != null ? itemOpt.get().getLineTotal() : BigDecimal.ZERO;
         if (subtotal.compareTo(BigDecimal.ZERO) <= 0) {
             return 0L;
         }
@@ -383,53 +214,29 @@ public class ComplaintService {
         result.put("canCreateComplaint", false);
         result.put("blockReason", null);
         result.put("allowedReasons", Collections.emptyMap());
-        result.put("allowRefundRequest", false);
         result.put("orderActualPaidAmount", 0L);
-        result.put("itemActualPaidAmounts", Collections.emptyMap());
         result.put("hasActiveComplaint", false);
         result.put("canCompleteOrder", false);
 
-        List<Map<String, Object>> orders = safeQueryList("""
-            SELECT o.*
-            FROM orders o
-            JOIN checkouts c ON c.id = o.checkout_id
-            WHERE o.id = ? AND c.user_id = ?
-        """, orderId, customerId);
-        if (orders.isEmpty()) {
+        Optional<Order> orderOpt = orderRepository.findByIdAndCustomerId(orderId, customerId);
+        if (orderOpt.isEmpty()) {
             result.put("blockReason", "Không tìm thấy đơn hàng.");
             return result;
         }
 
-        Map<String, Object> order = orders.get(0);
-        String orderStatus = String.valueOf(order.get("status"));
-        String deliveryStatus = order.get("delivery_status") != null ? String.valueOf(order.get("delivery_status")) : "";
-        LocalDateTime deliveredAt = toLocalDateTime(order.get("delivered_at"));
-        LocalDateTime cancelledAt = toLocalDateTime(order.get("cancelled_at"));
+        Order order = orderOpt.get();
+        String orderStatus = order.getStatus();
+        LocalDateTime deliveredAt = order.getDeliveredAt();
         LocalDateTime now = LocalDateTime.now();
 
-        long nonCancelledCount = queryCount(
-                "SELECT COUNT(*) FROM complaints WHERE order_id = ? AND status <> 'CANCELLED'",
-                orderId
-        );
-        long activeCount = queryCount(
-                "SELECT COUNT(*) FROM complaints WHERE order_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')",
-                orderId
-        );
+        long nonCancelledCount = complaintRepository.countByOrderIdAndStatusNot(orderId, STATUS_CANCELLED);
+        long activeCount = complaintRepository.countByOrderIdAndStatusIn(orderId, ACTIVE_COMPLAINT_STATUSES);
         boolean hasActiveComplaint = activeCount > 0;
         result.put("hasActiveComplaint", hasActiveComplaint);
         result.put("canCompleteOrder", "DELIVERED".equals(orderStatus) && !hasActiveComplaint);
-        result.put("canRefuseDelivery", ("SHIPPING".equals(orderStatus) || "DELIVERED".equals(orderStatus)) && !hasActiveComplaint);
 
-        long orderActualPaid = calculateActualPaidAmountFromOrderMap(order, null);
+        long orderActualPaid = calculateActualPaidAmountFromOrder(order, null);
         result.put("orderActualPaidAmount", orderActualPaid);
-
-        List<Map<String, Object>> itemRows = safeQueryList("SELECT id FROM order_items WHERE order_id = ?", orderId);
-        Map<Long, Long> itemPaidMap = new LinkedHashMap<>();
-        for (Map<String, Object> itemRow : itemRows) {
-            Long itemId = ((Number) itemRow.get("id")).longValue();
-            itemPaidMap.put(itemId, calculateActualPaidAmountFromOrderMap(order, itemId));
-        }
-        result.put("itemActualPaidAmounts", itemPaidMap);
 
         // 1. Kiểm tra giới hạn tối đa 1 lần khiếu nại / đơn (trừ khi đã tự hủy CANCELLED)
         if (nonCancelledCount > 0) {
@@ -438,33 +245,19 @@ public class ComplaintService {
         }
 
         // 2. Kiểm tra theo trạng thái đơn hàng:
-        // - DELIVERED: cho phép khiếu nại toàn bộ lý do trong 24 giờ.
-        // - SHIPPING hoặc CANCELLED do giao hàng thất bại/khách từ chối nhận (delivery_status = 'FAILED'):
-        //   cho phép khiếu nại nhóm sự cố giao hàng (DELIVERY_ISSUE / DELIVERY_OR_SERVICE / OTHER).
-        boolean isFailedOrRefusedDelivery = "CANCELLED".equals(orderStatus) && "FAILED".equalsIgnoreCase(deliveryStatus);
-        if ("DELIVERED".equals(orderStatus)) {
-            if (deliveredAt != null && now.isAfter(deliveredAt.plusHours(DELIVERED_COMPLAINT_WINDOW_HOURS))) {
+        // Chỉ cho phép khiếu nại sau khi đơn đã DELIVERED (hoặc COMPLETED nếu vẫn nằm trong thời hạn 24 giờ kể từ delivered_at).
+        if ("DELIVERED".equals(orderStatus) || "COMPLETED".equals(orderStatus)) {
+            if (deliveredAt == null || now.isAfter(deliveredAt.plusHours(DELIVERED_COMPLAINT_WINDOW_HOURS))) {
                 result.put("blockReason", "Đã quá thời hạn 24 giờ kể từ thời điểm giao hàng thành công để gửi khiếu nại.");
                 return result;
             }
             result.put("canCreateComplaint", true);
-            result.put("allowedReasons", ACTIVE_REASON_LABELS);
+            result.put("allowedReasons", REASON_LABELS);
             result.put("allowedDesiredResolutions", DESIRED_RESOLUTION_LABELS);
-            result.put("allowRefundRequest", true);
-            return result;
-        } else if ("SHIPPING".equals(orderStatus) || isFailedOrRefusedDelivery) {
-            if (isFailedOrRefusedDelivery && cancelledAt != null && now.isAfter(cancelledAt.plusHours(DELIVERED_COMPLAINT_WINDOW_HOURS))) {
-                result.put("blockReason", "Đã quá thời hạn 24 giờ kể từ thời điểm từ chối nhận hàng / giao thất bại để gửi khiếu nại.");
-                return result;
-            }
-            result.put("canCreateComplaint", true);
-            result.put("allowedReasons", DELIVERY_ONLY_REASON_LABELS);
-            result.put("allowedDesiredResolutions", DESIRED_RESOLUTION_LABELS);
-            result.put("allowRefundRequest", true);
             return result;
         }
 
-        result.put("blockReason", "Chỉ được phép khiếu nại sau khi đơn hàng đã được giao thành công (DELIVERED trong vòng 24 giờ) hoặc khi gặp sự cố giao hàng.");
+        result.put("blockReason", "Chỉ được phép khiếu nại sau khi đơn hàng đã được giao thành công (DELIVERED trong vòng 24 giờ kể từ thời điểm giao hàng).");
         return result;
     }
 
@@ -480,47 +273,8 @@ public class ComplaintService {
             String reasonType,
             String title,
             String description,
-            MultipartFile evidenceImage) {
-        return submitCustomerComplaint(customerId, orderId, orderItemId, reasonType, title, description, evidenceImage, "RESEND_ITEMS", 0L);
-    }
-
-    @Transactional
-    public Long submitCustomerComplaint(
-            Long customerId,
-            Long orderId,
-            Long orderItemId,
-            String reasonType,
-            String title,
-            String description,
-            MultipartFile evidenceImage,
-            Long requestedRefundAmount) {
-        return submitCustomerComplaint(customerId, orderId, orderItemId, reasonType, title, description, evidenceImage, "RESEND_ITEMS", requestedRefundAmount);
-    }
-
-    @Transactional
-    public Long submitCustomerComplaint(
-            Long customerId,
-            Long orderId,
-            Long orderItemId,
-            String reasonType,
-            String title,
-            String description,
             MultipartFile evidenceImage,
             String desiredResolution) {
-        return submitCustomerComplaint(customerId, orderId, orderItemId, reasonType, title, description, evidenceImage, desiredResolution, 0L);
-    }
-
-    @Transactional
-    public Long submitCustomerComplaint(
-            Long customerId,
-            Long orderId,
-            Long orderItemId,
-            String reasonType,
-            String title,
-            String description,
-            MultipartFile evidenceImage,
-            String desiredResolution,
-            Long requestedRefundAmount) {
 
         if (customerId == null) {
             throw new IllegalArgumentException("Vui lòng đăng nhập để gửi khiếu nại.");
@@ -528,20 +282,15 @@ public class ComplaintService {
         if (orderId == null) {
             throw new IllegalArgumentException("Không xác định được đơn hàng cần khiếu nại.");
         }
-        String cleanReason = reasonType != null ? reasonType.trim() : "";
-        if (!REASON_LABELS.containsKey(cleanReason)) {
-            cleanReason = REASON_LABELS.keySet().stream()
-                    .filter(k -> k.equalsIgnoreCase(reasonType != null ? reasonType.trim() : ""))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Vui lòng chọn lý do khiếu nại hợp lệ."));
+        String cleanReason = reasonType != null ? reasonType.trim().toUpperCase(Locale.ROOT) : "";
+        if (!ACTIVE_REASONS.contains(cleanReason)) {
+            throw new IllegalArgumentException("Vui lòng chọn lý do khiếu nại hợp lệ (QUALITY_ISSUE, QUANTITY_SHORTAGE, WRONG_PRODUCT, DELIVERY_ISSUE).");
         }
 
         String cleanResolution = (desiredResolution != null && !desiredResolution.isBlank())
                 ? desiredResolution.trim().toUpperCase(Locale.ROOT) : "RESEND_ITEMS";
-        if (!"RESEND_ITEMS".equals(cleanResolution)
-                && !"ISSUE_VOUCHER".equals(cleanResolution)
-                && !"RETURN_REFUND".equals(cleanResolution)) {
-            cleanResolution = "RESEND_ITEMS";
+        if (!DESIRED_RESOLUTION_LABELS.containsKey(cleanResolution)) {
+            throw new IllegalArgumentException("Phương án mong muốn giải quyết không hợp lệ (chỉ chấp nhận RETURN_REFUND, RESEND_ITEMS, ISSUE_VOUCHER).");
         }
 
         String cleanTitle = title != null ? title.trim() : "";
@@ -557,129 +306,78 @@ public class ComplaintService {
             throw new IllegalArgumentException("Vui lòng mô tả chi tiết tình trạng (từ 5 đến 2000 ký tự).");
         }
 
-        // Khóa dòng đơn hàng FOR UPDATE để chống Race Condition khi tạo khiếu nại đồng thời
-        List<Map<String, Object>> orders = jdbc.queryForList("""
-            SELECT o.*, s.name AS shop_name, s.owner_id AS shop_owner_id
-            FROM orders o
-            JOIN checkouts c ON c.id = o.checkout_id
-            JOIN shops s ON s.id = o.shop_id
-            WHERE o.id = ? AND c.user_id = ?
-            FOR UPDATE
-        """, orderId, customerId);
+        // Khóa dòng đơn hàng PESSIMISTIC_WRITE để chống Race Condition khi tạo khiếu nại đồng thời
+        Order order = orderRepository.findLockedByIdAndCustomerId(orderId, customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền khiếu nại đơn hàng này."));
 
-        if (orders.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng hoặc bạn không có quyền khiếu nại đơn hàng này.");
-        }
-        Map<String, Object> order = orders.get(0);
-        String orderStatus = String.valueOf(order.get("status"));
-        String deliveryStatus = order.get("delivery_status") != null ? String.valueOf(order.get("delivery_status")) : "";
+        String orderStatus = order.getStatus();
         LocalDateTime now = LocalDateTime.now();
 
         // 1. Giới hạn số lần khiếu nại: Mỗi đơn chỉ tối đa 1 lần (trừ khi khiếu nại trước đó đã CANCELLED)
-        Long existingNonCancelled = jdbc.queryForObject("""
-            SELECT COUNT(*) FROM complaints
-            WHERE order_id = ? AND status <> 'CANCELLED'
-        """, Long.class, orderId);
-        if (existingNonCancelled != null && existingNonCancelled > 0) {
+        long existingNonCancelled = complaintRepository.countByOrderIdAndStatusNot(orderId, STATUS_CANCELLED);
+        if (existingNonCancelled > 0) {
             throw new IllegalArgumentException("Mỗi đơn hàng chỉ được phép gửi khiếu nại tối đa 1 lần (trừ trường hợp đã hủy khiếu nại trước đó).");
         }
 
         // 2. Lọc theo trạng thái đơn hàng (OrderStatus):
-        // - DELIVERED: cho phép khiếu nại mọi lý do trong 24 giờ kể từ delivered_at.
-        // - SHIPPING hoặc CANCELLED do giao hàng thất bại/từ chối nhận hàng (delivery_status = 'FAILED'):
-        //   chỉ cho phép khiếu nại sự cố giao hàng (SHIPPING_OR_CANCELLED_ALLOWED_REASONS).
-        boolean isDeliveryExceptionAllowed = ("SHIPPING".equals(orderStatus)
-                || ("CANCELLED".equals(orderStatus) && "FAILED".equalsIgnoreCase(deliveryStatus)))
-                && SHIPPING_OR_CANCELLED_ALLOWED_REASONS.contains(cleanReason);
-
-        if (!"DELIVERED".equals(orderStatus) && !isDeliveryExceptionAllowed) {
-            throw new IllegalArgumentException("Chỉ được phép khiếu nại sau khi đơn hàng đã được giao thành công trong vòng 24 giờ (chỉ áp dụng đơn DELIVERED, hoặc khiếu nại sự cố giao hàng DELIVERY_ISSUE khi đang giao / từ chối nhận hàng).");
+        // Chỉ cho phép khiếu nại sau khi đơn đã DELIVERED (hoặc COMPLETED nếu vẫn nằm trong thời hạn 24 giờ kể từ delivered_at).
+        if (!"DELIVERED".equals(orderStatus) && !"COMPLETED".equals(orderStatus)) {
+            throw new IllegalArgumentException("Chỉ được phép khiếu nại sau khi đơn hàng đã được giao thành công trong vòng 24 giờ (chỉ áp dụng đơn DELIVERED hoặc COMPLETED trong hạn 24 giờ kể từ thời điểm giao hàng).");
         }
 
-        if ("DELIVERED".equals(orderStatus)) {
-            LocalDateTime deliveredAt = toLocalDateTime(order.get("delivered_at"));
-            if (deliveredAt != null && now.isAfter(deliveredAt.plusHours(DELIVERED_COMPLAINT_WINDOW_HOURS))) {
-                throw new IllegalArgumentException("Đã quá thời hạn 24 giờ kể từ lúc đơn hàng giao thành công, không thể tạo khiếu nại.");
-            }
-        } else if ("CANCELLED".equals(orderStatus)) {
-            LocalDateTime cancelledAt = toLocalDateTime(order.get("cancelled_at"));
-            if (cancelledAt != null && now.isAfter(cancelledAt.plusHours(DELIVERED_COMPLAINT_WINDOW_HOURS))) {
-                throw new IllegalArgumentException("Đã quá thời hạn 24 giờ kể từ lúc từ chối nhận hàng / giao thất bại, không thể tạo khiếu nại.");
-            }
+        LocalDateTime deliveredAt = order.getDeliveredAt();
+        if (deliveredAt == null || now.isAfter(deliveredAt.plusHours(DELIVERED_COMPLAINT_WINDOW_HOURS))) {
+            throw new IllegalArgumentException("Đã quá thời hạn 24 giờ kể từ lúc đơn hàng giao thành công, không thể tạo khiếu nại.");
         }
 
         // Kiểm tra orderItemId nếu có truyền vào
         Long validItemId = null;
         if (orderItemId != null) {
-            List<Long> itemIds = jdbc.queryForList(
-                    "SELECT id FROM order_items WHERE id = ? AND order_id = ?",
-                    Long.class, orderItemId, orderId);
-            if (itemIds.isEmpty()) {
-                throw new IllegalArgumentException("Sản phẩm khiếu nại không thuộc đơn hàng này.");
-            }
-            validItemId = itemIds.get(0);
+            OrderItem item = orderItemRepository.findByIdAndOrderId(orderItemId, orderId)
+                    .orElseThrow(() -> new IllegalArgumentException("Sản phẩm khiếu nại không thuộc đơn hàng này."));
+            validItemId = item.getId();
         }
 
         String imageUrl = storeEvidenceImageIfPresent(evidenceImage);
 
-        // Validate bằng chứng: Nhóm lỗi hàng hóa trên đơn đã giao (DELIVERED) bắt buộc đính kèm ít nhất 1 hình ảnh bằng chứng
-        if ("DELIVERED".equals(orderStatus) && PRODUCT_DEFECT_REASONS.contains(cleanReason) && (imageUrl == null || imageUrl.isBlank())) {
-            throw new IllegalArgumentException("Nhóm lỗi hàng hóa (Chất lượng hoa quả, Thiếu số lượng, Giao sai sản phẩm) bắt buộc phải đính kèm ít nhất 1 hình ảnh bằng chứng.");
+        // Validate bằng chứng: Bắt buộc đính kèm ít nhất 1 hình ảnh bằng chứng đối với khiếu nại đơn hàng
+        if (ACTIVE_REASONS.contains(cleanReason) && (imageUrl == null || imageUrl.isBlank())) {
+            throw new IllegalArgumentException("Nhóm lỗi hàng hóa (Chất lượng hoa quả, Thiếu số lượng, Giao sai sản phẩm, Sự cố giao hàng) bắt buộc phải đính kèm ít nhất 1 hình ảnh bằng chứng.");
         }
 
-        long actualPaidAmount = calculateActualPaidAmountFromOrderMap(order, validItemId);
-        long reqAmount = requestedRefundAmount != null ? requestedRefundAmount : 0L;
-        if (reqAmount < 0) {
-            throw new IllegalArgumentException("Số tiền/điểm yêu cầu hoàn trả không được âm.");
-        }
-        if (reqAmount > actualPaidAmount) {
-            throw new IllegalArgumentException("Số tiền/điểm yêu cầu đền bù (" + reqAmount + "đ) không được vượt quá số tiền thực trả (" + actualPaidAmount + "đ).");
-        }
-        long finalRequestedRefund = ("RETURN_REFUND".equals(cleanResolution) && reqAmount == 0L)
-                ? actualPaidAmount : reqAmount;
+        long actualPaidAmount = calculateActualPaidAmountFromOrder(order, validItemId);
 
-        Long shopId = ((Number) order.get("shop_id")).longValue();
-        BigDecimal totalAmount = toBigDecimal(order.get("total_amount"));
+        Long shopId = order.getShopId();
+        BigDecimal totalAmount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
         String priority = determineAutoPriority(cleanReason, totalAmount);
         LocalDateTime slaDueAt = now.plusHours(SHOP_SLA_HOURS);
         String complaintCode = generateComplaintCode(now);
 
-        final String finalTitle = cleanTitle;
-        final Long finalItemId = validItemId;
-        final String finalResolution = cleanResolution;
-        final long refundToInsert = finalRequestedRefund;
-        final String finalReason = cleanReason;
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT INTO complaints (
-                    complaint_code, order_id, order_item_id, user_id, shop_id,
-                    reason_type, title, description, evidence_image_url,
-                    priority, status, source_type, desired_resolution, requested_refund_amount, final_refund_amount,
-                    sla_due_at, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_OPERATIONS', 'CUSTOMER', ?, ?, 0, ?, ?, ?)
-            """, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, complaintCode);
-            ps.setLong(2, orderId);
-            if (finalItemId != null) ps.setLong(3, finalItemId); else ps.setNull(3, java.sql.Types.BIGINT);
-            ps.setLong(4, customerId);
-            ps.setLong(5, shopId);
-            ps.setString(6, finalReason);
-            ps.setString(7, finalTitle);
-            ps.setString(8, cleanDesc);
-            ps.setString(9, imageUrl);
-            ps.setString(10, priority);
-            ps.setString(11, finalResolution);
-            ps.setLong(12, refundToInsert);
-            ps.setTimestamp(13, Timestamp.valueOf(slaDueAt));
-            ps.setTimestamp(14, Timestamp.valueOf(now));
-            ps.setTimestamp(15, Timestamp.valueOf(now));
-            return ps;
-        }, keyHolder);
+        Complaint complaint = new Complaint();
+        complaint.setComplaintCode(complaintCode);
+        complaint.setOrderId(orderId);
+        complaint.setOrderItemId(validItemId);
+        complaint.setUserId(customerId);
+        complaint.setShopId(shopId);
+        complaint.setReasonType(cleanReason);
+        complaint.setTitle(cleanTitle);
+        complaint.setDescription(cleanDesc);
+        complaint.setEvidenceImageUrl(imageUrl);
+        complaint.setPriority(priority);
+        complaint.setStatus(STATUS_PENDING_OPERATIONS);
+        complaint.setSourceType("CUSTOMER");
+        complaint.setDesiredResolution(cleanResolution);
+        complaint.setRequestedRefundAmount(actualPaidAmount);
+        complaint.setFinalRefundAmount(0L);
+        complaint.setSlaDueAt(slaDueAt);
+        complaint.setCreatedAt(now);
+        complaint.setUpdatedAt(now);
 
-        Long complaintId = extractKey(keyHolder, complaintCode);
-        String orderCode = String.valueOf(order.get("order_code"));
-        Long shopOwnerId = order.get("shop_owner_id") instanceof Number n ? n.longValue() : null;
+        Complaint saved = complaintRepository.save(complaint);
+        complaintRepository.flush();
+        Long complaintId = saved.getId();
+        String orderCode = order.getOrderCode();
+        Long shopOwnerId = shopRepository.findById(shopId).map(Shop::getOwnerId).orElse(null);
 
         createNotificationSafe(customerId,
                 "COMPLAINT_CREATED_CUST_" + complaintId,
@@ -692,7 +390,7 @@ public class ComplaintService {
                 "COMPLAINT_CREATED_OPS_" + complaintId,
                 "COMPLAINT",
                 "Khiếu nại mới chờ duyệt: " + complaintCode,
-                "Khách hàng gửi khiếu nại cho đơn " + orderCode + ": '" + finalTitle + "'. Vui lòng thẩm định.",
+                "Khách hàng gửi khiếu nại cho đơn " + orderCode + ": '" + cleanTitle + "'. Vui lòng thẩm định.",
                 "COMPLAINT", complaintId);
 
         if (shopOwnerId != null) {
@@ -700,7 +398,7 @@ public class ComplaintService {
                     "COMPLAINT_CREATED_SHOP_" + complaintId,
                     "COMPLAINT",
                     "Đơn hàng " + orderCode + " có khiếu nại mới (" + complaintCode + ")",
-                    "Khách hàng gửi khiếu nại: '" + finalTitle + "' (Đang chờ Ban Vận hành thẩm định).",
+                    "Khách hàng gửi khiếu nại: '" + cleanTitle + "' (Đang chờ Ban Vận hành thẩm định).",
                     "ORDER", orderId);
         }
 
@@ -708,35 +406,22 @@ public class ComplaintService {
     }
 
     /**
-     * Customer tự hủy: Khi đang ở PENDING_OPERATIONS hoặc PENDING_SHOP, Customer có quyền bấm hủy -> chuyển sang CANCELLED.
-     * Chống xung đột thao tác (Race Condition) bằng FOR UPDATE.
+     * Customer tự hủy: Khi đang ở PENDING_OPERATIONS, PENDING_SHOP hoặc ESCALATED, Customer có quyền bấm hủy -> chuyển sang CANCELLED.
+     * Chống xung đột thao tác (Race Condition) bằng PESSIMISTIC_WRITE.
      */
     @Transactional
     public void cancelCustomerComplaint(Long customerId, Long complaintId) {
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT id, status, user_id
-            FROM complaints
-            WHERE id = ? AND user_id = ?
-            FOR UPDATE
-        """, complaintId, customerId);
+        Complaint complaint = complaintRepository.findLockedByIdAndUserId(complaintId, customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu khiếu nại của bạn."));
 
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy yêu cầu khiếu nại của bạn.");
-        }
-        String currentStatus = String.valueOf(rows.get(0).get("status"));
-        if (!STATUS_PENDING_OPERATIONS.equals(currentStatus) && !STATUS_PENDING_SHOP.equals(currentStatus) && !STATUS_ESCALATED.equals(currentStatus)
-                && !"PENDING_OPS".equals(currentStatus) && !"PENDING".equals(currentStatus) && !"IN_PROGRESS".equals(currentStatus)) {
+        String currentStatus = complaint.getStatus();
+        if (!ACTIVE_COMPLAINT_STATUSES.contains(currentStatus)) {
             throw new IllegalArgumentException("Chỉ có thể rút lại khiếu nại khi đang ở trạng thái Chờ Vận hành duyệt hoặc Chờ Shop xử lý.");
         }
 
-        int updated = jdbc.update("""
-            UPDATE complaints
-            SET status = 'CANCELLED', updated_at = ?
-            WHERE id = ? AND user_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS')
-        """, Timestamp.valueOf(LocalDateTime.now()), complaintId, customerId);
-        if (updated == 0) {
-            throw new IllegalArgumentException("Trạng thái khiếu nại vừa thay đổi, không thể hủy.");
-        }
+        complaint.setStatus(STATUS_CANCELLED);
+        complaint.setUpdatedAt(LocalDateTime.now());
+        complaintRepository.saveAndFlush(complaint);
     }
 
     // =========================================================================
@@ -748,13 +433,10 @@ public class ComplaintService {
         if (complaintId == null) {
             throw new IllegalArgumentException("Mã khiếu nại không hợp lệ.");
         }
-        List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT * FROM complaints WHERE id = ? FOR UPDATE", complaintId);
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId);
-        }
-        Map<String, Object> c = rows.get(0);
-        String currentStatus = String.valueOf(c.get("status"));
+        Complaint c = complaintRepository.findLockedById(complaintId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId));
+
+        String currentStatus = c.getStatus();
         if (!STATUS_PENDING_OPERATIONS.equals(currentStatus) && !"PENDING_OPS".equals(currentStatus) && !"PENDING".equals(currentStatus)) {
             throw new IllegalArgumentException("Chỉ có thể duyệt khiếu nại đang ở trạng thái Chờ Vận hành duyệt (trạng thái hiện tại: "
                     + STATUS_LABELS.getOrDefault(currentStatus, currentStatus) + ").");
@@ -767,25 +449,22 @@ public class ComplaintService {
             throw new IllegalArgumentException("Ghi chú phê duyệt không được vượt quá 1500 ký tự.");
         }
 
-        jdbc.update("""
-            UPDATE complaints
-            SET status = 'PENDING_SHOP',
-                operations_decision = 'APPROVED',
-                operations_note = ?,
-                operations_reviewed_at = ?,
-                sla_due_at = ?,
-                assigned_to = COALESCE(assigned_to, ?),
-                updated_at = ?
-            WHERE id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING')
-        """, cleanNote, Timestamp.valueOf(now), Timestamp.valueOf(shopSlaDueAt), operationsUserId, Timestamp.valueOf(now), complaintId);
+        c.setStatus(STATUS_PENDING_SHOP);
+        c.setOperationsDecision("APPROVED");
+        c.setOperationsNote(cleanNote);
+        c.setOperationsReviewedAt(now);
+        c.setSlaDueAt(shopSlaDueAt);
+        if (c.getAssignedTo() == null) {
+            c.setAssignedTo(operationsUserId);
+        }
+        c.setUpdatedAt(now);
+        complaintRepository.saveAndFlush(c);
 
-        Long shopId = ((Number) c.get("shop_id")).longValue();
-        Long customerId = c.get("user_id") instanceof Number n ? n.longValue() : null;
-        Long shopOwnerId = null;
-        try {
-            shopOwnerId = jdbc.queryForObject("SELECT owner_id FROM shops WHERE id = ?", Long.class, shopId);
-        } catch (Exception ignored) {}
-        String complaintCode = String.valueOf(c.get("complaint_code"));
+        Long shopId = c.getShopId();
+        Long customerId = c.getUserId();
+        Long shopOwnerId = shopRepository.findById(shopId).map(Shop::getOwnerId).orElse(null);
+        String complaintCode = c.getComplaintCode();
+
         if (shopOwnerId != null) {
             createNotificationSafe(shopOwnerId,
                     "COMPLAINT_OPS_APPROVED_" + complaintId,
@@ -806,17 +485,11 @@ public class ComplaintService {
 
     /**
      * Ban Vận hành (Operations Manager) trực tiếp duyệt khiếu nại và hoàn tiền về tài khoản ngân hàng (RETURN_REFUND).
-     * Đảm bảo tính nhất quán dữ liệu (@Transactional) và chống double-refund:
-     * 1. Khóa dòng khiếu nại bằng SELECT ... FOR UPDATE.
-     * 2. Kiểm tra trạng thái khiếu nại chưa RESOLVED và refund_status chưa COMPLETED.
-     * 3. Gọi CustomerRefundService.queueComplaintReturnRefund() để kiểm tra trùng (order_id, 'RETURN_REFUND') và lưu vào bảng customer_refunds.
-     * 4. Cập nhật trạng thái khiếu nại sang RESOLVED, resolution_type = 'RETURN_REFUND', refund_status = 'COMPLETED'.
      */
     @Transactional
     public void approveComplaintRefundByOperations(
             Long operationsUserId,
             Long complaintId,
-            Long refundAmountInput,
             String operationsNote) {
 
         if (complaintId == null) {
@@ -824,17 +497,14 @@ public class ComplaintService {
         }
 
         // 1. Khóa bản ghi khiếu nại để chống nhấn duyệt nhiều lần đồng thời (Double-Refund / Race Condition)
-        List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT * FROM complaints WHERE id = ? FOR UPDATE", complaintId);
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId);
-        }
-        Map<String, Object> c = rows.get(0);
-        String currentStatus = String.valueOf(c.get("status"));
-        String refundStatus = c.get("refund_status") != null ? String.valueOf(c.get("refund_status")) : "NONE";
+        Complaint c = complaintRepository.findLockedById(complaintId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId));
+
+        String currentStatus = c.getStatus();
+        String refundStatus = c.getRefundStatus() != null ? c.getRefundStatus() : "NONE";
 
         if (STATUS_RESOLVED.equals(currentStatus) || "COMPLETED".equalsIgnoreCase(refundStatus)
-                || "RETURN_REFUND".equalsIgnoreCase(String.valueOf(c.get("resolution_type")))) {
+                || "RETURN_REFUND".equalsIgnoreCase(c.getResolutionType())) {
             throw new IllegalArgumentException("Khiếu nại này đã được giải quyết hoặc đã hoàn tiền trước đó.");
         }
         if (STATUS_REJECTED.equals(currentStatus) || STATUS_CANCELLED.equals(currentStatus)) {
@@ -842,50 +512,33 @@ public class ComplaintService {
                     + STATUS_LABELS.getOrDefault(currentStatus, currentStatus) + ").");
         }
 
-        Long orderId = ((Number) c.get("order_id")).longValue();
-        Long orderItemId = c.get("order_item_id") instanceof Number n ? n.longValue() : null;
-        Long customerId = ((Number) c.get("user_id")).longValue();
-        Long shopId = ((Number) c.get("shop_id")).longValue();
-        String complaintCode = String.valueOf(c.get("complaint_code"));
+        Long orderId = c.getOrderId();
+        Long orderItemId = c.getOrderItemId();
+        Long customerId = c.getUserId();
+        Long shopId = c.getShopId();
+        String complaintCode = c.getComplaintCode();
 
-        List<Map<String, Object>> orderRows = jdbc.queryForList(
-                "SELECT status, payment_status, total_amount, shop_revenue_amount FROM orders WHERE id = ? FOR UPDATE", orderId);
-        if (!orderRows.isEmpty()) {
-            Map<String, Object> ord = orderRows.get(0);
-            String ordStatus = String.valueOf(ord.get("status"));
-            String payStatus = String.valueOf(ord.get("payment_status"));
+        Optional<Order> orderOpt = orderRepository.findLockedById(orderId);
+        if (orderOpt.isPresent()) {
+            Order ord = orderOpt.get();
+            String ordStatus = ord.getStatus();
+            String payStatus = ord.getPaymentStatus();
             if (!"PAID".equalsIgnoreCase(payStatus) && !"DELIVERED".equalsIgnoreCase(ordStatus) && !"COMPLETED".equalsIgnoreCase(ordStatus)) {
                 throw new IllegalArgumentException("Đơn hàng chưa thanh toán (COD chưa thu tiền), không thể lập lệnh hoàn tiền.");
             }
         }
 
         long maxRefund = calculateActualPaidAmount(orderId, orderItemId);
-        if (maxRefund <= 0) {
-            try {
-                BigDecimal orderTotal = jdbc.queryForObject("SELECT total_amount FROM orders WHERE id = ?", BigDecimal.class, orderId);
-                if (orderTotal != null && orderTotal.longValue() > 0) {
-                    maxRefund = orderTotal.longValue();
-                }
-            } catch (Exception ignored) {
+        if (maxRefund <= 0 && orderOpt.isPresent()) {
+            BigDecimal orderTotal = orderOpt.get().getTotalAmount();
+            if (orderTotal != null && orderTotal.longValue() > 0) {
+                maxRefund = orderTotal.longValue();
             }
         }
 
-        long requestedRefund = toLong(c.get("requested_refund_amount"));
-        long finalRefund;
-        if (refundAmountInput != null && refundAmountInput > 0) {
-            finalRefund = refundAmountInput;
-        } else if (requestedRefund > 0) {
-            finalRefund = Math.min(requestedRefund, maxRefund > 0 ? maxRefund : requestedRefund);
-        } else {
-            finalRefund = maxRefund;
-        }
-
+        long finalRefund = maxRefund;
         if (finalRefund <= 0) {
             throw new IllegalArgumentException("Số tiền hoàn trả phải lớn hơn 0đ.");
-        }
-        if (maxRefund > 0 && finalRefund > maxRefund) {
-            throw new IllegalArgumentException("Số tiền hoàn trả (" + String.format("%,d", finalRefund)
-                    + "đ) không được vượt quá số tiền thực trả của đơn hàng (" + String.format("%,d", maxRefund) + "đ).");
         }
 
         String cleanNote = (operationsNote == null || operationsNote.isBlank())
@@ -905,43 +558,33 @@ public class ComplaintService {
 
         // 3. Cập nhật trạng thái khiếu nại sang RESOLVED & đánh dấu hoàn tiền COMPLETED
         LocalDateTime now = LocalDateTime.now();
-        int updated = jdbc.update("""
-            UPDATE complaints
-            SET status = 'RESOLVED',
-                operations_decision = 'APPROVED',
-                operations_note = ?,
-                operations_reviewed_at = COALESCE(operations_reviewed_at, ?),
-                resolution_type = 'RETURN_REFUND',
-                resolution_note = ?,
-                final_refund_amount = ?,
-                compensated_points = ?,
-                refund_method = 'BANK_TRANSFER',
-                refund_status = 'COMPLETED',
-                refund_completed_at = ?,
-                assigned_to = COALESCE(assigned_to, ?),
-                resolved_by = ?,
-                resolved_at = ?,
-                is_shop_fault = 1,
-                fault_party = 'SHOP',
-                updated_at = ?
-            WHERE id = ? AND status NOT IN ('RESOLVED', 'REJECTED', 'CANCELLED')
-        """, cleanNote, Timestamp.valueOf(now), cleanNote, finalRefund, finalRefund,
-                Timestamp.valueOf(now), operationsUserId, operationsUserId, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
-
-        if (updated != 1) {
-            throw new IllegalArgumentException("Trạng thái khiếu nại đã thay đổi bởi thao tác khác, không thể duyệt hoàn tiền trùng lặp.");
+        c.setStatus(STATUS_RESOLVED);
+        c.setOperationsDecision("APPROVED");
+        c.setOperationsNote(cleanNote);
+        if (c.getOperationsReviewedAt() == null) {
+            c.setOperationsReviewedAt(now);
         }
-
-        // 4. Nếu hoàn toàn bộ đơn (hoặc số tiền hoàn >= doanh thu Shop của đơn), khóa quyết toán đơn hàng cho Shop (is_settled = 1)
-        try {
-            BigDecimal shopRev = !orderRows.isEmpty() ? toBigDecimal(orderRows.get(0).get("shop_revenue_amount")) : BigDecimal.ZERO;
-            if (finalRefund >= maxRefund || (shopRev.longValue() > 0 && finalRefund >= shopRev.longValue())) {
-                jdbc.update("UPDATE orders SET is_settled = 1 WHERE id = ?", orderId);
-            }
-        } catch (Exception ignored) {
+        c.setResolutionType("RETURN_REFUND");
+        c.setResolutionNote(cleanNote);
+        c.setFinalRefundAmount(finalRefund);
+        c.setRefundMethod("BANK_TRANSFER");
+        c.setRefundStatus("COMPLETED");
+        c.setRefundCompletedAt(now);
+        if (c.getAssignedTo() == null) {
+            c.setAssignedTo(operationsUserId);
         }
+        c.setResolvedBy(operationsUserId);
+        c.setResolvedAt(now);
+        c.setIsShopFault(1);
+        c.setFaultParty("SHOP");
+        c.setUpdatedAt(now);
+        complaintRepository.saveAndFlush(c);
 
-        deductShopReputation(shopId, complaintId, 5, "Khiếu nại " + complaintCode + " được Vận hành duyệt hoàn tiền");
+        // 4. Khóa quyết toán đơn hàng cho Shop (is_settled = 1)
+        orderOpt.ifPresent(ord -> {
+            ord.setIsSettled(1);
+            orderRepository.saveAndFlush(ord);
+        });
 
         createNotificationSafe(customerId,
                 "COMPLAINT_OPS_REFUND_" + complaintId,
@@ -951,11 +594,7 @@ public class ComplaintService {
                         + String.format("%,d", finalRefund) + "đ về tài khoản ngân hàng của bạn.",
                 "COMPLAINT", complaintId);
 
-        Long shopOwnerId = null;
-        try {
-            shopOwnerId = jdbc.queryForObject("SELECT owner_id FROM shops WHERE id = ?", Long.class, shopId);
-        } catch (Exception ignored) {
-        }
+        Long shopOwnerId = shopRepository.findById(shopId).map(Shop::getOwnerId).orElse(null);
         if (shopOwnerId != null) {
             createNotificationSafe(shopOwnerId,
                     "COMPLAINT_OPS_REFUND_SHOP_" + complaintId,
@@ -976,37 +615,31 @@ public class ComplaintService {
             throw new IllegalArgumentException("Vui lòng nhập lý do từ chối khiếu nại chi tiết (từ 5 đến 1500 ký tự).");
         }
 
-        List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT * FROM complaints WHERE id = ? FOR UPDATE", complaintId);
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId);
-        }
-        Map<String, Object> c = rows.get(0);
-        String currentStatus = String.valueOf(c.get("status"));
+        Complaint c = complaintRepository.findLockedById(complaintId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khiếu nại #" + complaintId));
+
+        String currentStatus = c.getStatus();
         if (!STATUS_PENDING_OPERATIONS.equals(currentStatus) && !"PENDING_OPS".equals(currentStatus) && !"PENDING".equals(currentStatus)) {
             throw new IllegalArgumentException("Chỉ có thể từ chối khiếu nại đang ở trạng thái Chờ Vận hành duyệt (trạng thái hiện tại: "
                     + STATUS_LABELS.getOrDefault(currentStatus, currentStatus) + ").");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        jdbc.update("""
-            UPDATE complaints
-            SET status = 'REJECTED',
-                resolution_type = 'REJECTED',
-                resolution_note = ?,
-                operations_decision = 'REJECTED',
-                operations_note = ?,
-                operations_reviewed_at = ?,
-                resolved_by = ?,
-                resolved_at = ?,
-                is_shop_fault = 0,
-                fault_party = 'NONE',
-                updated_at = ?
-            WHERE id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING')
-        """, cleanReason, cleanReason, Timestamp.valueOf(now), operationsUserId, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
+        c.setStatus(STATUS_REJECTED);
+        c.setResolutionType("REJECTED");
+        c.setResolutionNote(cleanReason);
+        c.setOperationsDecision("REJECTED");
+        c.setOperationsNote(cleanReason);
+        c.setOperationsReviewedAt(now);
+        c.setResolvedBy(operationsUserId);
+        c.setResolvedAt(now);
+        c.setIsShopFault(0);
+        c.setFaultParty("NONE");
+        c.setUpdatedAt(now);
+        complaintRepository.saveAndFlush(c);
 
-        Long customerId = ((Number) c.get("user_id")).longValue();
-        String complaintCode = String.valueOf(c.get("complaint_code"));
+        Long customerId = c.getUserId();
+        String complaintCode = c.getComplaintCode();
         createNotificationSafe(customerId,
                 "COMPLAINT_OPS_REJECTED_" + complaintId,
                 "COMPLAINT",
@@ -1019,239 +652,18 @@ public class ComplaintService {
     // 3. SHOP XỬ LÝ KHIẾU NẠI (BƯỚC 2 - PENDING_SHOP)
     // =========================================================================
 
-    /**
-     * Shop xử lý khiếu nại (chỉ thực hiện được khi đơn đang ở PENDING_SHOP):
-     * - RESEND_ITEMS: Tạo đơn giao bù 0đ -> RESOLVED.
-     * - ISSUE_VOUCHER: Phát hành voucher đền bù riêng vào ví khách hàng -> RESOLVED.
-     * Shop không có quyền từ chối khiếu nại sau khi Ban Vận hành đã phê duyệt.
-     */
-    @Transactional
-    public void submitShopDecision(
-            Long ownerId,
-            Long complaintId,
-            String decision,
-            String shopResponse,
-            MultipartFile shopEvidenceImage) {
-        submitShopDecision(ownerId, complaintId, decision, shopResponse, shopEvidenceImage, null);
-    }
-
-    @Transactional
-    public void submitShopDecision(
-            Long ownerId,
-            Long complaintId,
-            String decision,
-            String shopResponse,
-            MultipartFile shopEvidenceImage,
-            Long voucherDiscount) {
-
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT c.*, o.order_code, s.name AS shop_name
-            FROM complaints c
-            JOIN shops s ON s.id = c.shop_id
-            JOIN orders o ON o.id = c.order_id
-            WHERE c.id = ? AND s.owner_id = ?
-            FOR UPDATE
-        """, complaintId, ownerId);
-
-        if (rows.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xử lý khiếu nại này.");
-        }
-
-        Map<String, Object> c = rows.get(0);
-        String currentStatus = String.valueOf(c.get("status"));
-        if (!STATUS_PENDING_SHOP.equals(currentStatus) && !"PENDING".equals(currentStatus)) {
-            throw new IllegalArgumentException("Chỉ có thể xử lý khiếu nại khi đang ở trạng thái Chờ Shop phản hồi (trạng thái hiện tại: "
-                    + STATUS_LABELS.getOrDefault(currentStatus, currentStatus) + ").");
-        }
-
-        String rawDecision = decision == null ? "" : decision.trim().toUpperCase(Locale.ROOT);
-        String normalizedDecision;
-        if ("ACCEPT".equals(rawDecision)) {
-            String desired = c.get("desired_resolution") != null ? String.valueOf(c.get("desired_resolution")) : "";
-            if ("ISSUE_VOUCHER".equalsIgnoreCase(desired)) {
-                normalizedDecision = "ISSUE_VOUCHER";
-            } else {
-                normalizedDecision = "RESEND_ITEMS";
-            }
-        } else if ("REJECT".equals(rawDecision)) {
-            normalizedDecision = "REJECTED";
-        } else {
-            normalizedDecision = rawDecision;
-        }
-
-        if (!"RESEND_ITEMS".equals(normalizedDecision) && !"ISSUE_VOUCHER".equals(normalizedDecision) && !"REJECTED".equals(normalizedDecision)) {
-            throw new IllegalArgumentException("Quyết định xử lý của Shop không hợp lệ (chấp nhận RESEND_ITEMS hoặc ISSUE_VOUCHER).");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        Long customerId = ((Number) c.get("user_id")).longValue();
-        Long orderId = ((Number) c.get("order_id")).longValue();
-        Long orderItemId = c.get("order_item_id") instanceof Number n ? n.longValue() : null;
-        Long shopId = ((Number) c.get("shop_id")).longValue();
-        String complaintCode = String.valueOf(c.get("complaint_code"));
-        String orderCode = String.valueOf(c.get("order_code"));
-
-        if ("RESEND_ITEMS".equals(normalizedDecision)) {
-            if (c.get("replacement_order_id") != null) {
-                throw new IllegalArgumentException("Khiếu nại này đã có đơn giao bù được tạo trước đó.");
-            }
-            String cleanNote = (shopResponse == null || shopResponse.isBlank())
-                    ? "Cửa hàng chấp thuận khiếu nại và tiến hành giao bù sản phẩm cho khách hàng."
-                    : shopResponse.trim();
-            if (cleanNote.length() > 1500) {
-                throw new IllegalArgumentException("Nội dung phản hồi không được vượt quá 1500 ký tự.");
-            }
-
-            Long replacementOrderId = createReplacementOrder(complaintId, orderId, orderItemId, shopId, customerId, cleanNote);
-
-            int updated = jdbc.update("""
-                UPDATE complaints
-                SET status = 'RESOLVED',
-                    shop_decision = 'RESEND_ITEMS',
-                    resolution_type = 'RESEND_ITEMS',
-                    resolution_note = ?,
-                    replacement_order_id = ?,
-                    shop_response = ?,
-                    shop_responded_at = ?,
-                    resolved_by = ?,
-                    resolved_at = ?,
-                    is_shop_fault = 1,
-                    fault_party = 'SHOP',
-                    updated_at = ?
-                WHERE id = ? AND status IN ('PENDING_SHOP', 'PENDING')
-            """, cleanNote, replacementOrderId, cleanNote, Timestamp.valueOf(now), ownerId, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
-
-            if (updated == 0) {
-                throw new IllegalArgumentException("Khiếu nại đã được cập nhật bởi thao tác khác, vui lòng tải lại trang.");
-            }
-
-            String replacementOrderCode = jdbc.queryForObject("SELECT order_code FROM orders WHERE id = ?", String.class, replacementOrderId);
-
-            createNotificationSafe(customerId,
-                    "COMPLAINT_RESEND_ITEMS_" + complaintId,
-                    "COMPLAINT",
-                    "Shop đồng ý giao bù đơn hàng cho khiếu nại " + complaintCode,
-                    "Cửa hàng đã tạo đơn giao bù mới 0đ (Mã đơn: " + replacementOrderCode + ") cho khiếu nại trên đơn " + orderCode + ". Bạn không phải thanh toán thêm bất kỳ khoản phí nào.",
-                    "ORDER", replacementOrderId);
-
-        } else if ("ISSUE_VOUCHER".equals(normalizedDecision)) {
-            if (c.get("voucher_id") != null) {
-                throw new IllegalArgumentException("Khiếu nại này đã được tặng voucher đền bù trước đó.");
-            }
-            String cleanNote = (shopResponse == null || shopResponse.isBlank())
-                    ? "Cửa hàng chấp thuận khiếu nại và tặng voucher đền bù cho khách hàng."
-                    : shopResponse.trim();
-            if (cleanNote.length() > 1500) {
-                throw new IllegalArgumentException("Nội dung phản hồi không được vượt quá 1500 ký tự.");
-            }
-
-            long discountVal;
-            if (voucherDiscount != null) {
-                if (voucherDiscount <= 0) {
-                    throw new IllegalArgumentException("Giá trị voucher đền bù phải lớn hơn 0.");
-                }
-                discountVal = voucherDiscount;
-            } else {
-                long actualPaid = calculateActualPaidAmount(orderId, orderItemId);
-                discountVal = actualPaid > 0 ? actualPaid : 20000L;
-            }
-
-            String baseVoucherCode = "VC-KN-" + complaintCode.replace("KN-", "").replace("-", "");
-            String voucherCode = ensureUniqueVoucherCode(shopId, baseVoucherCode);
-            String voucherName = "Voucher đền bù khiếu nại " + complaintCode;
-            LocalDateTime voucherExpiry = now.plusDays(30);
-
-            KeyHolder vKeyHolder = new GeneratedKeyHolder();
-            jdbc.update(con -> {
-                PreparedStatement ps = con.prepareStatement("""
-                    INSERT INTO vouchers (
-                        shop_id, code, name, discount_type, discount_value, min_order_value,
-                        max_usages, used_count, is_public, voucher_type, status, starts_at, ends_at
-                    ) VALUES (?, ?, ?, 'FIXED_AMOUNT', ?, 0, 1, 0, FALSE, 'DISCOUNT', 'ACTIVE', ?, ?)
-                """, Statement.RETURN_GENERATED_KEYS);
-                ps.setLong(1, shopId);
-                ps.setString(2, voucherCode);
-                ps.setString(3, voucherName);
-                ps.setBigDecimal(4, BigDecimal.valueOf(discountVal));
-                ps.setTimestamp(5, Timestamp.valueOf(now));
-                ps.setTimestamp(6, Timestamp.valueOf(voucherExpiry));
-                return ps;
-            }, vKeyHolder);
-
-            Long voucherId = extractVoucherKey(vKeyHolder, shopId, voucherCode);
-
-            try {
-                jdbc.update("""
-                    INSERT INTO customer_saved_vouchers (user_id, voucher_id, saved_at)
-                    VALUES (?, ?, ?)
-                """, customerId, voucherId, Timestamp.valueOf(now));
-            } catch (Exception ex) {
-                System.err.println("Warning: Cannot insert customer_saved_vouchers: " + ex.getMessage());
-            }
-
-            int updated = jdbc.update("""
-                UPDATE complaints
-                SET status = 'RESOLVED',
-                    shop_decision = 'ISSUE_VOUCHER',
-                    resolution_type = 'ISSUE_VOUCHER',
-                    resolution_note = ?,
-                    voucher_id = ?,
-                    voucher_code = ?,
-                    shop_response = ?,
-                    shop_responded_at = ?,
-                    resolved_by = ?,
-                    resolved_at = ?,
-                    is_shop_fault = 1,
-                    fault_party = 'SHOP',
-                    updated_at = ?
-                WHERE id = ? AND status IN ('PENDING_SHOP', 'PENDING')
-            """, cleanNote, voucherId, voucherCode, cleanNote, Timestamp.valueOf(now), ownerId, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
-
-            if (updated == 0) {
-                throw new IllegalArgumentException("Khiếu nại đã được cập nhật bởi thao tác khác, vui lòng tải lại trang.");
-            }
-
-            createNotificationSafe(customerId,
-                    "COMPLAINT_ISSUE_VOUCHER_" + complaintId,
-                    "COMPLAINT",
-                    "Shop đã tặng voucher đền bù cho khiếu nại " + complaintCode,
-                    "Cửa hàng gửi tặng bạn voucher đền bù " + String.format("%,d", discountVal) + "đ (Mã: " + voucherCode + ") cho đơn hàng tiếp theo. Hạn dùng 30 ngày.",
-                    "COMPLAINT", complaintId);
-
-        } else {
-            // Shop không được quyền từ chối sau khi Ban Vận hành đã phê duyệt
-            throw new IllegalArgumentException("Khiếu nại này đã được Ban Vận hành phê duyệt. Cửa hàng không có quyền từ chối mà bắt buộc phải chọn Tạo đơn giao bù (RESEND_ITEMS) hoặc Tặng voucher đền bù (ISSUE_VOUCHER).");
-        }
-    }
-
     @Transactional
     public Long createReplacementOrder(
             Long complaintId,
             Long originalOrderId,
-            Long orderItemId,
-            Long shopId,
-            Long customerId,
-            String shopNote) {
-        return createReplacementOrder(complaintId, originalOrderId, orderItemId, shopId, customerId, shopNote, null, null);
-    }
-
-    @Transactional
-    public Long createReplacementOrder(
-            Long complaintId,
-            Long originalOrderId,
-            Long orderItemId,
             Long shopId,
             Long customerId,
             String shopNote,
             List<Long> customVariantIds,
             List<Integer> customQuantities) {
 
-        List<Map<String, Object>> originalOrders = jdbc.queryForList(
-                "SELECT * FROM orders WHERE id = ?", originalOrderId);
-        if (originalOrders.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng gốc #" + originalOrderId);
-        }
-        Map<String, Object> orig = originalOrders.get(0);
+        Order orig = orderRepository.findById(originalOrderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng gốc #" + originalOrderId));
 
         String randomSuffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
         String newOrderCode = "RB-" + randomSuffix;
@@ -1260,85 +672,58 @@ public class ComplaintService {
         String newCheckoutCode = "CHK-RB-" + randomSuffix;
         String newRequestKey = "REQ-RB-" + randomSuffix;
 
-        String contactEmail = "customer@freshfruit.local";
-        try {
-            Long origCheckoutId = orig.get("checkout_id") instanceof Number n ? n.longValue() : null;
-            String foundEmail = jdbc.queryForObject("SELECT contact_email FROM checkouts WHERE id = ?", String.class, origCheckoutId);
-            if (foundEmail != null && !foundEmail.isBlank()) contactEmail = foundEmail;
-        } catch (Exception ignored) {}
+        String contactEmail = checkoutRepository.findById(orig.getCheckoutId())
+                .map(Checkout::getContactEmail)
+                .filter(e -> !e.isBlank())
+                .orElse("customer@freshfruit.local");
 
         LocalDateTime now = LocalDateTime.now();
 
         // 1. Create a dedicated checkouts record to satisfy UNIQUE(checkout_id, shop_id)
-        KeyHolder chkKeyHolder = new GeneratedKeyHolder();
-        final String finalContactEmail = contactEmail;
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT INTO checkouts (
-                    checkout_code, request_key, user_id, contact_email, payment_method, total_amount, status
-                ) VALUES (
-                    ?, ?, ?, ?, 'COD', 0, 'CONFIRMED'
-                )
-            """, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, newCheckoutCode);
-            ps.setString(2, newRequestKey);
-            ps.setLong(3, customerId);
-            ps.setString(4, finalContactEmail);
-            return ps;
-        }, chkKeyHolder);
+        Checkout replacementCheckout = new Checkout();
+        replacementCheckout.setCheckoutCode(newCheckoutCode);
+        replacementCheckout.setRequestKey(newRequestKey);
+        replacementCheckout.setUserId(customerId);
+        replacementCheckout.setContactEmail(contactEmail);
+        replacementCheckout.setPaymentMethod("COD");
+        replacementCheckout.setTotalAmount(BigDecimal.ZERO);
+        replacementCheckout.setStatus("CONFIRMED");
+        Long replacementCheckoutId = checkoutRepository.save(replacementCheckout).getId();
 
-        Long replacementCheckoutId = extractKeyByTable(chkKeyHolder, "checkouts", "checkout_code", newCheckoutCode);
-
-        String recipientName = String.valueOf(orig.get("recipient_name"));
-        String recipientPhone = String.valueOf(orig.get("recipient_phone"));
-        String deliveryProvinceCode = String.valueOf(orig.get("delivery_province_code"));
-        String deliveryProvinceName = String.valueOf(orig.get("delivery_province_name"));
-        String deliveryWardName = String.valueOf(orig.get("delivery_ward_name"));
-        String deliveryAddress = String.valueOf(orig.get("delivery_address"));
-        String shopProvinceCode = String.valueOf(orig.get("shop_province_code"));
         String customerNote = "Đơn giao bù khiếu nại #" + complaintId + (shopNote != null && !shopNote.isBlank() ? " (" + shopNote.trim() + ")" : "");
 
-        KeyHolder orderKeyHolder = new GeneratedKeyHolder();
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT INTO orders (
-                    order_code, checkout_id, original_order_id, order_type, shop_id,
-                    recipient_name, recipient_phone,
-                    delivery_province_code, delivery_province_name, delivery_ward_name, delivery_address,
-                    shop_province_code, customer_note,
-                    subtotal, points_used, points_discount, points_subsidy_amount, qualifying_amount, points_earned,
-                    shipping_fee, total_amount, shop_revenue_amount,
-                    payment_method, delivery_code, status, payment_status, delivery_status,
-                    created_at
-                ) VALUES (
-                    ?, ?, ?, 'RESEND', ?,
-                    ?, ?,
-                    ?, ?, ?, ?,
-                    ?, ?,
-                    0, 0, 0, 0, 0, 0,
-                    0, 0, 0,
-                    'RESEND', ?, 'CONFIRMED', 'PAID', 'NOT_STARTED',
-                    ?
-                )
-            """, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, newOrderCode);
-            ps.setLong(2, replacementCheckoutId);
-            ps.setLong(3, originalOrderId);
-            ps.setLong(4, shopId);
-            ps.setString(5, recipientName);
-            ps.setString(6, recipientPhone);
-            ps.setString(7, deliveryProvinceCode);
-            ps.setString(8, deliveryProvinceName);
-            ps.setString(9, deliveryWardName);
-            ps.setString(10, deliveryAddress);
-            ps.setString(11, shopProvinceCode);
-            ps.setString(12, customerNote);
-            ps.setString(13, newDeliveryCode);
-            ps.setTimestamp(14, Timestamp.valueOf(now));
-            return ps;
-        }, orderKeyHolder);
+        Order replacementOrder = new Order();
+        replacementOrder.setOrderCode(newOrderCode);
+        replacementOrder.setCheckoutId(replacementCheckoutId);
+        replacementOrder.setOriginalOrderId(originalOrderId);
+        replacementOrder.setOrderType("RESEND");
+        replacementOrder.setShopId(shopId);
+        replacementOrder.setRecipientName(orig.getRecipientName());
+        replacementOrder.setRecipientPhone(orig.getRecipientPhone());
+        replacementOrder.setDeliveryProvinceCode(orig.getDeliveryProvinceCode());
+        replacementOrder.setDeliveryProvinceName(orig.getDeliveryProvinceName());
+        replacementOrder.setDeliveryWardName(orig.getDeliveryWardName());
+        replacementOrder.setDeliveryAddress(orig.getDeliveryAddress());
+        replacementOrder.setShopProvinceCode(orig.getShopProvinceCode());
+        replacementOrder.setCustomerNote(customerNote);
+        replacementOrder.setSubtotal(BigDecimal.ZERO);
+        replacementOrder.setPointsUsed(0L);
+        replacementOrder.setPointsDiscount(BigDecimal.ZERO);
+        replacementOrder.setPointsSubsidyAmount(BigDecimal.ZERO);
+        replacementOrder.setQualifyingAmount(BigDecimal.ZERO);
+        replacementOrder.setPointsEarned(0L);
+        replacementOrder.setShippingFee(BigDecimal.ZERO);
+        replacementOrder.setTotalAmount(BigDecimal.ZERO);
+        replacementOrder.setShopRevenueAmount(BigDecimal.ZERO);
+        replacementOrder.setVoucherDiscount(BigDecimal.ZERO);
+        replacementOrder.setPaymentMethod("RESEND");
+        replacementOrder.setDeliveryCode(newDeliveryCode);
+        replacementOrder.setStatus("CONFIRMED");
+        replacementOrder.setPaymentStatus("PAID");
+        replacementOrder.setDeliveryStatus("NOT_STARTED");
+        replacementOrder.setCreatedAt(now);
 
-        Long replacementOrderId = extractKeyByTable(orderKeyHolder, "orders", "order_code", newOrderCode);
+        Long replacementOrderId = orderRepository.save(replacementOrder).getId();
 
         // 2. Insert items into order_items and deduct inventory accurately
         boolean customItemsInserted = false;
@@ -1349,54 +734,38 @@ public class ComplaintService {
                         ? customQuantities.get(i) : 0;
                 if (vId == null || qty <= 0) continue;
 
-                List<Map<String, Object>> vRows = jdbc.queryForList("""
-                    SELECT v.id as variant_id, v.sku, v.name as variant_name, v.image_url,
-                           p.id as product_id, p.name as product_name,
-                           u.name as base_unit_name,
-                           COALESCE(vi.id, 0) as inventory_id
-                    FROM product_variants v
-                    JOIN products p ON p.id = v.product_id
-                    JOIN units u ON u.id = v.base_unit_id
-                    LEFT JOIN variant_inventory vi ON vi.variant_id = v.id
-                    WHERE v.id = ? AND v.shop_id = ?
-                """, vId, shopId);
+                ProductVariant pv = productVariantRepository.findByIdAndShopIdWithProductAndUnit(vId, shopId)
+                        .orElseThrow(() -> new IllegalArgumentException("Sản phẩm biến thể #" + vId + " không thuộc cửa hàng này."));
 
-                if (vRows.isEmpty()) {
-                    throw new IllegalArgumentException("Sản phẩm biến thể #" + vId + " không thuộc cửa hàng này.");
-                }
-                Map<String, Object> vr = vRows.get(0);
-                Long invId = vr.get("inventory_id") instanceof Number n ? n.longValue() : 0L;
-                String pName = String.valueOf(vr.get("product_name"));
-                String vName = String.valueOf(vr.get("variant_name"));
-                String sku = String.valueOf(vr.get("sku"));
-                String img = vr.get("image_url") != null ? String.valueOf(vr.get("image_url")) : null;
-                String uName = String.valueOf(vr.get("base_unit_name"));
+                Long invId = variantInventoryRepository.findByVariantId(vId)
+                        .map(VariantInventory::getId)
+                        .orElse(0L);
+                String pName = pv.getProduct().getName();
+                String vName = pv.getName();
+                String sku = pv.getSku();
+                String img = pv.getImageUrl();
+                String uName = pv.getBaseUnit().getName();
 
                 deductInventoryForResendItem(invId, qty, pName + " - " + vName);
 
-                KeyHolder itemKeyHolder = new GeneratedKeyHolder();
-                jdbc.update(con -> {
-                    PreparedStatement ps = con.prepareStatement("""
-                        INSERT INTO order_items (
-                            order_id, shop_id, variant_id, inventory_id, promotion_id,
-                            product_name, variant_name, sku, image_url, base_unit_name,
-                            quantity, unit_price, sale_unit_price, line_total, allocation_status
-                        ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'CONSUMED')
-                    """, Statement.RETURN_GENERATED_KEYS);
-                    ps.setLong(1, replacementOrderId);
-                    ps.setLong(2, shopId);
-                    ps.setLong(3, vId);
-                    ps.setLong(4, invId);
-                    ps.setString(5, pName);
-                    ps.setString(6, vName);
-                    ps.setString(7, sku);
-                    ps.setString(8, img);
-                    ps.setString(9, uName);
-                    ps.setInt(10, qty);
-                    return ps;
-                }, itemKeyHolder);
+                OrderItem newItem = new OrderItem();
+                newItem.setOrderId(replacementOrderId);
+                newItem.setShopId(shopId);
+                newItem.setVariantId(vId);
+                newItem.setInventoryId(invId);
+                newItem.setPromotionId(null);
+                newItem.setProductName(pName);
+                newItem.setVariantName(vName);
+                newItem.setSku(sku);
+                newItem.setImageUrl(img);
+                newItem.setBaseUnitName(uName);
+                newItem.setQuantity(qty);
+                newItem.setUnitPrice(BigDecimal.ZERO);
+                newItem.setSaleUnitPrice(BigDecimal.ZERO);
+                newItem.setLineTotal(BigDecimal.ZERO);
+                newItem.setAllocationStatus("CONSUMED");
 
-                Long newItemId = extractGeneratedId(itemKeyHolder);
+                Long newItemId = orderItemRepository.save(newItem).getId();
                 recordResendInventoryTransaction(invId, newItemId, qty, newOrderCode);
                 customItemsInserted = true;
             }
@@ -1407,61 +776,54 @@ public class ComplaintService {
 
         // Fallback: Copy original items if no custom items provided
         if (!customItemsInserted) {
-            List<Map<String, Object>> itemsToCopy;
-            if (orderItemId != null) {
-                itemsToCopy = jdbc.queryForList("SELECT * FROM order_items WHERE id = ? AND order_id = ?", orderItemId, originalOrderId);
-            } else {
-                itemsToCopy = jdbc.queryForList("SELECT * FROM order_items WHERE order_id = ?", originalOrderId);
-            }
+            List<OrderItem> itemsToCopy = orderItemRepository.findByOrderIdOrderByIdAsc(originalOrderId);
 
-            for (Map<String, Object> item : itemsToCopy) {
-                Long variantId = ((Number) item.get("variant_id")).longValue();
-                Long inventoryId = ((Number) item.get("inventory_id")).longValue();
-                Long promotionId = item.get("promotion_id") instanceof Number pn ? pn.longValue() : null;
-                String productName = String.valueOf(item.get("product_name"));
-                String variantName = String.valueOf(item.get("variant_name"));
-                String sku = String.valueOf(item.get("sku"));
-                String imageUrl = item.get("image_url") != null ? String.valueOf(item.get("image_url")) : null;
-                String baseUnitName = String.valueOf(item.get("base_unit_name"));
-                int quantity = ((Number) item.get("quantity")).intValue();
+            for (OrderItem item : itemsToCopy) {
+                Long variantId = item.getVariantId();
+                Long inventoryId = item.getInventoryId();
+                Long promotionId = item.getPromotionId();
+                String productName = item.getProductName();
+                String variantName = item.getVariantName();
+                String sku = item.getSku();
+                String imageUrl = item.getImageUrl();
+                String baseUnitName = item.getBaseUnitName();
+                int quantity = item.getQuantity();
 
                 deductInventoryForResendItem(inventoryId, quantity, productName + " - " + variantName);
 
-                KeyHolder itemKeyHolder = new GeneratedKeyHolder();
-                jdbc.update(con -> {
-                    PreparedStatement ps = con.prepareStatement("""
-                        INSERT INTO order_items (
-                            order_id, shop_id, variant_id, inventory_id, promotion_id,
-                            product_name, variant_name, sku, image_url, base_unit_name,
-                            quantity, unit_price, sale_unit_price, line_total, allocation_status
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'CONSUMED')
-                    """, Statement.RETURN_GENERATED_KEYS);
-                    ps.setLong(1, replacementOrderId);
-                    ps.setLong(2, shopId);
-                    ps.setLong(3, variantId);
-                    ps.setLong(4, inventoryId);
-                    if (promotionId != null) ps.setLong(5, promotionId); else ps.setNull(5, java.sql.Types.BIGINT);
-                    ps.setString(6, productName);
-                    ps.setString(7, variantName);
-                    ps.setString(8, sku);
-                    ps.setString(9, imageUrl);
-                    ps.setString(10, baseUnitName);
-                    ps.setInt(11, quantity);
-                    return ps;
-                }, itemKeyHolder);
+                OrderItem newItem = new OrderItem();
+                newItem.setOrderId(replacementOrderId);
+                newItem.setShopId(shopId);
+                newItem.setVariantId(variantId);
+                newItem.setInventoryId(inventoryId);
+                newItem.setPromotionId(promotionId);
+                newItem.setProductName(productName);
+                newItem.setVariantName(variantName);
+                newItem.setSku(sku);
+                newItem.setImageUrl(imageUrl);
+                newItem.setBaseUnitName(baseUnitName);
+                newItem.setQuantity(quantity);
+                newItem.setUnitPrice(BigDecimal.ZERO);
+                newItem.setSaleUnitPrice(BigDecimal.ZERO);
+                newItem.setLineTotal(BigDecimal.ZERO);
+                newItem.setAllocationStatus("CONSUMED");
 
-                Long newItemId = extractGeneratedId(itemKeyHolder);
+                Long newItemId = orderItemRepository.save(newItem).getId();
                 recordResendInventoryTransaction(inventoryId, newItemId, quantity, newOrderCode);
             }
         }
 
         // Create 0đ paid payment record
         try {
-            jdbc.update("""
-                INSERT INTO payments (
-                    payment_code, order_id, request_key, method, amount, status, paid_at
-                ) VALUES (?, ?, ?, 'RESEND', 0, 'SUCCEEDED', ?)
-            """, newPaymentCode, replacementOrderId, UUID.randomUUID().toString(), Timestamp.valueOf(now));
+            Payment payment = new Payment();
+            payment.setPaymentCode(newPaymentCode);
+            payment.setOrderId(replacementOrderId);
+            payment.setRequestKey(UUID.randomUUID().toString());
+            payment.setMethod("RESEND");
+            payment.setAmount(BigDecimal.ZERO);
+            payment.setStatus("SUCCEEDED");
+            payment.setPaidAt(now);
+            paymentRepository.save(payment);
         } catch (Exception ex) {
             System.err.println("Warning: Cannot insert payment for replacement order: " + ex.getMessage());
         }
@@ -1471,62 +833,81 @@ public class ComplaintService {
 
     private void deductInventoryForResendItem(Long inventoryId, int quantity, String itemLabel) {
         if (inventoryId == null || inventoryId <= 0) return;
-        List<Map<String, Object>> invRows = jdbc.queryForList(
-                "SELECT id, quantity_on_hand, reserved_quantity FROM variant_inventory WHERE id = ? FOR UPDATE",
-                inventoryId);
-        if (invRows.isEmpty()) {
+        Optional<VariantInventory> invOpt = variantInventoryRepository.findLockedById(inventoryId);
+        if (invOpt.isEmpty()) {
             return;
         }
-        Map<String, Object> inv = invRows.get(0);
-        int onHand = ((Number) inv.get("quantity_on_hand")).intValue();
-        int reserved = ((Number) inv.get("reserved_quantity")).intValue();
+        VariantInventory inv = invOpt.get();
+        int onHand = inv.getQuantityOnHand() != null ? inv.getQuantityOnHand() : 0;
+        int reserved = inv.getReservedQuantity() != null ? inv.getReservedQuantity() : 0;
         int available = onHand - reserved;
         if (quantity > available) {
             throw new IllegalArgumentException("Tồn kho khả dụng không đủ để giao bù cho sản phẩm '" + itemLabel
                     + "' (Cần " + quantity + ", hiện còn " + Math.max(0, available) + ").");
         }
-        int updated = jdbc.update(
-                "UPDATE variant_inventory SET quantity_on_hand = quantity_on_hand - ? WHERE id = ? AND quantity_on_hand - reserved_quantity >= ?",
-                quantity, inventoryId, quantity);
-        if (updated != 1) {
-            throw new IllegalArgumentException("Không thể trừ tồn kho giao bù cho sản phẩm '" + itemLabel + "'. Vui lòng kiểm tra lại tồn kho.");
-        }
+        inv.setQuantityOnHand(onHand - quantity);
+        variantInventoryRepository.save(inv);
     }
 
     private void recordResendInventoryTransaction(Long inventoryId, Long orderItemId, int quantity, String orderCode) {
         if (inventoryId == null || inventoryId <= 0 || orderItemId == null) return;
         try {
-            List<Map<String, Object>> invRows = jdbc.queryForList(
-                    "SELECT quantity_on_hand, reserved_quantity FROM variant_inventory WHERE id = ?", inventoryId);
-            if (invRows.isEmpty()) return;
-            int onHandAfter = ((Number) invRows.get(0).get("quantity_on_hand")).intValue();
-            int reservedAfter = ((Number) invRows.get(0).get("reserved_quantity")).intValue();
-            jdbc.update("""
-                INSERT INTO inventory_transactions(
-                    inventory_id, order_item_id, type, on_hand_delta, reserved_delta,
-                    on_hand_after, reserved_after, event_key, reason, created_by
-                ) VALUES (?, ?, 'SALE', ?, 0, ?, ?, ?, ?, NULL)
-            """, inventoryId, orderItemId, -quantity, onHandAfter, reservedAfter,
-                    "sale-resend-" + orderItemId, "Xuất kho giao bù theo đơn " + orderCode);
+            Optional<VariantInventory> invOpt = variantInventoryRepository.findById(inventoryId);
+            if (invOpt.isEmpty()) return;
+            VariantInventory inv = invOpt.get();
+            int onHandAfter = inv.getQuantityOnHand() != null ? inv.getQuantityOnHand() : 0;
+            int reservedAfter = inv.getReservedQuantity() != null ? inv.getReservedQuantity() : 0;
+
+            InventoryTransaction tx = new InventoryTransaction();
+            tx.setInventoryId(inventoryId);
+            tx.setOrderItemId(orderItemId);
+            tx.setType("SALE");
+            tx.setOnHandDelta(-quantity);
+            tx.setReservedDelta(0);
+            tx.setOnHandAfter(onHandAfter);
+            tx.setReservedAfter(reservedAfter);
+            tx.setEventKey("sale-resend-" + orderItemId);
+            tx.setReason("Xuất kho giao bù theo đơn " + orderCode);
+            tx.setCreatedBy(null);
+            inventoryTransactionRepository.save(tx);
         } catch (Exception ignored) {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> getAvailableShopVariants(Long shopId) {
         if (shopId == null) return List.of();
-        return jdbc.queryForList("""
-            SELECT v.id as variant_id, v.sku, v.name as variant_name, v.price, v.image_url,
-                   p.id as product_id, p.name as product_name,
-                   u.name as base_unit_name,
-                   COALESCE(vi.id, 0) as inventory_id,
-                   COALESCE(vi.quantity_on_hand - vi.reserved_quantity, 0) as available_quantity
-            FROM product_variants v
-            JOIN products p ON p.id = v.product_id
-            JOIN units u ON u.id = v.base_unit_id
-            LEFT JOIN variant_inventory vi ON vi.variant_id = v.id
-            WHERE v.shop_id = ? AND v.status = 'ACTIVE'
-            ORDER BY p.name ASC, v.name ASC
-        """, shopId);
+        List<ProductVariant> variants = productVariantRepository.findActiveByShopIdWithProductAndUnit(shopId);
+        if (variants.isEmpty()) return List.of();
+
+        List<Long> variantIds = variants.stream().map(ProductVariant::getId).toList();
+        Map<Long, VariantInventory> invMap = new HashMap<>();
+        for (VariantInventory vi : variantInventoryRepository.findByVariantIdIn(variantIds)) {
+            invMap.put(vi.getVariantId(), vi);
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(variants.size());
+        for (ProductVariant pv : variants) {
+            VariantInventory vi = invMap.get(pv.getId());
+            long invId = vi != null && vi.getId() != null ? vi.getId() : 0L;
+            int avail = vi != null
+                    ? (vi.getQuantityOnHand() != null ? vi.getQuantityOnHand() : 0) - (vi.getReservedQuantity() != null ? vi.getReservedQuantity() : 0)
+                    : 0;
+
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("variant_id", pv.getId());
+            m.put("sku", pv.getSku());
+            m.put("variant_name", pv.getName());
+            m.put("price", pv.getPrice());
+            m.put("image_url", pv.getImageUrl());
+            m.put("product_id", pv.getProduct().getId());
+            m.put("product_name", pv.getProduct().getName());
+            m.put("base_unit_name", pv.getBaseUnit().getName());
+            m.put("inventory_id", invId);
+            m.put("available_quantity", avail);
+            result.add(m);
+        }
+        return result;
     }
 
     @Transactional
@@ -1537,34 +918,22 @@ public class ComplaintService {
             List<Integer> customQuantities,
             String shopResponse) {
 
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT c.*, o.order_code, s.name AS shop_name
-            FROM complaints c
-            JOIN shops s ON s.id = c.shop_id
-            JOIN orders o ON o.id = c.order_id
-            WHERE c.id = ? AND s.owner_id = ?
-            FOR UPDATE
-        """, complaintId, ownerId);
-        if (rows.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xử lý khiếu nại này.");
-        }
-        Map<String, Object> cp = rows.get(0);
-        Long shopId = ((Number) cp.get("shop_id")).longValue();
-        String currentStatus = String.valueOf(cp.get("status"));
+        Complaint cp = complaintRepository.findLockedByIdAndShopOwnerId(complaintId, ownerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xử lý khiếu nại này."));
+
+        Long shopId = cp.getShopId();
+        String currentStatus = cp.getStatus();
         if (!"PENDING_SHOP".equalsIgnoreCase(currentStatus) && !"PENDING".equalsIgnoreCase(currentStatus)) {
             throw new IllegalArgumentException("Khiếu nại không ở trạng thái chờ Shop phản hồi.");
         }
-        if (cp.get("replacement_order_id") != null) {
+        if (cp.getReplacementOrderId() != null) {
             throw new IllegalArgumentException("Khiếu nại này đã có đơn giao bù được tạo trước đó.");
         }
 
-        Long originalOrderId = ((Number) cp.get("order_id")).longValue();
-        Long customerId = cp.get("user_id") instanceof Number n ? n.longValue() : (cp.get("customer_id") instanceof Number n2 ? n2.longValue() : null);
-        if (customerId == null) {
-            throw new IllegalArgumentException("Không xác định được tài khoản khách hàng để tạo đơn.");
-        }
-        String complaintCode = String.valueOf(cp.get("complaint_code"));
-        String orderCode = String.valueOf(cp.get("order_code"));
+        Long originalOrderId = cp.getOrderId();
+        Long customerId = cp.getUserId();
+        String complaintCode = cp.getComplaintCode();
+        String orderCode = orderRepository.findById(originalOrderId).map(Order::getOrderCode).orElse("#" + originalOrderId);
         String cleanNote = (shopResponse == null || shopResponse.isBlank())
                 ? "Cửa hàng đã tạo đơn giao bù sản phẩm mới gửi đến quý khách."
                 : shopResponse.trim();
@@ -1573,30 +942,25 @@ public class ComplaintService {
         }
         LocalDateTime now = LocalDateTime.now();
 
-        Long replacementOrderId = createReplacementOrder(complaintId, originalOrderId, null, shopId, customerId, cleanNote, customVariantIds, customQuantities);
+        Long replacementOrderId = createReplacementOrder(complaintId, originalOrderId, shopId, customerId, cleanNote, customVariantIds, customQuantities);
 
-        int updated = jdbc.update("""
-            UPDATE complaints
-            SET status = 'RESOLVED',
-                shop_decision = 'RESEND_ITEMS',
-                resolution_type = 'RESEND_ITEMS',
-                resolution_note = ?,
-                replacement_order_id = ?,
-                shop_response = ?,
-                shop_responded_at = ?,
-                resolved_by = ?,
-                resolved_at = ?,
-                is_shop_fault = 1,
-                fault_party = 'SHOP',
-                updated_at = ?
-            WHERE id = ? AND status IN ('PENDING_SHOP', 'PENDING')
-        """, cleanNote, replacementOrderId, cleanNote, Timestamp.valueOf(now), ownerId, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
+        cp.setStatus(STATUS_RESOLVED);
+        cp.setShopDecision("RESEND_ITEMS");
+        cp.setResolutionType("RESEND_ITEMS");
+        cp.setResolutionNote(cleanNote);
+        cp.setReplacementOrderId(replacementOrderId);
+        cp.setShopResponse(cleanNote);
+        cp.setShopRespondedAt(now);
+        cp.setResolvedBy(ownerId);
+        cp.setResolvedAt(now);
+        cp.setIsShopFault(1);
+        cp.setFaultParty("SHOP");
+        cp.setUpdatedAt(now);
+        complaintRepository.saveAndFlush(cp);
 
-        if (updated == 0) {
-            throw new IllegalArgumentException("Khiếu nại đã được cập nhật bởi thao tác khác, vui lòng tải lại trang.");
-        }
-
-        String replacementOrderCode = jdbc.queryForObject("SELECT order_code FROM orders WHERE id = ?", String.class, replacementOrderId);
+        String replacementOrderCode = orderRepository.findById(replacementOrderId)
+                .map(Order::getOrderCode)
+                .orElse("#" + replacementOrderId);
 
         createNotificationSafe(customerId,
                 "COMPLAINT_RESEND_ITEMS_" + complaintId,
@@ -1622,32 +986,20 @@ public class ComplaintService {
             LocalDateTime endsAt,
             String shopResponse) {
 
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT c.*, o.order_code, s.name AS shop_name
-            FROM complaints c
-            JOIN shops s ON s.id = c.shop_id
-            JOIN orders o ON o.id = c.order_id
-            WHERE c.id = ? AND s.owner_id = ?
-            FOR UPDATE
-        """, complaintId, ownerId);
-        if (rows.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xử lý khiếu nại này.");
-        }
-        Map<String, Object> cp = rows.get(0);
-        Long shopId = ((Number) cp.get("shop_id")).longValue();
-        String currentStatus = String.valueOf(cp.get("status"));
+        Complaint cp = complaintRepository.findLockedByIdAndShopOwnerId(complaintId, ownerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xử lý khiếu nại này."));
+
+        Long shopId = cp.getShopId();
+        String currentStatus = cp.getStatus();
         if (!"PENDING_SHOP".equalsIgnoreCase(currentStatus) && !"PENDING".equalsIgnoreCase(currentStatus)) {
             throw new IllegalArgumentException("Khiếu nại không ở trạng thái chờ Shop phản hồi.");
         }
-        if (cp.get("voucher_id") != null) {
+        if (cp.getVoucherId() != null) {
             throw new IllegalArgumentException("Khiếu nại này đã được tặng voucher đền bù trước đó.");
         }
 
-        Long customerId = cp.get("user_id") instanceof Number n ? n.longValue() : (cp.get("customer_id") instanceof Number n2 ? n2.longValue() : null);
-        if (customerId == null) {
-            throw new IllegalArgumentException("Không xác định được tài khoản khách hàng để tạo đơn.");
-        }
-        String complaintCode = String.valueOf(cp.get("complaint_code"));
+        Long customerId = cp.getUserId();
+        String complaintCode = cp.getComplaintCode();
         String cleanNote = (shopResponse == null || shopResponse.isBlank())
                 ? "Cửa hàng gửi tặng voucher đền bù vào ví của quý khách."
                 : shopResponse.trim();
@@ -1680,8 +1032,7 @@ public class ComplaintService {
             if (code.length() > 40) {
                 throw new IllegalArgumentException("Mã voucher không được vượt quá 40 ký tự.");
             }
-            long existingCount = queryCount("SELECT COUNT(*) FROM vouchers WHERE shop_id = ? AND code = ?", shopId, code);
-            if (existingCount > 0) {
+            if (voucherRepository.existsByShopIdAndCode(shopId, code)) {
                 throw new IllegalArgumentException("Mã voucher '" + code + "' đã tồn tại trong cửa hàng. Vui lòng chọn mã khác.");
             }
         }
@@ -1692,66 +1043,46 @@ public class ComplaintService {
         LocalDateTime start = startsAt != null ? startsAt : now;
         LocalDateTime end = endsAt != null && endsAt.isAfter(start) ? endsAt : start.plusDays(30);
 
-        final String finalCode = code;
-        final String finalName = name;
-        KeyHolder vKeyHolder = new GeneratedKeyHolder();
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT INTO vouchers (
-                    shop_id, code, name, discount_type, discount_value, max_discount_amount, min_order_value,
-                    max_usages, used_count, is_public, voucher_type, status, starts_at, ends_at, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, FALSE, 'DISCOUNT', 'ACTIVE', ?, ?, ?, ?)
-            """, Statement.RETURN_GENERATED_KEYS);
-            ps.setLong(1, shopId);
-            ps.setString(2, finalCode);
-            ps.setString(3, finalName);
-            ps.setString(4, discType);
-            ps.setBigDecimal(5, discVal);
-            if (maxDiscountAmount != null && "PERCENTAGE".equals(discType)) {
-                ps.setBigDecimal(6, maxDiscountAmount);
-            } else {
-                ps.setNull(6, java.sql.Types.DECIMAL);
-            }
-            ps.setBigDecimal(7, minVal);
-            ps.setTimestamp(8, Timestamp.valueOf(start));
-            ps.setTimestamp(9, Timestamp.valueOf(end));
-            ps.setTimestamp(10, Timestamp.valueOf(now));
-            ps.setTimestamp(11, Timestamp.valueOf(now));
-            return ps;
-        }, vKeyHolder);
+        Voucher voucher = new Voucher();
+        voucher.setShopId(shopId);
+        voucher.setCode(code);
+        voucher.setName(name);
+        voucher.setDiscountType(discType);
+        voucher.setDiscountValue(discVal);
+        voucher.setMaxDiscountAmount((maxDiscountAmount != null && "PERCENTAGE".equals(discType)) ? maxDiscountAmount : null);
+        voucher.setMinOrderValue(minVal);
+        voucher.setMaxUsages(1);
+        voucher.setUsedCount(0);
+        voucher.setIsPublic(false);
+        voucher.setVoucherType("DISCOUNT");
+        voucher.setStatus("ACTIVE");
+        voucher.setStartsAt(start);
+        voucher.setEndsAt(end);
 
-        Long voucherId = extractVoucherKey(vKeyHolder, shopId, code);
+        Long voucherId = voucherRepository.save(voucher).getId();
 
         try {
-            jdbc.update("""
-                INSERT INTO customer_saved_vouchers (user_id, voucher_id, saved_at)
-                VALUES (?, ?, ?)
-            """, customerId, voucherId, Timestamp.valueOf(now));
+            if (!customerSavedVoucherRepository.existsByUserIdAndVoucherId(customerId, voucherId)) {
+                customerSavedVoucherRepository.save(new CustomerSavedVoucher(customerId, voucherId, now));
+            }
         } catch (Exception ex) {
             System.err.println("Warning: Cannot save voucher to customer wallet: " + ex.getMessage());
         }
 
-        int updated = jdbc.update("""
-            UPDATE complaints
-            SET status = 'RESOLVED',
-                shop_decision = 'ISSUE_VOUCHER',
-                resolution_type = 'ISSUE_VOUCHER',
-                resolution_note = ?,
-                voucher_id = ?,
-                voucher_code = ?,
-                shop_response = ?,
-                shop_responded_at = ?,
-                resolved_by = ?,
-                resolved_at = ?,
-                is_shop_fault = 1,
-                fault_party = 'SHOP',
-                updated_at = ?
-            WHERE id = ? AND status IN ('PENDING_SHOP', 'PENDING')
-        """, cleanNote, voucherId, code, cleanNote, Timestamp.valueOf(now), ownerId, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
-
-        if (updated == 0) {
-            throw new IllegalArgumentException("Khiếu nại đã được cập nhật bởi thao tác khác, vui lòng tải lại trang.");
-        }
+        cp.setStatus(STATUS_RESOLVED);
+        cp.setShopDecision("ISSUE_VOUCHER");
+        cp.setResolutionType("ISSUE_VOUCHER");
+        cp.setResolutionNote(cleanNote);
+        cp.setVoucherId(voucherId);
+        cp.setVoucherCode(code);
+        cp.setShopResponse(cleanNote);
+        cp.setShopRespondedAt(now);
+        cp.setResolvedBy(ownerId);
+        cp.setResolvedAt(now);
+        cp.setIsShopFault(1);
+        cp.setFaultParty("SHOP");
+        cp.setUpdatedAt(now);
+        complaintRepository.saveAndFlush(cp);
 
         createNotificationSafe(customerId,
                 "COMPLAINT_ISSUE_VOUCHER_" + complaintId,
@@ -1765,8 +1096,7 @@ public class ComplaintService {
 
     private String ensureUniqueVoucherCode(Long shopId, String candidate) {
         String clean = candidate.length() > 35 ? candidate.substring(0, 35) : candidate;
-        long count = queryCount("SELECT COUNT(*) FROM vouchers WHERE shop_id = ? AND code = ?", shopId, clean);
-        if (count == 0) {
+        if (!voucherRepository.existsByShopIdAndCode(shopId, clean)) {
             return clean;
         }
         return clean + "-" + (100 + new Random().nextInt(900));
@@ -1779,172 +1109,61 @@ public class ComplaintService {
     @Transactional
     public int autoEscalateOverdueShopComplaints() {
         LocalDateTime now = LocalDateTime.now();
-        List<Long> overdueIds = safeQueryList("""
-            SELECT id FROM complaints
-            WHERE status IN ('PENDING_SHOP', 'PENDING') AND sla_due_at <= ?
-            ORDER BY id
-        """, Timestamp.valueOf(now)).stream()
-                .map(r -> ((Number) r.get("id")).longValue())
-                .toList();
+        List<Long> overdueIds = complaintRepository.findOverduePendingShopIds(now);
 
         int escalatedCount = 0;
         for (Long complaintId : overdueIds) {
-            List<Map<String, Object>> locked = jdbc.queryForList("""
-                SELECT c.id, c.complaint_code, c.user_id, c.order_id, o.order_code, s.owner_id AS shop_owner_id
-                FROM complaints c
-                JOIN orders o ON o.id = c.order_id
-                JOIN shops s ON s.id = c.shop_id
-                WHERE c.id = ? AND c.status IN ('PENDING_SHOP', 'PENDING') AND c.sla_due_at <= ?
-                FOR UPDATE
-            """, complaintId, Timestamp.valueOf(now));
-            if (locked.isEmpty()) {
+            Optional<Complaint> lockedOpt = complaintRepository.findLockedById(complaintId);
+            if (lockedOpt.isEmpty()) {
                 continue;
             }
-            Map<String, Object> row = locked.get(0);
-            int updated = jdbc.update("""
-                UPDATE complaints
-                SET status = 'ESCALATED',
-                    escalated_at = ?,
-                    updated_at = ?
-                WHERE id = ? AND status IN ('PENDING_SHOP', 'PENDING')
-            """, Timestamp.valueOf(now), Timestamp.valueOf(now), complaintId);
-
-            if (updated == 1) {
-                escalatedCount++;
-                Long customerId = ((Number) row.get("user_id")).longValue();
-                Long orderId = ((Number) row.get("order_id")).longValue();
-                Long shopOwnerId = row.get("shop_owner_id") instanceof Number n ? n.longValue() : null;
-                String complaintCode = String.valueOf(row.get("complaint_code"));
-                String orderCode = String.valueOf(row.get("order_code"));
-
-                createNotificationSafe(customerId,
-                        "COMPLAINT_SLA_ESCALATED_CUST_" + complaintId,
-                        "COMPLAINT",
-                        "Khiếu nại " + complaintCode + " đã chuyển lên CSKH phân xử",
-                        "Do Cửa hàng không phản hồi trong thời hạn SLA 6 giờ, hệ thống đã tự động chuyển khiếu nại đơn " + orderCode + " lên Bộ phận CSKH phân xử.",
-                        "COMPLAINT", complaintId);
-
-                if (shopOwnerId != null) {
-                    createNotificationSafe(shopOwnerId,
-                            "COMPLAINT_SLA_ESCALATED_SHOP_" + complaintId,
-                            "COMPLAINT",
-                            "⚠️ Quá hạn 6h phản hồi khiếu nại " + complaintCode,
-                            "Khiếu nại trên đơn hàng " + orderCode + " đã quá hạn SLA 6 giờ và được chuyển thẳng lên CSKH phân xử.",
-                            "ORDER", orderId);
-                }
-
-                notifyRoleUsers("CS_STAFF",
-                        "COMPLAINT_SLA_ESCALATED_CS_" + complaintId,
-                        "COMPLAINT",
-                        "⏰ [Quá hạn SLA 6h] Khiếu nại " + complaintCode + " chuyển CSKH phân xử",
-                        "Shop không phản hồi khiếu nại đơn " + orderCode + " trong 6 giờ. Vui lòng tiếp nhận phân xử.",
-                        "COMPLAINT", complaintId);
+            Complaint c = lockedOpt.get();
+            if (entityManager != null && entityManager.contains(c)) {
+                entityManager.refresh(c);
             }
-        }
-        return escalatedCount;
-    }
+            if (!"PENDING_SHOP".equals(c.getStatus()) && !"PENDING".equals(c.getStatus())) {
+                continue;
+            }
+            if (c.getSlaDueAt() == null || c.getSlaDueAt().isAfter(now)) {
+                continue;
+            }
 
+            c.setStatus(STATUS_ESCALATED);
+            c.setEscalatedAt(now);
+            c.setUpdatedAt(now);
+            complaintRepository.saveAndFlush(c);
 
-    /**
-     * Tạo phiếu hỗ trợ/khiếu nại thủ công hoặc tự động 1-click từ đơn hàng gặp sự cố.
-     * Tuân thủ quy trình V22: Khởi tạo ở trạng thái PENDING_OPERATIONS để Ban Vận hành thẩm định.
-     */
-    @Transactional
-    public Long createTicketByCs(
-            Long csUserId,
-            String orderCodeInput,
-            String reasonType,
-            String title,
-            String description,
-            String sourceType) {
+            escalatedCount++;
+            Long customerId = c.getUserId();
+            Long orderId = c.getOrderId();
+            Long shopOwnerId = shopRepository.findById(c.getShopId()).map(Shop::getOwnerId).orElse(null);
+            String complaintCode = c.getComplaintCode();
+            String orderCode = orderRepository.findById(orderId).map(Order::getOrderCode).orElse("#" + orderId);
 
-        if (orderCodeInput == null || orderCodeInput.isBlank()) {
-            throw new IllegalArgumentException("Vui lòng nhập Mã đơn hàng (ví dụ: FF-...).");
-        }
-        String cleanCode = orderCodeInput.trim();
-        List<Map<String, Object>> orders = jdbc.queryForList("""
-            SELECT o.id, o.order_code, o.shop_id, o.total_amount, c.user_id,
-                   s.owner_id AS shop_owner_id
-            FROM orders o
-            JOIN checkouts c ON c.id = o.checkout_id
-            JOIN shops s ON s.id = o.shop_id
-            WHERE o.order_code = ?
-            FOR UPDATE
-        """, cleanCode);
-
-        if (orders.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng có mã: " + cleanCode);
-        }
-        Map<String, Object> order = orders.get(0);
-        Long orderId = ((Number) order.get("id")).longValue();
-        Long customerId = order.get("user_id") instanceof Number n ? n.longValue() : csUserId;
-        Long shopId = ((Number) order.get("shop_id")).longValue();
-
-        Long existingNonCancelled = jdbc.queryForObject("""
-            SELECT COUNT(*) FROM complaints
-            WHERE order_id = ? AND status <> 'CANCELLED'
-        """, Long.class, orderId);
-        if (existingNonCancelled != null && existingNonCancelled > 0) {
-            throw new IllegalArgumentException("Đơn hàng " + cleanCode + " đã có phiếu khiếu nại.");
-        }
-
-        String cleanReason = (reasonType == null || !REASON_LABELS.containsKey(reasonType.trim()))
-                ? "DELIVERY_OR_SERVICE" : reasonType.trim();
-        String cleanTitle = (title == null || title.isBlank())
-                ? REASON_LABELS.get(cleanReason) : title.trim();
-        String cleanDesc = (description == null || description.trim().length() < 5)
-                ? "Phiếu hỗ trợ được khởi tạo cho đơn hàng " + cleanCode + "."
-                : description.trim();
-        String cleanSource = "AUTO_SYSTEM".equals(sourceType) ? "AUTO_SYSTEM" : "CS_MANUAL";
-
-        BigDecimal totalAmount = toBigDecimal(order.get("total_amount"));
-        String priority = determineAutoPriority(cleanReason, totalAmount);
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime slaDueAt = now.plusHours(SHOP_SLA_HOURS);
-        String complaintCode = generateComplaintCode(now);
-
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT INTO complaints (
-                    complaint_code, order_id, user_id, shop_id,
-                    reason_type, title, description,
-                    priority, status, source_type, desired_resolution, requested_refund_amount, final_refund_amount,
-                    assigned_to, sla_due_at, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_OPERATIONS', ?, 'RESEND_ITEMS', 0, 0, ?, ?, ?, ?)
-            """, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, complaintCode);
-            ps.setLong(2, orderId);
-            ps.setLong(3, customerId);
-            ps.setLong(4, shopId);
-            ps.setString(5, cleanReason);
-            ps.setString(6, cleanTitle);
-            ps.setString(7, cleanDesc);
-            ps.setString(8, priority);
-            ps.setString(9, cleanSource);
-            if (csUserId != null) ps.setLong(10, csUserId); else ps.setNull(10, java.sql.Types.BIGINT);
-            ps.setTimestamp(11, Timestamp.valueOf(slaDueAt));
-            ps.setTimestamp(12, Timestamp.valueOf(now));
-            ps.setTimestamp(13, Timestamp.valueOf(now));
-            return ps;
-        }, keyHolder);
-
-        Long complaintId = extractKey(keyHolder, complaintCode);
-        if (customerId != null) {
             createNotificationSafe(customerId,
-                    "COMPLAINT_CS_CREATED_" + complaintId,
+                    "COMPLAINT_SLA_ESCALATED_CUST_" + complaintId,
                     "COMPLAINT",
-                    "Đã mở phiếu hỗ trợ " + complaintCode + " cho đơn " + cleanCode,
-                    "Hệ thống đã ghi nhận sự cố trên đơn hàng " + cleanCode + " và chuyển tới Ban Vận hành thẩm định.",
+                    "Khiếu nại " + complaintCode + " đã chuyển lên Ban Vận hành phân xử",
+                    "Do Cửa hàng không phản hồi trong thời hạn SLA 6 giờ, hệ thống đã tự động chuyển khiếu nại đơn " + orderCode + " lên Bộ phận Ban Vận hành phân xử.",
+                    "COMPLAINT", complaintId);
+
+            if (shopOwnerId != null) {
+                createNotificationSafe(shopOwnerId,
+                        "COMPLAINT_SLA_ESCALATED_SHOP_" + complaintId,
+                        "COMPLAINT",
+                        "⚠️ Quá hạn 6h phản hồi khiếu nại " + complaintCode,
+                        "Khiếu nại trên đơn hàng " + orderCode + " đã quá hạn SLA 6 giờ và được chuyển thẳng lên Ban Vận hành phân xử.",
+                        "ORDER", orderId);
+            }
+
+            notifyRoleUsers("OPERATIONS_MANAGER",
+                    "COMPLAINT_SLA_ESCALATED_OPS_" + complaintId,
+                    "COMPLAINT",
+                    "⏰ [Quá hạn SLA 6h] Khiếu nại " + complaintCode + " chuyển Ban Vận hành phân xử",
+                    "Shop không phản hồi khiếu nại đơn " + orderCode + " trong 6 giờ. Vui lòng tiếp nhận phân xử.",
                     "COMPLAINT", complaintId);
         }
-        notifyRoleUsers("OPERATIONS_MANAGER",
-                "COMPLAINT_CS_CREATED_OPS_" + complaintId,
-                "COMPLAINT",
-                "Phiếu khiếu nại mới: " + complaintCode,
-                "Phiếu hỗ trợ vừa được khởi tạo cho đơn " + cleanCode + ". Vui lòng thẩm định.",
-                "COMPLAINT", complaintId);
-        return complaintId;
+        return escalatedCount;
     }
 
     /**
@@ -1952,21 +1171,10 @@ public class ComplaintService {
      */
     @Transactional
     public void requestShopResponse(Long complaintId, Long csUserId, String requestNote) {
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            SELECT c.id, c.complaint_code, c.order_id, c.status, c.sla_due_at,
-                   c.shop_remind_count, o.order_code, s.name AS shop_name, s.owner_id AS shop_owner_id
-            FROM complaints c
-            JOIN orders o ON o.id = c.order_id
-            JOIN shops s ON s.id = c.shop_id
-            WHERE c.id = ?
-            FOR UPDATE
-        """, complaintId);
+        Complaint c = complaintRepository.findLockedById(complaintId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu khiếu nại #" + complaintId));
 
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy phiếu khiếu nại #" + complaintId);
-        }
-        Map<String, Object> c = rows.get(0);
-        String status = String.valueOf(c.get("status"));
+        String status = c.getStatus();
         if (STATUS_RESOLVED.equals(status) || STATUS_REJECTED.equals(status) || STATUS_CANCELLED.equals(status)) {
             throw new IllegalArgumentException("Phiếu khiếu nại này đã đóng, không thể gửi yêu cầu giải trình.");
         }
@@ -1979,23 +1187,22 @@ public class ComplaintService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        long nextRemindCount = toLong(c.get("shop_remind_count")) + 1;
+        int nextRemindCount = (c.getShopRemindCount() != null ? c.getShopRemindCount() : 0) + 1;
 
-        jdbc.update("""
-            UPDATE complaints
-            SET assigned_to = COALESCE(assigned_to, ?),
-                shop_remind_count = ?,
-                last_reminded_at = ?,
-                cs_shop_request_note = ?,
-                updated_at = ?
-            WHERE id = ?
-        """, csUserId, nextRemindCount, Timestamp.valueOf(now), cleanNote, Timestamp.valueOf(now), complaintId);
+        if (c.getAssignedTo() == null) {
+            c.setAssignedTo(csUserId);
+        }
+        c.setShopRemindCount(nextRemindCount);
+        c.setLastRemindedAt(now);
+        c.setCsShopRequestNote(cleanNote);
+        c.setUpdatedAt(now);
+        complaintRepository.saveAndFlush(c);
 
-        Long shopOwnerId = c.get("shop_owner_id") instanceof Number n ? n.longValue() : null;
-        Long orderId = ((Number) c.get("order_id")).longValue();
-        String complaintCode = String.valueOf(c.get("complaint_code"));
-        String orderCode = String.valueOf(c.get("order_code"));
-        LocalDateTime slaDueAt = toLocalDateTime(c.get("sla_due_at"));
+        Long shopOwnerId = shopRepository.findById(c.getShopId()).map(Shop::getOwnerId).orElse(null);
+        Long orderId = c.getOrderId();
+        String complaintCode = c.getComplaintCode();
+        String orderCode = orderRepository.findById(orderId).map(Order::getOrderCode).orElse("#" + orderId);
+        LocalDateTime slaDueAt = c.getSlaDueAt();
         String slaText = slaDueAt != null ? slaDueAt.format(DT_FMT) : "sớm nhất";
 
         if (shopOwnerId != null) {
@@ -2015,64 +1222,24 @@ public class ComplaintService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listCustomerComplaints(Long customerId, String statusFilter) {
-        StringBuilder sql = new StringBuilder("""
-            SELECT c.*, o.order_code, o.total_amount, o.status AS order_status,
-                   s.name AS shop_name,
-                   oi.product_name AS item_product_name, oi.variant_name AS item_variant_name
-            FROM complaints c
-            JOIN orders o ON o.id = c.order_id
-            JOIN shops s ON s.id = c.shop_id
-            LEFT JOIN order_items oi ON oi.id = c.order_item_id
-            WHERE c.user_id = ?
-        """);
-        List<Object> params = new ArrayList<>();
-        params.add(customerId);
-
-        if (statusFilter != null && !statusFilter.isBlank() && !"all".equalsIgnoreCase(statusFilter)) {
-            String normalized = statusFilter.trim().toUpperCase(Locale.ROOT);
-            if ("PROCESSING".equals(normalized) || "PENDING".equals(normalized)) {
-                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS') ");
-            } else if ("PENDING_OPERATIONS".equals(normalized) || "PENDING_OPS".equals(normalized)) {
-                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS') ");
-            } else if ("PENDING_SHOP".equals(normalized)) {
-                sql.append(" AND c.status = 'PENDING_SHOP' ");
-            } else if ("ESCALATED".equals(normalized)) {
-                sql.append(" AND c.status IN ('ESCALATED', 'IN_PROGRESS') ");
-            } else if ("PROCESSED".equals(normalized)) {
-                sql.append(" AND c.status IN ('RESOLVED', 'REJECTED') ");
-            } else {
-                sql.append(" AND c.status = ? ");
-                params.add(normalized);
-            }
+        if (customerId == null) return List.of();
+        List<Complaint> complaints;
+        if (statusFilter == null || statusFilter.isBlank() || "all".equalsIgnoreCase(statusFilter)) {
+            complaints = complaintRepository.findByUserIdOrderByCreatedAtDescIdDesc(customerId);
+        } else {
+            List<String> statuses = resolveStatusFilterList(statusFilter);
+            complaints = complaintRepository.findByUserIdAndStatusInOrderByCreatedAtDescIdDesc(customerId, statuses);
         }
-        sql.append(" ORDER BY c.created_at DESC, c.id DESC");
-
-        List<Map<String, Object>> list = safeQueryList(sql.toString(), params.toArray());
-        return enrichComplaintRows(list);
+        return mapComplaintsToViewRows(complaints);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Long> countCustomerComplaintsByStatus(Long customerId) {
         Map<String, Long> counts = new LinkedHashMap<>();
-        counts.put("all", queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ?", customerId));
-        long pendingOps = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status IN ('PENDING_OPERATIONS', 'PENDING_OPS')", customerId);
-        long pendingShop = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status IN ('PENDING_SHOP', 'PENDING')", customerId);
-        long escalated = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status IN ('ESCALATED', 'IN_PROGRESS')", customerId);
-        long resolved = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status = 'RESOLVED'", customerId);
-        long rejected = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status = 'REJECTED'", customerId);
-        long cancelled = queryCount("SELECT COUNT(*) FROM complaints WHERE user_id = ? AND status = 'CANCELLED'", customerId);
-
-        counts.put("processing", pendingOps + pendingShop + escalated);
-        counts.put("pending_operations", pendingOps);
-        counts.put("processed", resolved + rejected);
-        counts.put("cancelled", cancelled);
-
-        counts.put("pending_shop", pendingShop);
-        counts.put("escalated", escalated);
-        counts.put("resolved", resolved);
-        counts.put("rejected", rejected);
-        counts.put("pending", pendingShop);
-        counts.put("in_progress", escalated);
+        counts.put("all", complaintRepository.countByUserId(customerId));
+        counts.put("processing", complaintRepository.countByUserIdAndStatusIn(customerId, ACTIVE_COMPLAINT_STATUSES));
+        counts.put("processed", complaintRepository.countByUserIdAndStatusIn(customerId, List.of(STATUS_RESOLVED, STATUS_REJECTED)));
+        counts.put("cancelled", complaintRepository.countByUserIdAndStatus(customerId, STATUS_CANCELLED));
         return counts;
     }
 
@@ -2084,72 +1251,16 @@ public class ComplaintService {
             Boolean overdueOnly,
             String keyword) {
 
-        StringBuilder sql = new StringBuilder("""
-            SELECT c.*, o.order_code, o.total_amount, o.status AS order_status, o.delivery_status,
-                   u.full_name AS customer_name, u.phone AS customer_phone, u.email AS customer_email,
-                   s.name AS shop_name, s.phone AS shop_phone,
-                   oi.product_name AS item_product_name, oi.variant_name AS item_variant_name,
-                   staff.full_name AS resolved_by_name
-            FROM complaints c
-            JOIN orders o ON o.id = c.order_id
-            JOIN users u ON u.id = c.user_id
-            JOIN shops s ON s.id = c.shop_id
-            LEFT JOIN order_items oi ON oi.id = c.order_item_id
-            LEFT JOIN users staff ON staff.id = COALESCE(c.resolved_by, c.assigned_to)
-            WHERE 1=1
-        """);
-        List<Object> params = new ArrayList<>();
+        boolean filterByStatus = statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter);
+        List<String> statuses = filterByStatus ? resolveStatusFilterList(statusFilter) : List.of(STATUS_PENDING_OPERATIONS);
+        String priority = (priorityFilter != null && !priorityFilter.isBlank() && !"ALL".equalsIgnoreCase(priorityFilter))
+                ? priorityFilter.trim().toUpperCase(Locale.ROOT) : "";
+        String reason = (reasonFilter != null && !reasonFilter.isBlank() && !"ALL".equalsIgnoreCase(reasonFilter))
+                ? reasonFilter.trim().toUpperCase(Locale.ROOT) : "";
+        String kw = keyword != null ? keyword.trim() : "";
 
-        if (statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter)) {
-            String norm = statusFilter.trim().toUpperCase(Locale.ROOT);
-            if ("ACTIVE".equals(norm)) {
-                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'ESCALATED', 'PENDING', 'IN_PROGRESS') ");
-            } else if ("PENDING_OPERATIONS".equals(norm) || "PENDING_OPS".equals(norm)) {
-                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS') ");
-            } else if ("PENDING_SHOP".equals(norm)) {
-                sql.append(" AND c.status = 'PENDING_SHOP' ");
-            } else if ("PENDING".equals(norm)) {
-                sql.append(" AND c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS', 'PENDING_SHOP', 'PENDING') ");
-            } else if ("IN_PROGRESS".equals(norm) || STATUS_ESCALATED.equals(norm)) {
-                sql.append(" AND c.status IN ('ESCALATED', 'IN_PROGRESS') ");
-            } else {
-                sql.append(" AND c.status = ? ");
-                params.add(norm);
-            }
-        }
-        if (priorityFilter != null && !priorityFilter.isBlank() && !"ALL".equalsIgnoreCase(priorityFilter)) {
-            sql.append(" AND c.priority = ? ");
-            params.add(priorityFilter.trim().toUpperCase(Locale.ROOT));
-        }
-        if (reasonFilter != null && !reasonFilter.isBlank() && !"ALL".equalsIgnoreCase(reasonFilter)) {
-            sql.append(" AND c.reason_type = ? ");
-            params.add(reasonFilter.trim().toUpperCase(Locale.ROOT));
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            String kw = "%" + keyword.trim() + "%";
-            sql.append("""
-                AND (c.complaint_code LIKE ?
-                     OR o.order_code LIKE ?
-                     OR u.full_name LIKE ?
-                     OR u.phone LIKE ?
-                     OR s.name LIKE ?
-                     OR c.title LIKE ?)
-            """);
-            Collections.addAll(params, kw, kw, kw, kw, kw, kw);
-        }
-
-        sql.append("""
-            ORDER BY
-                CASE WHEN c.status IN ('PENDING_OPERATIONS', 'PENDING_OPS') THEN 0
-                     WHEN c.status = 'PENDING_SHOP' THEN 1
-                     WHEN c.status IN ('ESCALATED', 'IN_PROGRESS') THEN 2
-                     ELSE 3 END ASC,
-                CASE WHEN c.priority = 'HIGH' THEN 0 ELSE 1 END ASC,
-                c.sla_due_at ASC,
-                c.created_at DESC
-        """);
-
-        List<Map<String, Object>> rows = enrichComplaintRows(safeQueryList(sql.toString(), params.toArray()));
+        List<Complaint> complaints = complaintRepository.searchCsComplaints(filterByStatus, statuses, priority, reason, kw);
+        List<Map<String, Object>> rows = mapComplaintsToViewRows(complaints);
         if (Boolean.TRUE.equals(overdueOnly)) {
             rows.removeIf(r -> !"OVERDUE".equals(r.get("sla_state")) && !"BREACHED_SLA".equals(r.get("sla_state")));
         }
@@ -2159,17 +1270,21 @@ public class ComplaintService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listComplaintsByOrder(Long orderId) {
         if (orderId == null) return List.of();
-        List<Map<String, Object>> rows = safeQueryList("""
-            SELECT c.*, o.order_code, s.name AS shop_name,
-                   oi.product_name AS item_product_name, oi.variant_name AS item_variant_name
-            FROM complaints c
-            JOIN orders o ON o.id = c.order_id
-            JOIN shops s ON s.id = c.shop_id
-            LEFT JOIN order_items oi ON oi.id = c.order_item_id
-            WHERE c.order_id = ?
-            ORDER BY c.created_at DESC, c.id DESC
-        """, orderId);
-        return enrichComplaintRows(rows);
+        List<Complaint> complaints = complaintRepository.findByOrderIdOrderByCreatedAtDescIdDesc(orderId);
+        return mapComplaintsToViewRows(complaints);
+    }
+
+    private List<String> resolveStatusFilterList(String rawFilter) {
+        String norm = rawFilter.trim().toUpperCase(Locale.ROOT);
+        return switch (norm) {
+            case "ACTIVE", "PROCESSING" -> ACTIVE_COMPLAINT_STATUSES;
+            case "PENDING_OPERATIONS", "PENDING_OPS" -> List.of(STATUS_PENDING_OPERATIONS, "PENDING_OPS");
+            case "PENDING_SHOP" -> List.of(STATUS_PENDING_SHOP);
+            case "PENDING" -> List.of(STATUS_PENDING_OPERATIONS, "PENDING_OPS", STATUS_PENDING_SHOP, "PENDING");
+            case "IN_PROGRESS", "ESCALATED" -> List.of(STATUS_ESCALATED, "IN_PROGRESS");
+            case "PROCESSED" -> List.of(STATUS_RESOLVED, STATUS_REJECTED);
+            default -> List.of(norm);
+        };
     }
 
     // =========================================================================
@@ -2188,168 +1303,55 @@ public class ComplaintService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getComplaintDetail(Long complaintId) {
-        List<Map<String, Object>> rows = safeQueryList("""
-            SELECT c.*,
-                   o.order_code, o.total_amount, o.subtotal, o.voucher_discount, o.points_discount,
-                   o.shipping_fee, o.status AS order_status,
-                   o.payment_method, o.payment_status, o.delivery_status, o.delivery_code,
-                   o.recipient_name, o.recipient_phone, o.delivery_address, o.delivery_ward_name, o.delivery_province_name,
-                   o.created_at AS order_created_at, o.delivered_at AS order_delivered_at, o.completed_at AS order_completed_at,
-                   u.full_name AS customer_name, u.email AS customer_email, u.phone AS customer_phone, u.points_balance AS customer_points,
-                   s.name AS shop_name, s.phone AS shop_phone, s.operating_status AS shop_operating_status, s.owner_id AS shop_owner_id,
-                   owner.full_name AS shop_owner_name,
-                   oi.product_name AS item_product_name, oi.variant_name AS item_variant_name, oi.sku AS item_sku,
-                   oi.quantity AS item_quantity, oi.line_total AS item_line_total,
-                   staff.full_name AS resolved_by_name, assignee.full_name AS assigned_to_name
-            FROM complaints c
-            JOIN orders o ON o.id = c.order_id
-            JOIN users u ON u.id = c.user_id
-            JOIN shops s ON s.id = c.shop_id
-            JOIN users owner ON owner.id = s.owner_id
-            LEFT JOIN order_items oi ON oi.id = c.order_item_id
-            LEFT JOIN users staff ON staff.id = c.resolved_by
-            LEFT JOIN users assignee ON assignee.id = c.assigned_to
-            WHERE c.id = ?
-        """, complaintId);
+        Complaint c = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu khiếu nại #" + complaintId));
 
-        if (rows.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu khiếu nại #" + complaintId);
-        }
-
-        Map<String, Object> raw = rows.get(0);
+        Map<String, Object> raw = buildComplaintDetailMap(c);
         Map<String, Object> detail = enrichSingleComplaintRow(raw);
-        Long orderId = ((Number) detail.get("order_id")).longValue();
-        Long shopId = ((Number) detail.get("shop_id")).longValue();
-        Long customerId = detail.get("user_id") instanceof Number n ? n.longValue() : null;
-        Long orderItemId = detail.get("order_item_id") instanceof Number n ? n.longValue() : null;
+        Long orderId = c.getOrderId();
+        Long shopId = c.getShopId();
+        Long customerId = c.getUserId();
+        Long orderItemId = c.getOrderItemId();
 
         long actualPaidAmount = calculateActualPaidAmount(orderId, orderItemId);
         detail.put("actual_paid_amount", actualPaidAmount);
 
         if (customerId != null) {
-            List<Map<String, Object>> bankRows = safeQueryList(
-                    "SELECT bank_name, bank_account_no, bank_account_holder FROM customer_bank_accounts WHERE user_id = ?",
-                    customerId);
-            if (!bankRows.isEmpty()) {
-                Map<String, Object> b = bankRows.get(0);
-                detail.put("customer_bank_name", b.get("bank_name"));
-                detail.put("customer_bank_account_no", b.get("bank_account_no"));
-                detail.put("customer_bank_account_holder", b.get("bank_account_holder"));
-            }
+            customerBankAccountRepository.findById(customerId).ifPresent(b -> {
+                detail.put("customer_bank_name", b.getBankName());
+                detail.put("customer_bank_account_no", b.getBankAccountNo());
+                detail.put("customer_bank_account_holder", b.getBankAccountHolder());
+            });
         }
 
-        List<Map<String, Object>> refundRows = safeQueryList(
-                "SELECT id, refund_amount, status, created_at, exported_at FROM customer_refunds WHERE order_id = ? AND refund_type = 'RETURN_REFUND'",
-                orderId);
-        if (!refundRows.isEmpty()) {
-            detail.put("customer_refund_record", refundRows.get(0));
+        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByIdAsc(orderId);
+        List<Map<String, Object>> orderItems = new ArrayList<>(items.size());
+        for (OrderItem oi : items) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", oi.getId());
+            m.put("variant_id", oi.getVariantId());
+            m.put("product_name", oi.getProductName());
+            m.put("variant_name", oi.getVariantName());
+            m.put("sku", oi.getSku());
+            m.put("image_url", oi.getImageUrl());
+            m.put("base_unit_name", oi.getBaseUnitName());
+            m.put("quantity", oi.getQuantity());
+            m.put("unit_price", oi.getUnitPrice());
+            m.put("sale_unit_price", oi.getSaleUnitPrice());
+            m.put("line_total", oi.getLineTotal());
+            orderItems.add(m);
         }
-
-        List<Map<String, Object>> orderItems = safeQueryList("""
-            SELECT id, variant_id, product_name, variant_name, sku, image_url,
-                   base_unit_name, quantity, unit_price, sale_unit_price, line_total
-            FROM order_items
-            WHERE order_id = ?
-            ORDER BY id
-        """, orderId);
         detail.put("orderItems", orderItems);
 
-        long shopTotalComplaints = queryCount("SELECT COUNT(*) FROM complaints WHERE shop_id = ?", shopId);
-        long shopFaultComplaints = queryCount("SELECT COUNT(*) FROM complaints WHERE shop_id = ? AND is_shop_fault = 1", shopId);
-        long shopLowReviews = queryCount("""
-            SELECT COUNT(*) FROM reviews r
-            JOIN product_variants pv ON pv.id = r.variant_id
-            WHERE pv.shop_id = ? AND r.rating <= 2
-        """, shopId);
+        long shopTotalComplaints = complaintRepository.countByShopId(shopId);
+        long shopFaultComplaints = complaintRepository.countByShopIdAndIsShopFault(shopId, 1);
+        long shopLowReviews = reviewRepository.countByShopIdAndMaxRating(shopId, 2);
 
         detail.put("shopTotalComplaints", shopTotalComplaints);
         detail.put("shopFaultComplaints", shopFaultComplaints);
         detail.put("shopLowReviews", shopLowReviews);
-        detail.put("shopHighRisk", shopFaultComplaints >= 2 || shopLowReviews >= 2);
 
         return detail;
-    }
-
-    /**
-     * Ghi nhận người phụ trách theo dõi phiếu, KHÔNG chuyển trạng thái sang ESCALATED.
-     */
-    @Transactional
-    public void startProcessing(Long complaintId, Long csUserId) {
-        List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT id, complaint_code, user_id, order_id, status FROM complaints WHERE id = ? FOR UPDATE", complaintId);
-        if (rows.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy yêu cầu khiếu nại.");
-        }
-        Map<String, Object> c = rows.get(0);
-        String status = String.valueOf(c.get("status"));
-        if (STATUS_RESOLVED.equals(status) || STATUS_REJECTED.equals(status) || STATUS_CANCELLED.equals(status)) {
-            throw new IllegalArgumentException("Phiếu khiếu nại này đã kết thúc.");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        jdbc.update("""
-            UPDATE complaints
-            SET assigned_to = COALESCE(assigned_to, ?),
-                updated_at = ?
-            WHERE id = ?
-        """, csUserId, Timestamp.valueOf(now), complaintId);
-    }
-
-    @Transactional
-    public void resolveComplaint(
-            Long complaintId,
-            Long csUserId,
-            String decisionStatus,
-            String resolutionType,
-            String resolutionNote,
-            Long finalRefundAmountInput,
-            boolean isShopFault,
-            boolean escalateToOps) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bộ phận CSKH chỉ có quyền xem báo cáo thống kê, không có thẩm quyền quyết định hay phân xử khiếu nại. Quyền quyết định thuộc về Ban Vận hành và Chủ Shop.");
-    }
-
-    @Transactional
-    public void resolveComplaint(
-            Long complaintId,
-            Long csUserId,
-            String decisionStatus,
-            String resolutionType,
-            String resolutionNote,
-            Long finalRefundAmountInput,
-            boolean isShopFault,
-            String faultParty,
-            boolean giftFreeShipping,
-            boolean escalateToOps) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bộ phận CSKH chỉ có quyền xem báo cáo thống kê, không có thẩm quyền quyết định hay phân xử khiếu nại. Quyền quyết định thuộc về Ban Vận hành và Chủ Shop.");
-    }
-
-    public void deductShopReputation(Long shopId, Long complaintId, int pointsDeducted, String reason) {
-        if (shopId == null || pointsDeducted <= 0) return;
-        try {
-            jdbc.update("UPDATE shops SET reputation_score = GREATEST(0, COALESCE(reputation_score, 100) - ?) WHERE id = ?", pointsDeducted, shopId);
-            Integer currentScore = 100 - pointsDeducted;
-            try {
-                Integer s = jdbc.queryForObject("SELECT COALESCE(reputation_score, 100) FROM shops WHERE id = ?", Integer.class, shopId);
-                if (s != null) currentScore = s;
-            } catch (Exception ignored) {}
-
-            jdbc.update("""
-                INSERT INTO shop_reputation_logs(shop_id, complaint_id, points_change, current_reputation, reason)
-                VALUES (?, ?, ?, ?, ?)
-            """, shopId, complaintId, -pointsDeducted, currentScore, reason);
-
-            if (currentScore < 80) {
-                notifyRoleUsers("OPERATIONS_MANAGER",
-                        "SHOP_LOW_REPUTATION_" + shopId + "_" + System.currentTimeMillis(),
-                        "VIOLATION_ALERT",
-                        "⚠️ Điểm uy tín Shop giảm sâu: Còn " + currentScore + "/100 điểm",
-                        "Cửa hàng #" + shopId + " vừa bị trừ " + pointsDeducted + " điểm uy tín (Lý do: " + reason
-                                + "). Điểm hiện tại còn " + currentScore + "/100. Đề nghị Ban Vận hành theo dõi hoặc tạm hạn chế hiển thị.",
-                        "SHOP", shopId);
-            }
-        } catch (Exception ex) {
-            System.err.println("Warning: Không thể cập nhật shop reputation: " + ex.getMessage());
-        }
     }
 
     /**
@@ -2357,16 +1359,15 @@ public class ComplaintService {
      */
     @Transactional
     public void escalateShopToOperations(Long shopId, String reason) {
-        List<Map<String, Object>> shops = jdbc.queryForList("SELECT id, name FROM shops WHERE id = ?", shopId);
-        if (shops.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy cửa hàng #" + shopId);
-        }
-        String shopName = String.valueOf(shops.get(0).get("name"));
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cửa hàng #" + shopId));
+
+        String shopName = shop.getName();
         String cleanReason = (reason == null || reason.isBlank())
                 ? "Gian hàng có nhiều khiếu nại chất lượng nông sản và đánh giá tiêu cực từ người mua."
                 : reason.trim();
 
-        jdbc.update("UPDATE complaints SET escalated_to_ops = 1 WHERE shop_id = ? AND is_shop_fault = 1", shopId);
+        complaintRepository.markEscalatedToOpsByShopId(shopId);
 
         notifyRoleUsers("OPERATIONS_MANAGER",
                 "MANUAL_ESCALATE_SHOP_" + shopId + "_" + System.currentTimeMillis(),
@@ -2376,8 +1377,19 @@ public class ComplaintService {
                 "SHOP", shopId);
     }
 
+    public Map<String, Long> getComplaintStatusCounts() {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("countPendingOps", complaintRepository.countByStatusIn(List.of(STATUS_PENDING_OPERATIONS, "PENDING_OPS")));
+        counts.put("countPendingShop", complaintRepository.countByStatus(STATUS_PENDING_SHOP));
+        counts.put("countEscalated", complaintRepository.countByStatusIn(List.of(STATUS_ESCALATED, "IN_PROGRESS")));
+        counts.put("countResolved", complaintRepository.countByStatus(STATUS_RESOLVED));
+        counts.put("countRejected", complaintRepository.countByStatus(STATUS_REJECTED));
+        counts.put("countAll", complaintRepository.countByStatusNot(STATUS_CANCELLED));
+        return counts;
+    }
+
     // =========================================================================
-    // 6. NĂM TÍNH NĂNG BÁO CÁO & GIÁM SÁT (OPERATIONS & CS DASHBOARD)
+    // 6. BÁO CÁO & GIÁM SÁT (OPERATIONS & CS DASHBOARD - JDBCTEMPLATE)
     // =========================================================================
 
     @Transactional(readOnly = true)
@@ -2385,9 +1397,7 @@ public class ComplaintService {
         Map<String, Object> result = new HashMap<>();
         result.put("disputeReport", buildDisputeReport());
         result.put("csSlaReport", buildCsSlaReport());
-        result.put("moderationMetrics", buildContentModerationMetrics());
         result.put("violationAlerts", buildViolationAlerts());
-        result.put("autoSuggestIssues", buildAutoSuggestIssues());
         return result;
     }
 
@@ -2401,16 +1411,7 @@ public class ComplaintService {
         long resolvedDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'RESOLVED'");
         long rejectedDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'REJECTED'");
         long shopFaultDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE is_shop_fault = 1");
-        long escalatedDisputes = queryCount("SELECT COUNT(*) FROM complaints WHERE escalated_to_ops = 1");
         long distinctDisputedOrders = queryCount("SELECT COUNT(DISTINCT order_id) FROM complaints WHERE status <> 'CANCELLED'");
-
-        Long totalCompensatedPoints = 0L;
-        try {
-            totalCompensatedPoints = jdbc.queryForObject(
-                    "SELECT COALESCE(SUM(COALESCE(NULLIF(final_refund_amount, 0), compensated_points)), 0) FROM complaints WHERE status = 'RESOLVED'",
-                    Long.class);
-        } catch (Exception ignored) {
-        }
 
         double disputeRatePct = totalOrders > 0 ? Math.round((distinctDisputedOrders * 1000.0) / totalOrders) / 10.0 : 0.0;
         long closedDisputes = resolvedDisputes + rejectedDisputes;
@@ -2468,8 +1469,6 @@ public class ComplaintService {
         report.put("resolvedDisputes", resolvedDisputes);
         report.put("rejectedDisputes", rejectedDisputes);
         report.put("shopFaultDisputes", shopFaultDisputes);
-        report.put("escalatedDisputes", escalatedDisputes);
-        report.put("totalCompensatedPoints", totalCompensatedPoints != null ? totalCompensatedPoints : 0L);
         report.put("disputeRatePct", disputeRatePct);
         report.put("resolutionRatePct", resolutionRatePct);
         report.put("byReason", byReason);
@@ -2537,7 +1536,6 @@ public class ComplaintService {
                 }
             } else {
                 activeTickets++;
-                // SLA 6 giờ của Shop chỉ tính khi đã chuyển sang PENDING_SHOP
                 if (STATUS_PENDING_SHOP.equals(status) || STATUS_ESCALATED.equals(status) || "PENDING".equals(status)) {
                     if (now.isAfter(slaDueAt)) {
                         overdueActiveTickets++;
@@ -2581,6 +1579,10 @@ public class ComplaintService {
         sla.put("normalAvgHours", normalAvgHours);
 
         return sla;
+    }
+
+    public Map<String, Object> getContentModerationMetrics() {
+        return buildContentModerationMetrics();
     }
 
     private Map<String, Object> buildContentModerationMetrics() {
@@ -2700,35 +1702,192 @@ public class ComplaintService {
         return alerts;
     }
 
-    private List<Map<String, Object>> buildAutoSuggestIssues() {
-        return safeQueryList("""
-            SELECT o.id AS order_id, o.order_code, o.recipient_name, o.recipient_phone,
-                   o.status, o.delivery_status, o.cancellation_reason, o.delivery_failure_reason,
-                   s.name AS shop_name
-            FROM orders o
-            JOIN shops s ON s.id = o.shop_id
-            WHERE (o.status = 'CANCELLED' OR o.delivery_status = 'FAILED')
-              AND NOT EXISTS (SELECT 1 FROM complaints c WHERE c.order_id = o.id AND c.status <> 'CANCELLED')
-            ORDER BY o.created_at DESC
-            LIMIT 5
-        """);
-    }
-
     // =========================================================================
-    // HELPER METHODS
+    // HELPER METHODS (JPA ENTITY -> VIEW MAP & ENRICHMENT)
     // =========================================================================
 
-    private List<Map<String, Object>> enrichComplaintRows(List<Map<String, Object>> rows) {
-        List<Map<String, Object>> result = new ArrayList<>(rows.size());
-        for (Map<String, Object> r : rows) {
-            result.add(enrichSingleComplaintRow(r));
+    private List<Map<String, Object>> mapComplaintsToViewRows(List<Complaint> complaints) {
+        if (complaints == null || complaints.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Set<Long> orderIds = new HashSet<>();
+        Set<Long> shopIds = new HashSet<>();
+        Set<Long> userIds = new HashSet<>();
+        Set<Long> itemIds = new HashSet<>();
+
+        for (Complaint c : complaints) {
+            if (c.getOrderId() != null) orderIds.add(c.getOrderId());
+            if (c.getShopId() != null) shopIds.add(c.getShopId());
+            if (c.getUserId() != null) userIds.add(c.getUserId());
+            if (c.getResolvedBy() != null) userIds.add(c.getResolvedBy());
+            if (c.getAssignedTo() != null) userIds.add(c.getAssignedTo());
+            if (c.getOrderItemId() != null) itemIds.add(c.getOrderItemId());
+        }
+
+        Map<Long, Order> orderMap = new HashMap<>();
+        orderRepository.findAllById(orderIds).forEach(o -> orderMap.put(o.getId(), o));
+
+        Map<Long, Shop> shopMap = new HashMap<>();
+        shopRepository.findAllById(shopIds).forEach(s -> shopMap.put(s.getId(), s));
+
+        Map<Long, User> userMap = new HashMap<>();
+        userRepository.findAllById(userIds).forEach(u -> userMap.put(u.getId(), u));
+
+        Map<Long, OrderItem> itemMap = new HashMap<>();
+        if (!itemIds.isEmpty()) {
+            orderItemRepository.findAllById(itemIds).forEach(oi -> itemMap.put(oi.getId(), oi));
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(complaints.size());
+        for (Complaint c : complaints) {
+            Map<String, Object> raw = toBaseComplaintMap(c);
+            Order o = orderMap.get(c.getOrderId());
+            if (o != null) {
+                raw.put("order_code", o.getOrderCode());
+                raw.put("total_amount", o.getTotalAmount());
+                raw.put("order_status", o.getStatus());
+                raw.put("delivery_status", o.getDeliveryStatus());
+            }
+            User u = userMap.get(c.getUserId());
+            if (u != null) {
+                raw.put("customer_name", u.getFullName());
+                raw.put("customer_phone", u.getPhone());
+                raw.put("customer_email", u.getEmail());
+            }
+            Shop s = shopMap.get(c.getShopId());
+            if (s != null) {
+                raw.put("shop_name", s.getName());
+                raw.put("shop_phone", s.getPhone());
+            }
+            OrderItem oi = c.getOrderItemId() != null ? itemMap.get(c.getOrderItemId()) : null;
+            if (oi != null) {
+                raw.put("item_product_name", oi.getProductName());
+                raw.put("item_variant_name", oi.getVariantName());
+            }
+            Long staffId = c.getResolvedBy() != null ? c.getResolvedBy() : c.getAssignedTo();
+            User staff = staffId != null ? userMap.get(staffId) : null;
+            raw.put("resolved_by_name", staff != null ? staff.getFullName() : null);
+
+            result.add(enrichSingleComplaintRow(raw));
         }
         return result;
     }
 
+    private Map<String, Object> buildComplaintDetailMap(Complaint c) {
+        Map<String, Object> raw = toBaseComplaintMap(c);
+
+        orderRepository.findById(c.getOrderId()).ifPresent(o -> {
+            raw.put("order_code", o.getOrderCode());
+            raw.put("total_amount", o.getTotalAmount());
+            raw.put("subtotal", o.getSubtotal());
+            raw.put("voucher_discount", o.getVoucherDiscount());
+            raw.put("points_discount", o.getPointsDiscount());
+            raw.put("shipping_fee", o.getShippingFee());
+            raw.put("order_status", o.getStatus());
+            raw.put("payment_method", o.getPaymentMethod());
+            raw.put("payment_status", o.getPaymentStatus());
+            raw.put("delivery_status", o.getDeliveryStatus());
+            raw.put("delivery_code", o.getDeliveryCode());
+            raw.put("recipient_name", o.getRecipientName());
+            raw.put("recipient_phone", o.getRecipientPhone());
+            raw.put("delivery_address", o.getDeliveryAddress());
+            raw.put("delivery_ward_name", o.getDeliveryWardName());
+            raw.put("delivery_province_name", o.getDeliveryProvinceName());
+            raw.put("order_created_at", o.getCreatedAt());
+            raw.put("order_delivered_at", o.getDeliveredAt());
+            raw.put("order_completed_at", o.getCompletedAt());
+        });
+
+        userRepository.findById(c.getUserId()).ifPresent(u -> {
+            raw.put("customer_name", u.getFullName());
+            raw.put("customer_email", u.getEmail());
+            raw.put("customer_phone", u.getPhone());
+        });
+
+        shopRepository.findById(c.getShopId()).ifPresent(s -> {
+            raw.put("shop_name", s.getName());
+            raw.put("shop_phone", s.getPhone());
+            raw.put("shop_operating_status", s.getOperatingStatus());
+            raw.put("shop_owner_id", s.getOwnerId());
+            if (s.getOwnerId() != null) {
+                userRepository.findById(s.getOwnerId())
+                        .ifPresent(owner -> raw.put("shop_owner_name", owner.getFullName()));
+            }
+        });
+
+        if (c.getOrderItemId() != null) {
+            orderItemRepository.findById(c.getOrderItemId()).ifPresent(oi -> {
+                raw.put("item_product_name", oi.getProductName());
+                raw.put("item_variant_name", oi.getVariantName());
+                raw.put("item_sku", oi.getSku());
+                raw.put("item_quantity", oi.getQuantity());
+                raw.put("item_line_total", oi.getLineTotal());
+            });
+        }
+
+        if (c.getResolvedBy() != null) {
+            userRepository.findById(c.getResolvedBy())
+                    .ifPresent(staff -> raw.put("resolved_by_name", staff.getFullName()));
+        }
+        if (c.getAssignedTo() != null) {
+            userRepository.findById(c.getAssignedTo())
+                    .ifPresent(assignee -> raw.put("assigned_to_name", assignee.getFullName()));
+        }
+
+        return raw;
+    }
+
+    private Map<String, Object> toBaseComplaintMap(Complaint c) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", c.getId());
+        m.put("complaint_code", c.getComplaintCode());
+        m.put("order_id", c.getOrderId());
+        m.put("order_item_id", c.getOrderItemId());
+        m.put("user_id", c.getUserId());
+        m.put("shop_id", c.getShopId());
+        m.put("reason_type", c.getReasonType());
+        m.put("title", c.getTitle());
+        m.put("description", c.getDescription());
+        m.put("evidence_image_url", c.getEvidenceImageUrl());
+        m.put("priority", c.getPriority());
+        m.put("status", c.getStatus());
+        m.put("source_type", c.getSourceType());
+        m.put("desired_resolution", c.getDesiredResolution());
+        m.put("requested_refund_amount", c.getRequestedRefundAmount());
+        m.put("final_refund_amount", c.getFinalRefundAmount());
+        m.put("replacement_order_id", c.getReplacementOrderId());
+        m.put("voucher_id", c.getVoucherId());
+        m.put("voucher_code", c.getVoucherCode());
+        m.put("shop_decision", c.getShopDecision());
+        m.put("shop_response", c.getShopResponse());
+        m.put("shop_responded_at", c.getShopRespondedAt());
+        m.put("operations_decision", c.getOperationsDecision());
+        m.put("operations_note", c.getOperationsNote());
+        m.put("operations_reviewed_at", c.getOperationsReviewedAt());
+        m.put("escalated_at", c.getEscalatedAt());
+        m.put("shop_remind_count", c.getShopRemindCount());
+        m.put("last_reminded_at", c.getLastRemindedAt());
+        m.put("cs_shop_request_note", c.getCsShopRequestNote());
+        m.put("resolution_type", c.getResolutionType());
+        m.put("resolution_note", c.getResolutionNote());
+        m.put("is_shop_fault", c.getIsShopFault());
+        m.put("fault_party", c.getFaultParty());
+        m.put("refund_method", c.getRefundMethod());
+        m.put("refund_status", c.getRefundStatus());
+        m.put("refund_completed_at", c.getRefundCompletedAt());
+        m.put("escalated_to_ops", c.getEscalatedToOps());
+        m.put("sla_due_at", c.getSlaDueAt());
+        m.put("assigned_to", c.getAssignedTo());
+        m.put("resolved_by", c.getResolvedBy());
+        m.put("resolved_at", c.getResolvedAt());
+        m.put("created_at", c.getCreatedAt());
+        m.put("updated_at", c.getUpdatedAt());
+        return m;
+    }
+
     private Map<String, Object> enrichSingleComplaintRow(Map<String, Object> raw) {
         Map<String, Object> row = new LinkedHashMap<>(raw);
-        String reasonType = String.valueOf(row.getOrDefault("reason_type", "OTHER"));
+        String reasonType = String.valueOf(row.getOrDefault("reason_type", "QUALITY_ISSUE"));
         String rawStatus = String.valueOf(row.getOrDefault("status", STATUS_PENDING_OPERATIONS));
         String status = switch (rawStatus) {
             case "PENDING_OPS" -> STATUS_PENDING_OPERATIONS;
@@ -2740,7 +1899,6 @@ public class ComplaintService {
 
         String priority = String.valueOf(row.getOrDefault("priority", "NORMAL"));
         String resolutionType = row.get("resolution_type") != null ? String.valueOf(row.get("resolution_type")) : null;
-        String sourceType = String.valueOf(row.getOrDefault("source_type", "CUSTOMER"));
 
         row.put("reason_label", REASON_LABELS.getOrDefault(reasonType, reasonType));
         row.put("status_label", STATUS_LABELS.getOrDefault(status, status));
@@ -2748,28 +1906,20 @@ public class ComplaintService {
 
         // Trạng thái rút gọn cho Khách hàng (Customer Facing)
         String customerStatus;
-        String customerStatusBadgeClass;
         if (STATUS_PENDING_OPERATIONS.equals(status)) {
             customerStatus = "Chờ Vận hành duyệt";
-            customerStatusBadgeClass = "processing";
         } else if (STATUS_PENDING_SHOP.equals(status) || STATUS_ESCALATED.equals(status)) {
             customerStatus = "Chờ Shop xử lý";
-            customerStatusBadgeClass = "processing";
         } else if (STATUS_RESOLVED.equals(status)) {
             customerStatus = "Đã xử lý (Thành công)";
-            customerStatusBadgeClass = "resolved";
         } else if (STATUS_REJECTED.equals(status)) {
             customerStatus = "Đã xử lý (Bác bỏ)";
-            customerStatusBadgeClass = "rejected";
         } else if (STATUS_CANCELLED.equals(status)) {
             customerStatus = "Đã rút khiếu nại";
-            customerStatusBadgeClass = "cancelled";
         } else {
             customerStatus = STATUS_LABELS.getOrDefault(status, status);
-            customerStatusBadgeClass = "default";
         }
         row.put("customer_status_label", customerStatus);
-        row.put("customer_status_badge", customerStatusBadgeClass);
 
         String desiredRes = row.get("desired_resolution") != null ? String.valueOf(row.get("desired_resolution")) : null;
         row.put("desired_resolution", desiredRes);
@@ -2777,56 +1927,38 @@ public class ComplaintService {
 
         if (row.get("replacement_order_id") != null) {
             Long rOrderId = ((Number) row.get("replacement_order_id")).longValue();
-            List<Map<String, Object>> rOrders = safeQueryList("SELECT id, order_code, status, delivery_status, total_amount, created_at FROM orders WHERE id = ?", rOrderId);
-            if (!rOrders.isEmpty()) {
-                Map<String, Object> rOrder = rOrders.get(0);
-                row.put("replacement_order_code", rOrder.get("order_code"));
-                row.put("replacement_order_status", rOrder.get("status"));
-                row.put("replacement_delivery_status", rOrder.get("delivery_status"));
-            }
+            orderRepository.findById(rOrderId).ifPresent(rOrder -> {
+                row.put("replacement_order_code", rOrder.getOrderCode());
+                row.put("replacement_order_status", rOrder.getStatus());
+                row.put("replacement_delivery_status", rOrder.getDeliveryStatus());
+            });
         }
         row.put("fault_party", row.getOrDefault("fault_party", "SHOP"));
-        row.put("gifted_freeship_voucher", row.get("gifted_freeship_voucher"));
         row.put("resolution_label", resolutionType != null ? RESOLUTION_LABELS.getOrDefault(resolutionType, resolutionType) : "Chưa có kết luận");
-        row.put("source_label", switch (sourceType) {
-            case "CS_MANUAL" -> "Nhân sự tạo thủ công";
-            case "AUTO_SYSTEM" -> "Hệ thống tự động";
-            default -> "Khách hàng gửi";
-        });
 
         long requestedRefund = toLong(row.get("requested_refund_amount"));
         long finalRefund = toLong(row.get("final_refund_amount"));
-        if (finalRefund == 0 && STATUS_RESOLVED.equals(status)) {
-            finalRefund = toLong(row.get("compensated_points"));
-        }
         row.put("requested_refund_amount", requestedRefund);
         row.put("final_refund_amount", finalRefund);
+
         LocalDateTime opsReviewedAt = toLocalDateTime(row.get("operations_reviewed_at"));
         if (opsReviewedAt != null) {
             row.put("operations_reviewed_at_fmt", opsReviewedAt.format(DT_FMT));
         }
-        row.put("compensated_points", finalRefund);
 
         LocalDateTime createdAt = toLocalDateTime(row.get("created_at"));
         LocalDateTime slaDueAt = toLocalDateTime(row.get("sla_due_at"));
         LocalDateTime resolvedAt = toLocalDateTime(row.get("resolved_at"));
         LocalDateTime shopRespondedAt = toLocalDateTime(row.get("shop_responded_at"));
-        LocalDateTime escalatedAt = toLocalDateTime(row.get("escalated_at"));
-        LocalDateTime lastRemindedAt = toLocalDateTime(row.get("last_reminded_at"));
         LocalDateTime now = LocalDateTime.now();
 
         row.put("created_at_fmt", createdAt != null ? createdAt.format(DT_FMT) : "—");
         row.put("sla_due_at_fmt", STATUS_PENDING_OPERATIONS.equals(status) ? "Bắt đầu sau khi Vận hành duyệt" : (slaDueAt != null ? slaDueAt.format(DT_FMT) : "—"));
         row.put("resolved_at_fmt", resolvedAt != null ? resolvedAt.format(DT_FMT) : "—");
         row.put("shop_responded_at_fmt", shopRespondedAt != null ? shopRespondedAt.format(DT_FMT) : "—");
-        row.put("escalated_at_fmt", escalatedAt != null ? escalatedAt.format(DT_FMT) : "—");
-        row.put("last_reminded_at_fmt", lastRemindedAt != null ? lastRemindedAt.format(DT_FMT) : "—");
 
         long remindCount = toLong(row.get("shop_remind_count"));
         row.put("shop_remind_count", remindCount);
-        boolean hasShopResponded = row.get("shop_response") != null && !String.valueOf(row.get("shop_response")).isBlank();
-        row.put("has_shop_responded", hasShopResponded);
-        row.put("can_penalize_shop", true);
 
         String slaState = "ON_TIME";
         String slaBadgeText = "Trong hạn";
@@ -2869,7 +2001,7 @@ public class ComplaintService {
     }
 
     private String determineAutoPriority(String reasonType, BigDecimal orderTotal) {
-        if ("QUALITY_ISSUE".equals(reasonType) || "WEIGHT_OR_QUANTITY_SHORTAGE".equals(reasonType)) {
+        if ("QUALITY_ISSUE".equals(reasonType) || "QUANTITY_SHORTAGE".equals(reasonType)) {
             return "HIGH";
         }
         if (orderTotal != null && orderTotal.compareTo(new BigDecimal("500000")) >= 0) {
@@ -2882,45 +2014,6 @@ public class ComplaintService {
         String datePart = now.format(CODE_DATE_FMT);
         int rand = 1000 + new Random().nextInt(9000);
         return "KN-" + datePart + "-" + rand;
-    }
-
-    private Long extractGeneratedId(KeyHolder keyHolder) {
-        try {
-            Map<String, Object> keys = keyHolder.getKeys();
-            if (keys != null) {
-                Object idObj = keys.get("id");
-                if (idObj == null) idObj = keys.get("ID");
-                if (idObj instanceof Number n) {
-                    return n.longValue();
-                }
-            }
-            if (keyHolder.getKey() != null) {
-                return keyHolder.getKey().longValue();
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
-    }
-
-    private Long extractKey(KeyHolder keyHolder, String complaintCode) {
-        Long id = extractGeneratedId(keyHolder);
-        if (id != null) return id;
-        List<Long> ids = jdbc.queryForList("SELECT id FROM complaints WHERE complaint_code = ?", Long.class, complaintCode);
-        return ids.isEmpty() ? null : ids.get(0);
-    }
-
-    private Long extractKeyByTable(KeyHolder keyHolder, String table, String codeColumn, String codeValue) {
-        Long id = extractGeneratedId(keyHolder);
-        if (id != null) return id;
-        List<Long> ids = jdbc.queryForList("SELECT id FROM " + table + " WHERE " + codeColumn + " = ?", Long.class, codeValue);
-        return ids.isEmpty() ? null : ids.get(0);
-    }
-
-    private Long extractVoucherKey(KeyHolder keyHolder, Long shopId, String voucherCode) {
-        Long id = extractGeneratedId(keyHolder);
-        if (id != null) return id;
-        List<Long> ids = jdbc.queryForList("SELECT id FROM vouchers WHERE shop_id = ? AND code = ?", Long.class, shopId, voucherCode);
-        return ids.isEmpty() ? null : ids.get(0);
     }
 
     private String storeEvidenceImageIfPresent(MultipartFile file) {
@@ -2958,7 +2051,11 @@ public class ComplaintService {
         try (var input = ImageIO.createImageInputStream(file.getInputStream())) {
             if (input == null) return false;
             var readers = ImageIO.getImageReaders(input);
-            return readers.hasNext();
+            if (!readers.hasNext()) return false;
+            String format = readers.next().getFormatName();
+            return format != null && (format.equalsIgnoreCase("JPEG")
+                    || format.equalsIgnoreCase("JPG")
+                    || format.equalsIgnoreCase("PNG"));
         } catch (IOException ex) {
             return false;
         }
@@ -2967,24 +2064,20 @@ public class ComplaintService {
     private void createNotificationSafe(Long userId, String eventKey, String type, String title, String content, String targetType, Long targetId) {
         if (userId == null) return;
         try {
-            jdbc.update("""
-                INSERT INTO notifications (user_id, event_key, type, title, content, target_type, target_id, is_read, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
-            """, userId, eventKey, type, title, content, targetType, targetId, Timestamp.valueOf(LocalDateTime.now()));
+            User user = userRepository.getReferenceById(userId);
+            Notification n = new Notification(user, eventKey, type, title, content, targetType, targetId);
+            notificationRepository.save(n);
         } catch (Exception ignored) {
         }
     }
 
     private void notifyRoleUsers(String roleCode, String eventKeyPrefix, String type, String title, String content, String targetType, Long targetId) {
         try {
-            List<Long> userIds = jdbc.queryForList("""
-                SELECT u.id FROM users u
-                JOIN user_roles ur ON ur.user_id = u.id
-                JOIN roles r ON r.id = ur.role_id
-                WHERE r.code = ? AND u.status = 'ACTIVE'
-            """, Long.class, roleCode);
-            for (Long uid : userIds) {
-                createNotificationSafe(uid, eventKeyPrefix + "_U" + uid, type, title, content, targetType, targetId);
+            List<User> users = userRoleRepository.findUsersByRoleCode(roleCode);
+            for (User u : users) {
+                if ("ACTIVE".equalsIgnoreCase(u.getStatus())) {
+                    createNotificationSafe(u.getId(), eventKeyPrefix + "_U" + u.getId(), type, title, content, targetType, targetId);
+                }
             }
         } catch (Exception ignored) {
         }
@@ -2995,17 +2088,6 @@ public class ComplaintService {
         if (val instanceof Timestamp ts) return ts.toLocalDateTime();
         if (val instanceof LocalDateTime ldt) return ldt;
         return null;
-    }
-
-    private BigDecimal toBigDecimal(Object val) {
-        if (val == null) return BigDecimal.ZERO;
-        if (val instanceof BigDecimal bd) return bd;
-        if (val instanceof Number n) return BigDecimal.valueOf(n.longValue());
-        try {
-            return new BigDecimal(val.toString());
-        } catch (Exception e) {
-            return BigDecimal.ZERO;
-        }
     }
 
     private long toLong(Object val) {
@@ -3019,16 +2101,6 @@ public class ComplaintService {
         } catch (Exception e) {
             return 0L;
         }
-    }
-
-    public Map<String, Long> getComplaintStatusCounts() {
-        Map<String, Long> counts = new LinkedHashMap<>();
-        counts.put("countPendingOps", queryCount("SELECT COUNT(*) FROM complaints WHERE status IN ('PENDING_OPERATIONS', 'PENDING_OPS')"));
-        counts.put("countPendingShop", queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'PENDING_SHOP'"));
-        counts.put("countResolved", queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'RESOLVED'"));
-        counts.put("countRejected", queryCount("SELECT COUNT(*) FROM complaints WHERE status = 'REJECTED'"));
-        counts.put("countAll", queryCount("SELECT COUNT(*) FROM complaints WHERE status <> 'CANCELLED'"));
-        return counts;
     }
 
     private List<Map<String, Object>> safeQueryList(String sql, Object... args) {

@@ -33,14 +33,14 @@
         <a th:classappend="${active == 'orders'} ? 'active'" th:href="@{/customer/account/orders}">Đơn hàng của tôi</a>
         <a th:classappend="${active == 'complaints'} ? 'active'" th:href="@{/customer/account/complaints}">🎫 Khiếu nại &amp; Hỗ trợ</a>
         <a th:classappend="${active == 'favorites'} ? 'active'" th:href="@{/customer/account/favorites}">Sản phẩm yêu thích</a>
-        <div class="nav-expandable" th:classappend="${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'} ? ' expanded' : ''">
-            <a class="nav-expandable-toggle" th:classappend="${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'} ? ' active' : ''"
-               href="#wallet-submenu" aria-controls="wallet-submenu" th:attr="aria-expanded=${active == 'wallet-coins' or active == 'wallet-money' or active == 'wallet-vouchers'}" onclick="this.parentElement.classList.toggle('expanded'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('expanded')); return false;">
+        <a th:classappend="${active == 'bank-account'} ? 'active' : ''" th:href="@{/customer/account/bank-account}">🏦 Liên kết tài khoản ngân hàng</a>
+        <div class="nav-expandable" th:classappend="${active == 'wallet-coins' or active == 'wallet-vouchers'} ? ' expanded' : ''">
+            <a class="nav-expandable-toggle" th:classappend="${active == 'wallet-coins' or active == 'wallet-vouchers'} ? ' active' : ''"
+               href="#wallet-submenu" aria-controls="wallet-submenu" th:attr="aria-expanded=${active == 'wallet-coins' or active == 'wallet-vouchers'}" onclick="this.parentElement.classList.toggle('expanded'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('expanded')); return false;">
                 <span aria-hidden="true">▣</span> Ví của tôi <b class="nav-chevron" aria-hidden="true">⌄</b>
             </a>
             <div id="wallet-submenu" class="nav-submenu">
                 <a th:classappend="${active == 'wallet-coins'} ? ' active' : ''" th:href="@{/customer/account/wallet/coins}">Ví xu</a>
-                <a th:classappend="${active == 'wallet-money'} ? ' active' : ''" th:href="@{/customer/account/wallet/money}">Ví tiền</a>
                 <a th:classappend="${active == 'wallet-vouchers'} ? ' active' : ''" th:href="@{/customer/account/wallet/vouchers}">Ví voucher</a>
             </div>
         </div>
@@ -60,7 +60,7 @@
     <div class="breadcrumbs"><a th:href="@{/}">Trang chủ</a><span>/</span><a th:href="@{/customer/account}">Tài khoản</a><span>/</span><strong th:text="${title}"></strong></div>
     <div th:replace="~{customer/account-fragments :: topbarActions}"></div>
 </header>
-<div class="topbar-actions" th:fragment="topbarActions" th:unless="${session.role == 'SHOP_OWNER'}">
+<div class="topbar-actions" th:fragment="topbarActions">
     <a class="top-icon" th:href="@{/search}" aria-label="Tìm kiếm sản phẩm" title="Tìm kiếm">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
     </a>

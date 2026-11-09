@@ -12,7 +12,7 @@
         <div th:if="${message}" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600;" th:text="${message}"></div>
         <div th:if="${error}" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600;" th:text="${error}"></div>
 
-        <!-- Header: quay lại + mã đơn + trạng thái + nút Hoàn tất đơn / Từ chối nhận hàng / Khiếu nại -->
+        <!-- Header: quay lại + mã đơn + trạng thái + nút Hoàn tất đơn / Khiếu nại -->
         <div class="order-detail-top">
             <a class="back-link" th:href="@{/customer/account/orders}">← Đơn hàng của tôi</a>
             <div class="order-detail-title" style="justify-content: space-between;">
@@ -50,29 +50,6 @@
                             </button>
                         </form>
                     </div>
-
-                    <!-- Nút Từ chối nhận hàng (khi SHIPPING hoặc DELIVERED và chưa hoàn tất) -->
-                    <details th:if="${(order['status'] == 'SHIPPING' or order['status'] == 'DELIVERED') and !hasActiveComplaint}"
-                             style="position: relative; display: inline-block;">
-                        <summary style="list-style: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; font-size: 13px; font-weight: 700; cursor: pointer;">
-                            ✕ Từ chối nhận hàng
-                        </summary>
-                        <div style="position: absolute; right: 0; top: 42px; z-index: 30; width: 310px; background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.12);">
-                            <form th:action="@{/customer/account/orders/{id}/refuse(id=${order['id']})}" method="post"
-                                  onsubmit="return confirm('Bạn xác nhận từ chối nhận đơn hàng này do vấn đề giao hàng / hàng hóa khi kiểm tra?');">
-                                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #991b1b; margin-bottom: 6px;">
-                                    Lý do từ chối nhận hàng *:
-                                </label>
-                                <textarea name="reason" rows="2" required minlength="5" maxlength="500"
-                                          placeholder="VD: Giao sai hẹn, thùng hàng dập nát, sản phẩm hư hỏng khi đồng kiểm..."
-                                          style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; box-sizing: border-box; margin-bottom: 8px;"></textarea>
-                                <button type="submit"
-                                        style="width: 100%; background: #e11d48; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
-                                    Xác nhận từ chối nhận hàng
-                                </button>
-                            </form>
-                        </div>
-                    </details>
 
                     <!-- Nút Khiếu nại nhanh -->
                     <a th:if="${eligibility != null and eligibility['canCreateComplaint']}"
@@ -204,7 +181,7 @@
                             <div class="detail-item-qty" th:text="'x' + ${item['quantity'] + ' ' + (item['base_unit_name'] != null ? item['base_unit_name'] : '')}">x1</div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 7px;">
                                 <a class="review-btn" style="margin-top: 0;"
-                                   th:if="${order['status'] == 'COMPLETED' and item['reviewed_at'] == null}"
+                                   th:if="${(order['status'] == 'COMPLETED' or order['status'] == 'DELIVERED') and item['reviewed_at'] == null}"
                                    th:href="@{'/product/' + ${item['variant_id']} + '#reviews-section'}">Đánh giá sản phẩm</a>
                                 <span class="reviewed-label" th:if="${item['reviewed_at'] != null}">Đã đánh giá</span>
                                 <a th:if="${eligibility != null and eligibility['canCreateComplaint']}"
@@ -295,11 +272,8 @@
                     </div>
 
                     <div th:if="${cp['shop_response'] != null}" style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; border-radius: 4px;">
-                        <strong>🏪 Cửa hàng phản hồi (<span th:text="${cp['shop_decision'] == 'RESEND_ITEMS' ? 'Giao bù sản phẩm' : (cp['shop_decision'] == 'ISSUE_VOUCHER' ? 'Tặng voucher đền bù' : (cp['shop_decision'] == 'ACCEPT' ? 'Đồng ý' : 'Phản hồi'))}"></span>):</strong>
+                        <strong>🏪 Cửa hàng phản hồi (<span th:text="${cp['shop_decision'] == 'RESEND_ITEMS' ? 'Giao bù sản phẩm' : (cp['shop_decision'] == 'ISSUE_VOUCHER' ? 'Tặng voucher đền bù' : 'Phản hồi')}"></span>):</strong>
                         <span th:text="${cp['shop_response']}"></span>
-                        <div th:if="${cp['shop_evidence_image_url'] != null}" style="margin-top: 4px;">
-                            <a th:href="${cp['shop_evidence_image_url']}" target="_blank" style="font-size: 12px; color: #0284c7; font-weight: 600;">📷 Xem ảnh đối chứng của Shop →</a>
-                        </div>
                     </div>
 
                     <div th:if="${cp['resolution_note'] != null}" style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; border-radius: 4px;">
@@ -348,7 +322,7 @@
                         </div>
                         <div>
                             <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155;">Sản phẩm cần hỗ trợ</label>
-                            <select id="complaintOrderItemSelect" name="orderItemId" onchange="handleOrderItemChange()"
+                            <select id="complaintOrderItemSelect" name="orderItemId"
                                     style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: #fff;">
                                 <option value="">-- Toàn bộ đơn hàng --</option>
                                 <option th:each="item : ${order['items']}"
@@ -361,7 +335,7 @@
                     <!-- Phương án mong muốn giải quyết khiếu nại -->
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;">
                         <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #1e293b;">
-                            Phương án bạn mong muốn Shop giải quyết *:
+                            Nguyện vọng giải quyết của bạn (Desired Resolution) *:
                         </label>
                         <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #047857;">
@@ -372,14 +346,15 @@
                                 <input type="radio" name="desiredResolution" value="ISSUE_VOUCHER" style="accent-color: #d97706; transform: scale(1.15);">
                                 🎟️ Đền bù voucher (Tặng mã giảm giá mua sắm)
                             </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #1d4ed8;">
+                                <input type="radio" name="desiredResolution" value="RETURN_REFUND" style="accent-color: #2563eb; transform: scale(1.15);">
+                                💳 Hoàn tiền 100% về Tài khoản ngân hàng
+                            </label>
                         </div>
                         <div style="margin-top: 8px; font-size: 12px; color: #475569; line-height: 1.5; background: #eff6ff; border-left: 3px solid #3b82f6; padding: 6px 10px; border-radius: 4px;">
-                            💡 <strong>Chính sách bảo vệ người mua:</strong> Mọi khiếu nại đều được <strong>Ban Vận hành</strong> thẩm định trước khi chuyển Cửa hàng xử lý.
-                            Trường hợp đơn hàng hư hỏng toàn bộ không thể khắc phục hoặc Cửa hàng không xử lý đúng hạn 24h, Ban Vận hành sẽ trực tiếp <strong>Hoàn tiền 100%</strong> về tài khoản ngân hàng của bạn.
+                            💡 <strong>Lưu ý:</strong> Đây là nguyện vọng của bạn để Ban Vận hành và Cửa hàng tham khảo khi thẩm định và xử lý bồi hoàn.
                         </div>
                     </div>
-
-                    <input type="hidden" id="requestedRefundAmountInput" name="requestedRefundAmount" value="0"/>
 
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155;">Mô tả chi tiết tình trạng *</label>
@@ -391,12 +366,12 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 4px;">
                         <div>
                             <label style="font-size: 12.5px; font-weight: 600; color: #475569; margin-right: 8px;">
-                                📷 Ảnh chụp thực tế (JPG/PNG) <span id="photoRequiredBadge" style="color: #dc2626;">*</span>:
+                                📷 Ảnh chụp thực tế (JPG/PNG, tối đa 5MB) <span id="photoRequiredBadge" style="color: #dc2626;">*</span>:
                             </label>
                             <input type="file" id="evidenceImageInput" name="evidenceImage" accept="image/jpeg,image/png"
                                    style="font-size: 12.5px; color: #475569;">
                             <small id="photoHint" style="display: block; font-size: 11px; color: #dc2626; margin-top: 2px;">
-                                Bắt buộc có ít nhất 1 ảnh đối với nhóm lỗi hàng hóa (chất lượng, thiếu cân, sai quy cách).
+                                Bắt buộc đính kèm ảnh chụp thực tế (định dạng JPG/PNG, dung lượng tối đa 5MB).
                             </small>
                         </div>
                         <button th:if="${hasBankAccount}" type="submit"
@@ -429,9 +404,7 @@
         const modal = document.getElementById('bankAccountRequiredModal');
         if (modal) modal.style.display = 'flex';
     }
-    const orderPaidMax = /*[[${eligibility != null ? eligibility['orderActualPaidAmount'] : 0}]]*/ 0;
-    const itemPaidMap = /*[[${eligibility != null ? eligibility['itemActualPaidAmounts'] : null}]]*/ {};
-    const productDefectReasons = ['QUALITY_ISSUE', 'QUANTITY_SHORTAGE', 'WRONG_PRODUCT', 'WEIGHT_OR_QUANTITY_SHORTAGE', 'WRONG_SPECIFICATION'];
+    const productDefectReasons = ['QUALITY_ISSUE', 'QUANTITY_SHORTAGE', 'WRONG_PRODUCT', 'DELIVERY_ISSUE'];
 
     function handleReasonChange() {
         const sel = document.getElementById('complaintReasonSelect');
@@ -446,30 +419,10 @@
         if (hint) hint.style.display = isDefect ? 'block' : 'none';
     }
 
-    function handleOrderItemChange() {
-        const itemSel = document.getElementById('complaintOrderItemSelect');
-        const refundInput = document.getElementById('requestedRefundAmountInput');
-        const display = document.getElementById('maxRefundDisplay');
-        if (!itemSel || !refundInput) return;
-
-        let maxAmount = orderPaidMax;
-        if (itemSel.value && itemPaidMap && itemPaidMap[itemSel.value] !== undefined) {
-            maxAmount = itemPaidMap[itemSel.value];
-        }
-        refundInput.max = maxAmount;
-        if (parseInt(refundInput.value) > maxAmount || parseInt(refundInput.value) === 0) {
-            refundInput.value = maxAmount;
-        }
-        if (display) {
-            display.innerText = new Intl.NumberFormat('vi-VN').format(maxAmount) + ' ₫';
-        }
-    }
-
     function selectItemForComplaint(itemId) {
         const sel = document.getElementById('complaintOrderItemSelect');
         if (sel) {
             sel.value = itemId;
-            handleOrderItemChange();
         }
         setTimeout(() => {
             const el = document.getElementById('complaintDescInput');
@@ -479,7 +432,6 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         handleReasonChange();
-        handleOrderItemChange();
     });
     /*]]>*/
 </script>

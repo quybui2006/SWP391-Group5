@@ -1,0 +1,1 @@
+{"uuid":"f774fad9-2159-46ad-9c86-5c4af86ee9ac","name":"TC05 - Đăng ký hợp lệ -> Chuyển đến trang OTP -> Báo lỗi khi nhập OTP sai","children":["c5910c47-a6d9-44ff-8d86-2b24093a7615"],"befores":[],"afters":[],"start":1794204579024,"stop":1794204602829}

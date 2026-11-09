@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
@@ -20,6 +21,23 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
      * Một sản phẩm không nên có hai biến thể cùng tên, ví dụ hai biến thể "Túi 1kg".
      */
     boolean existsByProduct_IdAndNameIgnoreCaseAndIdNot(Long productId, String name, Long id);
+
+    @Query("""
+            SELECT pv FROM ProductVariant pv
+            JOIN FETCH pv.product p
+            JOIN FETCH pv.baseUnit u
+            WHERE pv.id = :variantId AND pv.shopId = :shopId
+            """)
+    Optional<ProductVariant> findByIdAndShopIdWithProductAndUnit(@Param("variantId") Long variantId, @Param("shopId") Long shopId);
+
+    @Query("""
+            SELECT pv FROM ProductVariant pv
+            JOIN FETCH pv.product p
+            JOIN FETCH pv.baseUnit u
+            WHERE pv.shopId = :shopId AND pv.status = 'ACTIVE'
+            ORDER BY p.name ASC, pv.name ASC
+            """)
+    List<ProductVariant> findActiveByShopIdWithProductAndUnit(@Param("shopId") Long shopId);
 
     /**
      * Tin đang bán thuộc shop: hậu kiểm PENDING và đã duyệt APPROVED đều đủ điều kiện.

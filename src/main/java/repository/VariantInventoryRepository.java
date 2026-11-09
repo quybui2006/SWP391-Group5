@@ -25,6 +25,10 @@ public interface VariantInventoryRepository extends JpaRepository<VariantInvento
     @Query("SELECT i FROM VariantInventory i WHERE i.variantId = :variantId")
     Optional<VariantInventory> findLockedByVariantId(@Param("variantId") Long variantId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM VariantInventory i WHERE i.id = :id")
+    Optional<VariantInventory> findLockedById(@Param("id") Long id);
+
     @Query("""
             SELECT new dto.shop.InventoryRowDto(
                 i.id, v.id, p.name, v.name, v.sku, p.batchCode,
