@@ -293,11 +293,7 @@ public class ShopProductService {
 
     public Map<String, Object> shopDashboard(Long ownerUserId) {
         Shop shop = shopRepository.findByOwnerId(ownerUserId).orElse(null);
-        if (shop == null) return Map.of(
-                "name", "Chưa đăng ký cửa hàng",
-                "approvalStatus", "NOT_REGISTERED",
-                "operatingStatus", "CLOSED",
-                "paymentApprovalStatus", "UNCONFIGURED");
+        if (shop == null) return Map.of("name", "Chưa đăng ký cửa hàng", "approvalStatus", "NOT_REGISTERED", "operatingStatus", "CLOSED");
         Map<String, Object> map = new HashMap<>();
         map.put("id", shop.getId());
         map.put("name", shop.getName());

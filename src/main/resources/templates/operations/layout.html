@@ -78,11 +78,6 @@
                 <span>🔔</span> Trung tâm thông báo
             </a>
 
-            <a th:classappend="${activePage == 'membership-config'} ? ' active' : ''"
-                th:href="@{/operations/membership-config}">
-                <span>⚙</span> Cấu hình Membership
-            </a>
-
             <!-- Logout button inside sidebar -->
             <form th:action="@{/logout}" method="post" style="margin: 8px 4px 0;">
                 <button type="submit"

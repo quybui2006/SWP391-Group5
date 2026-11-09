@@ -22,31 +22,17 @@ public class CustomerDashboardService {
 
         // 1. User & Loyalty info
         Map<String, Object> user = jdbc.queryForMap(
-                "SELECT u.id, u.full_name, u.email, u.phone, u.points_balance, " +
+                "SELECT u.id, u.full_name, u.email, u.phone, u.points_balance, u.total_qualifying_spending, " +
                 "u.membership_tier_id, m.code AS tier_code, m.name AS tier_name, m.rank_order " +
                 "FROM users u " +
                 "LEFT JOIN membership_tiers m ON m.id = u.membership_tier_id " +
                 "WHERE u.id = ?", userId);
-        BigDecimal currentSpend = jdbc.queryForObject("""
-                SELECT COALESCE(SUM(o.qualifying_amount), 0)
-                FROM orders o JOIN checkouts c ON c.id = o.checkout_id
-                WHERE c.user_id = ? AND o.status = 'COMPLETED'
-                  AND o.completed_at >= DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL 6 MONTH)
-                """, BigDecimal.class, userId);
-        if (currentSpend == null) currentSpend = BigDecimal.ZERO;
-        Map<String, Object> activeTier = jdbc.queryForMap("""
-                SELECT id, code, name, rank_order FROM membership_tiers
-                WHERE min_spending <= ? ORDER BY min_spending DESC LIMIT 1
-                """, currentSpend);
-        user.put("membership_tier_id", activeTier.get("id"));
-        user.put("tier_code", activeTier.get("code"));
-        user.put("tier_name", activeTier.get("name"));
-        user.put("rank_order", activeTier.get("rank_order"));
-        user.put("total_qualifying_spending", currentSpend);
         data.put("user", user);
 
         // Next Tier calculation
-        Integer currentRank = ((Number) activeTier.get("rank_order")).intValue();
+        Integer currentRank = user.get("rank_order") != null ? ((Number) user.get("rank_order")).intValue() : 1;
+        BigDecimal currentSpend = user.get("total_qualifying_spending") != null
+                ? new BigDecimal(user.get("total_qualifying_spending").toString()) : BigDecimal.ZERO;
 
         List<Map<String, Object>> nextTierList = jdbc.queryForList(
                 "SELECT * FROM membership_tiers WHERE rank_order > ? ORDER BY rank_order ASC LIMIT 1", currentRank);

@@ -101,28 +101,19 @@ public class ShopOrderService {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT o.* FROM orders o JOIN shops s ON s.id=o.shop_id WHERE o.id=? AND s.owner_id=? FOR UPDATE", id, ownerId);
         if (rows.isEmpty()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
         Map<String, Object> order = rows.get(0);
-        boolean codPending = "COD".equals(order.get("payment_method")) && "UNPAID".equals(order.get("payment_status"));
-        boolean onlinePaid = "VNPAY".equals(order.get("payment_method")) && "PAID".equals(order.get("payment_status"));
-        if (!"PENDING".equals(order.get("status")) || (!codPending && !onlinePaid))
-            throw new IllegalArgumentException("Chỉ xác nhận được đơn COD chưa thanh toán hoặc đơn online đã thanh toán đang chờ Shop.");
+        if (!"PENDING".equals(order.get("status")) || !"COD".equals(order.get("payment_method")) || !"UNPAID".equals(order.get("payment_status")))
+            throw new IllegalArgumentException("Chỉ xác nhận được đơn COD đang chờ xử lý.");
 
         List<Map<String, Object>> items = jdbc.queryForList("SELECT oi.id,oi.inventory_id,oi.quantity FROM order_items oi WHERE oi.order_id=? AND oi.allocation_status='UNRESERVED' ORDER BY oi.inventory_id FOR UPDATE", id);
-        if (codPending) {
-            if (items.isEmpty()) throw new IllegalArgumentException("Đơn COD không có mặt hàng đang chờ giữ tồn kho.");
-            for (Map<String, Object> item : items) {
-                long inventoryId = ((Number) item.get("inventory_id")).longValue();
-                long itemId = ((Number) item.get("id")).longValue();
-                int quantity = ((Number) item.get("quantity")).intValue();
-                inventoryBatches.reserveOrderItem(itemId, inventoryId, quantity, ownerId);
-                jdbc.update("UPDATE order_items SET allocation_status='RESERVED' WHERE id=? AND allocation_status='UNRESERVED'", itemId);
-            }
-        } else {
-            Integer reservedItems = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM order_items WHERE order_id=? AND allocation_status='RESERVED'", Integer.class, id);
-            if (reservedItems == null || reservedItems == 0)
-                throw new IllegalArgumentException("Đơn online không còn mặt hàng đã giữ tồn kho.");
+        if (items.isEmpty()) throw new IllegalArgumentException("Đơn không có mặt hàng đang chờ giữ tồn kho.");
+        for (Map<String, Object> item : items) {
+            long inventoryId = ((Number) item.get("inventory_id")).longValue();
+            long itemId = ((Number) item.get("id")).longValue();
+            int quantity = ((Number) item.get("quantity")).intValue();
+            inventoryBatches.reserveOrderItem(itemId, inventoryId, quantity, ownerId);
+            jdbc.update("UPDATE order_items SET allocation_status='RESERVED' WHERE id=? AND allocation_status='UNRESERVED'", itemId);
         }
-        if (jdbc.update("UPDATE orders SET status='CONFIRMED' WHERE id=? AND status='PENDING'", id) != 1)
+        if (jdbc.update("UPDATE orders SET status='CONFIRMED' WHERE id=? AND status='PENDING' AND payment_method='COD'", id) != 1)
             throw new IllegalArgumentException("Đơn vừa được cập nhật ở nơi khác. Tải lại trang.");
         jdbc.update("INSERT IGNORE INTO notifications(user_id,event_key,type,title,content,target_type,target_id) SELECT c.user_id,CONCAT('ORDER_CONFIRMED_',o.id),'ORDER','Shop đã xác nhận đơn',CONCAT('Shop đã xác nhận đơn ',o.order_code),'ORDER',o.id FROM orders o JOIN checkouts c ON c.id=o.checkout_id WHERE o.id=? AND c.user_id IS NOT NULL", id);
     }
