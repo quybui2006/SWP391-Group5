@@ -30,7 +30,7 @@ public class ProductVariant {
     public void setPromotionalPrice(BigDecimal promotionalPrice) { this.promotionalPrice = promotionalPrice; }
 
 
-    /** Trạng thái kiểm duyệt: DRAFT / PENDING / APPROVED / REJECTED. */
+    /** Trường tương thích dữ liệu cũ; sản phẩm mới không qua hàng đợi duyệt. */
     @Column(name = "approval_status", nullable = false)
     private String approvalStatus = "DRAFT";
 
@@ -43,7 +43,13 @@ public class ProductVariant {
     @Column(name = "rejection_reason")
     private String rejectionReason;
 
-    /** Trạng thái bán: DRAFT / ACTIVE / INACTIVE. ACTIVE + PENDING được bán trong hậu kiểm. */
+    @Column(name = "operations_blocked", nullable = false)
+    private boolean operationsBlocked;
+
+    @Column(name = "operations_block_reason")
+    private String operationsBlockReason;
+
+    /** Trạng thái bán do shop quản lý; OP chặn bán bằng cờ riêng. */
     @Column(name = "status", nullable = false)
     private String status = "DRAFT";
 
@@ -93,6 +99,10 @@ public class ProductVariant {
     public void setReviewedAt(java.time.LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+    public boolean isOperationsBlocked() { return operationsBlocked; }
+    public void setOperationsBlocked(boolean operationsBlocked) { this.operationsBlocked = operationsBlocked; }
+    public String getOperationsBlockReason() { return operationsBlockReason; }
+    public void setOperationsBlockReason(String operationsBlockReason) { this.operationsBlockReason = operationsBlockReason; }
     public Unit getBaseUnit() { return baseUnit; }
     public void setBaseUnit(Unit baseUnit) { this.baseUnit = baseUnit; }
 

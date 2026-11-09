@@ -23,7 +23,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "(n.target_type = 'ORDER' AND n.target_id IN (SELECT o.id FROM orders o JOIN shops s ON s.id = o.shop_id WHERE s.owner_id = :userId)) "
             + "OR (n.target_type IN ('SHOP','PAYMENT_VERIFICATION') AND n.target_id IN (SELECT s.id FROM shops s WHERE s.owner_id = :userId)) "
             + "OR (n.target_type = 'PRODUCT' AND n.target_id IN (SELECT p.id FROM products p JOIN shops s ON s.id = p.shop_id WHERE s.owner_id = :userId)) "
-            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
+            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId)) "
+            + "OR (n.target_type = 'INVENTORY_BATCH' AND n.target_id IN (SELECT b.id FROM inventory_batches b JOIN variant_inventory vi ON vi.id = b.inventory_id JOIN product_variants pv ON pv.id = vi.variant_id JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
             + ") ORDER BY n.created_at DESC", nativeQuery = true)
     List<Notification> findShopOwnerNotifications(@Param("userId") Long userId);
 
@@ -31,7 +32,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "(n.target_type = 'ORDER' AND n.target_id IN (SELECT o.id FROM orders o JOIN shops s ON s.id = o.shop_id WHERE s.owner_id = :userId)) "
             + "OR (n.target_type IN ('SHOP','PAYMENT_VERIFICATION') AND n.target_id IN (SELECT s.id FROM shops s WHERE s.owner_id = :userId)) "
             + "OR (n.target_type = 'PRODUCT' AND n.target_id IN (SELECT p.id FROM products p JOIN shops s ON s.id = p.shop_id WHERE s.owner_id = :userId)) "
-            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
+            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId)) "
+            + "OR (n.target_type = 'INVENTORY_BATCH' AND n.target_id IN (SELECT b.id FROM inventory_batches b JOIN variant_inventory vi ON vi.id = b.inventory_id JOIN product_variants pv ON pv.id = vi.variant_id JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
             + ")", nativeQuery = true)
     long countUnreadShopOwnerNotifications(@Param("userId") Long userId);
 
@@ -40,7 +42,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "(n.target_type = 'ORDER' AND n.target_id IN (SELECT o.id FROM orders o JOIN shops s ON s.id = o.shop_id WHERE s.owner_id = :userId)) "
             + "OR (n.target_type IN ('SHOP','PAYMENT_VERIFICATION') AND n.target_id IN (SELECT s.id FROM shops s WHERE s.owner_id = :userId)) "
             + "OR (n.target_type = 'PRODUCT' AND n.target_id IN (SELECT p.id FROM products p JOIN shops s ON s.id = p.shop_id WHERE s.owner_id = :userId)) "
-            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
+            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId)) "
+            + "OR (n.target_type = 'INVENTORY_BATCH' AND n.target_id IN (SELECT b.id FROM inventory_batches b JOIN variant_inventory vi ON vi.id = b.inventory_id JOIN product_variants pv ON pv.id = vi.variant_id JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
             + ")", nativeQuery = true)
     int markShopOwnerNotificationsRead(@Param("userId") Long userId);
 
@@ -49,7 +52,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "(n.target_type = 'ORDER' AND n.target_id IN (SELECT o.id FROM orders o JOIN shops s ON s.id = o.shop_id WHERE s.owner_id = :userId)) "
             + "OR (n.target_type IN ('SHOP','PAYMENT_VERIFICATION') AND n.target_id IN (SELECT s.id FROM shops s WHERE s.owner_id = :userId)) "
             + "OR (n.target_type = 'PRODUCT' AND n.target_id IN (SELECT p.id FROM products p JOIN shops s ON s.id = p.shop_id WHERE s.owner_id = :userId)) "
-            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
+            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId)) "
+            + "OR (n.target_type = 'INVENTORY_BATCH' AND n.target_id IN (SELECT b.id FROM inventory_batches b JOIN variant_inventory vi ON vi.id = b.inventory_id JOIN product_variants pv ON pv.id = vi.variant_id JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
             + ")", nativeQuery = true)
     int deleteShopOwnerNotification(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
 
@@ -58,7 +62,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "(n.target_type = 'ORDER' AND n.target_id IN (SELECT o.id FROM orders o JOIN shops s ON s.id = o.shop_id WHERE s.owner_id = :userId)) "
             + "OR (n.target_type IN ('SHOP','PAYMENT_VERIFICATION') AND n.target_id IN (SELECT s.id FROM shops s WHERE s.owner_id = :userId)) "
             + "OR (n.target_type = 'PRODUCT' AND n.target_id IN (SELECT p.id FROM products p JOIN shops s ON s.id = p.shop_id WHERE s.owner_id = :userId)) "
-            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
+            + "OR (n.target_type IN ('VARIANT','PRODUCT_VARIANT') AND n.target_id IN (SELECT pv.id FROM product_variants pv JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId)) "
+            + "OR (n.target_type = 'INVENTORY_BATCH' AND n.target_id IN (SELECT b.id FROM inventory_batches b JOIN variant_inventory vi ON vi.id = b.inventory_id JOIN product_variants pv ON pv.id = vi.variant_id JOIN shops s ON s.id = pv.shop_id WHERE s.owner_id = :userId))"
             + ")", nativeQuery = true)
     int markShopOwnerNotificationRead(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
 

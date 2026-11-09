@@ -1,18 +1,14 @@
 package controller.operations;
 
-import dto.operations.ApprovalActionResponse;
 import dto.operations.OperationsVariantDetailDto;
-import dto.operations.RejectApprovalRequest;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import service.operations.OperationsVariantApprovalService;
 
 
@@ -24,13 +20,13 @@ public class OperationsVariantApprovalController {
         this.approvals = approvals;
     }
 
-    /** URL cũ được đưa về catalog để không còn màn danh sách hậu kiểm tách riêng. */
+    /** Đưa URL danh sách cũ về catalog sản phẩm hiện tại. */
     @GetMapping("/operations/variants")
     public String pendingVariants(Model model) {
         return "redirect:/operations/products";
     }
 
-    /** Chi tiết biến thể, sản phẩm cha, cửa hàng và tồn kho để phục vụ kiểm duyệt. */
+    /** Hiển thị thông tin biến thể để Operations theo dõi. */
     @GetMapping("/operations/variants/{variantId}")
     public String variantDetails(@PathVariable Long variantId,
                                  @RequestParam(required = false) Long returnShopId,
@@ -50,20 +46,28 @@ public class OperationsVariantApprovalController {
         return "operations/variant-detail";
     }
 
-    /** Duyệt biến thể đang chờ và cho phép biến thể tiếp tục mở bán. */
-    @PostMapping("/operations/api/variants/{variantId}/approve")
-    @ResponseBody
-    public ResponseEntity<ApprovalActionResponse> approveVariant(@PathVariable Long variantId) {
-        approvals.approveVariant(variantId);
-        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã duyệt biến thể. Biến thể đủ điều kiện mở bán."));
+    /** Chặn bán và lưu lý do do Operations nhập. */
+    @PostMapping("/operations/variants/{variantId}/block")
+    public String blockVariant(@PathVariable Long variantId, @RequestParam String reason,
+                               RedirectAttributes redirect) {
+        try {
+            approvals.blockVariant(variantId, reason);
+            redirect.addFlashAttribute("success", "Đã chặn bán biến thể.");
+        } catch (ResponseStatusException ex) {
+            redirect.addFlashAttribute("error", ex.getReason());
+        }
+        return "redirect:/operations/variants/" + variantId;
     }
 
-    /** Từ chối biến thể với lý do bắt buộc để ngừng bán và phản hồi cho shop. */
-    @PostMapping("/operations/api/variants/{variantId}/reject")
-    @ResponseBody
-    public ResponseEntity<ApprovalActionResponse> rejectVariant(
-            @PathVariable Long variantId, @Valid @RequestBody RejectApprovalRequest request) {
-        approvals.rejectVariant(variantId, request.getRejectionReason());
-        return ResponseEntity.ok(new ApprovalActionResponse(true, "Đã từ chối biến thể và ngừng bán."));
+    /** Mở chặn; biến thể giữ trạng thái ngừng bán để shop tự quyết định bật lại. */
+    @PostMapping("/operations/variants/{variantId}/unblock")
+    public String unblockVariant(@PathVariable Long variantId, RedirectAttributes redirect) {
+        try {
+            approvals.unblockVariant(variantId);
+            redirect.addFlashAttribute("success", "Đã mở chặn. Shop có thể chủ động đăng bán lại.");
+        } catch (ResponseStatusException ex) {
+            redirect.addFlashAttribute("error", ex.getReason());
+        }
+        return "redirect:/operations/variants/" + variantId;
     }
 }

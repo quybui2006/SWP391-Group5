@@ -38,10 +38,10 @@ public class SecurityConfig {
 
                         .requestMatchers("/shopowner/**", "/shop-owner/**").hasAnyRole("SHOP_OWNER", "ADMIN")
                         .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
-                        .requestMatchers("/cs/**").hasAnyRole("CS_STAFF", "OPERATIONS_MANAGER", "ADMIN")
+                        .requestMatchers("/cs/**").hasAnyRole("CS_STAFF", "ADMIN")
                         .requestMatchers("/delivery/**").hasAnyRole("DELIVERY_MANAGER", "ADMIN")
-                        // Ops pages and approval APIs are restricted to Operations Manager.
-                        .requestMatchers("/operations/**").hasRole("OPERATIONS_MANAGER")
+                        // Operations manages Complaints and platform operations; CS Staff has no access
+                        .requestMatchers("/operations/complaints/**", "/operations/**").hasRole("OPERATIONS_MANAGER")
 
 
                         // Các request còn lại

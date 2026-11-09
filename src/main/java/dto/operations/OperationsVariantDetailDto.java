@@ -16,6 +16,8 @@ public record OperationsVariantDetailDto(
         Integer minOrderQuantity,
         String unitName,
         String variantStatus,
+        boolean operationsBlocked,
+        String operationsBlockReason,
         String approvalStatus,
         String rejectionReason,
         LocalDateTime submittedAt,

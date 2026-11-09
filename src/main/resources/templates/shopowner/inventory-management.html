@@ -92,16 +92,18 @@
                                 </div>
                                 <div class="table-responsive" th:if="${!#lists.isEmpty(variant.batches)}">
                                     <table class="table table-sm inventory-batch-table">
-                                        <thead><tr><th>Mã lô</th><th>Ngày nhập</th><th class="text-end">Đã bán</th><th class="text-end">Tồn</th><th class="text-end">Đang giữ</th><th class="text-end">Có thể bán</th><th>Trạng thái</th></tr></thead>
+                                        <thead><tr><th>Mã lô</th><th>Ngày nhập</th><th>Hết hạn</th><th class="text-end">Đã bán</th><th class="text-end">Tồn</th><th class="text-end">Đang giữ</th><th class="text-end">Có thể bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                                         <tbody>
                                         <tr th:each="batch : ${variant.batches}">
                                             <td><strong class="inventory-batch-code" th:text="${batch.code}">LOT-1</strong></td>
                                             <td th:text="${#temporals.format(batch.receivedAt, 'dd/MM/yyyy HH:mm')}">01/11/2026 08:00</td>
+                                            <td th:text="${#temporals.format(batch.expiresAt, 'dd/MM/yyyy')}">01/12/2026</td>
                                             <td class="text-end" th:text="${batch.sold + ' ' + variant.unitName}">0 kg</td>
                                             <td class="text-end" th:text="${batch.onHand + ' ' + variant.unitName}">0 kg</td>
                                             <td class="text-end" th:text="${batch.reserved + ' ' + variant.unitName}">0 kg</td>
                                             <td class="text-end" th:text="${batch.available + ' ' + variant.unitName}">0 kg</td>
-                                            <td th:text="${batch.status == 'ACTIVE' ? 'Đang dùng' : 'Đã hết'}">Đang dùng</td>
+                                            <td th:text="${batch.status == 'EXPIRED' ? 'Đã hết hạn' : (batch.status == 'ACTIVE' ? 'Đang dùng' : 'Đã hết hàng')}">Đang dùng</td>
+                                            <td><a th:href="@{/shopowner/inventory/adjust(batchId=${batch.id})}">Điều chỉnh</a></td>
                                         </tr>
                                         </tbody>
                                     </table>

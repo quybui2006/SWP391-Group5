@@ -73,7 +73,6 @@ public class CustomerComplaintController {
             @RequestParam String description,
             @RequestParam(required = false) MultipartFile evidenceImage,
             @RequestParam(required = false, defaultValue = "RESEND_ITEMS") String desiredResolution,
-            @RequestParam(required = false, defaultValue = "0") Long requestedRefundAmount,
             HttpSession session,
             RedirectAttributes redirect) {
         Long customerId = currentCustomerId(session);
@@ -87,7 +86,7 @@ public class CustomerComplaintController {
                 return "redirect:/customer/account/orders/" + orderId;
             }
             Long complaintId = complaintService.submitCustomerComplaint(
-                    customerId, orderId, orderItemId, reasonType, title, description, evidenceImage, desiredResolution, requestedRefundAmount);
+                    customerId, orderId, orderItemId, reasonType, title, description, evidenceImage, desiredResolution);
             redirect.addFlashAttribute("message", "Đã gửi khiếu nại thành công!");
             return "redirect:/customer/account/complaints/" + complaintId;
         } catch (IllegalArgumentException ex) {

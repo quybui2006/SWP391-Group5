@@ -37,6 +37,7 @@ import entity.Category;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
@@ -86,43 +87,64 @@ public class ShopProductService {
                 .toList();
     }
 
-    public Page<ShopProductListItem> searchShopProducts(Long ownerUserId, String keyword, Long categoryId, int page, int size) {
+    public Page<ShopProductListItem> searchShopProducts(
+            Long ownerUserId, String keyword, Long categoryId, int page, int size) {
         Long shopId = requireShopId(ownerUserId);
         String term = keyword == null ? "" : keyword.trim();
         String like = "%" + term.toLowerCase() + "%";
+
         String condition = "p.shop_id=? AND (?='' OR LOWER(p.name) LIKE ? OR EXISTS "
                 + "(SELECT 1 FROM product_variants pv WHERE pv.product_id=p.id AND LOWER(pv.sku) LIKE ?))"
-                + (categoryId == null ? "" : " AND EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id=p.id AND pc.category_id=?)");
+                + (categoryId == null ? ""
+                : " AND EXISTS (SELECT 1 FROM product_categories pc "
+                  + "WHERE pc.product_id=p.id AND pc.category_id=?)");
+
         Object[] queryArgs = categoryId == null
                 ? new Object[]{shopId, term, like, like}
                 : new Object[]{shopId, term, like, like, categoryId};
-        Long total = jdbc.queryForObject("SELECT COUNT(*) FROM products p WHERE " + condition,
-                Long.class, queryArgs);
-        List<ShopProductListItem> rows = jdbc.query("""
-                SELECT p.id, p.name, p.selling_status AS status, p.approval_status, p.rejection_reason, p.is_visible, p.created_at,
-                    (SELECT pi.image_url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image_url,
-                     (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id=p.id) AS variant_count,
-                     (SELECT COALESCE(SUM(vi.quantity_on_hand), 0) FROM product_variants pv LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
-                         WHERE pv.product_id=p.id) AS stock_quantity,
-                    (SELECT c.name FROM product_categories pc JOIN categories c ON c.id=pc.category_id
-                        WHERE pc.product_id=p.id ORDER BY c.name LIMIT 1) AS category_name
-                FROM products p WHERE %s
-                ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?
-                """.formatted(condition), (rs, row) -> new ShopProductListItem(
-                rs.getLong("id"), rs.getString("name"), rs.getString("image_url"),
-                ((Number) rs.getObject("variant_count")).intValue(), rs.getString("category_name"),
-                ((Number) rs.getObject("stock_quantity")).intValue(), rs.getString("status"),
-                rs.getString("approval_status"), rs.getString("rejection_reason"),
-                rs.getBoolean("is_visible"),
-                rs.getTimestamp("created_at").toLocalDateTime()),
-                appendArgs(queryArgs, size, (long) page * size));
-        return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
-    }
 
-    private Object[] appendArgs(Object[] args, Object... suffix) {
-        Object[] combined = java.util.Arrays.copyOf(args, args.length + suffix.length);
-        System.arraycopy(suffix, 0, combined, args.length, suffix.length);
-        return combined;
+        Long total = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM products p WHERE " + condition,
+                Long.class,
+                queryArgs);
+
+        Object[] pageArgs = java.util.Arrays.copyOf(queryArgs, queryArgs.length + 2);
+        pageArgs[queryArgs.length] = size;
+        pageArgs[queryArgs.length + 1] = (long) page * size;
+
+        List<ShopProductListItem> rows = jdbc.query("""
+            SELECT p.id, p.name, p.selling_status AS status, p.approval_status,
+                   p.rejection_reason, p.is_visible, p.created_at,
+                   (SELECT pi.image_url FROM product_images pi
+                    WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image_url,
+                   (SELECT COUNT(*) FROM product_variants pv
+                    WHERE pv.product_id=p.id) AS variant_count,
+                   (SELECT COALESCE(SUM(vi.quantity_on_hand), 0)
+                    FROM product_variants pv
+                    LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
+                    WHERE pv.product_id=p.id) AS stock_quantity,
+                   (SELECT c.name FROM product_categories pc
+                    JOIN categories c ON c.id=pc.category_id
+                    WHERE pc.product_id=p.id ORDER BY c.name LIMIT 1) AS category_name
+            FROM products p
+            WHERE %s
+            ORDER BY p.created_at DESC, p.id DESC
+            LIMIT ? OFFSET ?
+            """.formatted(condition), (rs, row) -> new ShopProductListItem(
+                        rs.getLong("id"),
+                        rs.getString("name"),
+                        rs.getString("image_url"),
+                        ((Number) rs.getObject("variant_count")).intValue(),
+                        rs.getString("category_name"),
+                        ((Number) rs.getObject("stock_quantity")).intValue(),
+                        rs.getString("status"),
+                        rs.getString("approval_status"),
+                        rs.getString("rejection_reason"),
+                        rs.getBoolean("is_visible"),
+                        rs.getTimestamp("created_at").toLocalDateTime()),
+                pageArgs);
+
+        return new PageImpl<>(rows, PageRequest.of(page, size), total == null ? 0 : total);
     }
 
     public List<ProductVariantEditForm.UnitOption> activeUnitOptions() {
@@ -138,12 +160,14 @@ public class ShopProductService {
         form.setId(variant.getId()); form.setProductName(variant.getProduct().getName());
         form.setProductCanSell(true);
         form.setApprovalStatus(variant.getApprovalStatus());
+        form.setOperationsBlocked(variant.isOperationsBlocked());
+        form.setOperationsBlockReason(variant.getOperationsBlockReason());
         form.setVariantName(variant.getName()); form.setSku(variant.getSku()); form.setSpecification(variant.getSpecification());
         // Product là metadata; trạng thái bán chỉ thuộc biến thể.
-        form.setStatus("REJECTED".equals(variant.getApprovalStatus()) || "INACTIVE".equals(variant.getStatus()) ? "INACTIVE" : "ACTIVE");
+        form.setStatus(variant.isOperationsBlocked() || "INACTIVE".equals(variant.getStatus()) ? "INACTIVE" : "ACTIVE");
         form.setUnitId(variant.getBaseUnit().getId()); form.setPrice(variant.getPrice());
         form.setQuantityOnHand(inventory.getQuantityOnHand());
-        form.setLowStockThresholdQuantity(inventory.getLowStockThresholdQuantity());
+        form.setLowStockThresholdQuantity(inventory.getLowStockThresholdQuantity() == 0 ? null : inventory.getLowStockThresholdQuantity());
         form.setUnits(activeUnitOptions());
         return form;
     }
@@ -159,7 +183,8 @@ public class ShopProductService {
         return new ProductVariantDetailView(variant.getId(), variant.getProduct().getName(), variant.getName(),
                 variant.getSku(), variant.getSpecification(), variant.getPrice(), variant.getBaseUnit().getName(),
                 imageUrl, variant.getStatus(), variant.getApprovalStatus(), variant.getRejectionReason(),
-                variant.getSubmittedAt(), inventory == null ? 0 : inventory.getQuantityOnHand(),
+                variant.getSubmittedAt(), variant.isOperationsBlocked(), variant.getOperationsBlockReason(),
+                inventory == null ? 0 : inventory.getQuantityOnHand(),
                 inventory == null ? 0 : inventory.getReservedQuantity(), inventory == null ? 0 : inventory.getAvailableQuantity());
     }
 
@@ -168,7 +193,6 @@ public class ShopProductService {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
         VariantInventory inventory = inventoryRepository.findByVariantId(variantId)
                 .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy tồn kho biến thể."));
-        boolean rejectedBeforeEdit = "REJECTED".equals(variant.getApprovalStatus());
         Map<String, String> errors = new LinkedHashMap<>();
         String name = blankToNull(form.getVariantName()); String sku = variant.getSku();
         String specification = blankToNull(form.getSpecification());
@@ -178,37 +202,23 @@ public class ShopProductService {
             errors.put("variantName", "Tên biến thể này đã tồn tại trong sản phẩm.");
         }
         if (form.getPrice() == null || form.getPrice().signum() <= 0 || (form.getPrice() != null && form.getPrice().stripTrailingZeros().scale() > 0)) errors.put("price", "Giá bán phải là số nguyên VNĐ lớn hơn 0.");
+        if (form.getLowStockThresholdQuantity() != null && form.getLowStockThresholdQuantity() < 0) errors.put("lowStockThresholdQuantity", "Ngưỡng cảnh báo phải là số nguyên từ 0 trở lên.");
         String requestedStatus = upperOrNull(form.getStatus());
         if (requestedStatus == null || !Set.of("ACTIVE", "INACTIVE").contains(requestedStatus)) {
             errors.put("status", "Trạng thái biến thể không hợp lệ.");
         }
+        if (variant.isOperationsBlocked() && "ACTIVE".equals(requestedStatus)) {
+            errors.put("status", "Operations đang chặn bán biến thể này.");
+        }
         Unit unit = form.getUnitId() == null ? null : unitRepository.findById(form.getUnitId()).filter(u -> Boolean.TRUE.equals(u.getIsActive())).orElse(null);
         if (unit == null) errors.put("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động.");
-        if (form.getLowStockThresholdQuantity() == null || form.getLowStockThresholdQuantity() < 0) {
-            errors.put("lowStockThresholdQuantity", "Ngưỡng cảnh báo phải là số lượng không âm.");
-        }
         if (!errors.isEmpty()) throw new ProductValidationException(errors);
 
-        boolean listingDetailsChanged = !name.equals(variant.getName())
-                || !java.util.Objects.equals(specification, variant.getSpecification())
-                || form.getPrice().compareTo(variant.getPrice()) != 0
-                || !unit.getId().equals(variant.getBaseUnit().getId());
-        if (rejectedBeforeEdit && !listingDetailsChanged) {
-            throw new ProductValidationException("variantName", "Hãy cập nhật thông tin biến thể trước khi gửi hậu kiểm lại.");
-        }
         variant.setName(name); variant.setSku(sku); variant.setSpecification(specification);
         variant.setPrice(form.getPrice()); variant.setBaseUnit(unit);
-        if (listingDetailsChanged || !"APPROVED".equals(variant.getApprovalStatus())) {
-            // Refresh the review timestamp so Operations can identify edits made while the variant is pending.
-            // Hậu kiểm: thay đổi công khai tiếp tục được bán và được đưa lại vào hàng đợi kiểm tra.
-            variant.setApprovalStatus("PENDING");
-            variant.setSubmittedAt(LocalDateTime.now(BUSINESS_ZONE));
-            variant.setReviewedAt(null);
-            variant.setRejectionReason(null);
-        }
-        // Keep a rejected listing offline until Operations approves the edited version.
-        variant.setStatus(rejectedBeforeEdit ? "INACTIVE" : requestedStatus);
-        inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity());
+        variant.setStatus(requestedStatus);
+        // Ô trống tương đương với tắt cảnh báo tồn thấp.
+        inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
         variantRepository.save(variant); inventoryRepository.save(inventory);
     }
 
@@ -224,9 +234,9 @@ public class ShopProductService {
     @Transactional
     public void showVariantForSale(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
-        if ("REJECTED".equals(variant.getApprovalStatus())) {
+        if (variant.isOperationsBlocked()) {
             throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
-                    "Operations đã từ chối biến thể này nên không thể bật bán lại.");
+                    "Operations đang chặn bán biến thể này.");
         }
         if ("INACTIVE".equals(variant.getStatus())) {
             variant.setStatus("ACTIVE");
@@ -235,15 +245,23 @@ public class ShopProductService {
     }
 
     // Tan PTH integration: expose the same persisted variant/inventory rows used by product detail.
-    public List<Map<String, Object>> searchShopVariants(Long ownerUserId, String keyword) {
+    public List<Map<String, Object>> searchShopVariants(Long ownerUserId, String keyword, String status) {
         Long shopId = requireShopId(ownerUserId);
         String term = keyword == null ? "" : keyword.trim();
         String like = "%" + term.toLowerCase() + "%";
-        return jdbc.queryForList("""
+        String statusCondition = switch (status == null ? "all" : status) {
+            case "hidden" -> " AND p.is_visible = 0";
+            case "stopped" -> " AND pv.status = 'INACTIVE'";
+            case "selling" -> " AND pv.status = 'ACTIVE' AND pv.operations_blocked = 0 AND p.is_visible = 1 AND p.selling_status = 'ACTIVE'";
+            default -> "";
+        };
+        String sql = """
                 SELECT pv.id AS variant_id, p.id AS product_id, p.name AS product_name,
                     pv.name AS variant_name, pv.sku, pv.specification, pv.price,
                     COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
                     pv.approval_status, pv.rejection_reason, pv.submitted_at,
+                    pv.operations_blocked AS operations_blocked,
+                    pv.operations_block_reason AS operations_block_reason,
                     u.name AS unit_name, COALESCE(vi.quantity_on_hand, 0) AS stock_quantity,
                     COALESCE(vi.available_quantity, 0) AS available_quantity,
                     pv.status AS variant_status, p.selling_status AS product_status
@@ -253,17 +271,19 @@ public class ShopProductService {
                 LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
                 WHERE pv.shop_id = ?
                   AND (? = '' OR LOWER(p.name) LIKE ? OR LOWER(pv.name) LIKE ? OR LOWER(pv.sku) LIKE ?)
+                """ + statusCondition + """
                 ORDER BY p.name, pv.name, pv.id
-                """, shopId, term, like, like, like);
+                """;
+        return jdbc.queryForList(sql, shopId, term, like, like, like);
     }
 
     public Map<String, Long> shopVariantSummary(Long ownerUserId) {
         Long shopId = requireShopId(ownerUserId);
         return jdbc.queryForMap("""
                 SELECT COUNT(*) AS total,
-                    COALESCE(SUM(CASE WHEN pv.status = 'ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') THEN 1 ELSE 0 END), 0) AS active,
-                    COALESCE(SUM(CASE WHEN pv.approval_status = 'DRAFT' THEN 1 ELSE 0 END), 0) AS draft,
-                    COALESCE(SUM(CASE WHEN pv.status = 'INACTIVE' OR pv.approval_status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS paused
+                    COALESCE(SUM(CASE WHEN pv.status = 'ACTIVE' AND pv.operations_blocked = 0 THEN 1 ELSE 0 END), 0) AS active,
+                    0 AS draft,
+                    COALESCE(SUM(CASE WHEN pv.status = 'INACTIVE' OR pv.operations_blocked = 1 THEN 1 ELSE 0 END), 0) AS paused
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
                 WHERE pv.shop_id = ?
@@ -296,7 +316,7 @@ public class ShopProductService {
         return jdbc.queryForMap("""
                 SELECT COUNT(DISTINCT p.id) AS products,
                     COUNT(pv.id) AS variants,
-                    COALESCE(SUM(CASE WHEN pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') THEN 1 ELSE 0 END),0) AS active_variants,
+                    COALESCE(SUM(CASE WHEN pv.status='ACTIVE' AND pv.operations_blocked=0 THEN 1 ELSE 0 END),0) AS active_variants,
                 0 AS low_stock
                 FROM products p LEFT JOIN product_variants pv ON pv.product_id=p.id
                     LEFT JOIN variant_inventory vi ON vi.variant_id=pv.id
@@ -402,15 +422,17 @@ public class ShopProductService {
     @Transactional
     public String createVariantInventory(Long ownerUserId, ProductVariantCreateRequest form) {
         Product product = loadOwnedProduct(form.getProductId(), ownerUserId);
-        Long existingVariantCount = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM product_variants WHERE product_id=? AND shop_id=?",
-                Long.class, product.getId(), product.getShopId());
-        if (existingVariantCount == null || existingVariantCount == 0) {
-            // Sản phẩm cũ chưa có biến thể cũng phải được đăng bán lại sau khi thêm biến thể đầu tiên.
-            product.setVisible(false);
-            product.setSellingStatus("DRAFT");
-            productRepository.save(product);
+        String variantName = blankToNull(form.getVariantName());
+        if (variantName == null || variantName.length() > 150) {
+            throw new ProductValidationException("variantName", "Tên biến thể phải có từ 1 đến 150 ký tự.");
         }
+        if (variantRepository.existsByProduct_IdAndNameIgnoreCase(product.getId(), variantName)) {
+            throw new ProductValidationException("variantName", "Tên biến thể này đã tồn tại trong sản phẩm.");
+        }
+        if (form.getExpiresAt() == null || form.getExpiresAt().isBefore(LocalDate.now(BUSINESS_ZONE))) {
+            throw new ProductValidationException("expiresAt", "Ngày hết hạn phải từ hôm nay trở đi.");
+        }
+
         Unit unit = unitRepository.findById(form.getUnitId())
                 .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
                 .orElseThrow(() -> new ProductValidationException("unitId", "Đơn vị không tồn tại hoặc đã ngừng hoạt động."));
@@ -425,36 +447,31 @@ public class ShopProductService {
             variant.setProduct(product);
             variant.setShopId(product.getShopId());
             variant.setSku("SKU-PENDING-" + java.util.UUID.randomUUID());
-            variant.setName(form.getVariantName().trim());
+            variant.setName(variantName);
             variant.setBaseUnit(unit);
             variant.setPrice(form.getPrice());
-            // Hậu kiểm: biến thể được đăng bán ngay; Operations kiểm tra sau.
             variant.setStatus("ACTIVE");
-            variant.setApprovalStatus("PENDING");
+            // Giá trị tương thích với cột cũ; không tạo yêu cầu duyệt.
+            variant.setApprovalStatus("APPROVED");
             variant.setSubmittedAt(LocalDateTime.now(BUSINESS_ZONE));
-            variant.setReviewedAt(null);
+            variant.setReviewedAt(LocalDateTime.now(BUSINESS_ZONE));
             variant.setRejectionReason(null);
             variant.setImageUrl(imageUrl);
             variant.setMinOrderQuantity(1);
             variant = variantRepository.saveAndFlush(variant);
-            String sku = "SKU-" + variant.getId();
-            int suffix = 2;
-            while (variantRepository.existsByShopIdAndSku(product.getShopId(), sku)) {
-                sku = "SKU-" + variant.getId() + "-" + suffix++;
-            }
-            variant.setSku(sku);
+            variant.setSku("SKU-" + String.format(java.util.Locale.ROOT, "%08d", variant.getId()));
             variant = variantRepository.saveAndFlush(variant);
 
             VariantInventory inventory = new VariantInventory();
             inventory.setVariantId(variant.getId());
             inventory.setInitialQuantity(form.getStockQuantity());
             inventory.setQuantityOnHand(form.getStockQuantity());
+            inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
             inventory.setReservedQuantity(0);
-            inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity());
             inventory.setStatus("ACTIVE");
             inventory.setCreatedBy(ownerUserId);
             inventoryRepository.save(inventory);
-            addOpeningBatch(inventory, form.getStockQuantity(), ownerUserId);
+            addOpeningBatch(inventory, form.getStockQuantity(), form.getExpiresAt(), ownerUserId);
 
             if (imageRepository.findByProductIdOrderBySortOrderAsc(product.getId()).isEmpty()) {
                 ProductImage image = new ProductImage();
@@ -468,6 +485,18 @@ public class ShopProductService {
             imageStorage.delete(imageUrl);
             throw ex;
         }
+    }
+
+    /** Hiển thị trước ID SKU sắp cấp; SKU trả về sau khi lưu mới là mã chính thức. */
+    public String previewNextVariantSku(Long ownerUserId) {
+        requireShopId(ownerUserId);
+        Long nextId = jdbc.queryForObject("""
+                SELECT COALESCE((
+                    SELECT AUTO_INCREMENT FROM information_schema.TABLES
+                    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='product_variants'
+                ), 1)
+                """, Long.class);
+        return "SKU-" + String.format(java.util.Locale.ROOT, "%08d", nextId == null ? 1L : nextId);
     }
 
     public ProductEditView buildEditForm(Long productId, Long ownerUserId) {
@@ -513,7 +542,11 @@ public class ShopProductService {
         product.setName(name);
         product.setOrigin(origin);
         product.setDescription(description);
-        if (!"ARCHIVED".equals(product.getSellingStatus())) product.setSellingStatus("DRAFT");
+        if (!"ARCHIVED".equals(product.getSellingStatus())) {
+            // Sau khi sửa hồ sơ, yêu cầu người bán xác nhận lại trước khi sản phẩm hiển thị.
+            product.setSellingStatus("DRAFT");
+            product.setVisible(false);
+        }
         product.setApprovalStatus("DRAFT");
         product.setSubmittedAt(null);
         product.setReviewedAt(null);
@@ -574,7 +607,7 @@ public class ShopProductService {
                     || (reviewHistory != null && reviewHistory > 0)
                     || (inventoryHistory != null && inventoryHistory > 0)) {
                 throw new ProductValidationException("product",
-                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho. Hãy dùng Lưu trữ sản phẩm.");
+                        "Không thể xóa sản phẩm vì đã có lịch sử đơn hàng, đánh giá hoặc giao dịch kho.");
             }
 
             // Chỉ dọn dữ liệu phụ khi chưa có lịch sử cần bảo toàn.
@@ -676,7 +709,6 @@ public class ShopProductService {
         view.setBatchCode(product.getBatchCode());
         view.setApprovalStatus(product.getApprovalStatus());
         view.setSellingStatus(product.getSellingStatus());
-        view.setVisible(product.isVisible());
         view.setShopName(shopRepository.findById(product.getShopId())
                 .map(shop -> shop.getName()).orElse("-"));
 
@@ -692,8 +724,8 @@ public class ShopProductService {
         List<ProductVariant> variants = product.getVariants() == null
                 ? List.of()
                 : product.getVariants().stream()
-                        .sorted(java.util.Comparator.comparing(ProductVariant::getPrice))
-                        .toList();
+                  .sorted(java.util.Comparator.comparing(ProductVariant::getPrice))
+                  .toList();
 
         Map<Long, VariantInventory> inventories = inventoryRepository
                 .findByVariantIdIn(variants.stream().map(ProductVariant::getId).toList())
@@ -735,19 +767,20 @@ public class ShopProductService {
         return value == null ? 0 : value;
     }
 
-    private void addOpeningBatch(VariantInventory inventory, int quantity, Long ownerId) {
+    private void addOpeningBatch(VariantInventory inventory, int quantity, LocalDate expiresAt, Long ownerId) {
         java.time.LocalDateTime receivedAt = LocalDateTime.now(BUSINESS_ZONE);
         org.springframework.jdbc.support.KeyHolder key = new org.springframework.jdbc.support.GeneratedKeyHolder();
         jdbc.update(connection -> {
             java.sql.PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,status,note,created_by) VALUES(?,NULL,?,?,0,?,'ACTIVE','Lô khởi tạo biến thể',?)",
+                    "INSERT INTO inventory_batches(inventory_id,batch_code,received_quantity,quantity_on_hand,reserved_quantity,received_at,expires_at,status,note,created_by) VALUES(?,NULL,?,?,0,?,?,'ACTIVE','Lô khởi tạo biến thể',?)",
                     java.sql.Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, inventory.getId()); statement.setInt(2, quantity); statement.setInt(3, quantity);
             statement.setTimestamp(4, java.sql.Timestamp.valueOf(receivedAt));
-            statement.setLong(5, ownerId); return statement;
+            statement.setDate(5, java.sql.Date.valueOf(expiresAt));
+            statement.setLong(6, ownerId); return statement;
         }, key);
         long batchId = key.getKey().longValue();
-        String code = "LOT-" + batchId;
+        String code = "LOT-" + String.format(java.util.Locale.ROOT, "%08d", batchId);
         jdbc.update("UPDATE inventory_batches SET batch_code=? WHERE id=?", code, batchId);
         jdbc.update("INSERT INTO inventory_transactions(inventory_id,type,on_hand_delta,reserved_delta,on_hand_after,reserved_after,event_key,reason,created_by) VALUES(?,'RECEIVE',?,0,?,0,?,?,?)",
                 inventory.getId(), quantity, quantity, "initial-batch-" + batchId, "Nhập lô khởi tạo " + code, ownerId);
@@ -791,19 +824,15 @@ public class ShopProductService {
                     "Sản phẩm đã lưu trữ, hãy khôi phục hồ sơ trước."
             );
         }
-        Long variantCount = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM product_variants WHERE product_id=? AND shop_id=?",
-                Long.class, productId, product.getShopId());
-        if (variantCount == null || variantCount == 0) {
-            throw new ProductValidationException(
-                    "visibility",
-                    "Không thể đăng bán sản phẩm khi chưa có biến thể. Hãy thêm ít nhất một biến thể trước."
-            );
+        Integer sellableVariants = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM product_variants
+                WHERE product_id=? AND status='ACTIVE' AND operations_blocked=0
+                """, Integer.class, productId);
+        if (sellableVariants == null || sellableVariants == 0) {
+            throw new ProductValidationException("visibility", "Thêm ít nhất một loại hàng trước khi đăng bán.");
         }
         product.setVisible(true);
         product.setSellingStatus("ACTIVE");
         productRepository.save(product);
     }
 }
-
-

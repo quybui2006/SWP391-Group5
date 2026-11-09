@@ -41,7 +41,7 @@
                         </summary>
                         <div class="table-wrap" th:if="${!#lists.isEmpty(product.variants)}">
                             <table class="audit-variant-table">
-                                <thead><tr><th>ẢNH / BIẾN THỂ</th><th>MÃ SKU</th><th>GIÁ / ĐƠN VỊ</th><th>ĐÃ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI BÁN</th><th>HẬU KIỂM</th><th>CHI TIẾT</th></tr></thead>
+                                <thead><tr><th>ẢNH / BIẾN THỂ</th><th>MÃ SKU</th><th>GIÁ / ĐƠN VỊ</th><th>ĐÃ BÁN</th><th>TỒN KHO</th><th>TRẠNG THÁI BÁN</th><th>CHI TIẾT</th></tr></thead>
                                 <tbody><tr th:each="variant : ${product.variants}">
                                     <td><div class="audit-variant-cell">
                                         <img th:if="${variant.imageUrl != null and !#strings.isEmpty(variant.imageUrl)}" th:src="${variant.imageUrl}" th:alt="${variant.variantName}" onerror="this.hidden=true">
@@ -53,8 +53,7 @@
                                     <td th:text="${(variant.soldQuantity ?: 0) + ' ' + variant.unitName}">0</td>
                                     <td><strong th:text="${(variant.quantityOnHand ?: 0) + ' ' + variant.unitName}">0</strong><small th:text="${'Có thể bán: ' + (variant.availableQuantity ?: 0) + ' ' + variant.unitName}">Có thể bán: 0</small></td>
                                     <td><span class="status-pill open" th:if="${variant.variantStatus == 'ACTIVE'}">Đang bán</span><span class="status-pill draft" th:unless="${variant.variantStatus == 'ACTIVE'}" th:text="${variant.variantStatus}">Chưa bán</span></td>
-                                    <td><span class="status-pill open" th:if="${variant.approvalStatus == 'APPROVED'}">Đã hậu kiểm</span><span class="status-pill pending" th:if="${variant.approvalStatus == 'PENDING'}">Chờ hậu kiểm</span><span class="status-pill rejected" th:if="${variant.approvalStatus == 'REJECTED'}">Cần sửa</span><span class="status-pill draft" th:if="${variant.approvalStatus == 'DRAFT'}">Chưa gửi</span></td>
-                                    <td><a class="button button-primary" th:href="@{/operations/variants/{id}(id=${variant.variantId},returnShopId=${shop.id},returnPage='products')}" th:text="${variant.approvalStatus == 'PENDING' ? 'Hậu kiểm' : 'Xem chi tiết'}">Xem chi tiết</a></td>
+                                    <td><a class="button button-primary" th:href="@{/operations/variants/{id}(id=${variant.variantId},returnShopId=${shop.id},returnPage='products')}">Xem chi tiết</a></td>
                                 </tr></tbody>
                             </table>
                         </div>

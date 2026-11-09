@@ -45,8 +45,12 @@
                         <span>Phạm vi</span>
                         <strong>Toàn bộ đơn hàng</strong>
                     </div>
+                    <div class="pay-row" th:if="${complaint['desired_resolution_label'] != null}">
+                        <span>Nguyện vọng xử lý</span>
+                        <strong style="color: #0284c7;" th:text="${complaint['desired_resolution_label']}"></strong>
+                    </div>
                     <div class="pay-row" th:if="${complaint['requested_refund_amount'] != null and complaint['requested_refund_amount'] > 0}">
-                        <span>Yêu cầu bồi hoàn</span>
+                        <span>Giá trị hàng hóa thực trả</span>
                         <strong style="color: #dc2626;" th:text="${#numbers.formatDecimal(complaint['requested_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
                     </div>
                     <div class="pay-row">
@@ -68,7 +72,7 @@
                     </div>
 
                     <!-- Nút rút khiếu nại khi còn đang xử lý -->
-                    <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}"
+                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS' or complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}"
                          style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
                         <form th:action="@{/customer/account/complaints/{id}/cancel(id=${complaint['id']})}" method="post"
                               onsubmit="return confirm('Bạn có chắc muốn rút lại yêu cầu khiếu nại này?');">
@@ -89,24 +93,30 @@
                     <div th:if="${complaint['status'] == 'RESOLVED'}">
                         <div class="pay-row">
                             <span>Trạng thái kết luận</span>
-                            <strong style="color: #15803d;">✅ Đã chấp nhận đền bù</strong>
+                            <strong style="color: #15803d;" th:text="${'✅ ' + complaint['resolution_label']}">✅ Đã chấp nhận đền bù</strong>
                         </div>
-                        <div class="pay-row" th:if="${complaint['compensated_points'] != null and complaint['compensated_points'] > 0}">
-                            <span>Điểm thưởng hoàn trả</span>
-                            <strong style="color: #16a34a; font-size: 15px;"
-                                    th:text="${'+' + #numbers.formatInteger(complaint['compensated_points'], 1, 'COMMA') + ' điểm (đã cộng vào ví)'}"></strong>
+                        <div class="pay-row" th:if="${complaint['resolution_type'] == 'RETURN_REFUND' and complaint['final_refund_amount'] != null and complaint['final_refund_amount'] > 0}">
+                            <span>Số tiền hoàn về ngân hàng</span>
+                            <strong style="color: #1d4ed8; font-size: 15px;"
+                                    th:text="${#numbers.formatDecimal(complaint['final_refund_amount'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
                         </div>
-                        <div class="pay-row" th:if="${complaint['gifted_freeship_voucher'] != null}">
-                            <span>Quà tặng thiện chí</span>
-                            <strong style="color: #0284c7;"
-                                    th:text="${'🎁 Mã Freeship: ' + complaint['gifted_freeship_voucher'] + ' (Trị giá 20,000₫ do Quỹ Sàn tài trợ)'}"></strong>
+                        <div class="pay-row" th:if="${complaint['replacement_order_code'] != null}">
+                            <span>Đơn hàng giao bù (0 ₫)</span>
+                            <a th:href="@{/customer/account/orders/{oid}(oid=${complaint['replacement_order_id']})}"
+                               style="font-weight: 700; color: #047857; text-decoration: underline;"
+                               th:text="${'📦 ' + complaint['replacement_order_code']}"></a>
+                        </div>
+                        <div class="pay-row" th:if="${complaint['voucher_code'] != null}">
+                            <span>Mã voucher đền bù</span>
+                            <strong style="color: #86198f; font-family: monospace; background: #fae8ff; padding: 2px 8px; border-radius: 4px;"
+                                    th:text="${'🎟️ ' + complaint['voucher_code'] + ' (Đã lưu vào ví voucher)'}"></strong>
                         </div>
                         <div class="pay-row" th:if="${complaint['resolved_at_fmt'] != null}">
                             <span>Thời gian hoàn tất</span>
                             <span th:text="${complaint['resolved_at_fmt']}"></span>
                         </div>
                         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.08);">
-                            <span style="font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Lời giải thích:</span>
+                            <span style="font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Nội dung phản hồi / kết luận:</span>
                             <p style="margin: 0; font-size: 14px; color: #0f172a; line-height: 1.5;" th:text="${complaint['resolution_note']}"></p>
                         </div>
                     </div>
@@ -136,7 +146,7 @@
                     </div>
 
                     <!-- Case: Đang xử lý -->
-                    <div th:if="${complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}">
+                    <div th:if="${complaint['status'] == 'PENDING_OPERATIONS' or complaint['status'] == 'PENDING_SHOP' or complaint['status'] == 'ESCALATED' or complaint['status'] == 'PENDING' or complaint['status'] == 'IN_PROGRESS'}">
                         <p style="margin: 0; font-size: 13.5px; color: #0284c7; line-height: 1.5;">
                             ⏳ Yêu cầu khiếu nại của bạn đang được tiếp nhận và xử lý. Kết quả và mức bồi hoàn sẽ được cập nhật sớm nhất tại đây.
                         </p>

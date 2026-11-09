@@ -35,7 +35,7 @@ public class CsStaffController {
     }
 
     // =========================================================================
-    // 1. CS DASHBOARD (Moderation & Customer Overview)
+    // 1. CS DASHBOARD (Content Moderation & Customer Overview)
     // =========================================================================
 
     @GetMapping({"", "/", "/dashboard"})
@@ -53,24 +53,7 @@ public class CsStaffController {
         model.addAttribute("cancelledOrders", cancelledOrders);
         model.addAttribute("totalReviews", totalReviews);
         model.addAttribute("lowRatingReviews", lowRatingReviews);
-
-        Map<String, Object> reports = complaintService.getAnalyticsAndReports();
-        model.addAllAttributes(reports);
-
-        List<Map<String, Object>> recentComplaints = complaintService.listCsComplaints("ALL", "ALL", "ALL", false, null);
-        if (recentComplaints.size() > 6) {
-            recentComplaints = recentComplaints.subList(0, 6);
-        }
-        model.addAttribute("recentComplaints", recentComplaints);
-
-        List<Map<String, Object>> disputeOrders = safeQueryList(
-                "SELECT o.id, o.order_code, o.recipient_name, o.recipient_phone, o.total_amount, o.status, o.delivery_status, " +
-                        "o.cancellation_reason, o.delivery_failure_reason, o.created_at, s.name AS shop_name " +
-                        "FROM orders o JOIN shops s ON s.id = o.shop_id " +
-                        "WHERE o.status = 'CANCELLED' OR o.delivery_status = 'FAILED' " +
-                        "ORDER BY o.created_at DESC LIMIT 6"
-        );
-        model.addAttribute("disputeOrders", disputeOrders);
+        model.addAttribute("moderationMetrics", complaintService.getContentModerationMetrics());
 
         List<Map<String, Object>> recentLowReviews = safeQueryList(
                 "SELECT r.id, r.rating, r.content, r.created_at, COALESCE(r.moderation_status, 'PENDING') AS moderation_status, " +
@@ -82,66 +65,15 @@ public class CsStaffController {
                         "JOIN products p ON p.id = pv.product_id " +
                         "JOIN shops s ON s.id = pv.shop_id " +
                         "WHERE r.rating <= 3 " +
-                        "ORDER BY r.created_at DESC LIMIT 5"
+                        "ORDER BY r.created_at DESC LIMIT 8"
         );
         model.addAttribute("recentLowReviews", recentLowReviews);
-        model.addAttribute("reasonLabels", complaintService.getReasonLabels());
 
         return "cs/dashboard";
     }
 
     // =========================================================================
-    // 2. KHIẾU NẠI ĐÃ CHUYỂN HẾT SANG BAN VẬN HÀNH (/operations/complaints)
-    // =========================================================================
-
-    @GetMapping("/tickets")
-    public String tickets() {
-        return "redirect:/operations/complaints";
-    }
-
-    @PostMapping("/tickets/create")
-    public String createTicket(RedirectAttributes redirect) {
-        redirect.addFlashAttribute("error", "Chức năng quản lý và khởi tạo khiếu nại đã được chuyển toàn bộ sang phân hệ Vận hành (/operations/complaints).");
-        return "redirect:/operations/complaints";
-    }
-
-    @GetMapping("/tickets/{id}")
-    public String ticketDetail(@PathVariable Long id) {
-        return "redirect:/operations/complaints/" + id;
-    }
-
-    @PostMapping("/tickets/{id}/start")
-    public String startTicketProcessing(@PathVariable Long id) {
-        return "redirect:/operations/complaints/" + id;
-    }
-
-    @PostMapping("/tickets/{id}/remind-shop")
-    public String remindShopResponse(@PathVariable Long id) {
-        return "redirect:/operations/complaints/" + id;
-    }
-
-    @PostMapping("/tickets/{id}/resolve")
-    public String resolveTicket(@PathVariable Long id, RedirectAttributes redirect) {
-        redirect.addFlashAttribute("error", "Toàn bộ luồng xử lý và duyệt hoàn tiền khiếu nại đã được chuyển sang Ban Vận hành (/operations/complaints).");
-        return "redirect:/operations/complaints/" + id;
-    }
-
-    @PostMapping("/violations/{shopId}/escalate")
-    public String escalateShopViolation(
-            @PathVariable Long shopId,
-            @RequestParam(required = false) String reason,
-            RedirectAttributes redirect) {
-        try {
-            complaintService.escalateShopToOperations(shopId, reason);
-            redirect.addFlashAttribute("message", "Đã gửi Cảnh báo vi phạm sang Ban Vận hành (Operations Manager) để hậu kiểm Shop #" + shopId + ".");
-        } catch (IllegalArgumentException ex) {
-            redirect.addFlashAttribute("error", ex.getMessage());
-        }
-        return "redirect:/operations/complaints";
-    }
-
-    // =========================================================================
-    // 3. KIỂM DUYỆT ĐÁNH GIÁ & PHẢN HỒI (CONTENT MODERATION)
+    // 2. KIỂM DUYỆT ĐÁNH GIÁ & PHẢN HỒI (CONTENT MODERATION)
     // =========================================================================
 
     @GetMapping("/reviews")
@@ -152,9 +84,7 @@ public class CsStaffController {
         model.addAttribute("activePage", "reviews");
         model.addAttribute("selectedRating", rating);
         model.addAttribute("selectedModStatus", modStatus);
-
-        Map<String, Object> reports = complaintService.getAnalyticsAndReports();
-        model.addAllAttributes(reports);
+        model.addAttribute("moderationMetrics", complaintService.getContentModerationMetrics());
 
         StringBuilder sql = new StringBuilder(
                 "SELECT r.id, r.rating, r.content, r.created_at, u.full_name AS customer_name, u.email AS customer_email, " +
@@ -224,14 +154,17 @@ public class CsStaffController {
         return updateReviewStatus(id, status, session, redirect, null);
     }
 
+    // =========================================================================
+    // 3. TRA CỨU KHÁCH HÀNG (CUSTOMER SUPPORT LOOKUP)
+    // =========================================================================
+
     @GetMapping("/customers")
     public String customers(@RequestParam(required = false) String keyword, Model model) {
         model.addAttribute("activePage", "customers");
         model.addAttribute("keyword", keyword);
 
         String sql = "SELECT u.id, u.full_name, u.email, u.phone, u.status, u.points_balance, u.created_at, " +
-                "(SELECT COUNT(*) FROM orders o JOIN checkouts c ON c.id = o.checkout_id WHERE c.user_id = u.id) AS order_count, " +
-                "(SELECT COUNT(*) FROM complaints cp WHERE cp.user_id = u.id) AS complaint_count " +
+                "(SELECT COUNT(*) FROM orders o JOIN checkouts c ON c.id = o.checkout_id WHERE c.user_id = u.id) AS order_count " +
                 "FROM users u " +
                 "JOIN user_roles ur ON ur.user_id = u.id " +
                 "JOIN roles r ON r.id = ur.role_id " +
