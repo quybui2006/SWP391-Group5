@@ -41,6 +41,11 @@
             <span>⌂</span> Tổng quan
         </a>
 
+        <a th:classappend="${activePage == 'registration-info'} ? ' active' : ''"
+           th:href="@{/shopowner/registration-info}">
+            <span>📋</span> Thông tin đăng ký
+        </a>
+
         <span class="nav-label">QUẢN LÝ CỬA HÀNG</span>
 
         <a th:classappend="${activePage == 'products'} ? ' active' : ''"
@@ -76,7 +81,7 @@
 
         <a th:classappend="${activePage == 'notifications'} ? ' active' : ''"
            th:href="@{/shopowner/notifications}">
-            <span class="notification-nav-icon" aria-hidden="true">▣</span>
+            <span class="notification-nav-icon" aria-hidden="true">&#x1F514;&#xFE0E;</span>
             <span class="notification-nav-label">Thông báo</span>
             <span class="notification-unread-badge" th:if="${shopOwnerUnreadCount > 0}"
                   th:text="${shopOwnerUnreadCount > 99 ? '99+' : shopOwnerUnreadCount}">1</span>
@@ -94,7 +99,7 @@
 
         <a th:classappend="${activePage == 'payment-verification'} ? ' active' : ''"
            th:href="@{/shopowner/payment-verification}">
-            <span aria-hidden="true">▱</span> Đối soát thanh toán
+            <span>💳</span> Thông tin tài khoản ngân hàng
         </a>
 
         <form th:action="@{/logout}" method="post" style="margin: 8px 4px 0;">
