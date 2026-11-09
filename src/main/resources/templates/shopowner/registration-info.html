@@ -79,6 +79,7 @@
         .btn-action-primary:hover {
             background: linear-gradient(135deg, #15803d 0%, #166534 100%);
             transform: translateY(-1px);
+            color: #fff;
         }
 
         .btn-action-secondary {
@@ -250,7 +251,15 @@
             display: flex;
             align-items: flex-start;
             gap: 10px;
+            cursor: pointer;
             transition: all 0.2s;
+            user-select: none;
+        }
+
+        .step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            border-color: #cbd5e1;
         }
 
         .step-card.done {
@@ -312,46 +321,80 @@
         .reg-nav-tabs {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 22px;
             border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 10px;
+            padding-bottom: 12px;
             overflow-x: auto;
         }
 
         .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font: 600 13px 'DM Sans', sans-serif;
-            color: #64748b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font: 600 13.5px 'Plus Jakarta Sans', sans-serif;
+            color: #475569;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .tab-btn:hover {
             color: #0f172a;
             background: #f1f5f9;
+            border-color: #cbd5e1;
         }
 
         .tab-btn.active {
             background: #16a34a;
             color: #fff;
-            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+            border-color: #16a34a;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
         }
 
-        /* 2-Column Responsive Layout Grid */
-        .info-grid {
+        /* Tab Panels */
+        .tab-panel {
+            display: none;
+            animation: fadeInTab 0.22s ease-in-out;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeInTab {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Layout Grids */
+        .tab-grid-2col {
             display: grid;
             grid-template-columns: 1.15fr 0.85fr;
             gap: 22px;
             align-items: start;
         }
 
+        .tab-grid-equal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            align-items: start;
+        }
+
         @media (max-width: 960px) {
-            .info-grid {
+            .tab-grid-2col,
+            .tab-grid-equal {
                 grid-template-columns: 1fr;
             }
         }
@@ -642,6 +685,179 @@
             text-decoration: line-through;
         }
 
+        /* Certificate Preview Styles */
+        .cert-card-box {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+        .cert-preview-wrapper {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            background: #0f172a;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-top: 12px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .cert-preview-wrapper:hover {
+            border-color: #16a34a;
+            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.18);
+        }
+
+        .cert-preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .cert-preview-wrapper:hover .cert-preview-img {
+            transform: scale(1.03);
+        }
+
+        .cert-zoom-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 13.5px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .cert-preview-wrapper:hover .cert-zoom-overlay {
+            opacity: 1;
+        }
+
+        .cert-empty-box {
+            background: #fffbeb;
+            border: 1px dashed #fcd34d;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #92400e;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        /* Lightbox Modal */
+        .lightbox-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .lightbox-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            background: #ffffff;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: zoomInModal 0.2s ease;
+        }
+
+        @keyframes zoomInModal {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .lightbox-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .lightbox-header h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lightbox-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lightbox-close-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            font-size: 16px;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .lightbox-close-btn:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+        .lightbox-body {
+            padding: 16px;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0f172a;
+            min-height: 360px;
+        }
+
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 72vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
         /* Copy Toast */
         #copyToast {
             position: fixed;
@@ -672,7 +888,7 @@
 
         /* Print Media Style */
         @media print {
-            .sidebar, .top-actions, .reg-header-actions, .reg-nav-tabs, #copyToast {
+            .sidebar, .top-actions, .reg-header-actions, .reg-nav-tabs, #copyToast, .lightbox-modal {
                 display: none !important;
             }
             .app-shell {
@@ -682,6 +898,10 @@
                 margin: 0 !important;
                 padding: 0 !important;
                 max-width: 100% !important;
+            }
+            .tab-panel {
+                display: block !important;
+                margin-bottom: 20px;
             }
             .section-card {
                 box-shadow: none !important;
@@ -761,7 +981,7 @@
                         <h1>
                             <span>📋</span> Toàn bộ Hồ sơ Đăng ký Shop
                         </h1>
-                        <p>Xem lại chi tiết hồ sơ định danh CCCD, thông tin thuế, địa chỉ kho lấy hàng và thông tin tài khoản ngân hàng đã đăng ký với FreshFruit.</p>
+                        <p>Xem lại chi tiết hồ sơ định danh CCCD, thông tin thuế, giấy phép kinh doanh, an toàn thực phẩm và tài khoản ngân hàng đã đăng ký với FreshFruit.</p>
                     </div>
 
                     <div class="reg-header-actions">
@@ -848,19 +1068,22 @@
                         <span th:text="${shop.bankRejectionReason}">Tên chủ tài khoản không trùng khớp với CCCD.</span>
                     </div>
 
-                    <!-- 4-Step Stepper Timeline -->
+                    <!-- 4-Step Stepper Timeline (Clickable to switch tab) -->
                     <div class="stepper-container">
                         <!-- Step 1 -->
-                        <div class="step-card done">
+                        <div class="step-card done" onclick="switchTab('legal-tab', document.getElementById('btn-tab-legal'))" title="Bấm xem Định danh CCCD & Thuế">
                             <span class="step-num-icon">✓</span>
                             <div class="step-card-text">
-                                <strong>1. Định danh CCCD & Thuế</strong>
+                                <strong>1. Định danh CCCD &amp; Thuế</strong>
                                 <small th:text="${createdAtFormatted}">Đã xác thực nộp đơn</small>
                             </div>
                         </div>
 
                         <!-- Step 2 -->
-                        <div class="step-card" th:classappend="${shop.approvalStatus == 'APPROVED'} ? ' done' : (${shop.approvalStatus == 'REJECTED'} ? ' fail' : ' active-step')">
+                        <div class="step-card"
+                             th:classappend="${shop.approvalStatus == 'APPROVED'} ? ' done' : (${shop.approvalStatus == 'REJECTED'} ? ' fail' : ' active-step')"
+                             onclick="switchTab('certificates-tab', document.getElementById('btn-tab-certificates'))"
+                             title="Bấm xem Giấy phép & Thẩm định hồ sơ">
                             <span class="step-num-icon" th:text="${shop.approvalStatus == 'APPROVED' ? '✓' : (shop.approvalStatus == 'REJECTED' ? '✕' : '2')}">2</span>
                             <div class="step-card-text">
                                 <strong>2. Thẩm định Hồ sơ Shop</strong>
@@ -871,7 +1094,10 @@
                         </div>
 
                         <!-- Step 3 -->
-                        <div class="step-card" th:classappend="${shop.paymentApprovalStatus == 'APPROVED'} ? ' done' : (${shop.paymentApprovalStatus == 'REJECTED'} ? ' fail' : (${shop.approvalStatus == 'APPROVED'} ? ' active-step' : ''))">
+                        <div class="step-card"
+                             th:classappend="${shop.paymentApprovalStatus == 'APPROVED'} ? ' done' : (${shop.paymentApprovalStatus == 'REJECTED'} ? ' fail' : (${shop.approvalStatus == 'APPROVED'} ? ' active-step' : ''))"
+                             onclick="switchTab('banking-tab', document.getElementById('btn-tab-banking'))"
+                             title="Bấm xem Tài khoản Ngân hàng">
                             <span class="step-num-icon" th:text="${shop.paymentApprovalStatus == 'APPROVED' ? '✓' : (shop.paymentApprovalStatus == 'REJECTED' ? '✕' : '3')}">3</span>
                             <div class="step-card-text">
                                 <strong>3. Tài khoản Ngân hàng</strong>
@@ -882,105 +1108,485 @@
                         </div>
 
                         <!-- Step 4 -->
-                        <div class="step-card" th:classappend="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN'} ? ' done' : ''">
+                        <div class="step-card"
+                             th:classappend="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN'} ? ' done' : ''"
+                             onclick="switchTab('shop-tab', document.getElementById('btn-tab-shop'))"
+                             title="Bấm xem Gian hàng & Kho bãi">
                             <span class="step-num-icon" th:text="${shop.approvalStatus == 'APPROVED' and shop.paymentApprovalStatus == 'APPROVED' and shop.operatingStatus == 'OPEN' ? '✓' : '4'}">4</span>
                             <div class="step-card-text">
                                 <strong>4. Mở bán Chính thức</strong>
                                 <small th:text="${shop.operatingStatus == 'OPEN' ? 'Đang mở bán trên FreshFruit' : 'Sẵn sàng bán hàng'}">
-                                    Đăng biến thể & bán hoa quả
+                                    Đăng biến thể &amp; bán hoa quả
                                 </small>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Navigation Tabs Filter -->
-                <div class="reg-nav-tabs">
-                    <button type="button" class="tab-btn active" onclick="filterTab('all', this)">📋 Tất cả thông tin</button>
-                    <button type="button" class="tab-btn" onclick="filterTab('shop-section', this)">🏪 Gian hàng & Kho bãi</button>
-                    <button type="button" class="tab-btn" onclick="filterTab('legal-section', this)">🪪 Định danh & Thuế</button>
-                    <button type="button" class="tab-btn" onclick="filterTab('certificates-section', this)">📑 GPKD &amp; An toàn thực phẩm</button>
-                    <button type="button" class="tab-btn" onclick="filterTab('banking-section', this)">💳 Tài khoản Ngân hàng</button>
+                <!-- Navigation Tabs Filter: Bỏ "Tất cả thông tin", Mặc định là "Gian hàng & Kho bãi" -->
+                <div class="reg-nav-tabs" role="tablist">
+                    <button type="button" class="tab-btn active" id="btn-tab-shop" onclick="switchTab('shop-tab', this)">
+                        🏪 Gian hàng &amp; Kho bãi
+                    </button>
+                    <button type="button" class="tab-btn" id="btn-tab-legal" onclick="switchTab('legal-tab', this)">
+                        🪪 Định danh &amp; Thuế
+                    </button>
+                    <button type="button" class="tab-btn" id="btn-tab-certificates" onclick="switchTab('certificates-tab', this)">
+                        📑 GPKD &amp; An toàn thực phẩm
+                    </button>
+                    <button type="button" class="tab-btn" id="btn-tab-banking" onclick="switchTab('banking-tab', this)">
+                        💳 Tài khoản Ngân hàng
+                    </button>
                 </div>
 
-                <!-- Main Grid Layout -->
-                <div class="info-grid">
-
-                    <!-- LEFT COLUMN: Shop Info & Fulfillment -->
-                    <div class="grid-col-left">
-
-                        <!-- SECTION 1: THÔNG TIN GIAN HÀNG & KHO HÀNG -->
-                        <div class="section-card" id="shop-section">
-                            <div class="section-title">
-                                <h2><span>🏪</span> Thông tin Gian hàng & Kho vận</h2>
-                                <span class="section-tag">Hồ sơ chính thức</span>
-                            </div>
-
-                            <div class="data-rows">
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Tên gian hàng hiển thị</span>
-                                    <span class="data-val">
-                                        <b th:text="${shop.name}">FreshFruit Store</b>
-                                        <span style="color:#16a34a; font-size: 15px;" title="Cửa hàng đã xác minh">✓</span>
-                                    </span>
+                <!-- ==========================================================================
+                     TAB 1: GIAN HÀNG & KHO BÃI (MẶC ĐỊNH ĐẦU TIÊN)
+                     ========================================================================== -->
+                <div class="tab-panel active" id="shop-tab" role="tabpanel">
+                    <div class="tab-grid-2col">
+                        <!-- Left Column: Shop Details -->
+                        <div>
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <h2><span>🏪</span> Thông tin Gian hàng &amp; Kho vận</h2>
+                                    <span class="section-tag">Hồ sơ chính thức</span>
                                 </div>
 
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Hotline liên hệ kinh doanh</span>
-                                    <span class="data-val">
-                                        <span th:text="${shop.phone}">0912345678</span>
-                                        <button type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.phone} + '\')'">Sao chép</button>
-                                    </span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Tỉnh / Thành phố kho lấy hàng</span>
-                                    <span class="data-val" th:text="${provinceName}">Hà Nội</span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Phường / Xã</span>
-                                    <span class="data-val" th:text="${shop.wardName}">Phường Dịch Vọng Hậu</span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Địa chỉ kho lấy hàng chi tiết</span>
-                                    <span class="data-val" style="text-align: right; max-width: 320px;" th:text="${shop.addressDetail}">
-                                        Số 123 Đường Cầu Giấy
-                                    </span>
-                                </div>
-
-                                <div class="data-row" style="margin-top: 6px;">
-                                    <span class="data-label">Mô tả gian hàng & Cam kết chất lượng nông sản</span>
-                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 13.5px; color: #334155; line-height: 1.5;"
-                                         th:text="${!#strings.isEmpty(shop.description) ? shop.description : '(Chưa có mô tả chi tiết)'}">
-                                        Cam kết cung cấp hoa quả tươi ngon, có nguồn gốc xuất xứ rõ ràng.
+                                <div class="data-rows">
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Tên gian hàng hiển thị</span>
+                                        <span class="data-val">
+                                            <b th:text="${shop.name}">FreshFruit Store</b>
+                                            <span style="color:#16a34a; font-size: 15px;" title="Cửa hàng đã xác minh">✓</span>
+                                        </span>
                                     </div>
-                                </div>
 
-                                <!-- Shipping Methods Enabled -->
-                                <div class="data-row" style="margin-top: 8px;">
-                                    <span class="data-label">Kênh vận chuyển đã đăng ký</span>
-                                    <div class="shipping-pills">
-                                        <span class="ship-pill" th:classappend="${shippingExpress} ? 'active' : 'inactive'">
-                                            ⚡ Giao Hỏa tốc (2h - 4h)
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Mã cửa hàng FreshFruit</span>
+                                        <span class="data-val">
+                                            <span th:text="'#FF-' + ${shop.id}" style="font-family: monospace; font-weight:700; color:#1d4ed8;">#FF-1</span>
+                                            <button type="button" class="copy-chip" th:attr="onclick='copyText(\'#FF-' + ${shop.id} + '\')'">Sao chép</button>
                                         </span>
-                                        <span class="ship-pill" th:classappend="${shippingFast} ? 'active' : 'inactive'">
-                                            🚚 Giao Nhanh (Trong ngày)
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Hotline liên hệ kinh doanh</span>
+                                        <span class="data-val">
+                                            <span th:text="${shop.phone}">0912345678</span>
+                                            <button type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.phone} + '\')'">Sao chép</button>
                                         </span>
-                                        <span class="ship-pill" th:classappend="${shippingStandard} ? 'active' : 'inactive'">
-                                            📦 Giao Tiêu chuẩn (2 - 3 ngày)
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Tỉnh / Thành phố kho lấy hàng</span>
+                                        <span class="data-val" th:text="${provinceName}">Hà Nội</span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Phường / Xã</span>
+                                        <span class="data-val" th:text="${shop.wardName}">Phường Dịch Vọng Hậu</span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Địa chỉ kho lấy hàng chi tiết</span>
+                                        <span class="data-val" style="text-align: right; max-width: 320px;" th:text="${shop.addressDetail}">
+                                            Số 123 Đường Cầu Giấy
                                         </span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Địa chỉ kho hoàn chỉnh</span>
+                                        <span class="data-val" style="text-align: right; max-width: 360px;">
+                                            <span th:text="${shop.addressDetail + ', ' + shop.wardName + ', ' + provinceName}">Địa chỉ đầy đủ</span>
+                                            <button type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.addressDetail + ', ' + shop.wardName + ', ' + provinceName} + '\')'">Sao chép</button>
+                                        </span>
+                                    </div>
+
+                                    <div class="data-row" style="margin-top: 6px;">
+                                        <span class="data-label">Mô tả gian hàng &amp; Cam kết chất lượng nông sản</span>
+                                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 13.5px; color: #334155; line-height: 1.5;"
+                                             th:text="${!#strings.isEmpty(shop.description) ? shop.description : '(Chưa có mô tả chi tiết)'}">
+                                            Cam kết cung cấp hoa quả tươi ngon, có nguồn gốc xuất xứ rõ ràng.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- SECTION 3: TÀI KHOẢN NGÂN HÀNG & NHẬN THANH TOÁN -->
-                        <div class="section-card" id="banking-section">
+                        <!-- Right Column: Operations & Shipping -->
+                        <div>
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <h2><span>🚚</span> Kênh Vận chuyển &amp; Vận hành</h2>
+                                    <span class="section-tag">Giao nhận</span>
+                                </div>
+
+                                <div class="data-rows">
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Trạng thái mở bán</span>
+                                        <span class="data-val">
+                                            <span th:if="${shop.operatingStatus == 'OPEN'}" class="status-pill-lg pill-approved" style="padding:4px 10px; font-size:12px;">● ĐANG MỞ BÁN</span>
+                                            <span th:if="${shop.operatingStatus == 'SUSPENDED'}" class="status-pill-lg pill-rejected" style="padding:4px 10px; font-size:12px;">⛔ TẠM DỪNG BÁN</span>
+                                            <span th:if="${shop.operatingStatus == 'CLOSED'}" class="status-pill-lg pill-gray" style="padding:4px 10px; font-size:12px;">○ ĐANG ĐÓNG CỬA</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Hồ sơ thẩm định</span>
+                                        <span class="data-val">
+                                            <span th:if="${shop.approvalStatus == 'APPROVED'}" class="status-pill-lg pill-approved" style="padding:4px 10px; font-size:12px;">✓ ĐÃ DUYỆT</span>
+                                            <span th:if="${shop.approvalStatus == 'PENDING'}" class="status-pill-lg pill-pending" style="padding:4px 10px; font-size:12px;">⏳ CHỜ DUYỆT</span>
+                                            <span th:if="${shop.approvalStatus == 'REJECTED'}" class="status-pill-lg pill-rejected" style="padding:4px 10px; font-size:12px;">✕ BỊ TỪ CHỐI</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Ngày nộp hồ sơ</span>
+                                        <span class="data-val" th:text="${createdAtFormatted}">25/10/2026</span>
+                                    </div>
+
+                                    <div class="data-row horizontal" th:if="${reviewedAtFormatted != null}">
+                                        <span class="data-label">Ngày Ban Quản trị duyệt</span>
+                                        <span class="data-val" th:text="${reviewedAtFormatted}">26/10/2026</span>
+                                    </div>
+
+                                    <!-- Shipping Methods Enabled -->
+                                    <div class="data-row" style="margin-top: 8px;">
+                                        <span class="data-label">Kênh vận chuyển đã đăng ký</span>
+                                        <div class="shipping-pills">
+                                            <span class="ship-pill" th:classappend="${shippingExpress} ? 'active' : 'inactive'">
+                                                ⚡ Giao Hỏa tốc (2h - 4h)
+                                            </span>
+                                            <span class="ship-pill" th:classappend="${shippingFast} ? 'active' : 'inactive'">
+                                                🚚 Giao Nhanh (Trong ngày)
+                                            </span>
+                                            <span class="ship-pill" th:classappend="${shippingStandard} ? 'active' : 'inactive'">
+                                                📦 Giao Tiêu chuẩn (2 - 3 ngày)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                        <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="width: 100%; justify-content: center; box-sizing: border-box;">
+                                            <span>✏️</span> Cập nhật thông tin Gian hàng &amp; Kho
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rules & Support Box -->
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <h2><span>📜</span> Cam kết &amp; Quy chuẩn Gian hàng</h2>
+                                </div>
+                                <div style="font-size: 13px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                        <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                        <span>Hoa quả cung ứng phải đảm bảo nguồn gốc rõ ràng, không sử dụng chất cấm bảo quản.</span>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                        <span style="color:#16a34a; font-weight: 700;">✓</span>
+                                        <span>Kho hàng cần đóng gói đúng quy chuẩn chống dập nát trước khi bàn giao cho đơn vị vận chuyển.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================================
+                     TAB 2: ĐỊNH DANH PHÁP LÝ CCCD & THUẾ
+                     ========================================================================== -->
+                <div class="tab-panel" id="legal-tab" role="tabpanel">
+                    <div class="tab-grid-equal">
+                        <!-- Left: CCCD Mockup & Info -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <h2><span>🪪</span> Định danh Pháp lý Căn cước công dân</h2>
+                                <span class="section-tag">Bảo mật cao</span>
+                            </div>
+
+                            <!-- Digital ID Card Mockup -->
+                            <div class="id-mockup-card">
+                                <div class="id-card-top">
+                                    <strong>CĂN CƯỚC CÔNG DÂN VIỆT NAM</strong>
+                                    <div class="id-card-chip"></div>
+                                </div>
+
+                                <div class="id-name-box">
+                                    <small>HỌ VÀ TÊN / FULL NAME</small>
+                                    <h3 th:text="${shop.idCardName != null ? #strings.toUpperCase(shop.idCardName) : (activation != null ? #strings.toUpperCase(activation.idCardName) : 'CHỦ GIAN HÀNG')}">
+                                        NGUYEN VAN A
+                                    </h3>
+                                </div>
+
+                                <div class="id-meta-grid">
+                                    <div class="id-meta-item">
+                                        <small>SỐ ĐỊNH DANH / ID</small>
+                                        <b th:text="${shop.idCardNumber ?: (activation != null ? activation.idCardNumber : 'Chưa cập nhật')}">001203004567</b>
+                                    </div>
+                                    <div class="id-meta-item">
+                                        <small>LOẠI HÌNH</small>
+                                        <b th:text="${businessTypeLabel}">Cá nhân / Nhà vườn</b>
+                                    </div>
+                                    <div class="id-meta-item">
+                                        <small>NGÀY CẤP</small>
+                                        <b th:text="${shop.idCardDate != null ? #temporals.format(shop.idCardDate, 'dd/MM/yyyy') : (activation != null && activation.idCardDate != null ? activation.idCardDate : 'Chưa có')}">01/01/2021</b>
+                                    </div>
+                                    <div class="id-meta-item">
+                                        <small>NƠI CẤP</small>
+                                        <b th:text="${shop.idCardPlace ?: (activation != null ? activation.idCardPlace : 'Cục CSQLHC về TTXH')}">Cục CSQLHC</b>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Personal Details breakdown -->
+                            <div class="data-rows">
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Họ và tên trên CCCD</span>
+                                    <span class="data-val" th:text="${shop.idCardName != null ? #strings.toUpperCase(shop.idCardName) : 'Chưa cập nhật'}">NGUYEN VAN A</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Số Căn cước công dân</span>
+                                    <span class="data-val">
+                                        <span th:text="${shop.idCardNumber ?: 'Chưa cập nhật'}" style="font-family: monospace; font-weight:700;">001203004567</span>
+                                        <button th:if="${shop.idCardNumber != null}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.idCardNumber} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Ngày cấp thẻ CCCD</span>
+                                    <span class="data-val" th:text="${shop.idCardDate != null ? #temporals.format(shop.idCardDate, 'dd/MM/yyyy') : 'Chưa cập nhật'}">01/01/2021</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Nơi cấp</span>
+                                    <span class="data-val" th:text="${shop.idCardPlace ?: 'Cục CSQLHC về TTXH'}">Cục CSQLHC về TTXH</span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Mô hình kinh doanh</span>
+                                    <span class="data-val" th:text="${businessTypeLabel}">Cá nhân / Nhà vườn</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Tax & Invoicing -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <h2><span>📑</span> Thông tin Thuế &amp; Hóa đơn điện tử</h2>
+                                <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Thuế điện tử</span>
+                            </div>
+
+                            <div class="data-rows">
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Mã số thuế (MST)</span>
+                                    <span class="data-val">
+                                        <span th:text="${!#strings.isEmpty(shop.taxCode) ? shop.taxCode : 'Chưa có / Đăng ký theo CCCD'}" style="font-family: monospace; font-weight:700; color:#0f172a;">8123456789</span>
+                                        <button th:if="${!#strings.isEmpty(shop.taxCode)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.taxCode} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Tên người nộp thuế</span>
+                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.taxName) ? shop.taxName : (shop.idCardName ?: 'Đồng nhất chủ hộ')}">
+                                        Nguyen Van A
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Email nhận hóa đơn điện tử</span>
+                                    <span class="data-val">
+                                        <span th:text="${!#strings.isEmpty(shop.taxEmail) ? shop.taxEmail : (activation != null ? activation.email : 'Chưa cung cấp')}">seller@freshfruit.com</span>
+                                        <button th:if="${!#strings.isEmpty(shop.taxEmail)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.taxEmail} + '\')'">Sao chép</button>
+                                    </span>
+                                </div>
+
+                                <div class="data-row horizontal">
+                                    <span class="data-label">Đối tượng kê khai</span>
+                                    <span class="data-val">Khấu trừ tại sàn &amp; Khai thuế định kỳ</span>
+                                </div>
+
+                                <div style="margin-top: 14px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                                    <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 6px;">🔒 Quy chế bảo mật dữ liệu định danh:</strong>
+                                    <p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.5;">
+                                        Thông tin Căn cước công dân và Mã số thuế được mã hóa theo chuẩn bảo mật và tuân thủ chặt chẽ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. FreshFruit chỉ sử dụng thông tin này để phục vụ kê khai thuế và đối soát thanh toán.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================================
+                     TAB 3: GIẤY PHÉP KINH DOANH & AN TOÀN THỰC PHẨM (XEM LẠI GIẤY PHÉP ĐÃ NỘP)
+                     ========================================================================== -->
+                <div class="tab-panel" id="certificates-tab" role="tabpanel">
+                    <div class="tab-grid-equal">
+
+                        <!-- Card 1: Giấy phép Đăng ký Kinh doanh -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <h2><span>📄</span> Giấy phép Đăng ký Kinh doanh (GPKD)</h2>
+                                <span th:if="${!#strings.isEmpty(shop.businessLicenseNumber) or !#strings.isEmpty(shop.businessLicenseUrl)}"
+                                      class="section-tag">✓ Đã nộp</span>
+                                <span th:unless="${!#strings.isEmpty(shop.businessLicenseNumber) or !#strings.isEmpty(shop.businessLicenseUrl)}"
+                                      class="section-tag" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;">Chưa nộp</span>
+                            </div>
+
+                            <div class="cert-card-box">
+                                <div class="data-rows">
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Số GPKD / Mã số DN</span>
+                                        <span class="data-val">
+                                            <span th:text="${!#strings.isEmpty(shop.businessLicenseNumber) ? shop.businessLicenseNumber : 'Chưa cập nhật'}"
+                                                  style="font-family: monospace; font-weight:700; color:#0f172a;">0101234567</span>
+                                            <button th:if="${!#strings.isEmpty(shop.businessLicenseNumber)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.businessLicenseNumber} + '\')'">Sao chép</button>
+                                        </span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Ngày cấp</span>
+                                        <span class="data-val" th:text="${shop.businessLicenseDate != null ? #temporals.format(shop.businessLicenseDate, 'dd/MM/yyyy') : 'Chưa cập nhật'}">01/01/2023</span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Cơ quan cấp</span>
+                                        <span class="data-val" th:text="${!#strings.isEmpty(shop.businessLicensePlace) ? shop.businessLicensePlace : 'Chưa cập nhật'}">Sở Kế hoạch &amp; Đầu tư</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview / Xem lại Giấy phép đã nộp -->
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span class="data-label" style="font-weight: 700; color: #0f172a;">Bản chụp Giấy phép Kinh doanh đã nộp:</span>
+                                    <div th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}" style="display: flex; gap: 6px;">
+                                        <a th:href="${shop.businessLicenseUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none;">
+                                            🔗 Mở tab mới
+                                        </a>
+                                        <button type="button" class="copy-chip" style="background:#059669; color:#fff;"
+                                                th:attr="onclick='openPreviewModal(\'' + ${shop.businessLicenseUrl} + '\', \'Bản chụp Giấy phép Đăng ký Kinh doanh\')'">
+                                            🔍 Phóng to
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Has URL Preview -->
+                                <div th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}"
+                                     class="cert-preview-wrapper"
+                                     th:attr="onclick='openPreviewModal(\'' + ${shop.businessLicenseUrl} + '\', \'Bản chụp Giấy phép Đăng ký Kinh doanh\')'"
+                                     title="Bấm vào để xem ảnh phóng to đầy đủ">
+                                    <img th:src="${shop.businessLicenseUrl}" alt="Bản chụp Giấy phép Kinh doanh" class="cert-preview-img"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="cert-zoom-overlay">
+                                        <span>🔍 Bấm để xem ảnh phóng to đầy đủ</span>
+                                    </div>
+                                </div>
+
+                                <!-- No URL Alert -->
+                                <div th:unless="${!#strings.isEmpty(shop.businessLicenseUrl)}" class="cert-empty-box">
+                                    <div style="font-size: 24px; margin-bottom: 6px;">⚠️</div>
+                                    <strong>Chưa tải lên bản chụp Giấy phép Đăng ký Kinh doanh</strong>
+                                    <p style="margin: 6px 0 12px; color: #b45309;">Hồ sơ của bạn chưa có bản chụp tài liệu GPKD hợp lệ.</p>
+                                    <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="font-size: 12px; padding: 6px 14px;">
+                                        Bổ sung giấy phép ngay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Giấy chứng nhận An toàn thực phẩm -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <h2><span>🛡️</span> Giấy chứng nhận An toàn thực phẩm (ATTP)</h2>
+                                <span th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber) or !#strings.isEmpty(shop.foodSafetyCertUrl)}"
+                                      class="section-tag">✓ Đã nộp</span>
+                                <span th:unless="${!#strings.isEmpty(shop.foodSafetyCertNumber) or !#strings.isEmpty(shop.foodSafetyCertUrl)}"
+                                      class="section-tag" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;">Chưa nộp</span>
+                            </div>
+
+                            <div class="cert-card-box">
+                                <div class="data-rows">
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Số chứng nhận ATTP</span>
+                                        <span class="data-val">
+                                            <span th:text="${!#strings.isEmpty(shop.foodSafetyCertNumber) ? shop.foodSafetyCertNumber : 'Chưa cập nhật'}"
+                                                  style="font-family: monospace; font-weight:700; color:#065f46;">123/2023/ATTP-CNĐK</span>
+                                            <button th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.foodSafetyCertNumber} + '\')'">Sao chép</button>
+                                        </span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Ngày cấp</span>
+                                        <span class="data-val" th:text="${shop.foodSafetyCertDate != null ? #temporals.format(shop.foodSafetyCertDate, 'dd/MM/yyyy') : 'Chưa cập nhật'}">01/01/2023</span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Ngày hết hạn</span>
+                                        <span class="data-val" th:text="${shop.foodSafetyCertExpiry != null ? #temporals.format(shop.foodSafetyCertExpiry, 'dd/MM/yyyy') : 'Theo quy định'}">01/01/2026</span>
+                                    </div>
+
+                                    <div class="data-row horizontal">
+                                        <span class="data-label">Cơ quan cấp</span>
+                                        <span class="data-val" th:text="${!#strings.isEmpty(shop.foodSafetyCertPlace) ? shop.foodSafetyCertPlace : 'Chi cục ATVSTP'}">Chi cục ATVSTP</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview / Xem lại Giấy phép đã nộp -->
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span class="data-label" style="font-weight: 700; color: #0f172a;">Bản chụp Giấy chứng nhận ATTP đã nộp:</span>
+                                    <div th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}" style="display: flex; gap: 6px;">
+                                        <a th:href="${shop.foodSafetyCertUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none;">
+                                            🔗 Mở tab mới
+                                        </a>
+                                        <button type="button" class="copy-chip" style="background:#059669; color:#fff;"
+                                                th:attr="onclick='openPreviewModal(\'' + ${shop.foodSafetyCertUrl} + '\', \'Giấy chứng nhận An toàn thực phẩm (ATTP)\')'">
+                                            🔍 Phóng to
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Has URL Preview -->
+                                <div th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}"
+                                     class="cert-preview-wrapper"
+                                     th:attr="onclick='openPreviewModal(\'' + ${shop.foodSafetyCertUrl} + '\', \'Giấy chứng nhận An toàn thực phẩm (ATTP)\')'"
+                                     title="Bấm vào để xem ảnh phóng to đầy đủ">
+                                    <img th:src="${shop.foodSafetyCertUrl}" alt="Bản chụp Giấy chứng nhận ATTP" class="cert-preview-img"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="cert-zoom-overlay">
+                                        <span>🔍 Bấm để xem ảnh phóng to đầy đủ</span>
+                                    </div>
+                                </div>
+
+                                <!-- No URL Alert -->
+                                <div th:unless="${!#strings.isEmpty(shop.foodSafetyCertUrl)}" class="cert-empty-box">
+                                    <div style="font-size: 24px; margin-bottom: 6px;">⚠️</div>
+                                    <strong>Chưa tải lên bản chụp Giấy chứng nhận ATTP</strong>
+                                    <p style="margin: 6px 0 12px; color: #b45309;">Hồ sơ của bạn chưa có bản chụp Giấy chứng nhận an toàn thực phẩm.</p>
+                                    <a th:href="@{/seller/create-shop(mode='edit')}" class="btn-action btn-action-primary" style="font-size: 12px; padding: 6px 14px;">
+                                        Bổ sung giấy chứng nhận ngay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ==========================================================================
+                     TAB 4: TÀI KHOẢN NGÂN HÀNG & NHẬN THANH TOÁN
+                     ========================================================================== -->
+                <div class="tab-panel" id="banking-tab" role="tabpanel">
+                    <div class="tab-grid-equal">
+                        <!-- Left: Virtual Bank Card & Details -->
+                        <div class="section-card">
                             <div class="section-title">
                                 <h2><span>💳</span> Thông tin Tài khoản Ngân hàng Thụ hưởng</h2>
-                                <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Nhận tiền doanh thu</span>
+                                <span class="section-tag" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Nhận doanh thu</span>
                             </div>
 
                             <!-- Virtual Bank Card Mockup -->
@@ -1028,7 +1634,7 @@
                                 <div class="data-row horizontal">
                                     <span class="data-label">Số tài khoản ngân hàng</span>
                                     <span class="data-val">
-                                        <span th:text="${!#strings.isEmpty(shop.bankAccountNumber) ? shop.bankAccountNumber : 'Chưa cập nhật'}">0123456789</span>
+                                        <span th:text="${!#strings.isEmpty(shop.bankAccountNumber) ? shop.bankAccountNumber : 'Chưa cập nhật'}" style="font-family: monospace; font-weight:700;">0123456789</span>
                                         <button th:if="${!#strings.isEmpty(shop.bankAccountNumber)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.bankAccountNumber} + '\')'">Sao chép</button>
                                     </span>
                                 </div>
@@ -1052,209 +1658,60 @@
                             </div>
                         </div>
 
-                    </div>
-
-                    <!-- RIGHT COLUMN: Legal Identity & Tax -->
-                    <div class="grid-col-right">
-
-                        <!-- SECTION 2: ĐỊNH DANH PHÁP LÝ CCCD & THUẾ -->
-                        <div class="section-card" id="legal-section">
-                            <div class="section-title">
-                                <h2><span>🪪</span> Định danh Pháp lý & Thuế</h2>
-                                <span class="section-tag">Bảo mật cao</span>
-                            </div>
-
-                            <!-- Digital ID Card Mockup -->
-                            <div class="id-mockup-card">
-                                <div class="id-card-top">
-                                    <strong>CĂN CƯỚC CÔNG DÂN VIỆT NAM</strong>
-                                    <div class="id-card-chip"></div>
-                                </div>
-
-                                <div class="id-name-box">
-                                    <small>HỌ VÀ TÊN / FULL NAME</small>
-                                    <h3 th:text="${shop.idCardName != null ? #strings.toUpperCase(shop.idCardName) : (activation != null ? #strings.toUpperCase(activation.idCardName) : 'CHỦ GIAN HÀNG')}">
-                                        NGUYEN VAN A
-                                    </h3>
-                                </div>
-
-                                <div class="id-meta-grid">
-                                    <div class="id-meta-item">
-                                        <small>SỐ ĐỊNH DANH / ID</small>
-                                        <b th:text="${shop.idCardNumber ?: (activation != null ? activation.idCardNumber : 'Chưa cập nhật')}">001203004567</b>
-                                    </div>
-                                    <div class="id-meta-item">
-                                        <small>LOẠI HÌNH</small>
-                                        <b th:text="${businessTypeLabel}">Cá nhân / Nhà vườn</b>
-                                    </div>
-                                    <div class="id-meta-item">
-                                        <small>NGÀY CẤP</small>
-                                        <b th:text="${shop.idCardDate != null ? #temporals.format(shop.idCardDate, 'dd/MM/yyyy') : (activation != null && activation.idCardDate != null ? activation.idCardDate : 'Chưa có')}">01/01/2021</b>
-                                    </div>
-                                    <div class="id-meta-item">
-                                        <small>NƠI CẤP</small>
-                                        <b th:text="${shop.idCardPlace ?: (activation != null ? activation.idCardPlace : 'Cục CSQLHC về TTXH')}">Cục CSQLHC</b>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tax Information Breakdown -->
-                            <div class="data-rows">
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Số Căn cước công dân</span>
-                                    <span class="data-val">
-                                        <span th:text="${shop.idCardNumber ?: 'Chưa cập nhật'}">001203004567</span>
-                                        <button th:if="${shop.idCardNumber != null}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.idCardNumber} + '\')'">Sao chép</button>
-                                    </span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Mô hình kinh doanh</span>
-                                    <span class="data-val" th:text="${businessTypeLabel}">Cá nhân / Nhà vườn</span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Mã số thuế (MST)</span>
-                                    <span class="data-val">
-                                        <span th:text="${!#strings.isEmpty(shop.taxCode) ? shop.taxCode : 'Chưa có / Đăng ký theo CCCD'}">8123456789</span>
-                                        <button th:if="${!#strings.isEmpty(shop.taxCode)}" type="button" class="copy-chip" th:attr="onclick='copyText(\'' + ${shop.taxCode} + '\')'">Sao chép</button>
-                                    </span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Tên người nộp thuế</span>
-                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.taxName) ? shop.taxName : (shop.idCardName ?: 'Đồng nhất chủ hộ')}">
-                                        Nguyen Van A
-                                    </span>
-                                </div>
-
-                                <div class="data-row horizontal">
-                                    <span class="data-label">Email nhận hóa đơn điện tử</span>
-                                    <span class="data-val" th:text="${!#strings.isEmpty(shop.taxEmail) ? shop.taxEmail : (activation != null ? activation.email : 'Chưa cung cấp')}">
-                                        seller@freshfruit.com
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                                                <!-- SECTION 3B: GIẤY PHÉP KINH DOANH & AN TOÀN THỰC PHẨM -->
-                        <div class="section-card" id="certificates-section">
-                            <div class="section-title">
-                                <h2><span>📑</span> Giấy phép Kinh doanh &amp; An toàn thực phẩm</h2>
-                                <span class="section-tag" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;">Bắt buộc</span>
-                            </div>
-
-                            <!-- Business License Card -->
-                            <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span style="font-size: 20px;">📄</span>
-                                        <strong style="color: #0f172a; font-size: 13.5px;">GIẤY PHÉP ĐĂNG KÝ KINH DOANH</strong>
-                                    </div>
-                                    <span th:if="${!#strings.isEmpty(shop.businessLicenseNumber)}" style="background:#dcfce7; color:#15803d; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">✓ Đã nộp</span>
-                                    <span th:unless="${!#strings.isEmpty(shop.businessLicenseNumber)}" style="background:#fef2f2; color:#dc2626; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">Chưa nộp</span>
-                                </div>
-                                <div class="data-rows" style="margin-top:8px;">
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Số GPKD / MST</span>
-                                        <span class="data-val">
-                                            <span th:text="${!#strings.isEmpty(shop.businessLicenseNumber) ? shop.businessLicenseNumber : 'Chưa cập nhật'}" style="font-family:monospace; font-weight:700; color:#0f172a;">0101234567</span>
-                                            <button th:if="${!#strings.isEmpty(shop.businessLicenseNumber)}" type="button" class="copy-chip" th:onclick="|copyText('${shop.businessLicenseNumber}')|">Sao chép</button>
-                                        </span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Ngày cấp</span>
-                                        <span class="data-val" th:text="${shop.businessLicenseDate != null ? #temporals.format(shop.businessLicenseDate, 'dd/MM/yyyy') : 'Chưa có'}">01/01/2023</span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Cơ quan cấp</span>
-                                        <span class="data-val" th:text="${!#strings.isEmpty(shop.businessLicensePlace) ? shop.businessLicensePlace : 'Chưa cập nhật'}">Sở KH&amp;ĐT</span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;" th:if="${!#strings.isEmpty(shop.businessLicenseUrl)}">
-                                        <span class="data-label">Tài liệu / Bản chụp</span>
-                                        <span class="data-val">
-                                            <a th:href="${shop.businessLicenseUrl}" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none;">📎 Xem bản chụp GPKD</a>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Food Safety Certificate Card -->
-                            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px;">
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span style="font-size: 20px;">🛡️</span>
-                                        <strong style="color: #065f46; font-size: 13.5px;">GIẤY CHỨNG NHẬN AN TOÀN THỰC PHẨM</strong>
-                                    </div>
-                                    <span th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" style="background:#dcfce7; color:#15803d; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">✓ Đã nộp</span>
-                                    <span th:unless="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" style="background:#fef2f2; color:#dc2626; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;">Chưa nộp</span>
-                                </div>
-                                <div class="data-rows" style="margin-top:8px;">
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Số chứng nhận ATTP</span>
-                                        <span class="data-val">
-                                            <span th:text="${!#strings.isEmpty(shop.foodSafetyCertNumber) ? shop.foodSafetyCertNumber : 'Chưa cập nhật'}" style="font-family:monospace; font-weight:700; color:#065f46;">123/2023/ATTP-CNĐK</span>
-                                            <button th:if="${!#strings.isEmpty(shop.foodSafetyCertNumber)}" type="button" class="copy-chip" th:onclick="|copyText('${shop.foodSafetyCertNumber}')|">Sao chép</button>
-                                        </span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Ngày cấp</span>
-                                        <span class="data-val" th:text="${shop.foodSafetyCertDate != null ? #temporals.format(shop.foodSafetyCertDate, 'dd/MM/yyyy') : 'Chưa có'}">01/01/2023</span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Ngày hết hạn</span>
-                                        <span class="data-val" th:text="${shop.foodSafetyCertExpiry != null ? #temporals.format(shop.foodSafetyCertExpiry, 'dd/MM/yyyy') : 'Theo quy định'}">01/01/2026</span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;">
-                                        <span class="data-label">Cơ quan cấp</span>
-                                        <span class="data-val" th:text="${!#strings.isEmpty(shop.foodSafetyCertPlace) ? shop.foodSafetyCertPlace : 'Chi cục ATVSTP'}">Chi cục ATVSTP</span>
-                                    </div>
-                                    <div class="data-row horizontal" style="padding:6px 0;" th:if="${!#strings.isEmpty(shop.foodSafetyCertUrl)}">
-                                        <span class="data-label">Tài liệu / Bản chụp</span>
-                                        <span class="data-val">
-                                            <a th:href="${shop.foodSafetyCertUrl}" target="_blank" class="copy-chip" style="background:#059669; color:#fff; text-decoration:none;">📎 Xem bản chụp Giấy ATTP</a>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- SECTION 4: QUY CHẾ VẬN HÀNH & HỖ TRỢ -->
+                        <!-- Right: Payment Policy & Verification Guide -->
                         <div class="section-card">
                             <div class="section-title">
-                                <h2><span>📜</span> Cam kết & Hỗ trợ Gian hàng</h2>
+                                <h2><span>🛡️</span> Quy chuẩn Thanh toán &amp; Đối soát</h2>
+                                <span class="section-tag">Chính sách</span>
                             </div>
 
-                            <div style="font-size: 13px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+                            <div style="font-size: 13px; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
                                 <div style="display: flex; align-items: flex-start; gap: 8px;">
                                     <span style="color:#16a34a; font-weight: 700;">✓</span>
-                                    <span>Hồ sơ đã được lưu trữ và mã hóa an toàn trên máy chủ FreshFruit Việt Nam.</span>
+                                    <span><strong>Khớp danh tính 100%:</strong> Tên chủ tài khoản nhận doanh thu bắt buộc phải trùng khớp với Họ và tên trên Căn cước công dân đã nộp nhằm phòng chống rửa tiền và gian lận thương mại điện tử.</span>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 8px;">
                                     <span style="color:#16a34a; font-weight: 700;">✓</span>
-                                    <span>Chủ cửa hàng cam kết cung ứng nông sản đúng nguồn gốc xuất xứ, đạt tiêu chuẩn an toàn thực phẩm.</span>
+                                    <span><strong>Tự động quyết toán:</strong> Tiền hàng sau khi đơn hoàn tất sẽ được ghi nhận vào ví gian hàng và tự động giải ngân về số tài khoản này theo kỳ quy định.</span>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 8px;">
                                     <span style="color:#16a34a; font-weight: 700;">✓</span>
-                                    <span>Mọi điều chỉnh liên quan đến thông tin pháp lý CCCD / MST cần được Ban Quản trị hậu kiểm trước khi có hiệu lực.</span>
+                                    <span><strong>Thay đổi tài khoản:</strong> Bất kỳ điều chỉnh số tài khoản ngân hàng nào cũng sẽ chuyển sang trạng thái <em>Chờ đối soát</em> trước khi nhận các đợt thanh toán tiếp theo.</span>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                                <span style="font-size: 12px; color: #64748b;">Cần giải đáp thắc mắc?</span>
-                                <a th:href="@{/customer/account/complaints}" style="font-size: 12.5px; font-weight: 700; color: #16a34a; text-decoration: none;">
-                                    Liên hệ Ban Quản trị →
+                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <a th:href="@{/shopowner/payment-verification}" class="btn-action btn-action-primary" style="width: 100%; justify-content: center; box-sizing: border-box;">
+                                    <span>💳</span> Cập nhật / Xác thực Tài khoản Ngân hàng
                                 </a>
                             </div>
                         </div>
-
                     </div>
-
                 </div>
 
             </div>
 
         </main>
+    </div>
+
+    <!-- Lightbox Modal Phóng to xem bản chụp giấy phép -->
+    <div id="previewModal" class="lightbox-modal" onclick="closePreviewModal(event)">
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <div class="lightbox-header">
+                <h3 id="previewModalTitle">
+                    <span>📑</span> Bản chụp Giấy phép
+                </h3>
+                <div class="lightbox-header-actions">
+                    <a id="previewModalNewTabBtn" href="#" target="_blank" class="copy-chip" style="background:#2563eb; color:#fff; text-decoration:none; padding: 4px 10px;">
+                        🔗 Mở file gốc
+                    </a>
+                    <button type="button" class="lightbox-close-btn" onclick="closePreviewModal()" title="Đóng">✕</button>
+                </div>
+            </div>
+            <div class="lightbox-body">
+                <img id="previewModalImg" src="" alt="Bản chụp giấy tờ" class="lightbox-img">
+            </div>
+        </div>
     </div>
 
     <!-- Toast Notification for Copy -->
@@ -1277,37 +1734,87 @@
             });
         }
 
-        // Tab Filter Helper
-        function filterTab(targetId, btn) {
-            var allButtons = document.querySelectorAll('.tab-btn');
-            allButtons.forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
+        // Tab Switching Logic
+        function switchTab(tabId, btn) {
+            // Ẩn tất cả tab panels
+            var panels = document.querySelectorAll('.tab-panel');
+            panels.forEach(function(panel) {
+                panel.classList.remove('active');
+            });
 
-            var leftCol = document.querySelector('.grid-col-left');
-            var rightCol = document.querySelector('.grid-col-right');
+            // Hiện tab panel mục tiêu
+            var targetPanel = document.getElementById(tabId);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
 
-            if (targetId === 'all') {
-                leftCol.style.display = 'block';
-                rightCol.style.display = 'block';
-                document.getElementById('shop-section').style.display = 'block';
-                document.getElementById('banking-section').style.display = 'block';
-                document.getElementById('legal-section').style.display = 'block';
-            } else if (targetId === 'shop-section') {
-                leftCol.style.display = 'block';
-                rightCol.style.display = 'none';
-                document.getElementById('shop-section').style.display = 'block';
-                document.getElementById('banking-section').style.display = 'none';
-            } else if (targetId === 'banking-section') {
-                leftCol.style.display = 'block';
-                rightCol.style.display = 'none';
-                document.getElementById('shop-section').style.display = 'none';
-                document.getElementById('banking-section').style.display = 'block';
-            } else if (targetId === 'legal-section') {
-                leftCol.style.display = 'none';
-                rightCol.style.display = 'block';
-                document.getElementById('legal-section').style.display = 'block';
+            // Cập nhật trạng thái nút
+            var buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(function(b) {
+                b.classList.remove('active');
+            });
+
+            if (btn) {
+                btn.classList.add('active');
+            } else {
+                // Tự tìm nút tương ứng
+                var correspondingBtn = document.querySelector('button[onclick*="' + tabId + '"]');
+                if (correspondingBtn) correspondingBtn.classList.add('active');
+            }
+
+            // Cập nhật URL Hash không làm giật trang
+            var cleanHash = tabId.replace('-tab', '');
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, null, '#' + cleanHash);
             }
         }
+
+        // Lightbox Preview Modal Logic
+        function openPreviewModal(url, title) {
+            if (!url) return;
+            var modal = document.getElementById('previewModal');
+            var modalImg = document.getElementById('previewModalImg');
+            var modalTitle = document.getElementById('previewModalTitle');
+            var modalNewTabBtn = document.getElementById('previewModalNewTabBtn');
+
+            modalImg.src = url;
+            modalTitle.innerHTML = '<span>📑</span> ' + (title || 'Bản chụp giấy phép');
+            modalNewTabBtn.href = url;
+
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePreviewModal(e) {
+            if (e && e.target !== e.currentTarget && !e.target.classList.contains('lightbox-close-btn')) {
+                return;
+            }
+            var modal = document.getElementById('previewModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Phím ESC để đóng Lightbox
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePreviewModal();
+            }
+        });
+
+        // Khởi động trang: Mặc định bật Tab "Gian hàng & Kho bãi", hoặc theo URL hash nếu có
+        document.addEventListener('DOMContentLoaded', function() {
+            var hash = window.location.hash.replace('#', '');
+            if (hash === 'legal') {
+                switchTab('legal-tab', document.getElementById('btn-tab-legal'));
+            } else if (hash === 'certificates') {
+                switchTab('certificates-tab', document.getElementById('btn-tab-certificates'));
+            } else if (hash === 'banking') {
+                switchTab('banking-tab', document.getElementById('btn-tab-banking'));
+            } else {
+                // Mặc định luôn là Gian hàng & Kho bãi
+                switchTab('shop-tab', document.getElementById('btn-tab-shop'));
+            }
+        });
     </script>
 
 </body>
