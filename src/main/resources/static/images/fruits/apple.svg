@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="100%" height="100%">
+  <defs>
+    <radialGradient id="appleGrad" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="45%" stop-color="#ef233c"/>
+      <stop offset="90%" stop-color="#b91c1c"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </radialGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="70%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#86efac"/>
+    </linearGradient>
+    <linearGradient id="stemGrad" x1="0%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#713f12"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#881337" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Apple Body -->
+  <g filter="url(#softShadow)">
+    <!-- Stem -->
+    <path d="M40 26 C41 17 48 10 52 8 C52.5 8 52 10 49 14 C46 18 43 23 42 27 Z" fill="url(#stemGrad)" />
+    <!-- Leaf -->
+    <path d="M42 21 C48 16 58 16 63 19 C64 24 59 31 50 30 C44 29 42 24 42 21 Z" fill="url(#leafGrad)" />
+    <path d="M43 22 Q52 23 60 21" stroke="#15803d" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.6"/>
+
+    <!-- Main Fruit Contour -->
+    <path d="M40 28 C47 22 66 23 70 37 C74 51 65 67 54 71 C47 73.5 42 70 40 70 C38 70 33 73.5 26 71 C15 67 6 51 10 37 C14 23 33 22 40 28 Z" fill="url(#appleGrad)" />
+    
+    <!-- Gloss shine highlight -->
+    <ellipse cx="26" cy="38" rx="8" ry="14" transform="rotate(-28 26 38)" fill="#ffffff" opacity="0.28"/>
+    <circle cx="21" cy="46" r="3.5" fill="#ffffff" opacity="0.2"/>
+  </g>
+</svg>
+

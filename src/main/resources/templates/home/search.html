@@ -491,10 +491,8 @@
                                     class="image-placeholder"
                                     th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
                                     ? 'display:none'
-                                    : 'display:flex;align-items:center;justify-content:center;'">
-
-                                <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-
+                                    : 'display:flex;align-items:center;justify-content:center;background:#f0fdf4;'">
+                                <img th:src="@{/images/shopowner/product-placeholder.svg}" src="/images/shopowner/product-placeholder.svg" alt="FreshFruit" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
 
 

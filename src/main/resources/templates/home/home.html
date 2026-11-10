@@ -199,8 +199,8 @@
                 <div class="hero-orbit orbit-one"></div>
                 <div class="hero-orbit orbit-two"></div>
 
-                <div class="fruit-bowl" style="display: flex; align-items: center; justify-content: center; width: 140px; height: 140px; background: rgba(255,255,255,0.92); border-radius: 50%; box-shadow: 0 12px 36px rgba(22, 163, 74, 0.18);">
-                    <svg class="ui-icon" style="width: 68px; height: 68px; color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                <div class="fruit-bowl">
+                    <img th:src="@{/images/fruits/hero-fruit-bowl.svg}" src="/images/fruits/hero-fruit-bowl.svg" alt="Tô trái cây tươi FreshFruit">
                 </div>
 
                 <div class="fresh-badge">
@@ -276,28 +276,36 @@
 
                 <a class="category-card category-red"
                    th:href="@{/search(categoryId=1)}">
-                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+                    <span class="category-emoji">
+                        <img th:src="@{/images/fruits/apple.svg}" src="/images/fruits/apple.svg" alt="Táo" class="category-fruit-img">
+                    </span>
                     <strong>Táo</strong>
                     <span>Trái cây nhập khẩu</span>
                 </a>
 
                 <a class="category-card category-yellow"
                    th:href="@{/search(categoryId=2)}">
-                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+                    <span class="category-emoji">
+                        <img th:src="@{/images/fruits/banana.svg}" src="/images/fruits/banana.svg" alt="Chuối" class="category-fruit-img">
+                    </span>
                     <strong>Chuối</strong>
                     <span>Tươi ngon mỗi ngày</span>
                 </a>
 
                 <a class="category-card category-purple"
                    th:href="@{/search(categoryId=3)}">
-                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg></span>
+                    <span class="category-emoji">
+                        <img th:src="@{/images/fruits/grapes.svg}" src="/images/fruits/grapes.svg" alt="Nho" class="category-fruit-img">
+                    </span>
                     <strong>Nho</strong>
                     <span>Ngọt mọng tự nhiên</span>
                 </a>
 
                 <a class="category-card category-green"
                    th:href="@{/search(categoryId=4)}">
-                    <span class="category-emoji"><svg class="ui-icon" style="width: 54px; height: 54px; opacity: 0.2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg></span>
+                    <span class="category-emoji">
+                        <img th:src="@{/images/fruits/green-fruit.svg}" src="/images/fruits/green-fruit.svg" alt="Trái cây xanh" class="category-fruit-img">
+                    </span>
                     <strong>Trái cây xanh</strong>
                     <span>Giàu vitamin</span>
                 </a>
@@ -351,8 +359,8 @@
 
                         <div class="image-placeholder"
                              th:style="${variant.imageUrl != null and !variant.imageUrl.isEmpty()}
-                                ? 'display:none' : 'display:flex;align-items:center;justify-content:center;'">
-                            <svg class="ui-icon ui-icon-lg" style="color: #16a34a;" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                                ? 'display:none' : 'display:flex;align-items:center;justify-content:center;background:#f0fdf4;'">
+                            <img th:src="@{/images/shopowner/product-placeholder.svg}" src="/images/shopowner/product-placeholder.svg" alt="FreshFruit" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
 
                         <span class="fresh-tag">Đang bán</span>

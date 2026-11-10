@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bananaBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff066"/>
+      <stop offset="40%" stop-color="#facc15"/>
+      <stop offset="85%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+    <linearGradient id="bananaBack" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#a16207"/>
+    </linearGradient>
+    <linearGradient id="bananaStem" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#65a30d"/>
+      <stop offset="70%" stop-color="#4d7c0f"/>
+      <stop offset="100%" stop-color="#713f12"/>
+    </linearGradient>
+    <filter id="bananaShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#a16207" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#bananaShadow)">
+    <!-- Back secondary banana for bunch depth -->
+    <path d="M22 17 C28 20 40 28 47 41 C54 54 52 64 47 69 C48 67 56 56 50 43 C44 29 32 19 23 15 Z" fill="url(#bananaBack)" opacity="0.85"/>
+    
+    <!-- Main Banana -->
+    <!-- Stem -->
+    <path d="M19 14 C17 11 15 9 14 8 C12 7.5 11 8.5 12 10 C13 12 15 15 18 18 Z" fill="url(#bananaStem)"/>
+    
+    <!-- Main Crescent Body -->
+    <path d="M17 17 C26 23 48 38 48 57 C48 67 43 72 38 74 C46 72 58 64 56 50 C54 34 32 20 18 16 Z" fill="url(#bananaBody)"/>
+    
+    <!-- Facet Inner Ridge -->
+    <path d="M18 16.5 C28 24 45 37 46 54 C46 64 42 70 38 74 C41 71 49 61 47 49 C44 35 28 22 17 17 Z" fill="#fef08a" opacity="0.6"/>
+
+    <!-- Bottom Tip -->
+    <path d="M38 74 C37 74.5 35 75 34 74.5 C33.5 74 34 73 35.5 73 C37 73 37.5 73.5 38 74 Z" fill="#713f12"/>
+
+    <!-- Soft highlight gleam -->
+    <path d="M22 22 C30 28 44 40 45 52" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.45"/>
+  </g>
+</svg>
+

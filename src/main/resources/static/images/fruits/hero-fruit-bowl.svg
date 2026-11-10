@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  <defs>
+    <!-- Background Glow -->
+    <radialGradient id="heroGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#bbf7d0" stop-opacity="0.35"/>
+      <stop offset="70%" stop-color="#dcfce7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Apple Gradients -->
+    <radialGradient id="appleHero" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#fb7185"/>
+      <stop offset="45%" stop-color="#e11d48"/>
+      <stop offset="90%" stop-color="#9f1239"/>
+    </radialGradient>
+
+    <!-- Orange Gradients -->
+    <radialGradient id="orangePulp" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffedd5"/>
+      <stop offset="35%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </radialGradient>
+
+    <!-- Banana Gradients -->
+    <linearGradient id="bananaHero" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+
+    <!-- Grape Gradients -->
+    <radialGradient id="grapeHero" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#d8b4fe"/>
+      <stop offset="50%" stop-color="#9333ea"/>
+      <stop offset="100%" stop-color="#581c87"/>
+    </radialGradient>
+
+    <!-- Strawberry Gradients -->
+    <radialGradient id="strawHero" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="50%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#be123c"/>
+    </radialGradient>
+
+    <!-- Leaf Gradients -->
+    <linearGradient id="leafHero" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="70%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#86efac"/>
+    </linearGradient>
+
+    <!-- Ceramic Bowl Gradients -->
+    <linearGradient id="bowlGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+
+    <filter id="bowlShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#14532d" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="120" cy="120" r="105" fill="url(#heroGlow)"/>
+
+  <!-- Pedestal Base Shadow -->
+  <ellipse cx="120" cy="214" rx="65" ry="10" fill="#14532d" opacity="0.08"/>
+
+  <!-- ================= FRUITS BACKGROUND ================= -->
+
+  <!-- Banana Bunch (Right-Back) -->
+  <g>
+    <!-- Banana 1 -->
+    <path d="M142 85 C160 90 190 110 196 142 C198 152 195 160 190 165 C196 156 204 140 198 126 C190 106 165 85 145 80 Z" fill="url(#bananaHero)"/>
+    <!-- Banana 2 (Curving higher) -->
+    <path d="M152 68 C175 75 205 98 210 132 C212 142 208 150 203 154 C210 144 218 125 212 110 C202 88 175 66 155 63 Z" fill="url(#bananaHero)"/>
+    <path d="M152 68 C150 64 148 62 146 61 C144 60 145 63 147 66 Z" fill="#65a30d"/>
+  </g>
+
+  <!-- Fresh Emerald Mint Leaves (Back Left & Top) -->
+  <g>
+    <path d="M112 58 C96 44 80 50 78 58 C80 72 96 74 112 68 Z" fill="url(#leafHero)"/>
+    <path d="M118 48 C116 30 130 20 140 22 C142 34 134 44 122 50 Z" fill="url(#leafHero)"/>
+  </g>
+
+  <!-- Juicy Orange Slice (Left-Back) -->
+  <g>
+    <!-- Orange Peel -->
+    <circle cx="78" cy="115" r="38" fill="#f97316"/>
+    <circle cx="78" cy="115" r="34" fill="#ffedd5"/>
+    <circle cx="78" cy="115" r="30" fill="url(#orangePulp)"/>
+    <!-- Orange Segments -->
+    <g stroke="#ffedd5" stroke-width="2" opacity="0.9">
+      <line x1="78" y1="85" x2="78" y2="145"/>
+      <line x1="48" y1="115" x2="108" y2="115"/>
+      <line x1="57" y1="94" x2="99" y2="136"/>
+      <line x1="57" y1="136" x2="99" y2="94"/>
+    </g>
+    <circle cx="78" cy="115" r="6" fill="#ffedd5"/>
+  </g>
+
+  <!-- Red Crisp Apple (Center-Stage) -->
+  <g>
+    <!-- Apple Stem -->
+    <path d="M120 62 C122 50 128 42 133 39 C134 40 131 46 128 52 C126 57 124 61 123 64 Z" fill="#713f12"/>
+    <!-- Apple Leaf -->
+    <path d="M124 54 C132 46 144 48 148 54 C146 62 136 64 126 58 Z" fill="url(#leafHero)"/>
+    
+    <!-- Apple Fruit -->
+    <path d="M120 65 C130 57 154 58 160 76 C166 94 154 116 138 122 C128 125 122 121 120 121 C118 121 112 125 102 122 C86 116 74 94 80 76 C86 58 110 57 120 65 Z" fill="url(#appleHero)"/>
+    <!-- Apple Gloss Highlight -->
+    <ellipse cx="102" cy="78" rx="10" ry="18" transform="rotate(-26 102 78)" fill="#ffffff" opacity="0.32"/>
+    <circle cx="95" cy="88" r="4" fill="#ffffff" opacity="0.22"/>
+  </g>
+
+  <!-- ================= BOWL CONTAINER ================= -->
+  <g filter="url(#bowlShadow)">
+    <!-- Bowl Body -->
+    <path d="M34 135 C38 190 76 210 120 210 C164 210 202 190 206 135 C170 142 70 142 34 135 Z" fill="url(#bowlGrad)" stroke="#bbf7d0" stroke-width="2.5"/>
+    
+    <!-- Bowl Inner Depth Edge -->
+    <ellipse cx="120" cy="136" rx="86" ry="12" fill="#e2f5e7" opacity="0.45"/>
+    
+    <!-- Bowl Freshness Green Trim Stripe -->
+    <path d="M46 148 C72 176 100 186 120 186 C140 186 168 176 194 148" stroke="#16a34a" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+
+    <!-- Bowl Rim Highlight -->
+    <path d="M48 140 C80 148 160 148 192 140" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.8"/>
+  </g>
+
+  <!-- ================= FOREGROUND FRUITS (Overlapping Rim) ================= -->
+
+  <!-- Ripe Purple Grape Cluster (Front Left Cascading over Bowl Rim) -->
+  <g>
+    <!-- Background Grapes -->
+    <circle cx="56" cy="142" r="9.5" fill="url(#grapeHero)"/>
+    <circle cx="70" cy="138" r="9.5" fill="url(#grapeHero)"/>
+    <circle cx="62" cy="154" r="9" fill="url(#grapeHero)"/>
+    <circle cx="76" cy="150" r="9" fill="url(#grapeHero)"/>
+    <circle cx="68" cy="166" r="8.5" fill="url(#grapeHero)"/>
+    
+    <!-- Foreground Grapes with Highlights -->
+    <circle cx="58" cy="140" r="2.5" fill="#ffffff" opacity="0.4"/>
+    <circle cx="72" cy="136" r="2.5" fill="#ffffff" opacity="0.4"/>
+    <circle cx="64" cy="152" r="2.5" fill="#ffffff" opacity="0.4"/>
+    <circle cx="78" cy="148" r="2.5" fill="#ffffff" opacity="0.4"/>
+    <circle cx="70" cy="164" r="2.2" fill="#ffffff" opacity="0.4"/>
+  </g>
+
+  <!-- Fresh Ruby Strawberry (Front Right nestled on Bowl) -->
+  <g>
+    <!-- Strawberry Heart Shape -->
+    <path d="M152 142 C158 132 172 135 174 145 C176 156 166 168 160 174 C154 168 144 156 146 145 C148 135 162 132 152 142 Z" fill="url(#strawHero)"/>
+    <!-- Calyx / Leaves -->
+    <path d="M158 138 C155 132 150 134 148 136 C153 138 156 140 158 143 C160 140 163 138 168 136 C166 134 161 132 158 138 Z" fill="#16a34a"/>
+    <!-- Yellow Seed Dots -->
+    <circle cx="156" cy="147" r="0.9" fill="#fef08a"/>
+    <circle cx="164" cy="149" r="0.9" fill="#fef08a"/>
+    <circle cx="160" cy="156" r="0.9" fill="#fef08a"/>
+    <circle cx="154" cy="158" r="0.9" fill="#fef08a"/>
+    <circle cx="166" cy="160" r="0.9" fill="#fef08a"/>
+    <circle cx="160" cy="166" r="0.8" fill="#fef08a"/>
+  </g>
+
+  <!-- Sparkles / Fresh Glints -->
+  <g fill="#16a34a" opacity="0.85">
+    <!-- Star Sparkle 1 -->
+    <path d="M36 78 Q36 86 44 86 Q36 86 36 94 Q36 86 28 86 Q36 86 36 78 Z" fill="#22c55e"/>
+    <!-- Star Sparkle 2 -->
+    <path d="M208 64 Q208 70 214 70 Q208 70 208 76 Q208 70 202 70 Q208 70 208 64 Z" fill="#facc15"/>
+    <!-- Star Sparkle 3 -->
+    <circle cx="48" cy="62" r="2" fill="#86efac"/>
+    <circle cx="218" cy="88" r="2.5" fill="#fde047"/>
+  </g>
+</svg>
+

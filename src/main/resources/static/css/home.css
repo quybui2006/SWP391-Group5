@@ -692,91 +692,29 @@ input {
 /* FRUIT BOWL */
 
 .fruit-bowl {
-
     position: relative;
-
-    width: 320px;
-    height: 230px;
-
-    border-radius:
-            45%
-            45%
-            35%
-            35%;
-
-    border:
-            9px solid
-            #e6eee7;
-
-    background:
-            linear-gradient(
-                    #ffffff,
-                    #eef5ef
-            );
-
-    box-shadow: var(--shadow);
-
-    display: grid;
-
-    place-items: center;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 65%, #f0fdf4 100%);
+    box-shadow: 0 16px 44px rgba(22, 163, 74, 0.2), 0 0 0 8px rgba(255, 255, 255, 0.9);
+    border: 2px solid #bbf7d0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
 }
 
-
-.fruit {
-
-    position: absolute;
-
-    font-size: 74px;
-
-    filter:
-            drop-shadow(
-                    0 10px 8px
-                    rgba(
-                            0,
-                            0,
-                            0,
-                            0.09
-                    )
-            );
+.fruit-bowl:hover {
+    transform: scale(1.05);
 }
 
-
-.fruit-orange {
-
-    left: 25px;
-    top: 65px;
-}
-
-
-.fruit-apple {
-
-    left: 103px;
-    top: 28px;
-}
-
-
-.fruit-grape {
-
-    right: 42px;
-    top: 67px;
-}
-
-
-.fruit-lemon {
-
-    left: 65px;
-    bottom: 18px;
-
-    font-size: 62px;
-}
-
-
-.fruit-watermelon {
-
-    right: 78px;
-    bottom: 15px;
-
-    font-size: 63px;
+.fruit-bowl img {
+    width: 185px;
+    height: 185px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 18px rgba(22, 163, 74, 0.15));
 }
 
 
@@ -1011,24 +949,26 @@ input {
 
 
 .category-emoji {
-
     position: absolute;
-
-    right: 22px;
+    right: 20px;
     top: 16px;
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-    font-size: 66px;
+.category-fruit-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-    filter:
-            drop-shadow(
-                    0 8px 7px
-                    rgba(
-                            0,
-                            0,
-                            0,
-                            0.08
-                    )
-            );
+.category-card:hover .category-emoji {
+    transform: scale(1.15) translateY(-3px) rotate(3deg);
 }
 
 

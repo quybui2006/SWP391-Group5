@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="100%" height="100%">
+  <defs>
+    <radialGradient id="grape1" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#d8b4fe"/>
+      <stop offset="45%" stop-color="#9333ea"/>
+      <stop offset="90%" stop-color="#581c87"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </radialGradient>
+    <radialGradient id="grape2" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#e9d5ff"/>
+      <stop offset="40%" stop-color="#a855f7"/>
+      <stop offset="85%" stop-color="#6b21a8"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </radialGradient>
+    <linearGradient id="grapeLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="60%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+    <filter id="grapeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#581c87" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#grapeShadow)">
+    <!-- Stem and Vine -->
+    <path d="M40 22 C40 15 42 10 45 6 C46 5 44 5 42 7 C39 10 38 16 38 22 Z" fill="#65a30d"/>
+    <path d="M42 10 C46 11 48 14 47 16 C46 18 43 17 44 14" stroke="#65a30d" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+    <!-- Vine Leaf -->
+    <path d="M38 18 C30 14 20 18 21 26 C26 28 32 26 38 20 Z" fill="url(#grapeLeaf)"/>
+    <path d="M22 24 Q30 22 36 19" stroke="#15803d" stroke-width="0.8" fill="none"/>
+
+    <!-- Grape Spheres Layer 1 (Back / Depth) -->
+    <circle cx="31" cy="31" r="8" fill="url(#grape1)"/>
+    <circle cx="49" cy="31" r="8" fill="url(#grape1)"/>
+    <circle cx="25" cy="43" r="8" fill="url(#grape1)"/>
+    <circle cx="55" cy="43" r="8" fill="url(#grape1)"/>
+    <circle cx="32" cy="55" r="7.5" fill="url(#grape1)"/>
+    <circle cx="48" cy="55" r="7.5" fill="url(#grape1)"/>
+
+    <!-- Grape Spheres Layer 2 (Front / Highlights) -->
+    <!-- Top Center -->
+    <circle cx="40" cy="28" r="8.5" fill="url(#grape2)"/>
+    <circle cx="38" cy="25" r="2.2" fill="#ffffff" opacity="0.35"/>
+
+    <!-- Middle Row -->
+    <circle cx="33" cy="42" r="8.5" fill="url(#grape2)"/>
+    <circle cx="31" cy="39" r="2.2" fill="#ffffff" opacity="0.35"/>
+
+    <circle cx="47" cy="42" r="8.5" fill="url(#grape2)"/>
+    <circle cx="45" cy="39" r="2.2" fill="#ffffff" opacity="0.35"/>
+
+    <!-- Lower Row -->
+    <circle cx="40" cy="52" r="8" fill="url(#grape2)"/>
+    <circle cx="38" cy="49" r="2.2" fill="#ffffff" opacity="0.35"/>
+
+    <!-- Bottom Tip Grape -->
+    <circle cx="40" cy="65" r="7.5" fill="url(#grape2)"/>
+    <circle cx="38" cy="62" r="2" fill="#ffffff" opacity="0.35"/>
+  </g>
+</svg>
+
