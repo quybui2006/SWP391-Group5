@@ -151,7 +151,7 @@ public class InventoryBatchService {
             throw new IllegalArgumentException("Thông tin đơn hàng hoặc số lượng cần giữ không hợp lệ.");
         lockInventory(inventoryId);
         Integer matchingItem = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM order_items WHERE id=? AND inventory_id=? FOR UPDATE",
+                "SELECT COUNT(*) FROM order_items WHERE id=? AND inventory_id=?",
                 Integer.class, orderItemId, inventoryId);
         if (matchingItem == null || matchingItem != 1)
             throw new IllegalArgumentException("Chi tiết đơn hàng không khớp với biến thể tồn kho.");
