@@ -21,6 +21,7 @@ public class OperationsVariantApprovalService {
         this.jdbc = jdbc;
     }
 
+    /** Ghép thông tin shop/sản phẩm/biến thể/tồn kho để Operations xem và quyết định chặn bán. */
     @Transactional(readOnly = true)
     public OperationsVariantDetailDto getVariantDetail(Long variantId) {
         List<OperationsVariantDetailDto> rows = jdbc.query("""
@@ -65,6 +66,7 @@ public class OperationsVariantApprovalService {
         return rows.get(0);
     }
 
+    /** Ghi lý do và khóa trạng thái bán của biến thể; không thay đổi dữ liệu tồn kho hay trạng thái duyệt. */
     @Transactional
     public void blockVariant(Long variantId, String reason) {
         String cleanReason = normalizeReason(reason);
@@ -83,6 +85,7 @@ public class OperationsVariantApprovalService {
         if (updated != 1) throw new ResponseStatusException(HttpStatus.CONFLICT, "Trạng thái biến thể vừa thay đổi. Tải lại trang.");
     }
 
+    /** Gỡ cờ chặn của Operations; không tự mở bán nếu biến thể vẫn đang INACTIVE. */
     @Transactional
     public void unblockVariant(Long variantId) {
         requireVariant(variantId);

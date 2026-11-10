@@ -97,6 +97,7 @@ public class OperationsShopManagementService {
         return listShopProductsWithVariants(shopId, "", null);
     }
 
+    /** Đọc catalog của một shop, ghép sản phẩm với biến thể và lọc tùy chọn theo từ khóa/danh mục. */
     public List<ManagedShopProduct> listShopProductsWithVariants(Long shopId, String keyword, Long categoryId) {
         getShop(shopId);
         String term = keyword == null ? "" : keyword.trim().toLowerCase();
@@ -163,6 +164,7 @@ public class OperationsShopManagementService {
                 .toList();
     }
 
+    /** Đọc catalog toàn sàn cho Operations, gom các dòng join thành sản phẩm kèm danh sách biến thể. */
     public List<OperationsCatalogProduct> listAllProductsWithVariants(String keyword) {
         String term = keyword == null ? "" : keyword.trim().toLowerCase();
         String like = "%" + term + "%";

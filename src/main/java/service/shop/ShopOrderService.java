@@ -17,10 +17,12 @@ public class ShopOrderService {
         this.inventoryBatches = inventoryBatches;
     }
 
+    /** Lấy đơn của shop đăng nhập, kèm khiếu nại mới nhất để Shop xử lý trên cùng danh sách. */
     public List<Map<String, Object>> list(Long ownerId) {
         return list(ownerId, null);
     }
 
+    /** Lọc danh sách đơn theo shop; bộ lọc complaint chỉ giữ các đơn có khiếu nại chưa hủy. */
     public List<Map<String, Object>> list(Long ownerId, String filter) {
         StringBuilder sql = new StringBuilder("""
                 SELECT o.id, o.order_code, o.recipient_name, o.total_amount, o.status,
@@ -50,6 +52,7 @@ public class ShopOrderService {
         return jdbc.queryForList(sql.toString(), ownerId);
     }
 
+    /** Tổng hợp số khiếu nại còn hiệu lực và số đang chờ phản hồi từ shop. */
     public Map<String, Object> countComplaints(Long ownerId) {
         return jdbc.queryForMap("""
                 SELECT
@@ -61,6 +64,7 @@ public class ShopOrderService {
                 """, ownerId);
     }
 
+    /** Tính tổng đơn, đơn chờ xác nhận và doanh thu đã thanh toán của shop. */
     public Map<String, Object> summary(Long ownerId) {
         return jdbc.queryForMap("""
                 SELECT COUNT(*) AS total,
@@ -71,6 +75,7 @@ public class ShopOrderService {
                 """, ownerId);
     }
 
+    /** Chuẩn bị các dòng dữ liệu đơn hàng của riêng shop để xuất báo cáo. */
     public List<Map<String, Object>> exportRows(Long ownerId) {
         return jdbc.queryForList("""
                 SELECT o.order_code,o.created_at,o.recipient_name,o.recipient_phone,
@@ -85,17 +90,20 @@ public class ShopOrderService {
                 """, ownerId);
     }
 
+    /** Chỉ trả chi tiết nếu đơn thuộc shop của chủ tài khoản đang thao tác. */
     public Map<String, Object> detail(Long ownerId, Long id) {
         var rows = jdbc.queryForList("SELECT o.* FROM orders o JOIN shops s ON s.id=o.shop_id WHERE o.id=? AND s.owner_id=?", id, ownerId);
         if (rows.isEmpty()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
         return rows.get(0);
     }
 
+    /** Kiểm tra quyền xem đơn trước khi đọc các dòng hàng và tồn kho liên quan. */
     public List<Map<String, Object>> items(Long ownerId, Long id) {
         detail(ownerId, id);
         return jdbc.queryForList("SELECT oi.*,vi.quantity_on_hand,vi.reserved_quantity,vi.available_quantity FROM order_items oi JOIN variant_inventory vi ON vi.id=oi.inventory_id WHERE oi.order_id=? ORDER BY oi.id", id);
     }
 
+    /** Xác nhận đơn COD đang chờ: giữ lô theo FEFO, cập nhật trạng thái đơn rồi báo khách. */
     @org.springframework.transaction.annotation.Transactional
     public void confirmCod(Long ownerId, Long id) {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT o.* FROM orders o JOIN shops s ON s.id=o.shop_id WHERE o.id=? AND s.owner_id=? FOR UPDATE", id, ownerId);

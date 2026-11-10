@@ -75,11 +75,13 @@ public class ShopProductService {
 
     // ======================== ĐỌC DỮ LIỆU ========================
 
+    /** Kiểm tra sản phẩm thuộc shop của tài khoản rồi ghép ảnh, danh mục, biến thể và tồn kho thành dữ liệu chi tiết. */
     public ProductDetailView getDetail(Long productId, Long ownerUserId) {
         Product product = loadOwnedProduct(productId, ownerUserId);
         return toDetailView(product);
     }
 
+    /** Lấy các sản phẩm của shop và chuyển từng sản phẩm sang dữ liệu hiển thị ở màn quản lý. */
     public List<ProductDetailView> getListByShop(Long ownerUserId) {
         Long shopId = requireShopId(ownerUserId);
         return productRepository.findByShopId(shopId).stream()
@@ -87,6 +89,7 @@ public class ShopProductService {
                 .toList();
     }
 
+    /** Tìm và lọc sản phẩm theo tên/SKU/danh mục; tổng số dòng được tính riêng để phân trang. */
     public Page<ShopProductListItem> searchShopProducts(
             Long ownerUserId, String keyword, Long categoryId, int page, int size) {
         Long shopId = requireShopId(ownerUserId);
@@ -152,6 +155,7 @@ public class ShopProductService {
                 .map(unit -> new ProductVariantEditForm.UnitOption(unit.getId(), unit.getName())).toList();
     }
 
+    /** Nạp biến thể thuộc shop vào form cùng trạng thái duyệt, chặn bán và tồn kho hiện tại. */
     public ProductVariantEditForm buildVariantEditForm(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
         VariantInventory inventory = inventoryRepository.findByVariantId(variantId)
@@ -173,6 +177,7 @@ public class ShopProductService {
         return form;
     }
 
+    /** Đọc thông tin biến thể và số liệu tồn kho để hiển thị trang chi tiết sản phẩm. */
     public ProductVariantDetailView getVariantDetail(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
         VariantInventory inventory = inventoryRepository.findByVariantId(variantId).orElse(null);
@@ -185,6 +190,7 @@ public class ShopProductService {
                 inventory == null ? 0 : inventory.getReservedQuantity(), inventory == null ? 0 : inventory.getAvailableQuantity());
     }
 
+    /** Cập nhật thông tin biến thể và kho sau khi kiểm tra dữ liệu, quyền sở hữu và trạng thái chặn bán. */
     @Transactional
     public void updateVariant(Long variantId, Long ownerUserId, ProductVariantEditForm form) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
@@ -233,6 +239,7 @@ public class ShopProductService {
         }
     }
 
+    /** Ẩn bán biến thể bằng trạng thái INACTIVE; không xóa biến thể hay lịch sử kho. */
     @Transactional
     public void hideVariantFromSale(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
@@ -242,6 +249,7 @@ public class ShopProductService {
         }
     }
 
+    /** Mở bán lại biến thể nếu Operations không chặn; trạng thái duyệt được giữ nguyên. */
     @Transactional
     public void showVariantForSale(Long variantId, Long ownerUserId) {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
@@ -358,6 +366,7 @@ public class ShopProductService {
                 """, shopId);
     }
 
+    /** Tạo hồ sơ sản phẩm, xác thực danh mục và lưu ảnh sản phẩm trong cùng luồng giao dịch. */
     @Transactional
     public Long createProduct(Long ownerUserId, ProductCreateRequest form) {
         // Danh mục gửi từ form phải tồn tại và đang hoạt động; không tin trực tiếp ID từ client.
@@ -436,6 +445,7 @@ public class ShopProductService {
         }
     }
 
+    /** Tạo biến thể, khởi tạo tồn kho/lô đầu tiên và gán SKU sau khi lưu để dùng ID thật. */
     @Transactional
     public String createVariantInventory(Long ownerUserId, ProductVariantCreateRequest form) {
         Product product = loadOwnedProduct(form.getProductId(), ownerUserId);
@@ -516,6 +526,7 @@ public class ShopProductService {
         return "SKU-" + String.format(java.util.Locale.ROOT, "%08d", nextId == null ? 1L : nextId);
     }
 
+    /** Nạp thông tin sản phẩm, danh mục hiện tại và danh sách ảnh để dựng form chỉnh sửa. */
     public ProductEditView buildEditForm(Long productId, Long ownerUserId) {
         Product product = loadOwnedProduct(productId, ownerUserId);
 
@@ -545,6 +556,7 @@ public class ShopProductService {
 
     // ======================== GHI DỮ LIỆU ========================
 
+    /** Cập nhật metadata sản phẩm, ảnh và danh mục; trạng thái bán/duyệt vẫn do từng biến thể quản lý. */
     @Transactional
     public void update(Long productId, Long ownerUserId, ProductEditView form) {
         Product product = loadOwnedProduct(productId, ownerUserId);
@@ -861,6 +873,7 @@ public class ShopProductService {
         return LocalDateTime.now(ZoneOffset.UTC);
     }
 
+    /** Ẩn toàn bộ sản phẩm khỏi khách bằng cách tắt hiển thị và chuyển trạng thái bán sang tạm dừng. */
     @Transactional
     public void hideProductFromSale(Long productId, Long ownerUserId) {
         Product product = loadOwnedProduct(productId, ownerUserId);
@@ -875,6 +888,7 @@ public class ShopProductService {
         productRepository.save(product);
     }
 
+    /** Chỉ hiện lại sản phẩm khi còn ít nhất một biến thể đang hoạt động và không bị Operations chặn. */
     @Transactional
     public void showProductForSale(Long productId, Long ownerUserId) {
         Product product = loadOwnedProduct(productId, ownerUserId);

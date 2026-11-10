@@ -45,6 +45,7 @@ public class InventoryBatchService {
         } catch (Exception ignored) {}
     }
 
+    /** Nhập một lô mới sau khi xác thực hạn dùng/quyền shop, rồi đồng bộ tồn tổng và nhật ký giao dịch. */
     @Transactional
     public Long receive(Long inventoryId, int quantity, LocalDateTime receivedAt,
                         LocalDate expiresAt, String note, Long ownerId) {
@@ -93,6 +94,7 @@ public class InventoryBatchService {
         return batchId;
     }
 
+    /** Tăng/giảm số lượng của một lô; không cho giảm phần hàng đang giữ và ghi nhật ký ở cả cấp lô lẫn tổng kho. */
     @Transactional
     public void adjust(Long batchId, String direction, int quantity, String reason, Long ownerId) {
         if (batchId == null) throw new InventoryActionException("Vui lòng chọn batch cần điều chỉnh.");
