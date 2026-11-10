@@ -87,6 +87,7 @@ public class CartService {
         }
 
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
+        // Chọn giá khuyến mãi đang bật và còn hiệu lực; nếu không có thì dùng giá niêm yết.
         return jdbc.queryForList(
                 "SELECT ci.id, " +
                         "ci.variant_id, " +
@@ -115,6 +116,7 @@ public class CartService {
         List<Object> args = new java.util.ArrayList<>();
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         args.add(now); args.add(now); args.addAll(quantities.keySet());
+        // Giỏ khách vãng lai áp dụng cùng quy tắc chọn giá hiện hành như giỏ tài khoản.
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT pv.id AS variant_id,pv.shop_id,s.name AS shop_name,pv.name AS variant_name,p.name AS product_name,pv.image_url,pv.price AS original_price, " +
                         "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 " +

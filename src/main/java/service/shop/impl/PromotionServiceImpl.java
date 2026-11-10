@@ -82,23 +82,31 @@ public class PromotionServiceImpl {
         return form;
     }
 
-    /** Kiểm tra quyền sở hữu, giá, thời gian, tồn kho và lưu lịch khuyến mãi không chồng lấn. */
     @Transactional
     public void save(PromotionForm form, Long ownerUserId, Long promotionId) {
         try {
+            // Lấy biến thể được chọn; dừng ngay nếu ID không tồn tại.
             ProductVariant variant = variantRepository.findById(form.getVariantId())
                     .orElseThrow(() -> new PromotionValidationException("variantId", "Biến thể sản phẩm không tồn tại."));
+
+            // Chỉ chủ shop sở hữu biến thể này mới được tạo hoặc sửa khuyến mãi.
             Shop shop = requireShop(ownerUserId);
             if (!shop.getId().equals(variant.getShopId())) {
                 throw new PromotionValidationException("variantId", "Bạn chỉ có thể tạo khuyến mãi cho sản phẩm thuộc cửa hàng của mình.");
             }
+
+            // Biến thể phải đang hoạt động và ở trạng thái được duyệt hoặc đang chờ duyệt.
             if (!"ACTIVE".equals(variant.getStatus())
                     || !("APPROVED".equals(variant.getApprovalStatus()) || "PENDING".equals(variant.getApprovalStatus()))) {
                 throw new PromotionValidationException("variantId", "Chỉ có thể tạo khuyến mãi cho biến thể đang bán và đã đăng lên sàn.");
             }
+
+            // Giá khuyến mãi là giá bán cuối cùng, phải thấp hơn giá niêm yết của biến thể.
             if (form.getPromotionalPrice() == null || form.getPromotionalPrice().compareTo(variant.getPrice()) >= 0) {
                 throw new PromotionValidationException("promotionalPrice", "Giá khuyến mãi phải lớn hơn 0 và thấp hơn giá bán hiện tại (" + variant.getPrice().toPlainString() + ").");
             }
+
+            // Kiểm tra lịch theo giờ Việt Nam: bắt đầu không ở quá khứ và kết thúc phải sau bắt đầu.
             LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
             if (form.getStartsAt() == null || form.getStartsAt().isBefore(now)) {
                 throw new PromotionValidationException("startsAt", "Thời điểm bắt đầu phải từ thời điểm hiện tại trở đi (giờ Việt Nam). Hãy chọn lại thời gian.");
@@ -106,13 +114,18 @@ public class PromotionServiceImpl {
             if (form.getEndsAt() == null || !form.getEndsAt().isAfter(form.getStartsAt())) {
                 throw new PromotionValidationException("endsAt", "Thời điểm kết thúc phải sau thời điểm bắt đầu.");
             }
-            // Khóa dòng biến thể để hai yêu cầu đồng thời không cùng vượt qua bước kiểm tra lịch trùng.
+
+            // Khóa biến thể để các yêu cầu tạo/bật khuyến mãi đồng thời được xử lý lần lượt.
             jdbc.queryForObject("SELECT id FROM product_variants WHERE id=? FOR UPDATE", Long.class, variant.getId());
+
+            // Khuyến mãi chỉ hợp lệ khi biến thể có kho đang hoạt động.
             VariantInventory inventory = inventoryRepository.findByVariantId(variant.getId())
                     .orElseThrow(() -> new PromotionValidationException("variantId", "Biến thể này chưa có thông tin kho hàng."));
             if (!"ACTIVE".equals(inventory.getStatus())) {
                 throw new PromotionValidationException("variantId", "Kho của biến thể này chưa ở trạng thái hoạt động.");
             }
+
+            // Khi sửa, loại chính lịch đó khỏi phép đếm; chỉ so với lịch đang bật của cùng biến thể.
             Long excludedId = promotionId == null ? -1L : promotionId;
             Integer overlaps = jdbc.queryForObject("""
                     SELECT COUNT(*) FROM promotional_prices
@@ -120,10 +133,14 @@ public class PromotionServiceImpl {
                       AND starts_at < ? AND ends_at > ?
                     """, Integer.class, variant.getId(), excludedId,
                     Timestamp.valueOf(form.getEndsAt()), Timestamp.valueOf(form.getStartsAt()));
+
+            // Hai khoảng thời gian giao nhau khi lịch cũ bắt đầu trước lúc lịch mới kết thúc
+            // và lịch cũ kết thúc sau lúc lịch mới bắt đầu.
             if (overlaps != null && overlaps > 0 && Boolean.TRUE.equals(form.getEnabled())) {
                 throw new PromotionValidationException("startsAt", "Biến thể này đã có chương trình khuyến mãi đang bật trong khoảng thời gian được chọn.");
             }
 
+            // Tạo entity mới hoặc tải lịch hiện có, sau đó cập nhật các trường từ form.
             PromotionalPrice promotion = promotionId == null ? new PromotionalPrice() : loadOwnedPromotion(promotionId, ownerUserId);
             promotion.setVariantId(variant.getId());
             promotion.setInventoryId(inventory.getId());
@@ -132,6 +149,8 @@ public class PromotionServiceImpl {
             promotion.setEndsAt(form.getEndsAt());
             promotion.setEnabled(form.getEnabled() == null || form.getEnabled());
             if (promotionId == null) promotion.setCreatedBy(ownerUserId);
+
+            // Lưu lịch; chuyển lỗi truy cập dữ liệu thành lỗi có thể hiển thị cho người dùng.
             promotionRepository.save(promotion);
         } catch (DataAccessException ex) {
             throw new PromotionValidationException("serviceError", "Không thể lưu khuyến mãi do dữ liệu liên quan không hợp lệ. Vui lòng kiểm tra lại và thử lại.");

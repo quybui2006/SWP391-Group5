@@ -42,6 +42,7 @@ public class OrderCheckoutService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         Object[] args = new Object[variantIds.size() + 3]; args[0] = now; args[1] = now; args[2] = userId;
         for (int i = 0; i < variantIds.size(); i++) args[i + 3] = variantIds.get(i);
+        // Checkout đọc lại giá tại thời điểm hiện tại, không dùng giá cũ đã gửi từ giao diện.
         return jdbc.queryForList("SELECT ci.variant_id,ci.quantity,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.name AS name,pv.image_url,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at <= ? AND pp.ends_at > ? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price " +
                 "FROM carts c JOIN cart_items ci ON ci.cart_id=c.id JOIN product_variants pv ON pv.id=ci.variant_id JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id WHERE c.user_id=? AND ci.variant_id IN (" + marks + ") AND p.is_visible=1 AND pv.status='ACTIVE' AND pv.approval_status IN ('APPROVED','PENDING') AND s.approval_status='APPROVED' AND s.operating_status='OPEN'", args);
@@ -57,6 +58,7 @@ public class OrderCheckoutService {
         Object[] args = new Object[selected.size() + 2];
         args[0] = now; args[1] = now;
         for (int i = 0; i < selected.size(); i++) args[i + 2] = selected.get(i);
+        // Giỏ khách vãng lai tại checkout cũng lấy giá đang hiệu lực từ cơ sở dữ liệu.
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT pv.id AS variant_id,pv.shop_id,s.name AS shop_name,p.name AS product_name,pv.name AS variant_name,pv.name AS name,pv.image_url,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price,vi.available_quantity " +
                 "FROM product_variants pv JOIN products p ON p.id=pv.product_id JOIN shops s ON s.id=pv.shop_id JOIN variant_inventory vi ON vi.variant_id=pv.id " +
@@ -82,6 +84,7 @@ public class OrderCheckoutService {
     private VoucherQuote quoteVoucher(Long shopId, String rawCode, BigDecimal shopSubtotal, boolean lock) {
         String code = rawCode == null ? "" : rawCode.trim().toUpperCase(java.util.Locale.ROOT);
         if (code.isBlank()) return new VoucherQuote(null, "", BigDecimal.ZERO, null);
+        // Preview chỉ kiểm tra/tính thử; lúc đặt đơn mới khóa dòng voucher để tránh dùng vượt lượt.
         String lockClause = lock ? " FOR UPDATE" : "";
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT id,code,discount_type,discount_value,max_discount_amount,min_order_value,max_usages,used_count,status,starts_at,ends_at " +
                 "FROM vouchers WHERE shop_id=? AND code=? AND voucher_type='DISCOUNT'" + lockClause, shopId, code);
@@ -98,11 +101,14 @@ public class OrderCheckoutService {
         if (shopSubtotal.compareTo((BigDecimal) v.get("min_order_value")) < 0)
             throw new IllegalArgumentException("Đơn hàng của shop chưa đạt giá trị tối thiểu của voucher.");
         BigDecimal discountValue = (BigDecimal) v.get("discount_value");
+        // Tỷ lệ phần trăm tính trên subtotal shop; loại FIXED_AMOUNT lấy trực tiếp số tiền cấu hình.
+        // Phép chia làm tròn xuống để kết quả là số đồng nguyên.
         BigDecimal discount = "PERCENTAGE".equals(v.get("discount_type"))
                 ? shopSubtotal.multiply(discountValue).divide(new BigDecimal("100"), 0, RoundingMode.DOWN)
                 : discountValue;
         BigDecimal maxDiscount = (BigDecimal) v.get("max_discount_amount");
         if (maxDiscount != null) discount = discount.min(maxDiscount);
+        // Không cho giảm vượt subtotal của shop; chuẩn hóa kết quả cuối về số nguyên không âm.
         discount = discount.min(shopSubtotal).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN);
         return new VoucherQuote(((Number) v.get("id")).longValue(), code, discount, null);
     }
@@ -384,6 +390,7 @@ public class OrderCheckoutService {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
         Object[] args = new Object[selected.size() + 4]; args[0] = now; args[1] = now; args[2] = now; args[3] = now;
         for (int i = 0; i < selected.size(); i++) args[i + 4] = selected.get(i);
+        // Chốt giá khuyến mãi và promotion_id bằng cùng điều kiện hiệu lực để lưu lịch sử đúng giá đã áp dụng.
         List<Map<String, Object>> lines = jdbc.queryForList("SELECT pv.id AS variant_id,pv.shop_id,pv.sku,pv.name AS variant_name,pv.price AS original_price, " +
                 "COALESCE((SELECT pp.promotional_price FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1),pv.price) AS price, " +
                 "(SELECT pp.id FROM promotional_prices pp WHERE pp.variant_id=pv.id AND pp.is_enabled=1 AND pp.starts_at<=? AND pp.ends_at>? ORDER BY pp.starts_at DESC,pp.id DESC LIMIT 1) AS promotion_id, " +

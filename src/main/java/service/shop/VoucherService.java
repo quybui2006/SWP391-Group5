@@ -59,6 +59,7 @@ public class VoucherService {
         if (!"PERCENTAGE".equals(form.getDiscountType()) && !"FIXED_AMOUNT".equals(form.getDiscountType())) {
             throw new IllegalArgumentException("Loại giảm giá không hợp lệ.");
         }
+        // discountValue là tỷ lệ phần trăm hoặc số tiền VNĐ cố định tùy discountType.
         BigDecimal discountValue = form.getDiscountValue();
         if (discountValue == null || discountValue.compareTo(BigDecimal.ZERO) <= 0 || !isWholeVnd(discountValue)) {
             throw new IllegalArgumentException("Giá trị giảm phải là số nguyên VNĐ lớn hơn 0.");
@@ -71,6 +72,7 @@ public class VoucherService {
                 && (form.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) <= 0 || !isWholeVnd(form.getMaxDiscountAmount()))) {
             throw new IllegalArgumentException("Mức giảm tối đa phải là số nguyên VNĐ lớn hơn 0 hoặc để trống.");
         }
+        // Mức giảm tối đa chỉ áp dụng cho voucher phần trăm; voucher tiền cố định không có trần riêng.
         if ("FIXED_AMOUNT".equals(form.getDiscountType()) && form.getMaxDiscountAmount() != null) {
             throw new IllegalArgumentException("Voucher giảm số tiền không sử dụng mức giảm tối đa.");
         }
