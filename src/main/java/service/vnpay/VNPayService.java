@@ -67,20 +67,15 @@ public class VNPayService {
         while (itr.hasNext()) {
             String fieldName = itr.next();
             String fieldValue = vnpParams.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                // Build hash data
-                hashData.append(fieldName);
-                hashData.append('=');
-                hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                // Build query
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
-                query.append('=');
-                query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                if (itr.hasNext()) {
-                    query.append('&');
-                    hashData.append('&');
-                }
-            }
+            if (fieldValue == null || fieldValue.isEmpty()) continue;
+
+            if (hashData.length() > 0) hashData.append('&');
+            if (query.length() > 0) query.append('&');
+
+            String encodedName = URLEncoder.encode(fieldName, StandardCharsets.US_ASCII);
+            String encodedValue = URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII);
+            hashData.append(encodedName).append('=').append(encodedValue);
+            query.append(encodedName).append('=').append(encodedValue);
         }
 
         String vnpSecureHash = hmacSHA512(vnpHashSecret, hashData.toString());
@@ -89,27 +84,28 @@ public class VNPayService {
         return vnpPayUrl + "?" + query;
     }
 
-    public boolean verifyCallback(Map<String, String> fields) {
-        String vnpSecureHash = fields.get("vnp_SecureHash");
+    public boolean verifyCallback(Map<String, String> inputFields) {
+        if (inputFields == null) return false;
+
+        // Không sửa trực tiếp map do Spring truyền vào; callback còn được dùng để đọc
+        // vnp_ResponseCode và vnp_TxnRef ở controller.
+        Map<String, String> fields = new HashMap<>(inputFields);
+        String vnpSecureHash = fields.remove("vnp_SecureHash");
         fields.remove("vnp_SecureHashType");
-        fields.remove("vnp_SecureHash");
+        if (vnpSecureHash == null || vnpSecureHash.isBlank()) return false;
 
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         Collections.sort(fieldNames);
         StringBuilder hashData = new StringBuilder();
-        Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
+        for (String fieldName : fieldNames) {
             String fieldValue = fields.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                hashData.append(fieldName);
-                hashData.append("=");
-                hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                if (itr.hasNext()) {
-                    hashData.append("&");
-                }
-            }
+            if (fieldValue == null || fieldValue.isEmpty()) continue;
+            if (hashData.length() > 0) hashData.append('&');
+            hashData.append(fieldName)
+                    .append('=')
+                    .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
         }
+
         String calculatedHash = hmacSHA512(vnpHashSecret, hashData.toString());
         return calculatedHash.equalsIgnoreCase(vnpSecureHash);
     }
