@@ -31,9 +31,22 @@
         .description-block p{overflow-wrap:anywhere}
         .variants-card{margin-top:18px}
         .table-wrap table{min-width:720px}
-        .variant-actions{white-space:nowrap}
+        .variant-actions{min-width:150px}
+        .variant-action-links,.variant-sale-action{display:flex;align-items:center;gap:10px;white-space:nowrap}
+        .variant-action-links{margin-bottom:7px}
         .variant-actions a{color:var(--green-dark);font-size:12px;font-weight:800}
         .variant-actions a:hover{text-decoration:underline}
+        .variant-sale-action button{padding:0;border:0;background:transparent;color:#9b302a;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+        .variant-sale-action button.enable{color:var(--green-dark)}
+        .variant-sale-action button:disabled{color:#7c8580;cursor:not-allowed}
+        .variant-stock-note{display:block;margin-top:4px;color:var(--muted);font-size:11px}
+        .variant-state{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap}
+        .variant-state:before{width:7px;height:7px;border-radius:50%;background:currentColor;content:""}
+        .variant-state.active{background:#eaf7ee;color:#24723e}.variant-state.inactive{background:#f0f2f1;color:#59645e}.variant-state.blocked{background:#fff1e8;color:#a64b13}
+        .variant-thumb{display:block;width:54px;height:54px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#f5f8f6}
+        .variant-thumb-empty{display:grid;place-items:center;width:54px;height:54px;border:1px dashed var(--line);border-radius:8px;background:#f7f9f8;color:var(--muted);font-size:10px}
+        .variant-thumb-empty[hidden]{display:none!important}
+        .button-danger{background:#fff5f5;color:#b42318;border:1px solid #f3c5c2}
         .danger-note{margin:14px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
         @media(max-width:760px){.detail-hero{flex-direction:column}.detail-actions{justify-content:flex-start}.product-overview{grid-template-columns:1fr}.product-cover{width:100%;height:210px}.detail-grid{grid-template-columns:1fr}}
     </style>
@@ -54,16 +67,10 @@
                     <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     <span>Chỉnh sửa</span>
                 </a>
-                <form th:if="${!product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/show(id=${product.id})}" method="post">
-                    <button class="button button-primary" type="submit">Đăng bán sản phẩm</button>
-                </form>
                 <a th:if="${#lists.isEmpty(product.variants)}" class="button button-primary" th:href="@{/shopowner/product-variants/add(productId=${product.id})}" style="display:inline-flex;align-items:center;gap:6px;">
                     <svg class="ui-icon ui-icon-xs" style="stroke:#fff" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Thêm biến thể để đăng bán</span>
                 </a>
-                <form th:if="${product.visible and !#lists.isEmpty(product.variants)}" th:action="@{/shop/product/{id}/hide(id=${product.id})}" method="post" onsubmit="return confirm('Ẩn sản phẩm khỏi khách hàng?');">
-                    <button class="button button-ghost" type="submit">Ẩn sản phẩm</button>
-                </form>
                 <form th:action="@{/shop/product/{id}/delete(id=${product.id})}" method="post"
                       onsubmit="return confirm('Bạn chắc chắn muốn xóa sản phẩm? Chỉ sản phẩm chưa có đơn hàng, đánh giá hoặc lịch sử giao dịch kho mới được xóa.');">
                     <button class="button button-danger" type="submit">Xóa sản phẩm</button>
@@ -97,7 +104,7 @@
 
             <aside class="form-card">
                 <h2>Hồ sơ nhóm biến thể</h2>
-                <p class="muted" style="font-size:13px;line-height:1.65">Sản phẩm chỉ được đăng bán sau khi có ít nhất một biến thể. Từng biến thể được kiểm tra riêng.</p>
+                <p class="muted" style="font-size:13px;line-height:1.65">Hồ sơ này gom thông tin chung. Trạng thái mở bán được điều chỉnh riêng cho từng biến thể bên dưới.</p>
                 <div class="status-meta">
                     <div><span>Số biến thể</span><strong th:text="${#lists.size(product.variants)} + ' biến thể'">0 biến thể</strong></div>
                 </div>
@@ -122,17 +129,19 @@
                     <thead><tr><th>Ảnh</th><th>SKU</th><th>Tên biến thể</th><th>Quy cách</th><th>Giá bán</th><th>Tồn kho</th><th>Có thể bán</th><th>Trạng thái bán</th><th>Thao tác</th></tr></thead>
                     <tbody>
                     <tr th:each="variant : ${product.variants}">
-                        <td><img th:if="${variant.imageUrl != null}" th:src="${variant.imageUrl}" th:alt="${variant.name}" style="width:48px;height:48px;object-fit:cover;border-radius:8px" onerror="this.hidden=true"></td>
+                        <td><img class="variant-thumb" th:if="${variant.imageUrl != null}" th:src="${variant.imageUrl}" th:alt="${variant.name}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="variant-thumb-empty" th:hidden="${variant.imageUrl != null}">Chưa có ảnh</span><span class="variant-thumb-empty" th:if="${variant.imageUrl != null}" hidden>Ảnh lỗi</span></td>
                         <td><strong th:text="${variant.sku}">SKU</strong></td>
                         <td th:text="${variant.name}">Tên biến thể</td>
                         <td th:text="${variant.specification ?: '-'}">-</td>
                         <td th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</td>
                         <td th:text="${variant.quantityOnHand}">0</td>
-                        <td th:text="${variant.availableQuantity}">0</td>
-                        <td><span class="badge" th:classappend="${variant.operationsBlocked or variant.status == 'INACTIVE'} ? ' badge-draft' : ' badge-active'" th:text="${variant.operationsBlocked ? 'Bị chặn bán' : (variant.status == 'ACTIVE' ? 'Đang bán' : 'Ngừng bán')}">Ngừng bán</span></td>
+                        <td><strong th:text="${variant.availableQuantity}">0</strong><small class="variant-stock-note">khả dụng</small></td>
+                        <td><span class="variant-state blocked" th:if="${variant.operationsBlocked}">Bị chặn</span><span class="variant-state active" th:if="${!variant.operationsBlocked and variant.status == 'ACTIVE'}">Đang bán</span><span class="variant-state inactive" th:if="${!variant.operationsBlocked and variant.status != 'ACTIVE'}">Ngừng bán</span><small class="variant-stock-note" th:if="${variant.operationsBlocked and variant.operationsBlockReason != null}" th:text="${variant.operationsBlockReason}"></small></td>
                         <td class="variant-actions">
-                            <a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a>
-                            <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a>
+                            <div class="variant-action-links"><a th:href="@{/shopowner/product-variants/{id}(id=${variant.id})}">Chi tiết</a><a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.id})}">Sửa</a></div>
+                            <form class="variant-sale-action" th:if="${variant.status == 'ACTIVE' and !variant.operationsBlocked}" th:action="@{/shopowner/product-variants/{id}/hide(id=${variant.id})}" method="post" onsubmit="return confirm('Ngừng bán biến thể này?');"><button type="submit">Ngừng bán</button></form>
+                            <form class="variant-sale-action" th:if="${variant.status != 'ACTIVE' and !variant.operationsBlocked}" th:action="@{/shopowner/product-variants/{id}/show(id=${variant.id})}" method="post"><button class="enable" type="submit">Đăng bán</button></form>
+                            <span class="variant-stock-note" th:if="${variant.operationsBlocked}">Không thể đổi trạng thái khi bị chặn</span>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(product.variants)}"><td colspan="9" class="empty-cell">Chưa có biến thể nào. Hãy thêm biến thể để cấu hình giá và tồn kho.</td></tr>

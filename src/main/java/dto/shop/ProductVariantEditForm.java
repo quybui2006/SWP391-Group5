@@ -2,6 +2,7 @@ package dto.shop;
 
 import java.util.List;
 import java.math.BigDecimal;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Dữ liệu Shop Owner được phép cập nhật cho một biến thể và tồn kho của nó. */
 public class ProductVariantEditForm {
@@ -20,6 +21,8 @@ public class ProductVariantEditForm {
     private Integer quantityOnHand;
     private Integer lowStockThresholdQuantity;
     private List<UnitOption> units;
+    private String imageUrl;
+    private MultipartFile imageFile;
 
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
     public String getProductName() { return productName; } public void setProductName(String productName) { this.productName = productName; }
@@ -36,6 +39,8 @@ public class ProductVariantEditForm {
     public Integer getQuantityOnHand() { return quantityOnHand; } public void setQuantityOnHand(Integer quantityOnHand) { this.quantityOnHand = quantityOnHand; }
     public Integer getLowStockThresholdQuantity() { return lowStockThresholdQuantity; } public void setLowStockThresholdQuantity(Integer lowStockThresholdQuantity) { this.lowStockThresholdQuantity = lowStockThresholdQuantity; }
     public List<UnitOption> getUnits() { return units; } public void setUnits(List<UnitOption> units) { this.units = units; }
+    public String getImageUrl() { return imageUrl; } public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public MultipartFile getImageFile() { return imageFile; } public void setImageFile(MultipartFile imageFile) { this.imageFile = imageFile; }
 
     public record UnitOption(Long id, String name) { }
 }

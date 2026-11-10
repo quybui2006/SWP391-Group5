@@ -59,6 +59,7 @@ public class ShopProductEditController {
             form.setApprovalStatus(savedState.getApprovalStatus());
             form.setShopName(savedState.getShopName());
             form.setCategories(savedState.getCategories());
+            form.setImageUrls(savedState.getImageUrls());
             model.addAttribute("errors", ex.getFieldErrors());
         }
         return "shopowner/shopproductedit";

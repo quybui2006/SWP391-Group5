@@ -1,6 +1,7 @@
 package dto.shop;
 
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Dữ liệu cho màn hình Edit Product (Sheet2 No.8).
@@ -25,6 +26,8 @@ public class ProductEditView {
 
     private List<CategoryOption> categories;
     private Long categoryId;
+    private List<ImageOption> imageUrls;
+    private MultipartFile imageFile;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -46,8 +49,13 @@ public class ProductEditView {
     public void setCategories(List<CategoryOption> categories) { this.categories = categories; }
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
+    public List<ImageOption> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<ImageOption> imageUrls) { this.imageUrls = imageUrls; }
+    public MultipartFile getImageFile() { return imageFile; }
+    public void setImageFile(MultipartFile imageFile) { this.imageFile = imageFile; }
 
     /** Một lựa chọn trong ô chọn danh mục. */
     public record CategoryOption(Long id, String name) {
     }
+    public record ImageOption(Long id, String url) { }
 }

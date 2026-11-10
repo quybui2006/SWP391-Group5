@@ -37,7 +37,7 @@ public class ShopProductVariantEditController {
                        HttpServletRequest request, Model model, RedirectAttributes redirect) {
         try {
             products.updateVariant(id, currentUser.requireUserId(request), form);
-            redirect.addFlashAttribute("success", "Đã cập nhật biến thể và tồn kho.");
+            redirect.addFlashAttribute("success", "Đã cập nhật biến thể.");
             return "redirect:/shopowner/product-variants";
         } catch (ProductValidationException ex) {
             ProductVariantEditForm savedState = products.buildVariantEditForm(
@@ -46,6 +46,7 @@ public class ShopProductVariantEditController {
             form.setProductName(savedState.getProductName());
             form.setProductCanSell(savedState.isProductCanSell());
             form.setApprovalStatus(savedState.getApprovalStatus());
+            form.setImageUrl(savedState.getImageUrl());
             if (!savedState.isProductCanSell() && !"DRAFT".equalsIgnoreCase(form.getStatus())) {
                 form.setStatus("DRAFT");
             }

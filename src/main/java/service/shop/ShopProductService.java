@@ -169,6 +169,7 @@ public class ShopProductService {
         form.setQuantityOnHand(inventory.getQuantityOnHand());
         form.setLowStockThresholdQuantity(inventory.getLowStockThresholdQuantity() == 0 ? null : inventory.getLowStockThresholdQuantity());
         form.setUnits(activeUnitOptions());
+        form.setImageUrl(blankToNull(variant.getImageUrl()));
         return form;
     }
 
@@ -176,10 +177,6 @@ public class ShopProductService {
         ProductVariant variant = loadOwnedVariant(variantId, ownerUserId);
         VariantInventory inventory = inventoryRepository.findByVariantId(variantId).orElse(null);
         String imageUrl = blankToNull(variant.getImageUrl());
-        if (imageUrl == null) {
-            imageUrl = imageRepository.findByProductIdOrderBySortOrderAsc(variant.getProduct().getId()).stream()
-                    .map(ProductImage::getImageUrl).filter(url -> url != null && !url.isBlank()).findFirst().orElse(null);
-        }
         return new ProductVariantDetailView(variant.getId(), variant.getProduct().getName(), variant.getName(),
                 variant.getSku(), variant.getSpecification(), variant.getPrice(), variant.getBaseUnit().getName(),
                 imageUrl, variant.getStatus(), variant.getApprovalStatus(), variant.getRejectionReason(),
@@ -219,7 +216,21 @@ public class ShopProductService {
         variant.setStatus(requestedStatus);
         // Ô trống tương đương với tắt cảnh báo tồn thấp.
         inventory.setLowStockThresholdQuantity(form.getLowStockThresholdQuantity() == null ? 0 : form.getLowStockThresholdQuantity());
-        variantRepository.save(variant); inventoryRepository.save(inventory);
+        String oldImageUrl = blankToNull(variant.getImageUrl());
+        String newImageUrl = null;
+        if (form.getImageFile() != null && !form.getImageFile().isEmpty()) {
+            newImageUrl = imageStorage.store(form.getImageFile());
+            variant.setImageUrl(newImageUrl);
+        }
+        try {
+            variantRepository.save(variant); inventoryRepository.save(inventory);
+        } catch (RuntimeException ex) {
+            if (newImageUrl != null) imageStorage.delete(newImageUrl);
+            throw ex;
+        }
+        if (newImageUrl != null && oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+            deleteImageAfterCommit(oldImageUrl);
+        }
     }
 
     @Transactional
@@ -258,7 +269,7 @@ public class ShopProductService {
         String sql = """
                 SELECT pv.id AS variant_id, p.id AS product_id, p.name AS product_name,
                     pv.name AS variant_name, pv.sku, pv.specification, pv.price,
-                    COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                    NULLIF(pv.image_url, '') AS image_url,
                     pv.approval_status, pv.rejection_reason, pv.submitted_at,
                     pv.operations_blocked AS operations_blocked,
                     pv.operations_block_reason AS operations_block_reason,
@@ -337,7 +348,7 @@ public class ShopProductService {
         return jdbc.queryForList("""
                 SELECT pv.id AS variant_id, p.id AS product_id, p.name AS product_name,
                        pv.name AS variant_name, pv.sku, pv.price,
-                       COALESCE(NULLIF(pv.image_url, ''), (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1)) AS image_url,
+                       NULLIF(pv.image_url, '') AS image_url,
                        pv.status AS variant_status, pv.approval_status, pv.rejection_reason,
                        COALESCE(vi.quantity_on_hand,0) AS stock_quantity,
                        pv.submitted_at, p.selling_status AS product_status
@@ -526,6 +537,8 @@ public class ShopProductService {
                 .toList());
         form.setCategoryId(categoryLinkRepository.findCategoryIds(productId)
                 .stream().findFirst().orElse(null));
+        form.setImageUrls(imageRepository.findByProductIdOrderBySortOrderAsc(productId).stream()
+                .map(image -> new ProductEditView.ImageOption(image.getId(), image.getImageUrl())).toList());
 
         return form;
     }
@@ -558,12 +571,37 @@ public class ShopProductService {
         product.setReviewedAt(null);
         product.setRejectionReason(null);
 
-        productRepository.save(product);
-
-        // Giữ đúng một danh mục cho sản phẩm
-        if (form.getCategoryId() != null) {
-            categoryLinkRepository.replaceCategory(productId, form.getCategoryId());
+        String newImageUrl = null;
+        List<ProductImage> currentImages = imageRepository.findByProductIdOrderBySortOrderAsc(productId);
+        if (form.getImageFile() != null && !form.getImageFile().isEmpty()) {
+            newImageUrl = imageStorage.store(form.getImageFile());
         }
+        try {
+            productRepository.save(product);
+
+            // A selected file replaces the first remaining image, or adds one if none remain.
+            if (newImageUrl != null) {
+                ProductImage primary = currentImages.stream()
+                        .findFirst().orElse(null);
+                if (primary == null) {
+                    primary = new ProductImage();
+                    primary.setProductId(productId);
+                    primary.setSortOrder(currentImages.stream().mapToInt(ProductImage::getSortOrder).max().orElse(-1) + 1);
+                } else {
+                    deleteImageAfterCommit(primary.getImageUrl());
+                }
+                primary.setImageUrl(newImageUrl);
+                imageRepository.save(primary);
+            }
+            // Giữ đúng một danh mục cho sản phẩm.
+            if (form.getCategoryId() != null) {
+                categoryLinkRepository.replaceCategory(productId, form.getCategoryId());
+            }
+        } catch (RuntimeException ex) {
+            if (newImageUrl != null) imageStorage.delete(newImageUrl);
+            throw ex;
+        }
+
     }
 
     /**
@@ -715,6 +753,7 @@ public class ShopProductService {
         view.setBatchCode(product.getBatchCode());
         view.setApprovalStatus(product.getApprovalStatus());
         view.setSellingStatus(product.getSellingStatus());
+        view.setVisible(product.isVisible());
         view.setShopName(shopRepository.findById(product.getShopId())
                 .map(shop -> shop.getName()).orElse("-"));
 
@@ -742,9 +781,11 @@ public class ShopProductService {
                 .map(v -> {
                     VariantInventory inv = inventories.get(v.getId());
                     String variantImage = blankToNull(v.getImageUrl());
-                    if (variantImage == null && view.getImageUrls() != null && !view.getImageUrls().isEmpty()) {
-                        variantImage = view.getImageUrls().get(0);
-                    }
+                    int onHand = inv == null ? 0 : nz(inv.getQuantityOnHand());
+                    int reserved = inv == null ? 0 : nz(inv.getReservedQuantity());
+                    int available = inv == null ? 0 : (inv.getAvailableQuantity() == null
+                            ? Math.max(0, onHand - reserved) : inv.getAvailableQuantity());
+                    int lowStockThreshold = inv == null ? 0 : nz(inv.getLowStockThresholdQuantity());
                     return new ProductDetailView.VariantRow(
                             v.getId(),
                             v.getSku(),
@@ -756,10 +797,12 @@ public class ShopProductService {
                             variantImage,
                             v.getPrice(),
                             v.getBaseUnit() == null ? "" : v.getBaseUnit().getName(),
-                            inv == null ? 0 : nz(inv.getQuantityOnHand()),
-                            inv == null ? 0 : nz(inv.getReservedQuantity()),
-                            inv == null ? null : inv.getAvailableQuantity(),
-                            false);
+                            onHand,
+                            reserved,
+                            available,
+                            lowStockThreshold > 0 && available <= lowStockThreshold,
+                            v.isOperationsBlocked(),
+                            v.getOperationsBlockReason());
                 })
                 .toList();
 
@@ -800,6 +843,17 @@ public class ShopProductService {
 
     private String blankToNull(String value) {
         return (value == null || value.isBlank()) ? null : value.trim();
+    }
+
+    private void deleteImageAfterCommit(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        imageStorage.delete(imageUrl);
+                    }
+                });
     }
 
     /** Schema lưu mốc thời gian theo UTC. */

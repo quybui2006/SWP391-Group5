@@ -7,6 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/shopowner.css}">
     <link rel="stylesheet" th:href="@{/css/shop-product.css}">
     <link rel="stylesheet" th:href="@{/css/shopproductedit.css}">
+    <link rel="stylesheet" th:href="@{/css/shop-image-editor.css}">
 </head>
 <body>
 <div class="app-shell">
@@ -29,7 +30,7 @@
         </div>
 
         <form class="product-form edit-product-form" method="post"
-              th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
+              enctype="multipart/form-data" th:action="@{/shop/product/{id}/edit(id=${form.id})}" th:object="${form}">
             <section class="form-card edit-section">
                 <div class="edit-section-heading">
                     <div class="edit-section-icon" style="display:flex;align-items:center;justify-content:center;">
@@ -85,6 +86,23 @@
                 </div>
             </section>
 
+            <section class="form-card edit-section image-editor">
+                <div class="image-editor-heading"><div><h2>Hình ảnh sản phẩm</h2><p>Chọn ảnh mới để thay ảnh chính. Ảnh còn lại sẽ được giữ nguyên.</p></div><span class="image-count" th:text="${#lists.size(form.imageUrls) + ' ảnh'}">0 ảnh</span></div>
+                <div class="image-editor-layout product-image-layout">
+                    <div class="image-preview-wrap product-preview-wrap" th:classappend="${form.imageUrls.isEmpty()} ? ' is-empty' : ''">
+                        <img class="image-preview-large" th:if="${!form.imageUrls.isEmpty()}" th:src="${form.imageUrls[0].url}" alt="Ảnh chính sản phẩm" data-current-preview>
+                        <div class="image-empty" th:if="${form.imageUrls.isEmpty()}"><span aria-hidden="true">＋</span><strong>Sản phẩm chưa có ảnh</strong></div>
+                    </div>
+                    <div class="image-editor-controls">
+                        <label class="image-upload" for="productImageFile"><span class="image-upload-icon" aria-hidden="true">↑</span><span><strong>Chọn ảnh thay thế</strong><small>Ảnh mới sẽ thay ảnh chính hiện tại</small></span></label>
+                        <input class="image-file-input" id="productImageFile" type="file" th:field="*{imageFile}" accept="image/jpeg,image/png" data-image-input>
+                        <p class="image-file-name" data-file-name>Chưa chọn tệp</p>
+                        <p class="image-help">JPG hoặc PNG, tối đa 5 MB.</p>
+                        <em class="image-error" th:if="${errors.containsKey('imageFile')}" th:text="${errors.get('imageFile')}"></em>
+                    </div>
+                </div>
+            </section>
+
             <div class="edit-form-footer">
                 <div class="edit-footer-copy"><strong>Kiểm tra thông tin trước khi lưu</strong><span>Bạn có thể xem lại toàn bộ thông tin tại trang chi tiết sản phẩm.</span></div>
                 <div class="form-actions">
@@ -98,5 +116,6 @@
         </form>
     </main>
 </div>
+<script th:src="@{/js/shop-image-editor.js}" defer></script>
 </body>
 </html>

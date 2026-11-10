@@ -206,6 +206,50 @@ p, span, label, input, button, select, textarea {
     box-shadow: var(--shadow-xs);
 }
 
+.btn-success {
+    background: var(--primary-600);
+    color: #ffffff !important;
+    border-color: var(--primary-600);
+    box-shadow: var(--shadow-xs);
+}
+
+.btn-success:hover {
+    background: var(--primary-700);
+    border-color: var(--primary-700);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-outline-success {
+    background: #ffffff;
+    color: var(--primary-700) !important;
+    border-color: var(--primary-300);
+}
+
+.btn-outline-success:hover {
+    background: var(--primary-50);
+    border-color: var(--primary-600);
+    color: var(--primary-800) !important;
+}
+
+.btn-outline-secondary {
+    background: #ffffff;
+    color: var(--slate-700) !important;
+    border-color: var(--slate-300);
+}
+
+.btn-outline-secondary:hover {
+    background: var(--slate-50);
+    border-color: var(--slate-400);
+    color: var(--slate-900) !important;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
 .btn-secondary:hover, .btn-action-secondary:hover {
     background: var(--slate-50);
     border-color: var(--slate-400);
