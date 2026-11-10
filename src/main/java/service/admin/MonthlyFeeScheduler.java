@@ -50,14 +50,13 @@ public class MonthlyFeeScheduler {
         // completed_at được lưu theo UTC; khoảng chốt được tính theo giờ Việt Nam.
         java.sql.Timestamp from = java.sql.Timestamp.valueOf(revenueMonth.atStartOfDay(BUSINESS_ZONE).toLocalDateTime().minusHours(7));
         java.sql.Timestamp to = java.sql.Timestamp.valueOf(nextMonth.atStartOfDay(BUSINESS_ZONE).toLocalDateTime().minusHours(7));
-        java.sql.Timestamp dueAt = java.sql.Timestamp.valueOf(revenueMonth.plusMonths(1).withDayOfMonth(8).atStartOfDay(BUSINESS_ZONE).toLocalDateTime().minusHours(7));
 
         jdbc.update("""
                 INSERT INTO shop_monthly_fees
                     (shop_id, revenue_month, revenue_amount, fee_rate, fee_amount, due_at, status, paid_at)
                 SELECT o.shop_id, ?, SUM(o.shop_revenue_amount), 0.0500,
                        ROUND(SUM(o.shop_revenue_amount) * 0.05, 0),
-                       CAST(? AS DATETIME),
+                       CAST(DATE_ADD(LAST_DAY(?), INTERVAL '8 -7' DAY_HOUR) AS DATETIME),
                        CASE WHEN ROUND(SUM(o.shop_revenue_amount) * 0.05, 0) = 0 THEN 'PAID' ELSE 'UNPAID' END,
                        CASE WHEN ROUND(SUM(o.shop_revenue_amount) * 0.05, 0) = 0 THEN CURRENT_TIMESTAMP(3) ELSE NULL END
                 FROM orders o
@@ -65,7 +64,7 @@ public class MonthlyFeeScheduler {
                     AND o.completed_at >= ? AND o.completed_at < ?
                 GROUP BY o.shop_id
                 ON DUPLICATE KEY UPDATE shop_id = VALUES(shop_id)
-                """, Date.valueOf(revenueMonth), dueAt, from, to);
+                """, Date.valueOf(revenueMonth), Date.valueOf(revenueMonth), from, to);
 
         jdbc.update("""
                 UPDATE orders o
