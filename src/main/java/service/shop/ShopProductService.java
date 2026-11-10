@@ -759,7 +759,9 @@ public class ShopProductService {
                             inv == null ? 0 : nz(inv.getQuantityOnHand()),
                             inv == null ? 0 : nz(inv.getReservedQuantity()),
                             inv == null ? null : inv.getAvailableQuantity(),
-                            false);
+                            false,
+                            v.isOperationsBlocked(),
+                            v.getOperationsBlockReason());
                 })
                 .toList();
 

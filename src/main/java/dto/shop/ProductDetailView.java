@@ -65,6 +65,7 @@ public class ProductDetailView {
                              String status, String approvalStatus, String rejectionReason,
                              String imageUrl, BigDecimal price, String unitName,
                              int quantityOnHand, int reservedQuantity,
-                             int availableQuantity, boolean lowStock) {
+                             int availableQuantity, boolean lowStock,
+                             boolean operationsBlocked, String operationsBlockReason) {
     }
 }
