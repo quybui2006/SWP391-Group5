@@ -269,9 +269,9 @@ public class ShopProductService {
         String term = keyword == null ? "" : keyword.trim();
         String like = "%" + term.toLowerCase() + "%";
         String statusCondition = switch (status == null ? "all" : status) {
-            case "hidden" -> " AND p.is_visible = 0";
-            case "stopped" -> " AND pv.status = 'INACTIVE'";
-            case "selling" -> " AND pv.status = 'ACTIVE' AND pv.operations_blocked = 0 AND p.is_visible = 1 AND p.selling_status = 'ACTIVE'";
+            case "hidden" -> " AND (pv.operations_blocked = 1 OR p.is_visible = 0)";
+            case "stopped" -> " AND (pv.operations_blocked = 1 OR pv.status = 'INACTIVE')";
+            case "selling" -> " AND (pv.operations_blocked = 1 OR (pv.status = 'ACTIVE' AND p.is_visible = 1 AND p.selling_status = 'ACTIVE'))";
             default -> "";
         };
         String sql = """
@@ -281,12 +281,16 @@ public class ShopProductService {
                     pv.approval_status, pv.rejection_reason, pv.submitted_at,
                     pv.operations_blocked AS operations_blocked,
                     pv.operations_block_reason AS operations_block_reason,
-                    u.name AS unit_name, COALESCE(vi.quantity_on_hand, 0) AS stock_quantity,
+                    CASE WHEN pv.operations_blocked = 1
+                         THEN COALESCE(pv.operations_blocked_at, pv.updated_at)
+                         ELSE pv.operations_blocked_at
+                    END AS operations_blocked_at,
+                    COALESCE(u.name, '-') AS unit_name, COALESCE(vi.quantity_on_hand, 0) AS stock_quantity,
                     COALESCE(vi.available_quantity, 0) AS available_quantity,
                     pv.status AS variant_status, p.selling_status AS product_status
                 FROM product_variants pv
                 JOIN products p ON p.id = pv.product_id AND p.shop_id = pv.shop_id
-                JOIN units u ON u.id = pv.base_unit_id
+                LEFT JOIN units u ON u.id = pv.base_unit_id
                 LEFT JOIN variant_inventory vi ON vi.variant_id = pv.id
                 WHERE pv.shop_id = ?
                   AND (? = '' OR LOWER(p.name) LIKE ? OR LOWER(pv.name) LIKE ? OR LOWER(pv.sku) LIKE ?)

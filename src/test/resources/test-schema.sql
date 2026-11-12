@@ -235,6 +235,7 @@ CREATE TABLE product_variants (
     UNIQUE (shop_id, sku),
     operations_blocked BOOLEAN NOT NULL DEFAULT FALSE,
     operations_block_reason VARCHAR(1000),
+    operations_blocked_at TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id),
     FOREIGN KEY (base_unit_id) REFERENCES units(id)
 );

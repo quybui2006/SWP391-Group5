@@ -49,6 +49,9 @@ public class ProductVariant {
     @Column(name = "operations_block_reason")
     private String operationsBlockReason;
 
+    @Column(name = "operations_blocked_at")
+    private LocalDateTime operationsBlockedAt;
+
     /** Trạng thái bán do shop quản lý; OP chặn bán bằng cờ riêng. */
     @Column(name = "status", nullable = false)
     private String status = "DRAFT";
@@ -103,6 +106,8 @@ public class ProductVariant {
     public void setOperationsBlocked(boolean operationsBlocked) { this.operationsBlocked = operationsBlocked; }
     public String getOperationsBlockReason() { return operationsBlockReason; }
     public void setOperationsBlockReason(String operationsBlockReason) { this.operationsBlockReason = operationsBlockReason; }
+    public LocalDateTime getOperationsBlockedAt() { return operationsBlockedAt; }
+    public void setOperationsBlockedAt(LocalDateTime operationsBlockedAt) { this.operationsBlockedAt = operationsBlockedAt; }
     public Unit getBaseUnit() { return baseUnit; }
     public void setBaseUnit(Unit baseUnit) { this.baseUnit = baseUnit; }
 

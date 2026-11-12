@@ -16,6 +16,8 @@
         .variant-thumb{width:54px;height:54px;object-fit:contain;border-radius:9px;border:1px solid var(--line);background:#f5faf6;display:block}
         .variant-image-cell{width:70px}
         .variant-rejection{display:block;max-width:240px;white-space:normal;color:#a52822;font-size:11px;margin-top:4px}
+        .variant-blocked-at{min-width:150px;white-space:nowrap;font-variant-numeric:tabular-nums}
+        .variant-table{width:100%;min-width:1120px;table-layout:auto}
         @media(max-width:760px){.variant-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
     </style>
 </head>
@@ -55,7 +57,7 @@
             </form>
 
             <div class="table-wrap" th:if="${!variants.isEmpty()}">
-                <table>
+                <table class="variant-table">
                     <thead>
                     <tr>
                         <th>Ảnh</th>
@@ -65,6 +67,7 @@
                         <th>Giá bán</th>
                         <th>Tồn kho</th>
                         <th>Trạng thái</th>
+                        <th>Thời gian chặn</th>
                         <th>Thao tác</th>
                     </tr>
                     </thead>
@@ -95,6 +98,7 @@
                             <span class="badge badge-draft variant-status" th:if="${!variant.operations_blocked and variant.variant_status == 'INACTIVE'}">Ngừng bán</span>
                             <small class="variant-rejection" th:if="${variant.operations_blocked and variant.operations_block_reason != null}" th:text="${variant.operations_block_reason}"></small>
                         </td>
+                        <td class="variant-blocked-at" th:text="${variant.operations_blocked and variant.operations_blocked_at != null ? #temporals.format(variant.operations_blocked_at, 'dd/MM/yyyy HH:mm:ss') : '-'}">-</td>
                         <td class="product-actions">
                             <a th:href="@{/shopowner/product-variants/{id}(id=${variant.variant_id})}">Chi tiết</a>
                             <a th:href="@{/shopowner/product-variants/{id}/edit(id=${variant.variant_id})}">Sửa</a>

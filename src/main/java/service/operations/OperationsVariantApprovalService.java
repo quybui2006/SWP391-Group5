@@ -79,7 +79,8 @@ public class OperationsVariantApprovalService {
         }
         int updated = jdbc.update("""
                 UPDATE product_variants
-                   SET operations_blocked=1,operations_block_reason=?,status='INACTIVE'
+                   SET operations_blocked=1,operations_block_reason=?,
+                       operations_blocked_at=CURRENT_TIMESTAMP(3),status='INACTIVE'
                  WHERE id=? AND operations_blocked=0
                 """, cleanReason, variantId);
         if (updated != 1) throw new ResponseStatusException(HttpStatus.CONFLICT, "Trạng thái biến thể vừa thay đổi. Tải lại trang.");
